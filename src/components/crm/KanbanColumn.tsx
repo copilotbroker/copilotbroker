@@ -34,6 +34,8 @@ interface KanbanColumnProps {
   onOpenProposta?: (lead: CRMLead) => void;
   onOpenReagendamento?: (leadId: string) => void;
   onLeadsLoaded?: (leads: CRMLead[]) => void;
+  onWhatsAppClick?: (leadId: string) => void;
+  onCallClick?: (leadId: string) => void;
 }
 
 const STATUS_SQUARE_COLORS: Record<LeadStatus, string> = {
@@ -51,7 +53,7 @@ export function KanbanColumn({
   onCardClick, onUpdateOrigin, onDelete, onIniciarAtendimento,
   onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda,
   onDispatchWhatsApp, onAddLead, onOpenProposta, onOpenReagendamento,
-  onLeadsLoaded,
+  onLeadsLoaded, onWhatsAppClick, onCallClick,
 }: KanbanColumnProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const config = STATUS_CONFIG[status];
@@ -168,6 +170,8 @@ export function KanbanColumn({
                       onOpenPerda={onOpenPerda}
                       onOpenProposta={() => onOpenProposta?.(lead)}
                       onOpenReagendamento={onOpenReagendamento}
+                      onWhatsAppClick={onWhatsAppClick}
+                      onCallClick={onCallClick}
                     />
                   </div>
                 </div>

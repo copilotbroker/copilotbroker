@@ -33,6 +33,8 @@ interface KanbanCardProps {
   onOpenPerda?: (leadId: string, currentStatus: LeadStatus) => void;
   onOpenProposta?: (leadId: string) => void;
   onOpenReagendamento?: (leadId: string) => void;
+  onWhatsAppClick?: (leadId: string) => void;
+  onCallClick?: (leadId: string) => void;
 }
 
 // Vibrant dark theme colors for origin types
@@ -81,7 +83,7 @@ const RING_PULSE_GLOW_STYLE: React.CSSProperties = {
   boxShadow: "0 0 20px rgba(52,211,153,0.3)",
 };
 
-export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, onClick, onUpdateOrigin, onDelete, onIniciarAtendimento, onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda, onOpenProposta, onOpenReagendamento }: KanbanCardProps) {
+export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, onClick, onUpdateOrigin, onDelete, onIniciarAtendimento, onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda, onOpenProposta, onOpenReagendamento, onWhatsAppClick, onCallClick }: KanbanCardProps) {
   
 
   // Dynamic action config for scheduling status based on comparecimento
@@ -311,7 +313,7 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
               href={`https://wa.me/55${cleanPhone}`}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onWhatsAppClick?.(lead.id); }}
               className={cn(
                 "flex items-center justify-center p-2 min-h-[40px] md:min-h-0 md:p-1.5",
                 "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg",
@@ -320,6 +322,21 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
             >
               <MessageCircle className="w-4 h-4 md:w-3.5 md:h-3.5" />
             </a>
+          )}
+
+          {/* Call button */}
+          {lead.status !== "new" && onCallClick && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onCallClick(lead.id); }}
+              className={cn(
+                "flex items-center justify-center p-2 min-h-[40px] md:min-h-0 md:p-1.5",
+                "bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg",
+                "transition-all duration-150"
+              )}
+              title="Registrar ligação"
+            >
+              <Phone className="w-4 h-4 md:w-3.5 md:h-3.5" />
+            </button>
           )}
 
           {/* Perda + Delete buttons */}
