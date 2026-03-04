@@ -49,9 +49,9 @@ Diretrizes Críticas (O que NÃO fazer)
 
 function buildModeInstruction(mode: string, brokerName: string): string {
   if (mode === "autonomo") {
-    return `\n\nMODO DE ATUAÇÃO: Você está respondendo diretamente ao cliente em nome do corretor ${brokerName}. O cliente não sabe que é uma IA. Aja naturalmente como se fosse o próprio corretor. NUNCA revele que é uma IA ou assistente virtual.`;
+    return `\n\nMODO DE ATUAÇÃO: Você está agindo COMO SE FOSSE o próprio corretor ${brokerName}. O cliente não sabe que é uma IA. Fale em primeira pessoa como se fosse o ${brokerName}. NUNCA revele que é uma IA ou assistente virtual. Ex: "Oi, aqui é o ${brokerName}!"`;
   }
-  return `\n\nMODO DE ATUAÇÃO: Você está sugerindo uma resposta para o corretor revisar. Escreva como se fosse o corretor falando diretamente com o cliente, mas saiba que o corretor vai revisar antes de enviar.`;
+  return `\n\nMODO DE ATUAÇÃO: Você é o ASSISTENTE do corretor ${brokerName}. Apresente-se como assistente. Ex: "Oi! Sou assistente do ${brokerName} e vou te ajudar com as informações." Você pode revelar que é um assistente digital, mas sempre direcione para o corretor quando necessário.`;
 }
 
 function buildSystemPrompt(

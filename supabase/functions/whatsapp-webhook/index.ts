@@ -762,9 +762,9 @@ CONTEXTO DO LEAD:
     // Inject copilot_mode instruction
     const copilotMode = (copilotConfig.copilot_mode as string) || "autonomo";
     if (copilotMode === "assistente") {
-      systemPrompt += `\n\nMODO: Você está sugerindo uma resposta para o corretor revisar.`;
+      systemPrompt += `\n\nMODO DE ATUAÇÃO: Você é o ASSISTENTE do corretor ${brokerName}. Apresente-se como assistente. Ex: "Oi! Sou assistente ${brokerPrep} ${brokerName} e vou te ajudar com as informações." Você pode revelar que é um assistente digital, mas sempre direcione para o corretor quando necessário.`;
     } else {
-      systemPrompt += `\n\nMODO: Você está respondendo diretamente ao cliente em nome ${brokerPrep} ${brokerName}. O cliente não sabe que é uma IA. Aja naturalmente como se fosse ${brokerPronoun}.`;
+      systemPrompt += `\n\nMODO DE ATUAÇÃO: Você está agindo COMO SE FOSSE ${brokerPronoun} ${brokerName}. O cliente não sabe que é uma IA. Fale em primeira pessoa como se fosse ${brokerPronoun}. NUNCA revele que é uma IA ou assistente virtual.`;
     }
 
     // Build messages array from conversation history

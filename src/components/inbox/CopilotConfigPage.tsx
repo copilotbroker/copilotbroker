@@ -168,7 +168,7 @@ function CopilotAvatar({ name, isActive }: { name: string; isActive: boolean }) 
 function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; onEdit: () => void; onDelete: () => void }) {
   const personality = PERSONALITIES.find(p => p.id === config.personality);
   const propertyType = PROPERTY_TYPES.find(p => p.id === config.property_type);
-  const modeLabel = config.copilot_mode === "autonomo" ? "🚀 Autônomo" : "🤝 Assistente";
+  const modeLabel = config.copilot_mode === "autonomo" ? "🚀 Age como Corretor" : "🤝 Assistente do Corretor";
 
   return (
     <div className="max-w-2xl mx-auto pb-24 px-4 space-y-5 pt-6">
@@ -276,15 +276,15 @@ function StepMode({ form, update }: { form: Partial<CopilotConfig>; update: (k: 
           selected={form.copilot_mode !== "autonomo"}
           onClick={() => update("copilot_mode", "assistente")}
           icon={Handshake}
-          title="Meu Assistente"
-          description="Ele sugere respostas e eu decido o que enviar. Tenho controle total."
+          title="Assistente do Corretor"
+          description="Ele se apresenta como assistente do corretor. Ex: 'Oi, sou assistente do João e vou te ajudar!'"
         />
         <SelectionCard
           selected={form.copilot_mode === "autonomo"}
           onClick={() => update("copilot_mode", "autonomo")}
           icon={Rocket}
-          title="Agir em Meu Nome"
-          description="Ele responde diretamente aos clientes como se fosse eu. Automação total."
+          title="Agir como o Corretor"
+          description="Ele fala como se fosse você. O cliente não sabe que é uma IA. Ex: 'Oi, aqui é o João!'"
         />
       </div>
     </div>
