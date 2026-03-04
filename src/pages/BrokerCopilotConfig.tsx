@@ -83,7 +83,13 @@ export default function BrokerCopilotConfig() {
                 <Wifi className="w-4 h-4" />
                 <span className="hidden sm:inline">Conexão</span>
               </TabsTrigger>
-              {/* Copiloto tab - temporarily disabled */}
+              <TabsTrigger
+                value="copilot"
+                className="text-slate-400 data-[state=active]:bg-[#2a2a2e] data-[state=active]:text-white hover:text-white flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">Copiloto</span>
+              </TabsTrigger>
               <TabsTrigger
                 value="security"
                 className="text-slate-400 data-[state=active]:bg-[#2a2a2e] data-[state=active]:text-white hover:text-white flex items-center gap-2"
@@ -118,7 +124,9 @@ export default function BrokerCopilotConfig() {
               <ConnectionTab />
             </TabsContent>
 
-            {/* Copiloto tab content - temporarily disabled */}
+            <TabsContent value="copilot" className="mt-6">
+              {brokerId && <CopilotConfigPage brokerId={brokerId} />}
+            </TabsContent>
 
             <TabsContent value="security" className="mt-6">
               <SecurityTab />
