@@ -1,39 +1,38 @@
 
 
-## Plano: Validação de Webhook via Path Parameter
+## Proposta: Preview ao Vivo do Novo Esquema de Cores
 
-### Alteração
+Como não consigo capturar screenshots da Inbox (requer login), proponho **aplicar as mudanças diretamente** — assim você verá o resultado ao vivo no preview. Se não gostar, posso reverter instantaneamente ou ajustar.
 
-**`supabase/functions/whatsapp-webhook/index.ts`**
+### Antes de aplicar, aqui está o comparativo textual:
 
-1. Adicionar nova rota `POST /:token` que valida o token do path contra `UAZAPI_WEBHOOK_SECRET`
-2. Manter a rota `POST /` existente (backward compatible — aceita se secret não configurado, rejeita se configurado)
-3. Na rota `/:token`, extrair `c.req.param("token")` e comparar com `Deno.env.get("UAZAPI_WEBHOOK_SECRET")`
-
-```typescript
-// Nova rota com token no path
-app.post("/:token", async (c) => {
-  const webhookSecret = Deno.env.get("UAZAPI_WEBHOOK_SECRET");
-  if (webhookSecret) {
-    const provided = c.req.param("token");
-    if (provided !== webhookSecret) {
-      console.warn("🚫 Webhook rejected: invalid path token");
-      return c.json({ error: "Forbidden" }, 403, corsHeaders);
-    }
-  }
-  // ... mesmo handler existente
-});
+```text
+╔══════════════════════════════════════════════════════════╗
+║  ANTES (atual)              →  DEPOIS (proposto)        ║
+╠══════════════════════════════════════════════════════════╣
+║  Fundo: #141417 (preto)     →  #0F1117 (slate-950)      ║
+║  Cards: #1e1e22 (cinza)     →  #1A1D27 (slate-900)      ║
+║  Bordas: #2a2a2e            →  #2A2D37 (slate-800)      ║
+║  Avatar: amarelo neon       →  indigo-500 suave          ║
+║  Seleção: amarelo/15        →  indigo-500/10             ║
+║  Botão enviar: amarelo      →  indigo-500                ║
+║  Bolha outbound: verde/20   →  indigo-600/20             ║
+║  Spinner: amarelo           →  indigo-500                ║
+║  Hover ícones: amarelo      →  indigo-400                ║
+╚══════════════════════════════════════════════════════════╝
 ```
 
-**URL na UAZAPI:**
-```
-https://nckzxwxxtyeydolmdijn.supabase.co/functions/v1/whatsapp-webhook/SEU_SECRET
-```
+### Componentes afetados (apenas Inbox)
+1. `ConversationList.tsx` — KPIs, filtros, avatares, card selecionado
+2. `ConversationThread.tsx` — header, bolhas, composer, banners
+3. `LeadContextPanel.tsx` — header e cards
+4. `CadenceCountdown.tsx` — card de cadência
 
-### Configuração
-- Criar secret `UAZAPI_WEBHOOK_SECRET` com UUID seguro
-- Configurar URL acima no painel da UAZAPI
+### O que NÃO muda
+- Resto do app (admin, CRM, landing pages)
+- Cores semânticas (vermelho=risco, laranja=quente, verde=copilot ativo)
+- Layout e funcionalidades
 
-### Deploy
-- `whatsapp-webhook`
+### Abordagem
+Aplicar as mudanças e você avalia ao vivo. Se não aprovar, reverto em um clique.
 
