@@ -296,6 +296,10 @@ export function QueueTab() {
     hasMoreHistory,
   } = useWhatsAppQueue(effectiveFilterId);
 
+  const sentMessages = useMemo(() => historyQueue.filter(m => m.status === "sent"), [historyQueue]);
+  const cancelledAndFailedMessages = useMemo(() => historyQueue.filter(m => m.status === "failed" || m.status === "cancelled"), [historyQueue]);
+  const isEmpty = pendingQueue.length === 0 && historyQueue.length === 0;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -303,10 +307,6 @@ export function QueueTab() {
       </div>
     );
   }
-
-  const sentMessages = useMemo(() => historyQueue.filter(m => m.status === "sent"), [historyQueue]);
-  const cancelledAndFailedMessages = useMemo(() => historyQueue.filter(m => m.status === "failed" || m.status === "cancelled"), [historyQueue]);
-  const isEmpty = pendingQueue.length === 0 && historyQueue.length === 0;
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
