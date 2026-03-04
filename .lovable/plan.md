@@ -1,31 +1,33 @@
 
 
-## Plano simplificado: Realtime + remover botões
+## Problema
 
-Concordo -- Realtime na tabela é suficiente. O sync-all já dispara automaticamente ao entrar na aba (comportamento existente), e o Realtime propagará qualquer mudança subsequente no banco sem polling.
+O `reply_count` na tabela `whatsapp_daily_stats` incrementa a cada mensagem recebida do lead, não por lead único. Se um lead envia 5 mensagens, o contador sobe 5. Isso infla a taxa de resposta.
 
-### Mudanças
+A tabela `whatsapp_lead_replies` já faz deduplicação correta (upsert por `phone + campaign_id`), mas o contador `reply_count` no `whatsapp_daily_stats` não usa essa lógica.
 
-**1. Migração SQL** -- habilitar Realtime na tabela
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE broker_whatsapp_instances;
-```
+## Correção em 2 partes
 
-**2. `src/pages/AdminCopilotConfig.tsx`**
-- Adicionar canal Realtime que escuta `postgres_changes` em `broker_whatsapp_instances` e invalida a query `admin-whatsapp-instances` a cada evento UPDATE/INSERT/DELETE
-- Remover os dois botões ("Sincronizar Status" e "Atualizar") do header
-- Manter o sync-all automático no mount (já existe, não muda nada)
-- Cleanup do canal no unmount
+### 1. Webhook -- só incrementar reply_count para replies novas
 
-**3. `src/components/admin/WhatsAppOverviewTab.tsx`**
-- Remover a prop `refetchInstances` (não é mais usada)
+No `supabase/functions/whatsapp-webhook/index.ts`, na seção que atualiza `whatsapp_daily_stats.reply_count` (~linha 269-287):
 
-### O que permanece
-- O sync-all automático ao entrar na aba "Visão Global" (já reconcilia com UAZAPI e atualiza o banco)
-- A partir daí, qualquer mudança no banco (feita pelo sync, por pause/unpause, ou por outro processo) é refletida instantaneamente via Realtime
+- Antes de incrementar, verificar se o upsert em `whatsapp_lead_replies` realmente inseriu um registro novo (não apenas atualizou um existente)
+- Usar o retorno do upsert para decidir se incrementa o contador
+- Mesma lógica para `whatsapp_campaigns.reply_count`: só incrementar se for reply nova daquele phone
+
+### 2. Frontend -- usar `whatsapp_lead_replies` para contagem precisa
+
+No `useWhatsAppGlobalStats` (ou criar query dedicada no `AdminCopilotConfig`):
+
+- Consultar `whatsapp_lead_replies` com `count` para obter o número real de leads únicos que responderam
+- Usar esse valor como `replies` no `globalTotals` passado ao `WhatsAppOverviewTab`
+- Isso corrige imediatamente a taxa de resposta sem depender de dados históricos do `reply_count`
 
 ### Arquivos alterados
-- Migração SQL (1 linha)
-- `src/pages/AdminCopilotConfig.tsx` (Realtime + remover botões)
-- `src/components/admin/WhatsAppOverviewTab.tsx` (remover prop não utilizada)
+
+| Arquivo | Mudança |
+|---|---|
+| `supabase/functions/whatsapp-webhook/index.ts` | Checar se reply é nova antes de incrementar contadores |
+| `src/hooks/use-whatsapp-stats.ts` | Na função `useWhatsAppGlobalStats`, consultar `whatsapp_lead_replies` para contagem real de replies únicas |
 
