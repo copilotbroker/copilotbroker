@@ -1,54 +1,60 @@
 
 
-## Plano: Controle individual de Inbox e Copiloto por corretor
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-### Objetivo
-Permitir que o admin habilite/desabilite individualmente o acesso ao **Inbox** e à **criação do Copiloto** para cada corretor, diretamente na aba "Corretores" do painel admin.
+### Problema 1: Nomes dos leads não aparecem
 
-### 1. Migration: adicionar colunas na tabela `brokers`
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-```sql
-ALTER TABLE public.brokers 
-  ADD COLUMN inbox_enabled boolean NOT NULL DEFAULT false,
-  ADD COLUMN copilot_enabled boolean NOT NULL DEFAULT false;
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
 ```
 
-### 2. UI: Switches nos cards de corretor (`BrokerManagement.tsx`)
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-Na seção "Row 6: Actions" de cada broker card (linha ~752), adicionar dois switches inline:
-- **Inbox** — toggle `inbox_enabled`
-- **Copiloto** — toggle `copilot_enabled`
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-Cada toggle faz `supabase.from("brokers").update({ inbox_enabled / copilot_enabled }).eq("id", broker.id)` e atualiza o estado local. Usar ícones `MessageSquare` (Inbox) e `Bot` (Copiloto) com labels compactos.
+### Problema 2: Marcar como lida quando lida no celular
 
-### 3. Gating no lado do corretor
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-- **BrokerInbox.tsx** e **AdminInbox.tsx** (para broker role): verificar `brokers.inbox_enabled` ao carregar. Se `false`, mostrar tela de "Funcionalidade não liberada. Solicite ao administrador."
-- **BrokerCopilotConfig.tsx** e **CopilotConfigPage.tsx**: verificar `brokers.copilot_enabled`. Se `false`, mostrar mesma tela de bloqueio.
-- **BrokerSidebar.tsx** e **BrokerBottomNav.tsx**: ocultar ou desabilitar visualmente os botões de Inbox e Copiloto quando as flags estão `false`. Buscar as flags via query ao `brokers` usando o `brokerId`.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
 
-### 4. Hook: `use-broker-features.ts`
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
-Novo hook que busca `inbox_enabled` e `copilot_enabled` do broker logado:
-
-```typescript
-export function useBrokerFeatures(brokerId: string | null) {
-  // query brokers.inbox_enabled, copilot_enabled
-  return { inboxEnabled, copilotEnabled, isLoading };
-}
-```
-
-Usado pelo sidebar, bottom nav, e páginas de inbox/copiloto do corretor.
-
-### Arquivos a criar/editar
+### Arquivos a editar
 
 | Ação | Arquivo |
 |------|---------|
-| Migration | Adicionar `inbox_enabled` e `copilot_enabled` a `brokers` |
-| Criar | `src/hooks/use-broker-features.ts` |
-| Editar | `src/components/admin/BrokerManagement.tsx` (switches nos cards) |
-| Editar | `src/pages/BrokerInbox.tsx` (gating) |
-| Editar | `src/pages/BrokerCopilotConfig.tsx` (gating) |
-| Editar | `src/components/broker/BrokerSidebar.tsx` (ocultar itens) |
-| Editar | `src/components/broker/BrokerBottomNav.tsx` (ocultar itens) |
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
 
