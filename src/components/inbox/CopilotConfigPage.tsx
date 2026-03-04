@@ -1,27 +1,28 @@
 import { useState, useEffect } from "react";
-import { Bot, Save, Sparkles, MessageSquare, Target, Sliders, Shield, Building2, Pencil, Trash2 } from "lucide-react";
+import {
+  Bot, Save, Sparkles, MessageSquare, Target, Sliders, Shield, Building2,
+  Pencil, Trash2, ChevronLeft, ChevronRight, Handshake, Rocket,
+  Brain, Crown, Zap, GraduationCap, Gem,
+  Calendar, FileText, Search, Trophy,
+  Home, Building, Landmark, Store, HardHat
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useCopilotConfig, CopilotConfig } from "@/hooks/use-copilot";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 interface CopilotConfigPageProps {
@@ -66,19 +67,26 @@ Diretrizes Críticas (O que NÃO fazer)
 {contexto_lead}`;
 
 const PERSONALITIES = [
-  { id: "formal", label: "Formal", desc: "Profissional e direto" },
-  { id: "consultivo", label: "Consultivo", desc: "Empático e estratégico" },
-  { id: "agressivo", label: "Agressivo Comercial", desc: "Persuasivo e orientado ao fechamento" },
-  { id: "tecnico", label: "Técnico", desc: "Informativo e preciso" },
-  { id: "premium", label: "Premium", desc: "Sofisticado e exclusivo" },
+  { id: "consultivo", label: "Consultivo", desc: "Empático e estratégico", icon: Brain },
+  { id: "formal", label: "Formal", desc: "Profissional e direto", icon: GraduationCap },
+  { id: "agressivo", label: "Agressivo", desc: "Persuasivo e fechador", icon: Zap },
+  { id: "tecnico", label: "Técnico", desc: "Informativo e preciso", icon: Search },
+  { id: "premium", label: "Premium", desc: "Sofisticado e exclusivo", icon: Gem },
 ];
 
 const PROPERTY_TYPES = [
-  { id: "popular", label: "Popular" },
-  { id: "medio", label: "Médio Padrão" },
-  { id: "alto", label: "Alto Padrão" },
-  { id: "lancamentos", label: "Lançamentos" },
-  { id: "comercial", label: "Comercial" },
+  { id: "popular", label: "Popular", icon: Home },
+  { id: "medio", label: "Médio Padrão", icon: Building },
+  { id: "alto", label: "Alto Padrão", icon: Landmark },
+  { id: "lancamentos", label: "Lançamentos", icon: HardHat },
+  { id: "comercial", label: "Comercial", icon: Store },
+];
+
+const PRIORITIES = [
+  { id: "agendamento", label: "Agendamento", desc: "Agendar visitas", icon: Calendar },
+  { id: "proposta", label: "Proposta", desc: "Enviar propostas", icon: FileText },
+  { id: "qualificacao", label: "Qualificação", desc: "Qualificar leads", icon: Search },
+  { id: "fechamento", label: "Fechamento", desc: "Fechar negócio", icon: Trophy },
 ];
 
 const AUTONOMY_LABELS: Record<string, string> = {
@@ -94,6 +102,42 @@ const PRIORITY_LABELS: Record<string, string> = {
   fechamento: "Fechamento direto",
 };
 
+const STEP_LABELS = ["Modo", "Identidade", "Estilo", "Estratégia", "Avançado"];
+
+// ─── Reusable selection card ───
+function SelectionCard({
+  selected, onClick, icon: Icon, title, description, className,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative p-4 rounded-xl border text-left transition-all duration-200",
+        selected
+          ? "border-primary bg-primary/10 shadow-[0_0_20px_hsl(var(--primary)/0.08)]"
+          : "border-border bg-card hover:border-primary/30 hover:bg-primary/5",
+        className,
+      )}
+    >
+      {selected && (
+        <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.5)]" />
+      )}
+      <Icon className={cn("w-5 h-5 mb-2", selected ? "text-primary" : "text-muted-foreground")} />
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</p>
+    </button>
+  );
+}
+
+// ─── Hero / summary card (unchanged) ───
 function CopilotAvatar({ name, isActive }: { name: string; isActive: boolean }) {
   return (
     <div className="relative">
@@ -124,18 +168,16 @@ function CopilotAvatar({ name, isActive }: { name: string; isActive: boolean }) 
 function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; onEdit: () => void; onDelete: () => void }) {
   const personality = PERSONALITIES.find(p => p.id === config.personality);
   const propertyType = PROPERTY_TYPES.find(p => p.id === config.property_type);
+  const modeLabel = config.copilot_mode === "autonomo" ? "🚀 Autônomo" : "🤝 Assistente";
 
   return (
     <div className="max-w-2xl mx-auto pb-24 px-4 space-y-5 pt-6">
       <div className="relative overflow-hidden rounded-2xl bg-card border border-border">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-transparent pointer-events-none" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-
         <div className="relative px-6 pt-8 pb-6 flex flex-col items-center text-center">
           <CopilotAvatar name={config.name} isActive={config.is_active} />
-
           <h2 className="text-xl font-bold text-foreground mt-5 tracking-tight">{config.name}</h2>
-
           <div className="flex items-center gap-2 mt-2">
             {config.is_active ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wide uppercase">
@@ -149,9 +191,8 @@ function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; o
               </span>
             )}
           </div>
-
           <p className="text-sm text-muted-foreground mt-3">
-            {personality?.label} · {personality?.desc}
+            {modeLabel} · {personality?.label} · {personality?.desc}
           </p>
         </div>
       </div>
@@ -163,6 +204,7 @@ function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; o
       </div>
 
       <div className="space-y-px rounded-xl overflow-hidden border border-border">
+        <DetailRow label="Modo de atuação" value={modeLabel} highlight />
         <DetailRow label="Prioridade comercial" value={PRIORITY_LABELS[config.commercial_priority] || config.commercial_priority} />
         <DetailRow label="Tipo de imóvel" value={propertyType?.label || config.property_type} />
         <DetailRow label="Gatilhos mentais" value={config.use_mental_triggers ? "Ativado" : "Desativado"} highlight={config.use_mental_triggers} />
@@ -174,14 +216,10 @@ function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; o
       </div>
 
       <div className="flex gap-3 pt-1">
-        <Button
-          onClick={onEdit}
-          className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-semibold h-11 rounded-xl"
-        >
+        <Button onClick={onEdit} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-semibold h-11 rounded-xl">
           <Pencil className="w-4 h-4 mr-2" />
           Editar Copiloto
         </Button>
-
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" className="h-11 w-11 rounded-xl border-border text-muted-foreground hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 p-0">
@@ -197,9 +235,7 @@ function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; o
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel className="bg-muted border-border text-foreground hover:bg-secondary">Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700 text-foreground">
-                Excluir
-              </AlertDialogAction>
+              <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700 text-foreground">Excluir</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -221,18 +257,293 @@ function DetailRow({ label, value, highlight }: { label: string; value: string; 
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-card">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn(
-        "text-xs font-medium",
-        highlight ? "text-primary" : "text-foreground"
-      )}>{value}</span>
+      <span className={cn("text-xs font-medium", highlight ? "text-primary" : "text-foreground")}>{value}</span>
     </div>
   );
 }
 
+// ─── Wizard Steps ───
 
+function StepMode({ form, update }: { form: Partial<CopilotConfig>; update: (k: string, v: unknown) => void }) {
+  return (
+    <div className="space-y-4">
+      <div className="text-center mb-6">
+        <h2 className="text-lg font-bold text-foreground">Como seu Copiloto deve atuar?</h2>
+        <p className="text-xs text-muted-foreground mt-1">Você pode mudar isso a qualquer momento.</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <SelectionCard
+          selected={form.copilot_mode !== "autonomo"}
+          onClick={() => update("copilot_mode", "assistente")}
+          icon={Handshake}
+          title="Meu Assistente"
+          description="Ele sugere respostas e eu decido o que enviar. Tenho controle total."
+        />
+        <SelectionCard
+          selected={form.copilot_mode === "autonomo"}
+          onClick={() => update("copilot_mode", "autonomo")}
+          icon={Rocket}
+          title="Agir em Meu Nome"
+          description="Ele responde diretamente aos clientes como se fosse eu. Automação total."
+        />
+      </div>
+    </div>
+  );
+}
+
+function StepIdentity({ form, update }: { form: Partial<CopilotConfig>; update: (k: string, v: unknown) => void }) {
+  return (
+    <div className="space-y-5">
+      <div className="text-center mb-2">
+        <h2 className="text-lg font-bold text-foreground">Identidade e Personalidade</h2>
+        <p className="text-xs text-muted-foreground mt-1">Dê um nome e escolha o estilo do seu Copiloto.</p>
+      </div>
+
+      <div>
+        <Label className="text-xs text-muted-foreground">Nome do Copiloto</Label>
+        <Input
+          value={form.name || ""}
+          onChange={(e) => update("name", e.target.value)}
+          className="bg-background border-border text-foreground mt-1"
+          placeholder="Ex: Max, Luna, Atlas..."
+        />
+      </div>
+
+      <div>
+        <Label className="text-xs text-muted-foreground mb-2 block">Personalidade</Label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {PERSONALITIES.map((p) => (
+            <SelectionCard
+              key={p.id}
+              selected={form.personality === p.id}
+              onClick={() => update("personality", p.id)}
+              icon={p.icon}
+              title={p.label}
+              description={p.desc}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm text-foreground">Emojis</Label>
+            <p className="text-xs text-muted-foreground">Humaniza as respostas com emojis</p>
+          </div>
+          <Switch checked={form.allow_emojis} onCheckedChange={(v) => update("allow_emojis", v)} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm text-foreground">Gatilhos mentais</Label>
+            <p className="text-xs text-muted-foreground">Escassez, urgência, prova social</p>
+          </div>
+          <Switch checked={form.use_mental_triggers} onCheckedChange={(v) => update("use_mental_triggers", v)} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepStyle({ form, update }: { form: Partial<CopilotConfig>; update: (k: string, v: unknown) => void }) {
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-2">
+        <h2 className="text-lg font-bold text-foreground">Estilo de Comunicação</h2>
+        <p className="text-xs text-muted-foreground mt-1">Ajuste como o Copiloto se comunica.</p>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-muted-foreground">Sutil</span>
+          <Label className="text-sm text-foreground font-medium">Persuasão: {form.persuasion_level}%</Label>
+          <span className="text-xs text-muted-foreground">Direto</span>
+        </div>
+        <Slider value={[form.persuasion_level || 50]} onValueChange={([v]) => update("persuasion_level", v)} max={100} step={5} />
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-muted-foreground">Detalhista</span>
+          <Label className="text-sm text-foreground font-medium">Objetividade: {form.objectivity_level}%</Label>
+          <span className="text-xs text-muted-foreground">Objetivo</span>
+        </div>
+        <Slider value={[form.objectivity_level || 50]} onValueChange={([v]) => update("objectivity_level", v)} max={100} step={5} />
+      </div>
+
+      <div>
+        <Label className="text-xs text-muted-foreground mb-2 block">Tipo de imóvel predominante</Label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {PROPERTY_TYPES.map((pt) => (
+            <SelectionCard
+              key={pt.id}
+              selected={form.property_type === pt.id}
+              onClick={() => update("property_type", pt.id)}
+              icon={pt.icon}
+              title={pt.label}
+              description=""
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepStrategy({ form, update }: { form: Partial<CopilotConfig>; update: (k: string, v: unknown) => void }) {
+  return (
+    <div className="space-y-5">
+      <div className="text-center mb-2">
+        <h2 className="text-lg font-bold text-foreground">Estratégia Comercial</h2>
+        <p className="text-xs text-muted-foreground mt-1">Defina prioridades e automações.</p>
+      </div>
+
+      <div>
+        <Label className="text-xs text-muted-foreground mb-2 block">Prioridade comercial</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {PRIORITIES.map((p) => (
+            <SelectionCard
+              key={p.id}
+              selected={form.commercial_priority === p.id}
+              onClick={() => update("commercial_priority", p.id)}
+              icon={p.icon}
+              title={p.label}
+              description={p.desc}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm text-foreground">Incentivar visita</Label>
+            <p className="text-xs text-muted-foreground">Sugere visitas presenciais</p>
+          </div>
+          <Switch checked={form.incentive_visit} onCheckedChange={(v) => update("incentive_visit", v)} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm text-foreground">Incentivar chamada</Label>
+            <p className="text-xs text-muted-foreground">Sugere ligações ou videochamadas</p>
+          </div>
+          <Switch checked={form.incentive_call} onCheckedChange={(v) => update("incentive_call", v)} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm text-foreground">Follow-up automático</Label>
+            <p className="text-xs text-muted-foreground">Envia lembretes quando o lead esfria</p>
+          </div>
+          <Switch checked={form.followup_auto} onCheckedChange={(v) => update("followup_auto", v)} />
+        </div>
+      </div>
+
+      {form.copilot_mode === "autonomo" && (
+        <div>
+          <Label className="text-xs text-muted-foreground">Nível de autonomia</Label>
+          <Select value={form.max_autonomy} onValueChange={(v) => update("max_autonomy", v)}>
+            <SelectTrigger className="bg-background border-border text-foreground mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="suggest_only">Apenas sugerir</SelectItem>
+              <SelectItem value="suggest_and_draft">Sugerir e rascunhar</SelectItem>
+              <SelectItem value="auto_respond">Responder automaticamente</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[10px] text-muted-foreground mt-1">Define o quanto o Copiloto pode agir sozinho.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepAdvanced({ form, update }: { form: Partial<CopilotConfig>; update: (k: string, v: unknown) => void }) {
+  const [promptOpen, setPromptOpen] = useState(false);
+
+  return (
+    <div className="space-y-5">
+      <div className="text-center mb-2">
+        <h2 className="text-lg font-bold text-foreground">Personalização Avançada</h2>
+        <p className="text-xs text-muted-foreground mt-1">Opcional — ajuste fino para especialistas.</p>
+      </div>
+
+      <div>
+        <Label className="text-xs text-muted-foreground">Região de atuação</Label>
+        <Input
+          value={form.region || ""}
+          onChange={(e) => update("region", e.target.value)}
+          className="bg-background border-border text-foreground mt-1"
+          placeholder="Ex: Grande Porto Alegre"
+        />
+      </div>
+
+      <div>
+        <Label className="text-xs text-muted-foreground">Público-alvo</Label>
+        <Input
+          value={form.target_audience || ""}
+          onChange={(e) => update("target_audience", e.target.value)}
+          className="bg-background border-border text-foreground mt-1"
+          placeholder="Ex: Jovens casais, investidores"
+        />
+      </div>
+
+      <div>
+        <Label className="text-xs text-muted-foreground">Posicionamento de marca</Label>
+        <Textarea
+          value={form.brand_positioning || ""}
+          onChange={(e) => update("brand_positioning", e.target.value)}
+          className="bg-background border-border text-foreground min-h-[60px] mt-1"
+          placeholder="Descreva o posicionamento da sua marca..."
+        />
+      </div>
+
+      <Collapsible open={promptOpen} onOpenChange={setPromptOpen}>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full border-border text-muted-foreground hover:text-foreground">
+            <Pencil className="w-3.5 h-3.5 mr-2" />
+            {promptOpen ? "Fechar prompt avançado" : "Editar prompt avançado"}
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3 space-y-2">
+          <Textarea
+            value={form.custom_system_prompt || ""}
+            onChange={(e) => update("custom_system_prompt", e.target.value || null)}
+            className="bg-background border-border text-foreground min-h-[200px] text-xs font-mono"
+            placeholder={DEFAULT_SYSTEM_PROMPT}
+          />
+          <p className="text-[10px] text-muted-foreground">
+            Variáveis: {"{personalidade}"}, {"{regra_emojis}"}, {"{nivel_persuasao}"}, {"{nome_corretor}"}, {"{contexto_lead}"}, {"{contexto_empreendimento}"}
+          </p>
+          {form.custom_system_prompt && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => update("custom_system_prompt", null)}
+              className="text-xs border-border text-muted-foreground"
+            >
+              Restaurar prompt padrão
+            </Button>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      <div className="flex items-center justify-between pt-2">
+        <div>
+          <Label className="text-sm text-foreground">Copiloto ativo</Label>
+          <p className="text-xs text-muted-foreground">Ativar ou desativar o copiloto</p>
+        </div>
+        <Switch checked={form.is_active} onCheckedChange={(v) => update("is_active", v)} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Main ───
 export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
   const { config, isLoading, saveConfig, fetchConfig } = useCopilotConfig(brokerId);
   const [isEditing, setIsEditing] = useState(false);
+  const [step, setStep] = useState(0);
   const [form, setForm] = useState<Partial<CopilotConfig>>({
     name: "Meu Copiloto",
     personality: "consultivo",
@@ -254,15 +565,16 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
     target_audience: "",
     brand_positioning: "",
     custom_system_prompt: null,
+    copilot_mode: "assistente",
     is_active: true,
   });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (config) {
-      setForm(config);
-    }
+    if (config) setForm(config);
   }, [config]);
+
+  const update = (key: string, value: unknown) => setForm(prev => ({ ...prev, [key]: value }));
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -270,27 +582,24 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
     setIsSaving(false);
     if (success) {
       setIsEditing(false);
+      setStep(0);
     }
   };
 
   const handleDelete = async () => {
     if (!config?.id) return;
     try {
-      const { error } = await supabase
-        .from("copilot_configs")
-        .delete()
-        .eq("id", config.id);
+      const { error } = await supabase.from("copilot_configs").delete().eq("id", config.id);
       if (error) throw error;
       toast.success("Copiloto excluído com sucesso");
       await fetchConfig();
       setIsEditing(false);
+      setStep(0);
     } catch (err) {
       console.error(err);
       toast.error("Erro ao excluir copiloto");
     }
   };
-
-  const update = (key: string, value: unknown) => setForm(prev => ({ ...prev, [key]: value }));
 
   if (isLoading) {
     return (
@@ -301,286 +610,100 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
   }
 
   if (config && !isEditing) {
-    return (
-      <CopilotSummary
-        config={config}
-        onEdit={() => setIsEditing(true)}
-        onDelete={handleDelete}
-      />
-    );
+    return <CopilotSummary config={config} onEdit={() => setIsEditing(true)} onDelete={handleDelete} />;
   }
 
   const isFirstTime = !config;
+  const totalSteps = STEP_LABELS.length;
+  const progress = ((step + 1) / totalSteps) * 100;
+
+  const stepContent = [
+    <StepMode key="mode" form={form} update={update} />,
+    <StepIdentity key="identity" form={form} update={update} />,
+    <StepStyle key="style" form={form} update={update} />,
+    <StepStrategy key="strategy" form={form} update={update} />,
+    <StepAdvanced key="advanced" form={form} update={update} />,
+  ];
 
   return (
-    <div className="max-w-2xl mx-auto pb-24 px-4 space-y-4">
+    <div className="max-w-2xl mx-auto pb-24 px-4 pt-4">
       {/* Header */}
-      <div className="flex items-center gap-3 pt-4">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-          <Bot className="w-7 h-7 text-foreground" />
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
+          <Bot className="w-5 h-5 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="text-lg font-bold text-foreground">
             {isFirstTime ? "Crie seu Copiloto" : "Editar Copiloto"}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            {isFirstTime ? "Configure seu assistente de vendas com IA" : form.name}
-          </p>
+          <p className="text-xs text-muted-foreground">Passo {step + 1} de {totalSteps}</p>
         </div>
       </div>
 
-      {/* Name */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" /> Identidade
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label className="text-xs text-muted-foreground">Nome do Copiloto</Label>
-            <Input
-              value={form.name || ""}
-              onChange={(e) => update("name", e.target.value)}
-              className="bg-background border-border text-foreground"
-              placeholder="Ex: Max, Luna, Atlas..."
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Copiloto ativo</Label>
-            <Switch checked={form.is_active} onCheckedChange={(v) => update("is_active", v)} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Personality */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-blue-400" /> Personalidade e Tom
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            {PERSONALITIES.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => update("personality", p.id)}
-                className={cn(
-                  "p-2.5 rounded-lg border text-left transition-all",
-                  form.personality === p.id
-                    ? "border-primary bg-primary/10"
-                    : "border-border bg-background hover:border-secondary"
-                )}
-              >
-                <p className="text-xs font-medium text-foreground">{p.label}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{p.desc}</p>
-              </button>
-            ))}
-          </div>
-
-          <div>
-            <Label className="text-xs text-muted-foreground">Nível de persuasão: {form.persuasion_level}%</Label>
-            <Slider
-              value={[form.persuasion_level || 50]}
-              onValueChange={([v]) => update("persuasion_level", v)}
-              max={100} step={5}
-              className="mt-2"
-            />
-          </div>
-
-          <div>
-            <Label className="text-xs text-muted-foreground">Nível de objetividade: {form.objectivity_level}%</Label>
-            <Slider
-              value={[form.objectivity_level || 50]}
-              onValueChange={([v]) => update("objectivity_level", v)}
-              max={100} step={5}
-              className="mt-2"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Usar gatilhos mentais</Label>
-            <Switch checked={form.use_mental_triggers} onCheckedChange={(v) => update("use_mental_triggers", v)} />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Permitir emojis</Label>
-            <Switch checked={form.allow_emojis} onCheckedChange={(v) => update("allow_emojis", v)} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Commercial Strategy */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground flex items-center gap-2">
-            <Target className="w-4 h-4 text-green-400" /> Estratégia Comercial
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label className="text-xs text-muted-foreground">Prioridade</Label>
-            <Select value={form.commercial_priority} onValueChange={(v) => update("commercial_priority", v)}>
-              <SelectTrigger className="bg-background border-border text-foreground">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="agendamento">Agendamento de visita</SelectItem>
-                <SelectItem value="proposta">Envio de proposta</SelectItem>
-                <SelectItem value="qualificacao">Qualificação do lead</SelectItem>
-                <SelectItem value="fechamento">Fechamento direto</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Incentivar visita presencial</Label>
-            <Switch checked={form.incentive_visit} onCheckedChange={(v) => update("incentive_visit", v)} />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Incentivar chamada online</Label>
-            <Switch checked={form.incentive_call} onCheckedChange={(v) => update("incentive_call", v)} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Autonomy */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground flex items-center gap-2">
-            <Shield className="w-4 h-4 text-orange-400" /> Limites de Autonomia
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label className="text-xs text-muted-foreground">Nível máximo de autonomia</Label>
-            <Select value={form.max_autonomy} onValueChange={(v) => update("max_autonomy", v)}>
-              <SelectTrigger className="bg-background border-border text-foreground">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="suggest_only">Apenas sugerir</SelectItem>
-                <SelectItem value="suggest_and_draft">Sugerir e rascunhar</SelectItem>
-                <SelectItem value="auto_respond">Responder automaticamente</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Follow-up automático</Label>
-            <Switch checked={form.followup_auto} onCheckedChange={(v) => update("followup_auto", v)} />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Encerrar lead inativo automaticamente</Label>
-            <Switch checked={form.auto_close_inactive} onCheckedChange={(v) => update("auto_close_inactive", v)} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Custom System Prompt */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-yellow-400" /> Prompt do Sistema (Editável)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label className="text-xs text-muted-foreground">
-              Prompt base que define o comportamento do Copiloto e Piloto Automático. Deixe vazio para usar o padrão.
-            </Label>
-            <Textarea
-              value={form.custom_system_prompt || ""}
-              onChange={(e) => update("custom_system_prompt", e.target.value || null)}
-              className="bg-background border-border text-foreground min-h-[200px] mt-2 text-xs font-mono"
-              placeholder={DEFAULT_SYSTEM_PROMPT}
-            />
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Variáveis disponíveis: {"{personalidade}"}, {"{regra_emojis}"}, {"{nivel_persuasao}"}, {"{nome_corretor}"}, {"{contexto_lead}"}, {"{contexto_empreendimento}"}
-            </p>
-          </div>
-          {form.custom_system_prompt && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => update("custom_system_prompt", null)}
-              className="text-xs border-border text-muted-foreground"
+      {/* Progress Bar */}
+      <div className="mb-6">
+        <div className="flex justify-between mb-2">
+          {STEP_LABELS.map((label, i) => (
+            <button
+              key={label}
+              onClick={() => setStep(i)}
+              className={cn(
+                "text-[10px] font-medium transition-colors",
+                i <= step ? "text-primary" : "text-muted-foreground/50"
+              )}
             >
-              Restaurar prompt padrão
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+              {label}
+            </button>
+          ))}
+        </div>
+        <Progress value={progress} className="h-1.5" />
+      </div>
 
-      {/* Property Profile */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-purple-400" /> Perfil da Imobiliária
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label className="text-xs text-muted-foreground">Tipo de imóvel predominante</Label>
-            <Select value={form.property_type} onValueChange={(v) => update("property_type", v)}>
-              <SelectTrigger className="bg-background border-border text-foreground">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROPERTY_TYPES.map((pt) => (
-                  <SelectItem key={pt.id} value={pt.id}>{pt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Região de atuação</Label>
-            <Input
-              value={form.region || ""}
-              onChange={(e) => update("region", e.target.value)}
-              className="bg-background border-border text-foreground"
-              placeholder="Ex: Grande Porto Alegre"
-            />
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Público-alvo</Label>
-            <Input
-              value={form.target_audience || ""}
-              onChange={(e) => update("target_audience", e.target.value)}
-              className="bg-background border-border text-foreground"
-              placeholder="Ex: Jovens casais, investidores"
-            />
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Posicionamento de marca</Label>
-            <Textarea
-              value={form.brand_positioning || ""}
-              onChange={(e) => update("brand_positioning", e.target.value)}
-              className="bg-background border-border text-foreground min-h-[60px]"
-              placeholder="Descreva o posicionamento da sua marca..."
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Step Content */}
+      <div className="min-h-[340px]">
+        {stepContent[step]}
+      </div>
 
-      {/* Save button */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur border-t border-border lg:static lg:bg-transparent lg:border-0 lg:p-0">
+      {/* Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur border-t border-border lg:static lg:bg-transparent lg:border-0 lg:p-0 lg:mt-6">
         <div className="flex gap-3">
-          {!isFirstTime && (
+          {step > 0 ? (
             <Button
-              onClick={() => setIsEditing(false)}
+              onClick={() => setStep(step - 1)}
+              variant="outline"
+              className="border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Voltar
+            </Button>
+          ) : !isFirstTime ? (
+            <Button
+              onClick={() => { setIsEditing(false); setStep(0); }}
               variant="outline"
               className="border-border text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               Cancelar
             </Button>
+          ) : null}
+
+          {step < totalSteps - 1 ? (
+            <Button
+              onClick={() => setStep(step + 1)}
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
+            >
+              Próximo
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? "Salvando..." : isFirstTime ? "Criar Copiloto" : "Salvar Configurações"}
+            </Button>
           )}
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? "Salvando..." : isFirstTime ? "Criar Copiloto" : "Salvar Configurações"}
-          </Button>
         </div>
       </div>
     </div>

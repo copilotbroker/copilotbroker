@@ -759,6 +759,14 @@ CONTEXTO DO LEAD:
 - Notas: ${leadContext.notes || "Nenhuma"}`;
     }
 
+    // Inject copilot_mode instruction
+    const copilotMode = (copilotConfig.copilot_mode as string) || "autonomo";
+    if (copilotMode === "assistente") {
+      systemPrompt += `\n\nMODO: Você está sugerindo uma resposta para o corretor revisar.`;
+    } else {
+      systemPrompt += `\n\nMODO: Você está respondendo diretamente ao cliente em nome ${brokerPrep} ${brokerName}. O cliente não sabe que é uma IA. Aja naturalmente como se fosse ${brokerPronoun}.`;
+    }
+
     // Build messages array from conversation history
     const aiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: systemPrompt },
