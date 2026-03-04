@@ -21,7 +21,6 @@ interface ConversationThreadProps {
   onArchive: () => void;
   onUnarchive?: () => void;
   onToggleAiMode: (mode: string) => void;
-  // Copilot
   copilotSuggestion: string;
   isGeneratingSuggestion: boolean;
   onRequestSuggestion: () => void;
@@ -102,7 +101,7 @@ export function ConversationThread({
 
   return (
     <div
-      className="flex flex-col h-full bg-[#141417]"
+      className="flex flex-col h-full bg-[#0F1117]"
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0].clientX;
         touchStartY.current = e.touches[0].clientY;
@@ -113,20 +112,19 @@ export function ConversationThread({
         const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
         touchStartX.current = null;
         touchStartY.current = null;
-        // Swipe right > 80px and mostly horizontal
         if (dx > 80 && dy < 60) {
           onBack();
         }
       }}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-[#2a2a2e] bg-[#1a1a1e]">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-[#2A2D37] bg-[#151820]">
         <Button variant="ghost" size="icon" onClick={onBack} className="lg:hidden text-slate-400 h-8 w-8">
           <ArrowLeft className="w-5 h-5" />
         </Button>
 
         <button onClick={onOpenLeadPanel} className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-[#FFFF00]/20 flex items-center justify-center text-[#FFFF00] font-bold text-sm flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-sm flex-shrink-0">
             {leadName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -141,7 +139,7 @@ export function ConversationThread({
               variant="ghost"
               size="icon"
               onClick={() => onOpenLead ? onOpenLead(conversation.lead_id!) : navigate(`/corretor/lead/${conversation.lead_id}`)}
-              className="text-slate-400 hover:text-[#FFFF00] h-8 w-8"
+              className="text-slate-400 hover:text-indigo-400 h-8 w-8"
               title="Ver perfil do lead"
             >
               <UserRoundSearch className="w-4 h-4" />
@@ -219,7 +217,7 @@ export function ConversationThread({
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin w-6 h-6 border-2 border-[#FFFF00] border-t-transparent rounded-full" />
+            <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" />
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center py-12 text-slate-500 text-sm">
@@ -237,8 +235,8 @@ export function ConversationThread({
                   isOutbound
                     ? isAi
                       ? "bg-green-600/20 text-green-100 rounded-br-sm"
-                      : "bg-[#FFFF00]/20 text-yellow-100 rounded-br-sm"
-                    : "bg-[#2a2a2e] text-slate-200 rounded-bl-sm"
+                      : "bg-indigo-600/20 text-indigo-100 rounded-br-sm"
+                    : "bg-[#2A2D37] text-slate-200 rounded-bl-sm"
                 )}>
                   {isAi && (
                     <span className="text-[10px] text-green-400 flex items-center gap-0.5 mb-0.5">
@@ -264,7 +262,7 @@ export function ConversationThread({
           </p>
           <p className="text-sm text-slate-200 whitespace-pre-wrap">{copilotSuggestion}</p>
           <div className="flex gap-2 mt-2">
-            <Button size="sm" className="h-7 text-xs bg-[#FFFF00] text-black hover:bg-[#FFFF00]/80"
+            <Button size="sm" className="h-7 text-xs bg-indigo-500 text-white hover:bg-indigo-400"
               onClick={handleInsertSuggestion}>
               Inserir no campo
             </Button>
@@ -277,7 +275,7 @@ export function ConversationThread({
       )}
 
       {/* Input */}
-      <div className="px-3 pb-3 pt-1 border-t border-[#2a2a2e] pb-safe">
+      <div className="px-3 pb-3 pt-1 border-t border-[#2A2D37] pb-safe">
         <div className="flex items-end gap-2">
           {/* Copilot suggestion button */}
           <Button
@@ -301,13 +299,13 @@ export function ConversationThread({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Digite sua mensagem..."
-            className="min-h-[36px] max-h-[120px] resize-none bg-[#1e1e22] border-[#2a2a2e] text-sm text-white placeholder:text-slate-500 py-2"
+            className="min-h-[36px] max-h-[120px] resize-none bg-[#1A1D27] border-[#2A2D37] text-sm text-white placeholder:text-slate-500 py-2"
             rows={1}
           />
 
           <Button
             size="icon"
-            className="bg-[#FFFF00] hover:bg-[#FFFF00]/80 text-black h-9 w-9 flex-shrink-0"
+            className="bg-indigo-500 hover:bg-indigo-400 text-white h-9 w-9 flex-shrink-0"
             onClick={handleSend}
             disabled={!inputValue.trim() || isSending}
           >

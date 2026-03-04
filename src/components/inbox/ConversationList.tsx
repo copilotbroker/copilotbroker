@@ -31,10 +31,8 @@ interface ConversationListProps {
   onStatusFilterChange: (value: string) => void;
   isLoading: boolean;
   totalUnread: number;
-  // Quick actions
   onMarkAsRead?: (id: string) => void;
   onArchive?: (id: string) => void;
-  // Admin mode
   isAdminView?: boolean;
 }
 
@@ -89,8 +87,8 @@ function InboxKPIs({ conversations, activeKpi, onKpiClick }: { conversations: Co
             className={cn(
               "flex flex-col items-center py-1.5 rounded-lg transition-all",
               isActive
-                ? "bg-[#FFFF00]/15 ring-1 ring-[#FFFF00]/30"
-                : kpi.highlight ? "bg-red-500/10 hover:bg-red-500/15" : "bg-[#1e1e22] hover:bg-[#252528]"
+                ? "bg-indigo-500/15 ring-1 ring-indigo-500/30"
+                : kpi.highlight ? "bg-red-500/10 hover:bg-red-500/15" : "bg-[#1A1D27] hover:bg-[#22252F]"
             )}
           >
             <div className="flex items-center gap-0.5">
@@ -199,12 +197,12 @@ export function ConversationList({
   }, [kpiFilteredConversations, sortMode]);
 
   return (
-    <div className="flex flex-col h-full bg-[#141417]">
+    <div className="flex flex-col h-full bg-[#0F1117]">
       {/* Header */}
       <div className="px-3 pt-3 pb-1 space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Inbox className="w-5 h-5 text-[#FFFF00]" />
+            <Inbox className="w-5 h-5 text-indigo-400" />
             {isAdminView ? "Inbox Admin" : "Inbox"}
             {totalUnread > 0 && (
               <Badge variant="destructive" className="text-xs px-1.5 py-0 min-w-[20px] h-5">
@@ -222,7 +220,7 @@ export function ConversationList({
                 <ChevronDown className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-[#1e1e22] border-[#2a2a2e]">
+            <DropdownMenuContent align="end" className="bg-[#1A1D27] border-[#2A2D37]">
               {SORT_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 return (
@@ -231,7 +229,7 @@ export function ConversationList({
                     onClick={() => setSortMode(opt.id)}
                     className={cn(
                       "text-xs gap-2",
-                      sortMode === opt.id ? "text-[#FFFF00]" : "text-slate-300"
+                      sortMode === opt.id ? "text-indigo-400" : "text-slate-300"
                     )}
                   >
                     <Icon className="w-3 h-3" />
@@ -251,7 +249,7 @@ export function ConversationList({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar por nome ou telefone..."
-            className="pl-8 h-9 bg-[#1e1e22] border-[#2a2a2e] text-sm text-white placeholder:text-slate-500"
+            className="pl-8 h-9 bg-[#1A1D27] border-[#2A2D37] text-sm text-white placeholder:text-slate-500"
           />
         </div>
 
@@ -266,8 +264,8 @@ export function ConversationList({
                 className={cn(
                   "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs whitespace-nowrap transition-colors",
                   statusFilter === f.id
-                    ? "bg-[#FFFF00] text-black font-medium"
-                    : "bg-[#1e1e22] text-slate-400 hover:bg-[#2a2a2e]"
+                    ? "bg-indigo-500 text-white font-medium"
+                    : "bg-[#1A1D27] text-slate-400 hover:bg-[#2A2D37]"
                 )}
               >
                 <Icon className="w-3 h-3" />
@@ -286,7 +284,7 @@ export function ConversationList({
         <div className="px-2 pb-2 space-y-0.5">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin w-6 h-6 border-2 border-[#FFFF00] border-t-transparent rounded-full" />
+              <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" />
             </div>
           ) : sortedConversations.length === 0 ? (
             <div className="text-center py-12 text-slate-500">
@@ -315,17 +313,17 @@ export function ConversationList({
                     className={cn(
                       "w-full flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
                       isSelected
-                        ? "bg-[#FFFF00]/10 border border-[#FFFF00]/20"
+                        ? "bg-indigo-500/10 border border-indigo-500/20"
                         : isUnread
-                        ? "bg-[#1e1e22] hover:bg-[#252528]"
-                        : "hover:bg-[#1e1e22]"
+                        ? "bg-[#1A1D27] hover:bg-[#22252F]"
+                        : "hover:bg-[#1A1D27]"
                     )}
                     style={hasCadenciaAtiva ? RING_PULSE_STYLE : undefined}
                   >
                     {/* Avatar */}
                     <div className={cn(
                       "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
-                      isUnread ? "bg-[#FFFF00]/20 text-[#FFFF00]" : "bg-[#2a2a2e] text-slate-400"
+                      isUnread ? "bg-indigo-500/20 text-indigo-400" : "bg-[#2A2D37] text-slate-400"
                     )}>
                       {leadName.charAt(0).toUpperCase()}
                     </div>
@@ -378,7 +376,7 @@ export function ConversationList({
                           </span>
                         )}
                         {score > 0 && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-[#FFFF00]/70">
+                          <span className="flex items-center gap-0.5 text-[10px] text-indigo-400/70">
                             <Target className="w-3 h-3" /> {score}%
                           </span>
                         )}
@@ -410,7 +408,7 @@ export function ConversationList({
                             <MoreVertical className="w-3.5 h-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-[#1e1e22] border-[#2a2a2e]">
+                        <DropdownMenuContent align="end" className="bg-[#1A1D27] border-[#2A2D37]">
                           {isUnread && onMarkAsRead && (
                             <DropdownMenuItem
                               onClick={(e) => { e.stopPropagation(); onMarkAsRead(conv.id); }}
