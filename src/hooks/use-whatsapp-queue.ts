@@ -15,14 +15,16 @@ interface QueueStats {
 
 const PAGE_SIZE = 50;
 
-export function useWhatsAppQueue(brokerFilterId?: string) {
+// brokerFilterId: specific broker UUID to filter, or undefined = show all (no filter)
+// isAdminContext: when true, undefined brokerFilterId means "all"; when false, falls back to current user's broker
+export function useWhatsAppQueue(brokerFilterId?: string, isAdminContext = false) {
   const queryClient = useQueryClient();
   const [nextSendIn, setNextSendIn] = useState<number | null>(null);
   const [nextScheduledAt, setNextScheduledAt] = useState<string | null>(null);
   const [pendingPage, setPendingPage] = useState(0);
   const [historyPage, setHistoryPage] = useState(0);
 
-  // Fetch broker ID
+  // Fetch broker ID (only needed for non-admin context)
   const { data: broker } = useQuery({
     queryKey: ["current-broker"],
     queryFn: async () => {
@@ -37,9 +39,12 @@ export function useWhatsAppQueue(brokerFilterId?: string) {
       
       return data;
     },
+    enabled: !isAdminContext,
   });
 
-  const effectiveBrokerId = brokerFilterId || broker?.id || null;
+  // For admin: use brokerFilterId directly (undefined = all)
+  // For non-admin: always use own broker ID
+  const effectiveBrokerId = isAdminContext ? (brokerFilterId || null) : (broker?.id || null);
 
   const applyBrokerFilter = (query: any) => {
     if (effectiveBrokerId) {
