@@ -24,6 +24,8 @@ interface BrokerLayoutProps {
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
   isLeader?: boolean;
+  inboxEnabled?: boolean;
+  copilotEnabled?: boolean;
 }
 
 
@@ -40,6 +42,8 @@ export function BrokerLayout({
   searchTerm,
   onSearchChange,
   isLeader = false,
+  inboxEnabled,
+  copilotEnabled,
 }: BrokerLayoutProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   // Rastrear sessão de login
@@ -56,6 +60,8 @@ export function BrokerLayout({
         onAddLead={onAddLead}
         brokerInitial={brokerInitial}
         isLeader={isLeader}
+        inboxEnabled={inboxEnabled}
+        copilotEnabled={copilotEnabled}
       />
 
       {/* Mobile Bottom Navigation */}
@@ -66,6 +72,8 @@ export function BrokerLayout({
         onAddLead={onAddLead}
         onNotificationsClick={() => setIsNotificationsOpen(true)}
         isLeader={isLeader}
+        inboxEnabled={inboxEnabled}
+        copilotEnabled={copilotEnabled}
       />
 
       {/* Mobile Notifications Sheet - uses NotificationPanel inline */}

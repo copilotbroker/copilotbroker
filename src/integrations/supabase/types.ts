@@ -390,9 +390,11 @@ export type Database = {
       }
       brokers: {
         Row: {
+          copilot_enabled: boolean
           created_at: string
           email: string
           id: string
+          inbox_enabled: boolean
           is_active: boolean
           lider_id: string | null
           name: string
@@ -403,9 +405,11 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          copilot_enabled?: boolean
           created_at?: string
           email: string
           id?: string
+          inbox_enabled?: boolean
           is_active?: boolean
           lider_id?: string | null
           name: string
@@ -416,9 +420,11 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          copilot_enabled?: boolean
           created_at?: string
           email?: string
           id?: string
+          inbox_enabled?: boolean
           is_active?: boolean
           lider_id?: string | null
           name?: string

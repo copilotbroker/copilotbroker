@@ -7,10 +7,12 @@ import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatModal";
 import { useConversations, useConversationMessages, Conversation } from "@/hooks/use-conversations";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
+import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BrokerSidebar } from "@/components/broker/BrokerSidebar";
 import { BrokerBottomNav } from "@/components/broker/BrokerBottomNav";
+import { Lock, Loader2 } from "lucide-react";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
@@ -25,6 +27,8 @@ export default function BrokerInbox() {
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
+
+  const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
   // Get broker id
   useEffect(() => {
@@ -50,14 +54,13 @@ export default function BrokerInbox() {
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
 
-  // Auto-select conversation from query param (e.g. coming from LeadPage)
   useEffect(() => {
     const convId = searchParams.get("conversationId");
     if (convId && conversations.length > 0 && !selectedConversation) {
       const target = conversations.find(c => c.id === convId);
       if (target) {
         setSelectedConversation(target);
-        setSearchParams({}, { replace: true }); // clean URL
+        setSearchParams({}, { replace: true });
       }
     }
   }, [conversations, searchParams, selectedConversation, setSearchParams]);
@@ -163,22 +166,51 @@ export default function BrokerInbox() {
     }
   }, [selectedConversation]);
 
-  // View logic: mobile shows one panel at a time
-  const showList = !selectedConversation || !isMobile;
-  const showThread = !!selectedConversation;
-  const showContext = showLeadPanel && !isMobile;
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
 
+  // Gating: if inbox is not enabled, show blocked screen
+  if (featuresLoading) {
+    return (
+      <div className="min-h-screen bg-[#141417] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!inboxEnabled) {
+    return (
+      <div className="min-h-screen bg-[#141417] flex items-center justify-center p-6">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Inbox não liberado</h2>
+          <p className="text-sm text-muted-foreground">
+            Esta funcionalidade não está habilitada para sua conta. Solicite ao administrador para liberar o acesso.
+          </p>
+          <button
+            onClick={() => navigate("/corretor/admin")}
+            className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all"
+          >
+            Voltar ao Kanban
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const showList = !selectedConversation || !isMobile;
+  const showThread = !!selectedConversation;
+  const showContext = showLeadPanel && !isMobile;
+
   return (
     <div className="min-h-screen bg-[#141417] pt-safe">
-      <BrokerSidebar viewMode="kanban" onViewChange={() => navigate("/corretor/admin")} onLogout={handleLogout} />
+      <BrokerSidebar viewMode="kanban" onViewChange={() => navigate("/corretor/admin")} onLogout={handleLogout} inboxEnabled={inboxEnabled} />
       <div className="lg:pl-16">
         <div className="flex h-[calc(100vh-64px)] lg:h-screen overflow-hidden">
-        {/* Conversation List */}
         {showList && (
           <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0`}>
             <ConversationList
@@ -197,7 +229,6 @@ export default function BrokerInbox() {
           </div>
         )}
 
-        {/* Thread or Inline LeadPage */}
         {showThread && (
           <div className={`flex-1 min-w-0 ${isMobile ? "animate-in slide-in-from-right-5 duration-200" : ""}`}>
             {viewingLeadId ? (
@@ -237,7 +268,6 @@ export default function BrokerInbox() {
           </div>
         )}
 
-        {/* Lead Context Panel */}
         {showContext && selectedConversation && (
           <div className="w-72 flex-shrink-0">
             <LeadContextPanel
@@ -251,9 +281,8 @@ export default function BrokerInbox() {
         )}
         </div>
       </div>
-      <BrokerBottomNav viewMode="kanban" onViewChange={() => navigate("/corretor/admin")} />
+      <BrokerBottomNav viewMode="kanban" onViewChange={() => navigate("/corretor/admin")} inboxEnabled={inboxEnabled} />
 
-      {/* Create Lead Modal */}
       {selectedConversation && brokerId && (
         <CreateLeadFromChatModal
           open={showCreateLeadModal}

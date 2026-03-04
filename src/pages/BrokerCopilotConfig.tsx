@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/use-user-role";
+import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrokerSidebar } from "@/components/broker/BrokerSidebar";
 import { BrokerBottomNav } from "@/components/broker/BrokerBottomNav";
-import { Loader2, Wifi, Send, Shield, Megaphone, Bot, Sparkles } from "lucide-react";
+import { Loader2, Wifi, Send, Shield, Megaphone, Bot, Sparkles, Lock } from "lucide-react";
 import { ConnectionTab } from "@/components/whatsapp/ConnectionTab";
 import { CampaignsTab } from "@/components/whatsapp/CampaignsTab";
 import { QueueTab } from "@/components/whatsapp/QueueTab";
@@ -18,6 +19,7 @@ export default function BrokerCopilotConfig() {
   const { role, isLoading: roleLoading, brokerId } = useUserRole();
   const [brokerName, setBrokerName] = useState("");
   const [activeTab, setActiveTab] = useState("connection");
+  const { copilotEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
   useEffect(() => {
     if (!roleLoading && role !== "broker" && role !== "admin") {
@@ -43,10 +45,32 @@ export default function BrokerCopilotConfig() {
     navigate("/auth");
   };
 
-  if (roleLoading) {
+  if (roleLoading || featuresLoading) {
     return (
       <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!copilotEnabled) {
+    return (
+      <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center p-6">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Copiloto não liberado</h2>
+          <p className="text-sm text-muted-foreground">
+            Esta funcionalidade não está habilitada para sua conta. Solicite ao administrador para liberar o acesso.
+          </p>
+          <button
+            onClick={() => navigate("/corretor/admin")}
+            className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all"
+          >
+            Voltar ao Kanban
+          </button>
+        </div>
       </div>
     );
   }

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Search, RefreshCw, FileSpreadsheet } from "lucide-react";
 import { useCallback } from "react";
 import { useUserRole } from "@/hooks/use-user-role";
+import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import LeadsTable from "@/components/admin/LeadsTable";
 import { AddLeadModal } from "@/components/admin/AddLeadModal";
 import { CsvImportModal } from "@/components/admin/CsvImportModal";
@@ -41,6 +42,7 @@ const BrokerAdmin = () => {
   const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
   const navigate = useNavigate();
   const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
+  const { inboxEnabled, copilotEnabled } = useBrokerFeatures(brokerId);
 
   useEffect(() => {
     if (isRoleLoading) return;
@@ -171,6 +173,8 @@ const BrokerAdmin = () => {
         searchTerm={viewMode === "list" ? searchTerm : undefined}
         onSearchChange={viewMode === "list" ? setSearchTerm : undefined}
         isLeader={isLeader}
+        inboxEnabled={inboxEnabled}
+        copilotEnabled={copilotEnabled}
       >
         {viewMode === "kanban" ? (
           <div className="flex-1 min-h-[400px] space-y-4">

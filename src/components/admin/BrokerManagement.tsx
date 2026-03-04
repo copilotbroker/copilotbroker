@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Edit2, Trash2, RefreshCw, Copy, Check, Clock, Mail, Crown, Users } from "lucide-react";
+import { Plus, Edit2, Trash2, RefreshCw, Copy, Check, Clock, Mail, Crown, Users, Inbox, Bot } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,8 @@ interface Broker {
   lider_id: string | null;
   nome_equipe: string | null;
   created_at: string;
+  inbox_enabled: boolean;
+  copilot_enabled: boolean;
   projects?: Project[];
 }
 
@@ -748,7 +751,37 @@ const BrokerManagement = () => {
                         )}
                       </div>
 
-                      {/* Row 6: Actions */}
+                      {/* Row 6: Feature toggles */}
+                      <div className="flex items-center gap-3 mb-3" onClick={(e) => e.stopPropagation()}>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <Inbox className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-[10px] text-muted-foreground font-medium">Inbox</span>
+                          <Switch
+                            checked={broker.inbox_enabled}
+                            onCheckedChange={async (checked) => {
+                              setBrokers(prev => prev.map(b => b.id === broker.id ? { ...b, inbox_enabled: checked } : b));
+                              const { error } = await (supabase.from("brokers" as any).update({ inbox_enabled: checked }).eq("id", broker.id) as any);
+                              if (error) { toast.error("Erro ao atualizar"); setBrokers(prev => prev.map(b => b.id === broker.id ? { ...b, inbox_enabled: !checked } : b)); }
+                            }}
+                            className="scale-75"
+                          />
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <Bot className="w-3.5 h-3.5 text-blue-400" />
+                          <span className="text-[10px] text-muted-foreground font-medium">Copiloto</span>
+                          <Switch
+                            checked={broker.copilot_enabled}
+                            onCheckedChange={async (checked) => {
+                              setBrokers(prev => prev.map(b => b.id === broker.id ? { ...b, copilot_enabled: checked } : b));
+                              const { error } = await (supabase.from("brokers" as any).update({ copilot_enabled: checked }).eq("id", broker.id) as any);
+                              if (error) { toast.error("Erro ao atualizar"); setBrokers(prev => prev.map(b => b.id === broker.id ? { ...b, copilot_enabled: !checked } : b)); }
+                            }}
+                            className="scale-75"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Row 7: Actions */}
                       <div className="flex items-center gap-1 mb-3">
                         <button 
                           onClick={(e) => { e.stopPropagation(); copyLink(broker.slug); }}

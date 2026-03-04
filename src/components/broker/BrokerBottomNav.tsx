@@ -20,6 +20,8 @@ interface BrokerBottomNavProps {
   onAddLead?: () => void;
   onNotificationsClick?: () => void;
   isLeader?: boolean;
+  inboxEnabled?: boolean;
+  copilotEnabled?: boolean;
 }
 
 export function BrokerBottomNav({
@@ -29,6 +31,8 @@ export function BrokerBottomNav({
   onAddLead,
   onNotificationsClick,
   isLeader = false,
+  inboxEnabled = true,
+  copilotEnabled = true,
 }: BrokerBottomNavProps) {
   const { unreadCount } = useNotifications();
   const { unreadCount: inboxUnread } = useInboxUnread();
@@ -45,10 +49,10 @@ export function BrokerBottomNav({
     isFab?: boolean;
     badge?: number;
   }> = [
-    { id: "inbox", icon: Inbox, badge: inboxUnread },
+    ...(inboxEnabled ? [{ id: "inbox", icon: Inbox, badge: inboxUnread }] : []),
     { id: "kanban", icon: LayoutDashboard },
     { id: "add", icon: Plus, isFab: true },
-    { id: "copilot", icon: Bot },
+    ...(copilotEnabled ? [{ id: "copilot", icon: Bot }] : []),
     { id: "more", icon: MoreHorizontal },
   ];
 
