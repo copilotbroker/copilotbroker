@@ -9,7 +9,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Loader2, Wifi, Send, Shield, Megaphone, Bot,
-  Eye, Globe, RefreshCw, ChevronRight
+  Eye, Globe, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlobalConnectionTab } from "@/components/whatsapp/GlobalConnectionTab";
@@ -132,7 +132,27 @@ export default function AdminCopilotConfig() {
     }
   }, [activeTab, role, hasSynced]);
 
-  const { data: instances = [], isLoading: isLoadingInstances, refetch: refetchInstances } = useQuery({
+  // Realtime subscription for broker_whatsapp_instances
+  useEffect(() => {
+    if (role !== "admin") return;
+
+    const channel = supabase
+      .channel("admin-broker-instances-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "broker_whatsapp_instances" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-whatsapp-instances"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [role, queryClient]);
+
+  const { data: instances = [], isLoading: isLoadingInstances } = useQuery({
     queryKey: ["admin-whatsapp-instances"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -244,28 +264,6 @@ export default function AdminCopilotConfig() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => syncAllMutation.mutate()}
-                  disabled={syncAllMutation.isPending}
-                  className="border-border text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                >
-                  <RefreshCw className={cn("w-4 h-4 mr-2", syncAllMutation.isPending && "animate-spin")} />
-                  Sincronizar Status
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetchInstances()}
-                  disabled={isLoadingInstances}
-                  className="border-border text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                >
-                  <RefreshCw className={cn("w-4 h-4 mr-2", isLoadingInstances && "animate-spin")} />
-                  Atualizar
-                </Button>
-              </div>
             </div>
           </div>
 
@@ -318,7 +316,7 @@ export default function AdminCopilotConfig() {
               <WhatsAppOverviewTab
                 instances={instances}
                 isLoadingInstances={isLoadingInstances}
-                refetchInstances={refetchInstances}
+                
                 globalTotals={globalTotals}
                 isLoadingStats={isLoadingStats}
                 chartData={chartData}
