@@ -1,43 +1,31 @@
 
 
-## Diagnóstico: Erro de Sincronização
+## Plano simplificado: Realtime + remover botões
 
-### Causa raiz: CORS bloqueando a requisição
+Concordo -- Realtime na tabela é suficiente. O sync-all já dispara automaticamente ao entrar na aba (comportamento existente), e o Realtime propagará qualquer mudança subsequente no banco sem polling.
 
-A requisição do preview (`https://...lovableproject.com`) está sendo bloqueada pelo CORS. O arquivo `_shared/security.ts` só permite 3 origens:
-- `onovocondominio.com.br`
-- `onovocondominio.lovable.app`
-- `id-preview--...lovable.app`
+### Mudanças
 
-O preview atual usa `lovableproject.com`, que não está na lista. O navegador bloqueia a resposta e o frontend recebe "Failed to fetch".
-
-Isso não tem relação com trocar Cloud/Supabase em outro projeto — cada projeto é independente.
-
-### Correção
-
-**Arquivo: `supabase/functions/_shared/security.ts`**
-
-Atualizar `ALLOWED_ORIGINS` para aceitar **qualquer** subdomínio `lovable.app` e `lovableproject.com` dinamicamente, em vez de uma lista hardcoded:
-
-```typescript
-export function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get("origin") || "";
-  const isAllowed =
-    origin === "https://onovocondominio.com.br" ||
-    origin.endsWith(".lovable.app") ||
-    origin.endsWith(".lovableproject.com");
-  
-  const allowedOrigin = isAllowed ? origin : "https://onovocondominio.com.br";
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, ...",
-  };
-}
+**1. Migração SQL** -- habilitar Realtime na tabela
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE broker_whatsapp_instances;
 ```
 
-Isso corrige o sync-all e também previne futuros problemas de CORS em qualquer Edge Function que use esse shared helper.
+**2. `src/pages/AdminCopilotConfig.tsx`**
+- Adicionar canal Realtime que escuta `postgres_changes` em `broker_whatsapp_instances` e invalida a query `admin-whatsapp-instances` a cada evento UPDATE/INSERT/DELETE
+- Remover os dois botões ("Sincronizar Status" e "Atualizar") do header
+- Manter o sync-all automático no mount (já existe, não muda nada)
+- Cleanup do canal no unmount
+
+**3. `src/components/admin/WhatsAppOverviewTab.tsx`**
+- Remover a prop `refetchInstances` (não é mais usada)
+
+### O que permanece
+- O sync-all automático ao entrar na aba "Visão Global" (já reconcilia com UAZAPI e atualiza o banco)
+- A partir daí, qualquer mudança no banco (feita pelo sync, por pause/unpause, ou por outro processo) é refletida instantaneamente via Realtime
 
 ### Arquivos alterados
-- `supabase/functions/_shared/security.ts` — CORS dinâmico
-- Todas as Edge Functions que importam `getCorsHeaders` serão beneficiadas automaticamente (redeploy necessário)
+- Migração SQL (1 linha)
+- `src/pages/AdminCopilotConfig.tsx` (Realtime + remover botões)
+- `src/components/admin/WhatsAppOverviewTab.tsx` (remover prop não utilizada)
 
