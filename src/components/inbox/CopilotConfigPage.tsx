@@ -134,104 +134,128 @@ function SelectionCard({
   );
 }
 
-// ─── Hero / summary card (unchanged) ───
-function CopilotAvatar({ name, isActive }: { name: string; isActive: boolean }) {
-  return (
-    <div className="relative">
-      <div className={cn(
-        "absolute -inset-1 rounded-full blur-md transition-opacity duration-1000",
-        isActive ? "bg-primary/20 opacity-100 animate-pulse" : "opacity-0"
-      )} />
-      <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-card to-background border border-primary/30 flex items-center justify-center shadow-[0_0_30px_hsl(var(--primary)/0.08)]">
-        <div className="relative">
-          <div className="flex gap-3 mb-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]" />
-            <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]" />
-          </div>
-          <div className="w-6 h-3 mx-auto border-b-2 border-primary/60 rounded-b-full" />
-        </div>
-      </div>
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex flex-col items-center">
-        <div className={cn(
-          "w-2.5 h-2.5 rounded-full border border-primary/40",
-          isActive ? "bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.5)]" : "bg-muted"
-        )} />
-        <div className="w-px h-2 bg-primary/30" />
-      </div>
-    </div>
-  );
-}
+
+
 
 function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: CopilotConfig; onEdit: () => void; onDelete: () => void; onRefresh: () => void }) {
   const personality = PERSONALITIES.find(p => p.id === config.personality);
   const propertyType = PROPERTY_TYPES.find(p => p.id === config.property_type);
-  const modeLabel = config.copilot_mode === "autonomo" ? "🚀 Age como Corretor" : "🤝 Assistente do Corretor";
+  const modeLabel = config.copilot_mode === "autonomo" ? "Age como Corretor" : "Assistente do Corretor";
+  const modeIcon = config.copilot_mode === "autonomo" ? Rocket : Handshake;
+  const ModeIcon = modeIcon;
+  const PersonalityIcon = personality?.icon || Brain;
+
+  const toggleActive = async (v: boolean) => {
+    const { error } = await supabase.from("copilot_configs").update({ is_active: v }).eq("id", config.id);
+    if (error) { toast.error("Erro ao atualizar"); return; }
+    toast.success(v ? "Copiloto ativado! 🚀" : "Copiloto desativado");
+    onRefresh();
+  };
 
   return (
-    <div className="max-w-2xl mx-auto pb-24 px-4 space-y-5 pt-6">
+    <div className="max-w-2xl mx-auto pb-24 px-4 space-y-4 pt-6">
+      {/* Hero card with avatar, name, and power switch */}
       <div className="relative overflow-hidden rounded-2xl bg-card border border-border">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-transparent pointer-events-none" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-        <div className="relative px-6 pt-8 pb-6 flex flex-col items-center text-center">
-          <CopilotAvatar name={config.name} isActive={config.is_active} />
-          <h2 className="text-xl font-bold text-foreground mt-5 tracking-tight">{config.name}</h2>
-          <div className="flex items-center gap-2 mt-2">
-            {config.is_active ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wide uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                Online
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-primary/[0.02] pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+
+        <div className="relative p-5">
+          {/* Top: Avatar + Name + Switch */}
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <div className={cn(
+                "absolute -inset-1 rounded-2xl blur-lg transition-opacity duration-700",
+                config.is_active ? "bg-primary/15 opacity-100" : "opacity-0"
+              )} />
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
+                <Bot className={cn("w-7 h-7", config.is_active ? "text-primary" : "text-muted-foreground")} />
+              </div>
+              <div className={cn(
+                "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card",
+                config.is_active ? "bg-green-500 shadow-[0_0_8px_hsl(142_71%_45%/0.5)]" : "bg-muted-foreground"
+              )} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-bold text-foreground tracking-tight truncate">{config.name}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{personality?.label} · {personality?.desc}</p>
+            </div>
+            <div className="shrink-0 flex flex-col items-center gap-1">
+              <Switch checked={config.is_active} onCheckedChange={toggleActive} />
+              <span className={cn("text-[10px] font-semibold uppercase tracking-wider",
+                config.is_active ? "text-green-400" : "text-muted-foreground"
+              )}>
+                {config.is_active ? "Ativo" : "Off"}
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted border border-border text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-                Offline
-              </span>
-            )}
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-3">
-            {modeLabel} · {personality?.label} · {personality?.desc}
-          </p>
         </div>
       </div>
 
-      {/* Switch ativa/desativa copiloto */}
-      <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
-        <div>
-          <Label className="text-sm text-foreground font-semibold">Copiloto ativo</Label>
-          <p className="text-xs text-muted-foreground">Ativar ou desativar o copiloto</p>
+      {/* Quick capability cards — 2x2 grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <CapabilityCard
+          icon={ModeIcon}
+          label="Modo"
+          value={modeLabel}
+          active
+        />
+        <CapabilityCard
+          icon={PersonalityIcon}
+          label="Personalidade"
+          value={personality?.label || "—"}
+          active
+        />
+        <CapabilityCard
+          icon={Target}
+          label="Prioridade"
+          value={PRIORITY_LABELS[config.commercial_priority]?.replace(" de ", "\nde ") || "—"}
+          active
+        />
+        <CapabilityCard
+          icon={propertyType?.icon || Building2}
+          label="Imóvel"
+          value={propertyType?.label || config.property_type}
+          active
+        />
+      </div>
+
+      {/* Performance dials */}
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-3">Calibragem do Copiloto</p>
+        <div className="space-y-3">
+          <DialRow label="Persuasão" value={config.persuasion_level} />
+          <DialRow label="Objetividade" value={config.objectivity_level} />
         </div>
-        <Switch checked={config.is_active} onCheckedChange={async (v) => {
-          const { error } = await supabase.from("copilot_configs").update({ is_active: v }).eq("id", config.id);
-          if (error) { toast.error("Erro ao atualizar"); return; }
-          toast.success(v ? "Copiloto ativado!" : "Copiloto desativado");
-          onRefresh();
-        }} />
+        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Autonomia</span>
+          <span className="text-xs font-semibold text-primary">{AUTONOMY_LABELS[config.max_autonomy] || "—"}</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-border">
-        <StatCell label="Persuasão" value={`${config.persuasion_level}%`} />
-        <StatCell label="Objetividade" value={`${config.objectivity_level}%`} />
-        <StatCell label="Autonomia" value={AUTONOMY_LABELS[config.max_autonomy]?.split(" ")[0] || "—"} />
+      {/* Features toggles — compact pills */}
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-3">Recursos Ativos</p>
+        <div className="flex flex-wrap gap-2">
+          <FeaturePill label="Gatilhos mentais" active={config.use_mental_triggers} />
+          <FeaturePill label="Emojis" active={config.allow_emojis} />
+          <FeaturePill label="Visita presencial" active={config.incentive_visit} />
+          <FeaturePill label="Ligação" active={config.incentive_call} />
+          <FeaturePill
+            label={config.followup_enabled ? `Follow-up ${config.followup_max_attempts}x/${config.followup_period_days}d` : "Follow-up"}
+            active={config.followup_enabled}
+          />
+        </div>
       </div>
 
-      <div className="space-y-px rounded-xl overflow-hidden border border-border">
-        <DetailRow label="Modo de atuação" value={modeLabel} highlight />
-        <DetailRow label="Prioridade comercial" value={PRIORITY_LABELS[config.commercial_priority] || config.commercial_priority} />
-        <DetailRow label="Tipo de imóvel" value={propertyType?.label || config.property_type} />
-        <DetailRow label="Gatilhos mentais" value={config.use_mental_triggers ? "Ativado" : "Desativado"} highlight={config.use_mental_triggers} />
-        <DetailRow label="Emojis" value={config.allow_emojis ? "Ativado" : "Desativado"} highlight={config.allow_emojis} />
-        <DetailRow label="Follow-up automático" value={config.followup_enabled ? `Ativado (${config.followup_max_attempts}x em ${config.followup_period_days}d)` : "Desativado"} highlight={config.followup_enabled} />
-        <DetailRow label="Visita presencial" value={config.incentive_visit ? "Sim" : "Não"} highlight={config.incentive_visit} />
-      </div>
-
+      {/* Actions */}
       <div className="flex gap-3 pt-1">
-        <Button onClick={onEdit} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-semibold h-11 rounded-xl">
+        <Button onClick={onEdit} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-semibold h-12 rounded-xl text-sm">
           <Pencil className="w-4 h-4 mr-2" />
           Editar Copiloto
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" className="h-11 w-11 rounded-xl border-border text-muted-foreground hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 p-0">
+            <Button variant="outline" className="h-12 w-12 rounded-xl border-border text-muted-foreground hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 p-0">
               <Trash2 className="w-4 h-4" />
             </Button>
           </AlertDialogTrigger>
@@ -253,23 +277,53 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
   );
 }
 
-function StatCell({ label, value }: { label: string; value: string }) {
+function CapabilityCard({ icon: Icon, label, value, active }: { icon: React.ElementType; label: string; value: string; active?: boolean }) {
   return (
-    <div className="bg-card px-3 py-3 text-center">
-      <p className="text-base font-bold text-foreground tracking-tight">{value}</p>
-      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{label}</p>
+    <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Icon className="w-3.5 h-3.5 text-primary" />
+        </div>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{label}</span>
+      </div>
+      <p className="text-sm font-semibold text-foreground leading-tight">{value}</p>
     </div>
   );
 }
 
-function DetailRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function DialRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-card">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn("text-xs font-medium", highlight ? "text-primary" : "text-foreground")}>{value}</span>
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-xs font-bold text-foreground">{value}%</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-500"
+          style={{ width: `${value}%` }}
+        />
+      </div>
     </div>
   );
 }
+
+function FeaturePill({ label, active }: { label: string; active: boolean }) {
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors",
+      active
+        ? "bg-primary/10 border-primary/20 text-primary"
+        : "bg-muted/50 border-border text-muted-foreground"
+    )}>
+      <span className={cn("w-1.5 h-1.5 rounded-full", active ? "bg-primary" : "bg-muted-foreground/50")} />
+      {label}
+    </span>
+  );
+}
+
+
+
 
 // ─── Wizard Steps ───
 
