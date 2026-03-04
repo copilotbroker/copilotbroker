@@ -279,7 +279,8 @@ export function QueueTab() {
     enabled: role === "admin",
   });
 
-  const effectiveFilterId = role === "admin" ? (selectedBrokerId === "all" ? undefined : selectedBrokerId || undefined) : undefined;
+  const isAdmin = role === "admin";
+  const effectiveFilterId = isAdmin ? (selectedBrokerId === "all" ? undefined : selectedBrokerId || undefined) : undefined;
   const {
     pendingQueue,
     historyQueue,
@@ -294,7 +295,7 @@ export function QueueTab() {
     loadMoreHistory,
     hasMorePending,
     hasMoreHistory,
-  } = useWhatsAppQueue(effectiveFilterId);
+  } = useWhatsAppQueue(effectiveFilterId, isAdmin);
 
   const sentMessages = useMemo(() => historyQueue.filter(m => m.status === "sent"), [historyQueue]);
   const cancelledAndFailedMessages = useMemo(() => historyQueue.filter(m => m.status === "failed" || m.status === "cancelled"), [historyQueue]);
