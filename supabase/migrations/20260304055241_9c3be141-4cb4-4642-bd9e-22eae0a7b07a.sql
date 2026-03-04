@@ -1,0 +1,1 @@
+ALTER TABLE public.copilot_configs ADD COLUMN IF NOT EXISTS copilot_mode text NOT NULL DEFAULT 'assistente';

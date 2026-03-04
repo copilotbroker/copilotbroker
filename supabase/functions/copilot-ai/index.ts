@@ -2,6 +2,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 import { getCorsHeaders } from "../_shared/security.ts";
 
+const PERSONALITY_MAP: Record<string, string> = {
+  formal: "Seja formal, profissional e direto ao ponto.",
+  consultivo: "Seja consultivo, empático e estratégico. Guie o cliente com perguntas inteligentes.",
+  agressivo: "Seja persuasivo e orientado ao fechamento. Use gatilhos mentais de urgência e escassez.",
+  tecnico: "Seja técnico e informativo. Apresente dados e especificações com precisão.",
+  premium: "Seja sofisticado e exclusivo. Transmita luxo e exclusividade em cada palavra.",
+};
+
 const DEFAULT_SYSTEM_PROMPT = `Você é um Copiloto de vendas imobiliárias inteligente.
 {personalidade}
 {regra_emojis}
@@ -39,13 +47,12 @@ Diretrizes Críticas (O que NÃO fazer)
 {contexto_empreendimento}
 {contexto_lead}`;
 
-const PERSONALITY_MAP: Record<string, string> = {
-  formal: "Seja formal, profissional e direto ao ponto.",
-  consultivo: "Seja consultivo, empático e estratégico. Guie o cliente com perguntas inteligentes.",
-  agressivo: "Seja persuasivo e orientado ao fechamento. Use gatilhos mentais de urgência e escassez.",
-  tecnico: "Seja técnico e informativo. Apresente dados e especificações com precisão.",
-  premium: "Seja sofisticado e exclusivo. Transmita luxo e exclusividade em cada palavra.",
-};
+function buildModeInstruction(mode: string, brokerName: string): string {
+  if (mode === "autonomo") {
+    return `\n\nMODO DE ATUAÇÃO: Você está respondendo diretamente ao cliente em nome do corretor ${brokerName}. O cliente não sabe que é uma IA. Aja naturalmente como se fosse o próprio corretor. NUNCA revele que é uma IA ou assistente virtual.`;
+  }
+  return `\n\nMODO DE ATUAÇÃO: Você está sugerindo uma resposta para o corretor revisar. Escreva como se fosse o corretor falando diretamente com o cliente, mas saiba que o corretor vai revisar antes de enviar.`;
+}
 
 function buildSystemPrompt(
   config: Record<string, unknown>,
@@ -54,12 +61,11 @@ function buildSystemPrompt(
   brokerName?: string | null,
 ): string {
   const customPrompt = (config.custom_system_prompt as string) || DEFAULT_SYSTEM_PROMPT;
-
   const personality = PERSONALITY_MAP[(config.personality as string) || "consultivo"] || PERSONALITY_MAP.consultivo;
   const emojiRule = config.allow_emojis !== false ? "Use emojis com moderação para humanizar." : "Não use emojis.";
   const persuasionLevel = (config.persuasion_level as number) || 50;
+  const name = brokerName || "Corretor";
 
-  // Build context blocks
   let leadBlock = "";
   if (leadContext) {
     leadBlock = `\nCONTEXTO DO LEAD:
@@ -76,16 +82,15 @@ function buildSystemPrompt(
     projectBlock = `\nINFORMAÇÕES DO EMPREENDIMENTO:\n${projectAiPrompt}`;
   }
 
-  // Replace variables
   let prompt = customPrompt
     .replace(/\{personalidade\}/g, personality)
     .replace(/\{regra_emojis\}/g, emojiRule)
     .replace(/\{nivel_persuasao\}/g, String(persuasionLevel))
-    .replace(/\{nome_corretor\}/g, brokerName || "Corretor")
+    .replace(/\{nome_corretor\}/g, name)
     .replace(/\{contexto_lead\}/g, leadBlock)
     .replace(/\{contexto_empreendimento\}/g, projectBlock);
 
-  // Append extra rules from config
+  // Append extra rules
   if (config.use_mental_triggers) {
     prompt += "\n- Use gatilhos mentais sutis (escassez, urgência, prova social)";
   }
@@ -95,6 +100,10 @@ function buildSystemPrompt(
   if (config.incentive_call) {
     prompt += "\n- Sugira ligações quando o lead parecer interessado";
   }
+
+  // Inject mode instruction
+  const mode = (config.copilot_mode as string) || "assistente";
+  prompt += buildModeInstruction(mode, name);
 
   return prompt;
 }
@@ -110,12 +119,10 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No authorization header" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -124,49 +131,31 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { action, conversation_id, lead_context, messages, copilot_config } = await req.json();
 
-    // Fetch broker info
     const { data: broker } = await supabase
-      .from("brokers")
-      .select("id, name")
-      .eq("user_id", user.id)
-      .maybeSingle();
+      .from("brokers").select("id, name").eq("user_id", user.id).maybeSingle();
 
-    // Fetch copilot config from DB if not provided inline
     let config = copilot_config || {};
     if (broker?.id && !config.custom_system_prompt) {
       const { data: dbConfig } = await supabase
-        .from("copilot_configs")
-        .select("*")
-        .eq("broker_id", broker.id)
-        .maybeSingle();
-      if (dbConfig) {
-        config = { ...dbConfig, ...config };
-      }
+        .from("copilot_configs").select("*").eq("broker_id", broker.id).maybeSingle();
+      if (dbConfig) config = { ...dbConfig, ...config };
     }
 
-    // Fetch project ai_prompt if lead has a project
     let projectAiPrompt: string | null = null;
     if (lead_context?.project_id) {
       const { data: project } = await supabase
-        .from("projects")
-        .select("ai_prompt")
-        .eq("id", lead_context.project_id)
-        .maybeSingle();
-      if (project?.ai_prompt) {
-        projectAiPrompt = project.ai_prompt;
-      }
+        .from("projects").select("ai_prompt").eq("id", lead_context.project_id).maybeSingle();
+      if (project?.ai_prompt) projectAiPrompt = project.ai_prompt;
     }
 
     const systemPrompt = buildSystemPrompt(config, lead_context, projectAiPrompt, broker?.name);
 
-    // Add action-specific instructions
     let finalPrompt = systemPrompt;
     if (action === "suggest_response") {
       finalPrompt += `\n\nSua tarefa: Sugira UMA resposta estratégica para enviar ao lead baseado no histórico da conversa. A resposta deve ser natural, como se fosse o corretor falando diretamente com o cliente via WhatsApp.`;
@@ -196,7 +185,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Tente novamente em instantes." }), {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -211,7 +200,6 @@ serve(async (req) => {
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
 
-    // Track suggestion count
     if (conversation_id) {
       Promise.resolve(supabase.rpc("increment_copilot_count", { _conversation_id: conversation_id })).catch(() => {});
     }
@@ -219,12 +207,10 @@ serve(async (req) => {
     return new Response(JSON.stringify({ suggestion: content }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (e) {
     console.error("copilot-ai error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

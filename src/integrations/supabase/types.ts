@@ -584,6 +584,7 @@ export type Database = {
           broker_id: string
           commercial_focus: string
           commercial_priority: string
+          copilot_mode: string
           created_at: string
           custom_system_prompt: string | null
           followup_auto: boolean
@@ -611,6 +612,7 @@ export type Database = {
           broker_id: string
           commercial_focus?: string
           commercial_priority?: string
+          copilot_mode?: string
           created_at?: string
           custom_system_prompt?: string | null
           followup_auto?: boolean
@@ -638,6 +640,7 @@ export type Database = {
           broker_id?: string
           commercial_focus?: string
           commercial_priority?: string
+          copilot_mode?: string
           created_at?: string
           custom_system_prompt?: string | null
           followup_auto?: boolean
