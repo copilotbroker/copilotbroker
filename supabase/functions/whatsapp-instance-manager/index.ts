@@ -10,6 +10,13 @@ function getHonoCors(c: { req: { header: (name: string) => string | undefined } 
   return getCorsHeaders(new Request("https://dummy", { headers: { origin } }));
 }
 
+// Enforce dynamic CORS on every response path (including errors)
+app.use("*", async (c, next) => {
+  await next();
+  const cors = getHonoCors(c);
+  Object.entries(cors).forEach(([key, value]) => c.res.headers.set(key, value));
+});
+
 // Default corsHeaders for routes — restricted to primary domain (no wildcard).
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://onovocondominio.com.br",
@@ -1452,9 +1459,29 @@ app.post("/sync-all", async (c) => {
     );
 
     let uazapiInstances: Record<string, unknown>[] = [];
-    if (listResponse.ok) {
-      const data = await listResponse.json();
-      uazapiInstances = Array.isArray(data) ? data : [];
+    const listRaw = await listResponse.text();
+
+    if (!listResponse.ok) {
+      console.error(`[SYNC-ALL] fetchInstances failed with status ${listResponse.status}: ${listRaw.substring(0, 300)}`);
+      return c.json({
+        error: "Failed to fetch provider instances",
+        status: listResponse.status,
+        details: listRaw.substring(0, 300),
+      }, 502, getHonoCors(c));
+    }
+
+    try {
+      const parsed = JSON.parse(listRaw) as Record<string, unknown> | Record<string, unknown>[];
+      if (Array.isArray(parsed)) {
+        uazapiInstances = parsed;
+      } else if (Array.isArray(parsed?.data)) {
+        uazapiInstances = parsed.data as Record<string, unknown>[];
+      } else if (Array.isArray(parsed?.instances)) {
+        uazapiInstances = parsed.instances as Record<string, unknown>[];
+      }
+    } catch (parseError) {
+      console.error("[SYNC-ALL] Invalid JSON from fetchInstances:", parseError);
+      return c.json({ error: "Invalid provider response format" }, 502, getHonoCors(c));
     }
 
     // Fetch all local instances
