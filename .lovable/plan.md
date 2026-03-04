@@ -1,70 +1,86 @@
 
 
-## Plano: Wizard Interativo para Criação/Edição do Copiloto
+## Plano: Follow-up Automático por Inatividade do Lead (Piloto Automático)
 
-### Problema Atual
-A tela de criação/edição do Copiloto é um formulário longo com cards técnicos empilhados. Isso intimida corretores leigos e reduz a taxa de configuração completa.
+### Conceito
+Criar uma Edge Function agendada via pg_cron que detecta leads com Piloto Automático ativo (`ai_mode = 'ai_active'`) que não responderam após um período configurável, e envia automaticamente uma mensagem de reengajamento gerada por IA. O sistema fará até 7 tentativas em 10 dias, com intervalos crescentes.
 
-### Solução
-Substituir o formulário por um **Wizard de 5 passos** com barra de progresso, cards visuais selecionáveis, microcopy explicativo e linguagem simples. A experiência será semelhante a um onboarding de SaaS moderno.
+### Campos novos na tabela `copilot_configs`
+```sql
+ALTER TABLE public.copilot_configs 
+  ADD COLUMN followup_max_attempts integer NOT NULL DEFAULT 7,
+  ADD COLUMN followup_period_days integer NOT NULL DEFAULT 10,
+  ADD COLUMN followup_enabled boolean NOT NULL DEFAULT true;
+```
 
-### Novo campo no banco: `copilot_mode`
-Adicionar coluna `copilot_mode` (`text`, default `'assistente'`) à tabela `copilot_configs` para armazenar a escolha do corretor entre:
-- **"assistente"** → O Copiloto age como assistente do corretor (sugere respostas, o corretor revisa e envia)
-- **"autonomo"** → O Copiloto age em nome do corretor (responde diretamente como se fosse o corretor)
+Estes campos serão editáveis no Wizard do Copiloto (Passo 4 — Estratégia Comercial), substituindo o switch `followup_auto` atual (cosmético) por um controle real com inputs de quantidade e período.
 
-Essa escolha será injetada no prompt: no modo "assistente", o prompt instrui a IA a sugerir respostas para o corretor revisar; no modo "autonomo", o prompt instrui a IA a responder diretamente ao cliente como se fosse o corretor.
+### Nova tabela: `autopilot_followups`
+Rastreia tentativas de reengajamento por conversa para evitar spam:
+```sql
+CREATE TABLE public.autopilot_followups (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  broker_id uuid NOT NULL,
+  attempt_number integer NOT NULL DEFAULT 1,
+  sent_at timestamptz NOT NULL DEFAULT now(),
+  message_preview text,
+  UNIQUE(conversation_id, attempt_number)
+);
+```
 
-### Estrutura do Wizard (5 passos)
+### Nova Edge Function: `autopilot-followup`
+Lógica executada via cron (a cada 30 minutos):
 
-**Passo 1 — Modo de Atuação** (novo!)
-- Pergunta central: "Como seu Copiloto deve atuar?"
-- Dois cards grandes com ícones e descrições:
-  - 🤝 **Meu Assistente** — "Ele sugere respostas e eu decido o que enviar. Tenho controle total."
-  - 🚀 **Agir em Meu Nome** — "Ele responde diretamente aos clientes como se fosse eu. Ideal para quem quer automação total."
-- Microcopy: "Você pode mudar isso a qualquer momento."
+1. Busca todas as conversas com `ai_mode = 'ai_active'` onde a última mensagem é `outbound` (IA/corretor já mandou) e o lead não respondeu
+2. Para cada conversa, verifica o `copilot_config` do broker (se `followup_enabled`)
+3. Calcula o intervalo esperado com base no schedule crescente:
+   - Tentativas 1-2: ~1 dia após última mensagem
+   - Tentativas 3-4: ~2 dias
+   - Tentativas 5-6: ~3 dias  
+   - Tentativa 7: ~4 dias (total ≈ 10 dias)
+4. Verifica quantas tentativas já foram feitas (`autopilot_followups`)
+5. Se ainda não atingiu `followup_max_attempts` e o intervalo correto passou:
+   - Gera mensagem via IA (Gemini) com contexto de reengajamento
+   - Envia via UAZAPI
+   - Registra em `autopilot_followups`
+6. Respeita: working hours, opt-out, rate limits
 
-**Passo 2 — Identidade e Personalidade**
-- Nome do Copiloto (input com placeholder: "Ex: Max, Luna, Atlas...")
-- Personalidade: 5 cards visuais selecionáveis (Consultivo, Formal, Agressivo, Técnico, Premium) com ícone + descrição curta
-- Switches: Emojis, Gatilhos mentais
+### Prompt de reengajamento
+A IA receberá instrução adicional no system prompt:
+```
+CONTEXTO: O lead não respondeu sua última mensagem há X dias. 
+Esta é a tentativa Y de Z de reengajamento.
+Envie uma mensagem curta, natural e não invasiva para retomar o contato.
+Varie a abordagem a cada tentativa (pergunta, novidade, lembrete sutil).
+NÃO repita mensagens anteriores.
+```
 
-**Passo 3 — Estilo de Comunicação**
-- Slider de Persuasão (com labels: "Sutil" ↔ "Direto") 
-- Slider de Objetividade ("Detalhista" ↔ "Objetivo")
-- Tipo de imóvel predominante (cards visuais)
+### UI — Wizard Passo 4 (Estratégia Comercial)
+Substituir o switch cosmético `followup_auto` por:
+- **Switch "Follow-up por inatividade"** (ativa/desativa)
+- Quando ativo, mostra:
+  - Input: "Quantidade de tentativas" (default: 7, min: 1, max: 15)
+  - Input: "Período em dias" (default: 10, min: 3, max: 30)
+  - Microcopy: "O Copiloto vai tentar reengajar leads que não respondem, enviando até X mensagens em Y dias com intervalos crescentes."
 
-**Passo 4 — Estratégia Comercial**
-- Prioridade comercial (cards: Agendamento, Proposta, Qualificação, Fechamento)
-- Switches: Incentivar visita, Incentivar chamada, Follow-up automático
-- Nível de autonomia (Select, visível apenas no modo "autonomo")
+### Cron Job
+```sql
+SELECT cron.schedule('autopilot-followup-check', '*/30 * * * *', $$
+  SELECT net.http_post(
+    url:='https://nckzxwxxtyeydolmdijn.supabase.co/functions/v1/autopilot-followup',
+    headers:='{"Content-Type":"application/json","Authorization":"Bearer ..."}'::jsonb,
+    body:='{}'::jsonb
+  );
+$$);
+```
 
-**Passo 5 — Personalização Avançada (opcional)**
-- Região, público-alvo, posicionamento de marca
-- Prompt editável (textarea colapsável com "Editar prompt avançado")
-- Botão "Restaurar padrão"
+### Arquivos a alterar/criar
 
-### Barra de Progresso
-- Progress bar horizontal no topo com labels dos passos
-- Navegação: botões "Voltar" e "Próximo" (ou "Criar Copiloto" no último passo)
-
-### Impacto no Prompt (Edge Function)
-No `copilot-ai/index.ts` e `whatsapp-webhook/index.ts`, ler o campo `copilot_mode`:
-- Se `"assistente"`: adicionar instrução "Você está sugerindo uma resposta para o corretor revisar. Escreva como se fosse o corretor falando, mas saiba que ele vai revisar antes de enviar."
-- Se `"autonomo"`: adicionar instrução "Você está respondendo diretamente ao cliente em nome do corretor {nome}. O cliente não sabe que é uma IA. Aja naturalmente como se fosse o próprio corretor."
-
-### Arquivos a Alterar
-
-1. **Migration SQL** — Adicionar `copilot_mode text default 'assistente'` à `copilot_configs`
-2. **`src/hooks/use-copilot.ts`** — Adicionar `copilot_mode` ao tipo `CopilotConfig`
-3. **`src/components/inbox/CopilotConfigPage.tsx`** — Reescrever o formulário de criação/edição como Wizard de 5 passos (manter o `CopilotSummary` hero card como está)
-4. **`supabase/functions/copilot-ai/index.ts`** — Injetar instrução de modo no prompt
-5. **`supabase/functions/whatsapp-webhook/index.ts`** — Injetar instrução de modo no prompt
-
-### UX Details
-- Dark theme consistente com o restante (`bg-card`, `border-border`, `text-foreground`)
-- Animações suaves de transição entre passos
-- Cards selecionáveis com borda `border-primary` e fundo `bg-primary/10` quando ativos
-- Microcopy em `text-muted-foreground text-xs` abaixo de cada seção
-- Mobile-first: cards em coluna no mobile, grid no desktop
+1. **Migration SQL** — Adicionar colunas em `copilot_configs` + criar tabela `autopilot_followups`
+2. **`supabase/functions/autopilot-followup/index.ts`** — Nova Edge Function
+3. **`supabase/config.toml`** — Registrar nova function
+4. **`src/components/inbox/CopilotConfigPage.tsx`** — Atualizar Passo 4 com controles reais
+5. **`src/hooks/use-copilot.ts`** — Adicionar novos campos ao tipo
+6. **Cron SQL** — Agendar execução a cada 30 min
 
