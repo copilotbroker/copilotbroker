@@ -1450,100 +1450,86 @@ app.post("/sync-all", async (c) => {
       return c.json({ error: "Admin access required" }, 403, getHonoCors(c));
     }
 
-    // Fetch all UAZAPI instances
-    const listResponse = await uazapiFetchWithAuthFallback(
-      `${UAZAPI_BASE_URL}/instance/fetchInstances`,
-      { method: "GET" },
-      UAZAPI_DEFAULT_TOKEN,
-      true,
-    );
-
-    let uazapiInstances: Record<string, unknown>[] = [];
-    const listRaw = await listResponse.text();
-
-    if (!listResponse.ok) {
-      console.error(`[SYNC-ALL] fetchInstances failed with status ${listResponse.status}: ${listRaw.substring(0, 300)}`);
-      return c.json({
-        error: "Failed to fetch provider instances",
-        status: listResponse.status,
-        details: listRaw.substring(0, 300),
-      }, 502, getHonoCors(c));
-    }
-
-    try {
-      const parsed = JSON.parse(listRaw) as Record<string, unknown> | Record<string, unknown>[];
-      if (Array.isArray(parsed)) {
-        uazapiInstances = parsed;
-      } else if (Array.isArray(parsed?.data)) {
-        uazapiInstances = parsed.data as Record<string, unknown>[];
-      } else if (Array.isArray(parsed?.instances)) {
-        uazapiInstances = parsed.instances as Record<string, unknown>[];
-      }
-    } catch (parseError) {
-      console.error("[SYNC-ALL] Invalid JSON from fetchInstances:", parseError);
-      return c.json({ error: "Invalid provider response format" }, 502, getHonoCors(c));
-    }
-
     // Fetch all local instances
     const { data: localInstances } = await supabaseAdmin
       .from("broker_whatsapp_instances")
       .select("*");
 
     if (!localInstances || localInstances.length === 0) {
-      return c.json({ success: true, synced: 0, results: [] }, 200, getHonoCors(c));
+      return c.json({ success: true, synced: 0, total: 0, results: [] }, 200, getHonoCors(c));
     }
 
     const results: { broker_id: string; instance_name: string; old_status: string; new_status: string; }[] = [];
 
+    // Check each instance individually via /instance/status using its own token
+    // This is more reliable than fetchInstances which requires admin endpoint
     for (const local of localInstances) {
-      const instanceName = local.instance_name;
-      
-      // Find matching UAZAPI instance
-      const uazInstance = uazapiInstances.find((inst: Record<string, unknown>) =>
-        inst.name === instanceName || inst.instanceName === instanceName
-      );
-
-      let newStatus: string;
-      let phoneNumber = local.phone_number;
-
-      if (!uazInstance) {
-        // Instance doesn't exist in UAZAPI → disconnected
-        newStatus = "disconnected";
-      } else {
-        const normalized = normalizeUazapiStatus(uazInstance);
-        newStatus = normalized.status;
-        if (normalized.phoneNumber) {
-          phoneNumber = normalized.phoneNumber.startsWith("+")
-            ? normalized.phoneNumber
-            : `+${normalized.phoneNumber}`;
-        }
+      const instanceToken = local.instance_token;
+      if (!instanceToken) {
+        // No token stored → skip (can't check status)
+        continue;
       }
 
-      if (newStatus !== local.status || phoneNumber !== local.phone_number) {
-        const updateData: Record<string, unknown> = {
-          status: newStatus,
-          last_seen_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        if (phoneNumber) updateData.phone_number = phoneNumber;
-        if (newStatus === "connected" && !local.connected_at) {
-          updateData.connected_at = new Date().toISOString();
-        }
-        if (newStatus !== "connected") {
-          // Clear connected_at when disconnected
+      try {
+        // Build tokens to try: instance token first, then admin token as fallback
+        const additionalTokens = UAZAPI_ADMIN_TOKEN ? [UAZAPI_ADMIN_TOKEN] : [];
+
+        const statusRes = await uazapiFetchWithAuthFallback(
+          `${UAZAPI_BASE_URL}/instance/status`,
+          { method: "GET" },
+          instanceToken,
+          false, // not admin endpoint — use "token" header first
+          additionalTokens,
+        );
+
+        let newStatus: string = local.status; // keep current if check fails
+        let phoneNumber = local.phone_number;
+
+        if (statusRes.ok) {
+          const data = await statusRes.json();
+          const normalized = normalizeUazapiStatus(data);
+          newStatus = normalized.status;
+          if (normalized.phoneNumber) {
+            phoneNumber = normalized.phoneNumber.startsWith("+")
+              ? normalized.phoneNumber
+              : `+${normalized.phoneNumber}`;
+          }
+        } else {
+          // Non-ok but not necessarily disconnected — could be transient
+          // Only mark disconnected if we get a definitive error
+          const statusCode = statusRes.status;
+          if (statusCode === 401 || statusCode === 404) {
+            newStatus = "disconnected";
+          }
+          // For other errors (500, 502, etc.), keep current status
         }
 
-        await supabaseAdmin
-          .from("broker_whatsapp_instances")
-          .update(updateData)
-          .eq("id", local.id);
+        if (newStatus !== local.status || phoneNumber !== local.phone_number) {
+          const updateData: Record<string, unknown> = {
+            status: newStatus,
+            last_seen_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          if (phoneNumber) updateData.phone_number = phoneNumber;
+          if (newStatus === "connected" && !local.connected_at) {
+            updateData.connected_at = new Date().toISOString();
+          }
 
-        results.push({
-          broker_id: local.broker_id,
-          instance_name: instanceName,
-          old_status: local.status,
-          new_status: newStatus,
-        });
+          await supabaseAdmin
+            .from("broker_whatsapp_instances")
+            .update(updateData)
+            .eq("id", local.id);
+
+          results.push({
+            broker_id: local.broker_id,
+            instance_name: local.instance_name,
+            old_status: local.status,
+            new_status: newStatus,
+          });
+        }
+      } catch (instanceErr) {
+        console.error(`[SYNC-ALL] Error checking ${local.instance_name}:`, instanceErr);
+        // Skip this instance, don't change its status
       }
     }
 
