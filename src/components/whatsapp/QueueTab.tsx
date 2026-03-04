@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { QueueStatus } from "@/types/whatsapp";
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -303,6 +304,8 @@ export function QueueTab() {
     );
   }
 
+  const sentMessages = useMemo(() => historyQueue.filter(m => m.status === "sent"), [historyQueue]);
+  const cancelledAndFailedMessages = useMemo(() => historyQueue.filter(m => m.status === "failed" || m.status === "cancelled"), [historyQueue]);
   const isEmpty = pendingQueue.length === 0 && historyQueue.length === 0;
 
   return (
@@ -355,51 +358,83 @@ export function QueueTab() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
+          {/* Pendentes - Collapsible */}
           {pendingQueue.length > 0 && (
-            <div className="space-y-1">
-              <h3 className="text-sm font-medium text-slate-400 mb-1">
-                Pendentes ({stats.queued})
-              </h3>
-              <div className="space-y-1">
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg bg-[#1a1a1d] border border-[#2a2a2e] hover:bg-[#222225] transition-colors group">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-yellow-400" />
+                  <span className="text-sm font-medium text-white">Pendentes</span>
+                  <Badge variant="secondary" className="text-[10px]">{stats.queued}</Badge>
+                </div>
+                <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-1 space-y-1">
                 {pendingQueue.map((message) => (
                   <PendingMessageCard key={message.id} message={message} onCancel={cancelMessage} />
                 ))}
-              </div>
-              {hasMorePending && (
-                <Button
-                  variant="ghost"
-                  onClick={loadMorePending}
-                  className="w-full text-slate-400 hover:text-white gap-2 mt-2"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                  Carregar mais pendentes...
-                </Button>
-              )}
-            </div>
+                {hasMorePending && (
+                  <Button
+                    variant="ghost"
+                    onClick={loadMorePending}
+                    className="w-full text-slate-400 hover:text-white gap-2 mt-1"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                    Carregar mais pendentes...
+                  </Button>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           )}
 
-          {historyQueue.length > 0 && (
-            <div className="space-y-1">
-              <h3 className="text-sm font-medium text-slate-400 mb-1">
-                Histórico ({stats.sent + stats.failed})
-              </h3>
-              <div className="space-y-1">
-                {historyQueue.map((message) => (
+          {/* Enviados - Collapsible */}
+          {sentMessages.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg bg-[#1a1a1d] border border-[#2a2a2e] hover:bg-[#222225] transition-colors group">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                  <span className="text-sm font-medium text-white">Enviados</span>
+                  <Badge variant="default" className="text-[10px]">{stats.sent}</Badge>
+                </div>
+                <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-1 space-y-1">
+                {sentMessages.map((message) => (
                   <HistoryMessageCard key={message.id} message={message} onRetry={retryMessage} />
                 ))}
-              </div>
-              {hasMoreHistory && (
-                <Button
-                  variant="ghost"
-                  onClick={loadMoreHistory}
-                  className="w-full text-slate-400 hover:text-white gap-2 mt-2"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                  Carregar mais histórico...
-                </Button>
-              )}
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Cancelados / Falhas - Collapsible */}
+          {cancelledAndFailedMessages.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg bg-[#1a1a1d] border border-[#2a2a2e] hover:bg-[#222225] transition-colors group">
+                <div className="flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-red-400" />
+                  <span className="text-sm font-medium text-white">Cancelados / Falhas</span>
+                  <Badge variant="destructive" className="text-[10px]">{cancelledAndFailedMessages.length}</Badge>
+                </div>
+                <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-1 space-y-1">
+                {cancelledAndFailedMessages.map((message) => (
+                  <HistoryMessageCard key={message.id} message={message} onRetry={retryMessage} />
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {hasMoreHistory && (
+            <Button
+              variant="ghost"
+              onClick={loadMoreHistory}
+              className="w-full text-slate-400 hover:text-white gap-2"
+            >
+              <ChevronDown className="w-4 h-4" />
+              Carregar mais histórico...
+            </Button>
           )}
         </div>
       )}
