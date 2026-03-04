@@ -1079,6 +1079,7 @@ async function handleMessageStatusUpdate(
   const status = msg.status;
 
   if (messageId && status) {
+    // Update whatsapp_message_queue status
     const { error } = await supabase
       .from("whatsapp_message_queue")
       .update({ updated_at: new Date().toISOString() })
@@ -1086,6 +1087,29 @@ async function handleMessageStatusUpdate(
 
     if (error) {
       await logError(supabase, "messageStatusUpdate", error, { messageId });
+    }
+
+    // Update conversation_messages status
+    await supabase
+      .from("conversation_messages")
+      .update({ status: status })
+      .eq("uazapi_message_id", messageId);
+
+    // When status is "read", reset unread_count on the conversation
+    if (status === "read") {
+      const { data: msgData } = await supabase
+        .from("conversation_messages")
+        .select("conversation_id")
+        .eq("uazapi_message_id", messageId)
+        .maybeSingle();
+
+      if (msgData) {
+        await supabase
+          .from("conversations")
+          .update({ unread_count: 0, status: "attending" })
+          .eq("id", (msgData as { conversation_id: string }).conversation_id);
+        console.log(`✅ Conversation ${(msgData as { conversation_id: string }).conversation_id} marked as read (synced from phone)`);
+      }
     }
 
     console.log(`Message ${messageId} status: ${status}`);
