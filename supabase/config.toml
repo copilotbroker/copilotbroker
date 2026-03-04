@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.autopilot-followup]
 verify_jwt = false
+
+[functions.generate-landing]
+verify_jwt = false
