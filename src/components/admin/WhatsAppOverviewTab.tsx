@@ -64,7 +64,7 @@ interface ChartDataItem {
 interface WhatsAppOverviewTabProps {
   instances: BrokerInstance[];
   isLoadingInstances: boolean;
-  refetchInstances: () => void;
+  
   globalTotals: { sent: number; replies: number; failed: number };
   isLoadingStats: boolean;
   chartData: ChartDataItem[];
@@ -101,7 +101,7 @@ const getStatusBadge = (status: string, isPaused: boolean) => {
 export function WhatsAppOverviewTab({
   instances,
   isLoadingInstances,
-  refetchInstances,
+  
   globalTotals,
   isLoadingStats,
   chartData,
