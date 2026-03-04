@@ -1,91 +1,54 @@
 
 
-## Diagnóstico: Por que as landing pages geradas são inferiores
+## Plano: Controle individual de Inbox e Copiloto por corretor
 
-Após analisar o código, identifiquei **3 problemas fundamentais** — e o prompt é apenas um deles:
+### Objetivo
+Permitir que o admin habilite/desabilite individualmente o acesso ao **Inbox** e à **criação do Copiloto** para cada corretor, diretamente na aba "Corretores" do painel admin.
 
-### Problema 1: Modelo fraco para a tarefa
-O edge function usa `google/gemini-2.5-flash` — um modelo otimizado para velocidade, não qualidade criativa. Para copywriting de alto nível, precisamos de `google/gemini-2.5-pro` ou `openai/gpt-5`.
+### 1. Migration: adicionar colunas na tabela `brokers`
 
-### Problema 2: Componentes visuais simplistas
-Comparando as landing pages hardcoded (GoldenView) com os componentes dinâmicos:
-- **GoldenView Hero**: Background com imagem real, overlay com gradiente, badge animado com pulse, tipografia serif, parceiros lado a lado, layout rico
-- **Dynamic Hero**: Gradiente sólido sem imagem, tipografia genérica sans-serif, layout básico centralizado
+```sql
+ALTER TABLE public.brokers 
+  ADD COLUMN inbox_enabled boolean NOT NULL DEFAULT false,
+  ADD COLUMN copilot_enabled boolean NOT NULL DEFAULT false;
+```
 
-Os componentes dinâmicos não têm a **riqueza visual** das páginas artesanais: sem imagens de fundo no hero, sem layouts 2-colunas com imagem (como GVFeatures), sem variação de layout entre seções, sem tipografia serif/italic para luxo.
+### 2. UI: Switches nos cards de corretor (`BrokerManagement.tsx`)
 
-### Problema 3: Estrutura JSON rígida demais
-O schema do tool calling força uma estrutura fixa que não permite a flexibilidade que as páginas artesanais têm. Por exemplo:
-- Não há campo para hero background image
-- Features não suportam layout 2-colunas com imagem lateral
-- Não há como definir tipografia (serif vs sans-serif)
-- Não há seção de "parceiros" ou "depoimentos" como estrutura nativa
+Na seção "Row 6: Actions" de cada broker card (linha ~752), adicionar dois switches inline:
+- **Inbox** — toggle `inbox_enabled`
+- **Copiloto** — toggle `copilot_enabled`
 
----
+Cada toggle faz `supabase.from("brokers").update({ inbox_enabled / copilot_enabled }).eq("id", broker.id)` e atualiza o estado local. Usar ícones `MessageSquare` (Inbox) e `Bot` (Copiloto) com labels compactos.
 
-## Plano de Melhoria
+### 3. Gating no lado do corretor
 
-### 1. Trocar o modelo para `google/gemini-2.5-pro`
-Mais caro, mas dramaticamente melhor em criatividade e aderência às instruções de refinamento.
+- **BrokerInbox.tsx** e **AdminInbox.tsx** (para broker role): verificar `brokers.inbox_enabled` ao carregar. Se `false`, mostrar tela de "Funcionalidade não liberada. Solicite ao administrador."
+- **BrokerCopilotConfig.tsx** e **CopilotConfigPage.tsx**: verificar `brokers.copilot_enabled`. Se `false`, mostrar mesma tela de bloqueio.
+- **BrokerSidebar.tsx** e **BrokerBottomNav.tsx**: ocultar ou desabilitar visualmente os botões de Inbox e Copiloto quando as flags estão `false`. Buscar as flags via query ao `brokers` usando o `brokerId`.
 
-### 2. Expandir o schema `LandingContent` com campos visuais
-Adicionar ao schema:
-- `hero.backgroundImageUrl` — permitir imagem de fundo no hero
-- `hero.layout` — "centered" | "split" (texto + imagem lado a lado)
-- `theme.fontFamily` — "serif" | "sans-serif" para controle tipográfico
-- `features.layout` — "grid" | "list-with-image" (permitir imagem lateral como GoldenView)
-- `features.closingText` — texto de fechamento italic após os items
-- Seção `partners` opcional com nomes/logos
+### 4. Hook: `use-broker-features.ts`
 
-### 3. Melhorar os componentes visuais
-- **DynamicHero**: Suportar background image com overlay, layout split, tipografia serif
-- **DynamicFeatures**: Suportar layout com imagem lateral (2 colunas), icones em círculos com fundo, texto de fechamento
-- **DynamicUrgency**: Background dinâmico baseado no theme (não hardcoded `#fff8f0`)
-- Todos: Adicionar mais variações visuais (bordas decorativas, blurs, gradientes contextuais)
-
-### 4. Melhorar o prompt de refinamento
-O prompt atual para alterações é muito curto. Precisa instruir a IA a:
-- Retornar o JSON COMPLETO (não parcial)
-- Manter a identidade visual ao fazer ajustes pontuais
-- Entender comandos em português naturalmente ("mais agressivo", "muda a cor", "adiciona mapa")
-
-### 5. Enviar histórico de chat para contexto
-Atualmente cada refinamento envia apenas o JSON atual + 1 mensagem. Enviar o histórico completo de refinamentos para a IA ter contexto das iterações anteriores.
-
----
-
-## Arquivos a editar
-
-| Arquivo | Mudança |
-|---------|---------|
-| `supabase/functions/generate-landing/index.ts` | Trocar modelo para `gemini-2.5-pro`, expandir schema com novos campos, melhorar prompt de refinamento, receber histórico de chat |
-| `src/types/project.ts` | Adicionar novos campos ao `LandingContent` (backgroundImageUrl, layout, fontFamily, etc.) |
-| `src/components/landing/DynamicHero.tsx` | Suportar background image, layout split, tipografia serif |
-| `src/components/landing/DynamicFeatures.tsx` | Suportar layout com imagem lateral, closing text, ícones em círculos |
-| `src/components/landing/DynamicUrgency.tsx` | Background dinâmico baseado no theme |
-| `src/components/landing/DynamicAbout.tsx` | Layout mais rico com variação visual |
-| `src/components/landing/DynamicBenefits.tsx` | Melhorar cards visuais |
-| `src/components/admin/ProjectWizard.tsx` | Enviar histórico de chat completo nos refinamentos |
-
-### Detalhes técnicos do schema expandido
+Novo hook que busca `inbox_enabled` e `copilot_enabled` do broker logado:
 
 ```typescript
-hero: {
-  // campos existentes...
-  backgroundImageUrl?: string;  // URL de imagem uploaded
-  layout?: "centered" | "split"; // split = texto + imagem
-}
-theme: {
-  // campos existentes...
-  fontFamily?: "serif" | "sans-serif";
-}
-features: {
-  // campos existentes...
-  layout?: "grid" | "list-with-image";
-  imageUrl?: string;  // imagem lateral
-  closingText?: string;
+export function useBrokerFeatures(brokerId: string | null) {
+  // query brokers.inbox_enabled, copilot_enabled
+  return { inboxEnabled, copilotEnabled, isLoading };
 }
 ```
 
-Os componentes renderizarão condicionalmente com base nesses campos, mantendo retrocompatibilidade com o conteúdo já gerado.
+Usado pelo sidebar, bottom nav, e páginas de inbox/copiloto do corretor.
+
+### Arquivos a criar/editar
+
+| Ação | Arquivo |
+|------|---------|
+| Migration | Adicionar `inbox_enabled` e `copilot_enabled` a `brokers` |
+| Criar | `src/hooks/use-broker-features.ts` |
+| Editar | `src/components/admin/BrokerManagement.tsx` (switches nos cards) |
+| Editar | `src/pages/BrokerInbox.tsx` (gating) |
+| Editar | `src/pages/BrokerCopilotConfig.tsx` (gating) |
+| Editar | `src/components/broker/BrokerSidebar.tsx` (ocultar itens) |
+| Editar | `src/components/broker/BrokerBottomNav.tsx` (ocultar itens) |
 
