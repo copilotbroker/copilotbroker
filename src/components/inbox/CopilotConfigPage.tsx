@@ -75,11 +75,8 @@ const PERSONALITIES = [
 ];
 
 const PROPERTY_TYPES = [
-  { id: "popular", label: "Popular", icon: Home },
-  { id: "medio", label: "Médio Padrão", icon: Building },
-  { id: "alto", label: "Alto Padrão", icon: Landmark },
+  { id: "prontos", label: "Imóveis Prontos", icon: Home },
   { id: "lancamentos", label: "Lançamentos", icon: HardHat },
-  { id: "comercial", label: "Comercial", icon: Store },
 ];
 
 const PRIORITIES = [
