@@ -19,11 +19,21 @@ REGRAS FUNDAMENTAIS:
 
 CAPACIDADES AVANÇADAS — IMPORTANTE:
 8. Se o usuário fornecer links de MAPAS INTERATIVOS, VÍDEOS DO YOUTUBE, ou qualquer URL externa:
-   - Inclua no campo "customSections" como iframes ou embeds
-   - Use o campo "embedUrl" para mapas e vídeos
-   - O sistema renderizará automaticamente como iframe responsivo
-9. Se o usuário mencionar FOTOS ou IMAGENS com URLs, inclua no campo "mediaUrls" da seção relevante
-10. Crie seções adicionais quando necessário (galeria, mapa, vídeo, depoimentos, planta, etc.)
+   - Inclua no campo "customSections" como tipo "embed"
+   - Use o campo "embedUrl" com a URL EXATA fornecida pelo usuário
+   - Para vídeos do YouTube, converta para formato embed: https://www.youtube.com/embed/VIDEO_ID
+   - Para Google Maps, use a URL completa fornecida
+   - SEMPRE preserve links e URLs fornecidos pelo usuário
+9. Se o usuário mencionar FOTOS ou IMAGENS com URLs, inclua como imageUrl nas seções relevantes
+10. Crie seções adicionais quando necessário (galeria, mapa, vídeo, depoimentos, planta, estatísticas, etc.)
+
+CAMPOS VISUAIS AVANÇADOS:
+- theme.fontFamily: Use "serif" para empreendimentos de luxo/alto padrão para dar elegância tipográfica. Use "sans-serif" para projetos modernos/urbanos.
+- hero.backgroundImageUrl: Se o usuário forneceu URLs de imagens do empreendimento, use a melhor imagem como background do hero.
+- hero.layout: Use "split" quando há uma imagem forte de destaque (divide a tela em texto + imagem). Use "centered" para layouts clássicos.
+- features.layout: Use "list-with-image" quando há uma imagem/render do empreendimento disponível. Isso cria um layout 2 colunas com itens à esquerda e imagem grande à direita. Use "grid" para layout padrão em cards.
+- features.imageUrl: URL da imagem para o layout "list-with-image".
+- features.closingText: Uma frase italic de fechamento que reforça o valor emocional da seção.
 
 ÍCONES VÁLIDOS (Lucide React):
 "MapPin", "Trees", "Shield", "Home", "Star", "Clock", "TrendingUp", "Heart", "Gem", "Mountain", "Waves", "Sun", "Building2", "Car", "Leaf", "Award", "CheckCircle", "Target", "Zap", "Users", "Key", "Compass", "Camera", "Play", "Map", "Phone", "Mail", "Globe", "Wifi", "Lock", "Eye", "Palette", "Dumbbell", "Music", "Coffee", "Utensils", "Baby", "Dog", "Bike", "Plane", "Ship", "Train"
@@ -31,17 +41,26 @@ CAPACIDADES AVANÇADAS — IMPORTANTE:
 CORES: formato HEX, devem combinar com o estilo do empreendimento.
 
 ESTILOS:
-- "luxury": Tons dourados, escuros, tipografia elegante. Para alto padrão.
-- "modern": Tons vibrantes, clean. Para projetos urbanos e jovens.
-- "nature": Tons verdes, terrosos. Para projetos com natureza/campo.
-- "urban": Tons industriais, neutros. Para projetos em centros urbanos.
+- "luxury": Tons dourados (#C9A961), fundos escuros (#1a1a2e). fontFamily: "serif". Para alto padrão.
+- "modern": Tons vibrantes, clean. fontFamily: "sans-serif". Para projetos urbanos e jovens.
+- "nature": Tons verdes (#2d6a4f), terrosos (#5a3e2b). Para projetos com natureza/campo.
+- "urban": Tons industriais, neutros. fontFamily: "sans-serif". Para projetos em centros urbanos.
 
 REGRAS DE QUALIDADE:
 - O warning da urgência deve criar senso REAL de oportunidade perdida com dados específicos
 - O quote do CTA deve ser uma frase ASPIRACIONAL memorável que o cliente imagina dizendo
 - Features devem ser benefícios, não especificações técnicas
 - Use números e dados específicos sempre que possível
-- Crie contrastes emocionais: "de X para Y", "enquanto outros... você..."`;
+- Crie contrastes emocionais: "de X para Y", "enquanto outros... você..."
+
+REGRA CRÍTICA PARA REFINAMENTOS:
+Quando o usuário pedir alterações:
+- SEMPRE retorne o JSON COMPLETO com todas as seções, mesmo que só uma tenha mudado
+- MANTENHA toda a identidade visual e conteúdo das seções não mencionadas
+- Se o usuário pedir para "adicionar um mapa", adicione uma customSection SEM remover nenhuma seção existente
+- Se o usuário pedir para "mudar a cor", mude APENAS a cor mantendo todo o resto
+- Entenda comandos em português: "mais agressivo" = mais urgência e gatilhos mentais, "mais elegante" = tom mais sofisticado e serif
+- Se o usuário fornecer uma URL, SEMPRE inclua ela literalmente no embedUrl, NÃO modifique a URL`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -52,37 +71,59 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { projectData, currentContent, userMessage } = await req.json();
+    const { projectData, currentContent, userMessage, chatHistory } = await req.json();
 
-    let userPrompt: string;
+    const messages: { role: string; content: string }[] = [
+      { role: "system", content: SYSTEM_PROMPT },
+    ];
 
     if (currentContent && userMessage) {
-      userPrompt = `O conteúdo atual da landing page é:
+      // Refinement: send full chat history for context
+      if (chatHistory && Array.isArray(chatHistory)) {
+        for (const msg of chatHistory) {
+          if (msg.role === "user" || msg.role === "assistant") {
+            messages.push({ role: msg.role, content: msg.content });
+          }
+        }
+      }
+
+      messages.push({
+        role: "user",
+        content: `O conteúdo ATUAL da landing page é:
 \`\`\`json
 ${JSON.stringify(currentContent, null, 2)}
 \`\`\`
 
 O usuário pediu a seguinte alteração: "${userMessage}"
 
-INSTRUÇÕES:
-- Aplique as alterações solicitadas mantendo o resto intacto
-- Se o usuário pedir para adicionar mapa interativo, vídeo, galeria ou qualquer elemento externo, use o campo "customSections"
-- Se o usuário fornecer uma URL, inclua como "embedUrl" em uma customSection
-- Retorne o JSON completo atualizado com TODAS as seções`;
+INSTRUÇÕES CRÍTICAS:
+- Aplique EXATAMENTE as alterações solicitadas
+- Retorne o JSON COMPLETO com TODAS as seções (não omita nenhuma)
+- Se o usuário fornecer uma URL (mapa, vídeo, iframe), use-a LITERALMENTE no embedUrl de uma customSection
+- Se o usuário pedir para adicionar algo, ADICIONE sem remover conteúdo existente
+- Mantenha toda a identidade visual (cores, fontes, layout) exceto o que foi explicitamente pedido para mudar
+- Se o usuário pedir algo que não entende, pergunte (mas retorne o JSON atual intacto)`
+      });
     } else {
-      userPrompt = `Gere o conteúdo completo para a landing page de um empreendimento imobiliário:
+      messages.push({
+        role: "user",
+        content: `Gere o conteúdo completo para a landing page de um empreendimento imobiliário:
 
 NOME: ${projectData.name}
 CIDADE: ${projectData.city}
-${projectData.description ? `\nCONTEÚDO COMPLETO FORNECIDO PELO CLIENTE:\n${projectData.description}\n\nANALISE TODO O CONTEÚDO ACIMA E EXTRAIA: diferenciais, público-alvo, argumentos de venda, faixa de preço, infraestrutura, localização e qualquer link/URL mencionado.` : ""}
+${projectData.description ? `\nCONTEÚDO COMPLETO FORNECIDO PELO CLIENTE:\n${projectData.description}\n\nANALISE TODO O CONTEÚDO ACIMA E EXTRAIA: diferenciais, público-alvo, argumentos de venda, faixa de preço, infraestrutura, localização e QUALQUER link/URL mencionado (mapas, vídeos, iframes). Links devem ser incluídos como customSections com embedUrl.` : ""}
 ${projectData.location ? `LOCALIZAÇÃO: ${projectData.location}` : ""}
-${projectData.mediaUrls?.length ? `\nMÍDIA DISPONÍVEL (URLs de imagens/vídeos):\n${projectData.mediaUrls.join("\n")}` : ""}
+${projectData.mediaUrls?.length ? `\nMÍDIA DISPONÍVEL (URLs de imagens/vídeos):\n${projectData.mediaUrls.join("\n")}\n\nUse essas imagens: a melhor como hero.backgroundImageUrl, outras como features.imageUrl ou em customSections tipo gallery.` : ""}
 STATUS: ${projectData.status || "pre_launch"}
 
 IMPORTANTE:
-- Se houver links de mapas interativos ou vídeos no conteúdo, inclua-os como customSections com embedUrl
+- Se houver links de mapas interativos ou vídeos no conteúdo, inclua-os como customSections com embedUrl usando a URL EXATA
+- Escolha o fontFamily adequado ao estilo do empreendimento
+- Use hero.layout "split" se houver imagens disponíveis
+- Use features.layout "list-with-image" se houver renders/imagens do empreendimento
 - Crie conteúdo ÚNICO, persuasivo e de alta qualidade profissional
-- NÃO use templates genéricos — crie algo memorável para ESTE empreendimento`;
+- NÃO use templates genéricos — crie algo memorável para ESTE empreendimento`
+      });
     }
 
     const response = await fetch(
@@ -94,11 +135,8 @@ IMPORTANTE:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: userPrompt },
-          ],
+          model: "google/gemini-2.5-pro",
+          messages,
           tools: [
             {
               type: "function",
@@ -111,9 +149,10 @@ IMPORTANTE:
                     theme: {
                       type: "object",
                       properties: {
-                        primaryColor: { type: "string", description: "HEX color for primary elements" },
-                        accentColor: { type: "string", description: "HEX color for accent/background" },
+                        primaryColor: { type: "string", description: "HEX color for primary elements (e.g. #C9A961 for gold)" },
+                        accentColor: { type: "string", description: "HEX color for accent/background (e.g. #1a1a2e for dark)" },
                         style: { type: "string", enum: ["luxury", "modern", "nature", "urban"] },
+                        fontFamily: { type: "string", enum: ["serif", "sans-serif"], description: "serif for luxury/elegant, sans-serif for modern/clean" },
                       },
                       required: ["primaryColor", "accentColor", "style"],
                       additionalProperties: false,
@@ -126,6 +165,8 @@ IMPORTANTE:
                         subtitle: { type: "string" },
                         description: { type: "string" },
                         ctaText: { type: "string" },
+                        backgroundImageUrl: { type: "string", description: "URL of background image for hero section" },
+                        layout: { type: "string", enum: ["centered", "split"], description: "centered = classic layout, split = text left + image right" },
                       },
                       required: ["badge", "title", "subtitle", "description", "ctaText"],
                       additionalProperties: false,
@@ -161,6 +202,9 @@ IMPORTANTE:
                             additionalProperties: false,
                           },
                         },
+                        layout: { type: "string", enum: ["grid", "list-with-image"], description: "grid = card grid, list-with-image = items left + large image right" },
+                        imageUrl: { type: "string", description: "URL of image for list-with-image layout" },
+                        closingText: { type: "string", description: "Italic closing phrase for emotional reinforcement" },
                       },
                       required: ["title", "items"],
                       additionalProperties: false,
@@ -221,13 +265,13 @@ IMPORTANTE:
                     },
                     customSections: {
                       type: "array",
-                      description: "Additional custom sections like maps, videos, galleries, etc.",
+                      description: "Additional custom sections: interactive maps, videos, galleries, statistics, etc.",
                       items: {
                         type: "object",
                         properties: {
                           type: { type: "string", enum: ["embed", "gallery", "text", "stats"] },
                           title: { type: "string" },
-                          embedUrl: { type: "string", description: "URL for iframe embed (maps, videos)" },
+                          embedUrl: { type: "string", description: "EXACT URL for iframe embed (maps, videos). Use the URL provided by the user LITERALLY." },
                           description: { type: "string" },
                           items: {
                             type: "array",

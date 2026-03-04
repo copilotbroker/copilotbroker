@@ -39,6 +39,7 @@ export interface LandingContent {
     primaryColor: string;
     accentColor: string;
     style: "luxury" | "modern" | "nature" | "urban";
+    fontFamily?: "serif" | "sans-serif";
   };
   hero: {
     badge: string;
@@ -46,6 +47,8 @@ export interface LandingContent {
     subtitle: string;
     description: string;
     ctaText: string;
+    backgroundImageUrl?: string;
+    layout?: "centered" | "split";
   };
   about: {
     title: string;
@@ -55,6 +58,9 @@ export interface LandingContent {
   features: {
     title: string;
     items: { icon: string; text: string }[];
+    layout?: "grid" | "list-with-image";
+    imageUrl?: string;
+    closingText?: string;
   };
   urgency: {
     title: string;

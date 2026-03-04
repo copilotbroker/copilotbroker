@@ -21,13 +21,22 @@ export default function DynamicUrgency({ content, theme }: Props) {
     return () => observer.disconnect();
   }, []);
 
+  // Dynamic background based on theme style
+  const bgColor = theme.style === "luxury"
+    ? `${theme.accentColor}08`
+    : theme.style === "nature"
+    ? "#f0f7f0"
+    : theme.style === "urban"
+    ? "#f5f5f5"
+    : "#fff8f0";
+
   return (
-    <section ref={ref} className="py-20 md:py-28 px-4" style={{ backgroundColor: "#fff8f0" }}>
+    <section ref={ref} className="py-20 md:py-28 px-4" style={{ backgroundColor: bgColor }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2
           className={`text-3xl md:text-4xl font-bold mb-12 transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
+          } ${theme.fontFamily === "serif" ? "font-serif italic" : ""}`}
           style={{ color: theme.accentColor }}
         >
           {content.title}
@@ -39,7 +48,7 @@ export default function DynamicUrgency({ content, theme }: Props) {
             return (
               <div
                 key={i}
-                className={`flex items-center gap-4 p-5 rounded-xl bg-white border shadow-sm transition-all duration-500 ${
+                className={`flex items-center gap-4 p-5 rounded-xl bg-white border shadow-sm transition-all duration-500 hover:shadow-md ${
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
                 style={{
@@ -47,7 +56,12 @@ export default function DynamicUrgency({ content, theme }: Props) {
                   borderColor: `${theme.primaryColor}25`,
                 }}
               >
-                <Icon className="w-6 h-6 flex-shrink-0" style={{ color: theme.primaryColor }} />
+                <div
+                  className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: `${theme.primaryColor}15` }}
+                >
+                  <Icon className="w-5 h-5" style={{ color: theme.primaryColor }} />
+                </div>
                 <p className="text-sm text-gray-700 text-left font-medium">{item.text}</p>
               </div>
             );
