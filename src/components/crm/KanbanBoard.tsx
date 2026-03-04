@@ -13,6 +13,7 @@ import { ComparecimentoModal } from "./ComparecimentoModal";
 import { PropostaModal } from "./PropostaModal";
 import { VendaModal } from "./VendaModal";
 import { PerdaModal } from "./PerdaModal";
+import { CallLogModal } from "./CallLogModal";
 import { NewCampaignSheet } from "@/components/whatsapp/NewCampaignSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { cancelCadenciaForLead } from "@/hooks/use-cadencia-ativa";
@@ -76,6 +77,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [vendaModal, setVendaModal] = useState<{ open: boolean; leadId: string | null }>({ open: false, leadId: null });
   const [perdaModal, setPerdaModal] = useState<{ open: boolean; leadId: string | null; currentStatus: LeadStatus }>({ open: false, leadId: null, currentStatus: "new" });
   const [newLeadIds, setNewLeadIds] = useState<Set<string>>(new Set());
+  const [callModal, setCallModal] = useState<{ open: boolean; leadId: string | null }>({ open: false, leadId: null });
   const newLeadTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const { criarProposta } = usePropostas(propostaModal.leadId || "");
@@ -324,6 +326,41 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     setCadenciaLeadIds(prev => { const next = new Set(prev); next.delete(leadId); return next; });
   };
 
+  const handleWhatsAppClick = async (leadId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    supabase.from("lead_interactions").insert({
+      lead_id: leadId,
+      interaction_type: "whatsapp_manual" as any,
+      notes: "Atendimento via WhatsApp",
+      channel: "whatsapp",
+      created_by: user?.id,
+    }).then(({ error }) => { if (error) console.error("Erro ao registrar clique WhatsApp:", error); });
+  };
+
+  const handleCallClick = (leadId: string) => {
+    setCallModal({ open: true, leadId });
+  };
+
+  const handleCallConfirm = async (notes: string) => {
+    if (!callModal.leadId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("lead_interactions").insert({
+      lead_id: callModal.leadId,
+      interaction_type: "ligacao" as any,
+      notes,
+      channel: "ligacao",
+      created_by: user?.id,
+    });
+    if (error) {
+      console.error("Erro ao registrar ligação:", error);
+      toast.error("Erro ao registrar ligação.");
+    } else {
+      toast.success("Ligação registrada!");
+      // Invalidate timeline
+      queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-[700px]">
       {/* Toolbar - Filters */}
@@ -460,6 +497,8 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
                 }}
                 onOpenReagendamento={(leadId) => setAgendamentoModal({ open: true, leadId, isReagendamento: true })}
                 onLeadsLoaded={handleLeadsLoaded}
+                onWhatsAppClick={handleWhatsAppClick}
+                onCallClick={handleCallClick}
               />
             ))}
           </div>
@@ -555,6 +594,13 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
         open={whatsappCampaignOpen}
         onOpenChange={setWhatsappCampaignOpen}
         preselectedStatus={whatsappPreselectedStatus}
+      />
+
+      <CallLogModal
+        open={callModal.open}
+        onOpenChange={(v) => setCallModal(prev => ({ ...prev, open: v }))}
+        leadName={callModal.leadId ? allLeadsRef.current.get(callModal.leadId)?.name : undefined}
+        onConfirm={handleCallConfirm}
       />
     </div>
   );
