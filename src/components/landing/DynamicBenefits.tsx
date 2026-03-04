@@ -10,6 +10,7 @@ interface Props {
 export default function DynamicBenefits({ content, theme }: Props) {
   const ref = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const isSerif = theme.fontFamily === "serif";
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -26,7 +27,7 @@ export default function DynamicBenefits({ content, theme }: Props) {
         <h2
           className={`text-3xl md:text-4xl font-bold mb-14 text-center transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
+          } ${isSerif ? "font-serif italic" : ""}`}
           style={{ color: theme.accentColor }}
         >
           {content.title}
@@ -48,7 +49,7 @@ export default function DynamicBenefits({ content, theme }: Props) {
                 }}
               >
                 <div
-                  className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center"
+                  className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center"
                   style={{ backgroundColor: `${theme.primaryColor}18` }}
                 >
                   <Icon className="w-5 h-5" style={{ color: theme.primaryColor }} />

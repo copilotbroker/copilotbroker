@@ -157,6 +157,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete 
           },
           currentContent: userMessage ? landingContent : undefined,
           userMessage: userMessage || undefined,
+          chatHistory: userMessage ? chatMessages.filter(m => m.role !== "system") : undefined,
         },
       });
 
