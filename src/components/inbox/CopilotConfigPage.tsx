@@ -4,7 +4,7 @@ import {
   Pencil, Trash2, ChevronLeft, ChevronRight, Handshake, Rocket,
   Brain, Crown, Zap, GraduationCap, Gem,
   Calendar, FileText, Search, Trophy,
-  Home, Building, Landmark, Store, HardHat
+  Home, Building, Landmark, Store, HardHat, Plane
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,7 +162,7 @@ function CopilotAvatar({ name, isActive }: { name: string; isActive: boolean }) 
   );
 }
 
-function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; onEdit: () => void; onDelete: () => void }) {
+function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: CopilotConfig; onEdit: () => void; onDelete: () => void; onRefresh: () => void }) {
   const personality = PERSONALITIES.find(p => p.id === config.personality);
   const propertyType = PROPERTY_TYPES.find(p => p.id === config.property_type);
   const modeLabel = config.copilot_mode === "autonomo" ? "🚀 Age como Corretor" : "🤝 Assistente do Corretor";
@@ -194,6 +194,20 @@ function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; o
         </div>
       </div>
 
+      {/* Switch ativa/desativa copiloto */}
+      <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
+        <div>
+          <Label className="text-sm text-foreground font-semibold">Copiloto ativo</Label>
+          <p className="text-xs text-muted-foreground">Ativar ou desativar o copiloto</p>
+        </div>
+        <Switch checked={config.is_active} onCheckedChange={async (v) => {
+          const { error } = await supabase.from("copilot_configs").update({ is_active: v }).eq("id", config.id);
+          if (error) { toast.error("Erro ao atualizar"); return; }
+          toast.success(v ? "Copiloto ativado!" : "Copiloto desativado");
+          onRefresh();
+        }} />
+      </div>
+
       <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-border">
         <StatCell label="Persuasão" value={`${config.persuasion_level}%`} />
         <StatCell label="Objetividade" value={`${config.objectivity_level}%`} />
@@ -208,8 +222,6 @@ function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; o
         <DetailRow label="Emojis" value={config.allow_emojis ? "Ativado" : "Desativado"} highlight={config.allow_emojis} />
         <DetailRow label="Follow-up automático" value={config.followup_enabled ? `Ativado (${config.followup_max_attempts}x em ${config.followup_period_days}d)` : "Desativado"} highlight={config.followup_enabled} />
         <DetailRow label="Visita presencial" value={config.incentive_visit ? "Sim" : "Não"} highlight={config.incentive_visit} />
-        {config.region && <DetailRow label="Região" value={config.region} />}
-        {config.target_audience && <DetailRow label="Público-alvo" value={config.target_audience} />}
       </div>
 
       <div className="flex gap-3 pt-1">
@@ -505,81 +517,42 @@ function StepStrategy({ form, update }: { form: Partial<CopilotConfig>; update: 
 }
 
 function StepAdvanced({ form, update }: { form: Partial<CopilotConfig>; update: (k: string, v: unknown) => void }) {
-  const [promptOpen, setPromptOpen] = useState(false);
-
   return (
     <div className="space-y-5">
       <div className="text-center mb-2">
-        <h2 className="text-lg font-bold text-foreground">Personalização Avançada</h2>
-        <p className="text-xs text-muted-foreground mt-1">Opcional — ajuste fino para especialistas.</p>
+        <h2 className="text-lg font-bold text-foreground">Prompt do Copiloto</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Leia o prompt abaixo e ajuste de acordo com sua forma de trabalhar. Quanto mais personalizado, melhor o resultado!
+        </p>
       </div>
 
-      <div>
-        <Label className="text-xs text-muted-foreground">Região de atuação</Label>
-        <Input
-          value={form.region || ""}
-          onChange={(e) => update("region", e.target.value)}
-          className="bg-background border-border text-foreground mt-1"
-          placeholder="Ex: Grande Porto Alegre"
-        />
-      </div>
-
-      <div>
-        <Label className="text-xs text-muted-foreground">Público-alvo</Label>
-        <Input
-          value={form.target_audience || ""}
-          onChange={(e) => update("target_audience", e.target.value)}
-          className="bg-background border-border text-foreground mt-1"
-          placeholder="Ex: Jovens casais, investidores"
-        />
-      </div>
-
-      <div>
-        <Label className="text-xs text-muted-foreground">Posicionamento de marca</Label>
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Prompt do sistema</Label>
         <Textarea
-          value={form.brand_positioning || ""}
-          onChange={(e) => update("brand_positioning", e.target.value)}
-          className="bg-background border-border text-foreground min-h-[60px] mt-1"
-          placeholder="Descreva o posicionamento da sua marca..."
+          value={form.custom_system_prompt || ""}
+          onChange={(e) => update("custom_system_prompt", e.target.value || null)}
+          className="bg-background border-border text-foreground min-h-[260px] text-xs font-mono"
+          placeholder={DEFAULT_SYSTEM_PROMPT}
         />
-      </div>
-
-      <Collapsible open={promptOpen} onOpenChange={setPromptOpen}>
-        <CollapsibleTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full border-border text-muted-foreground hover:text-foreground">
-            <Pencil className="w-3.5 h-3.5 mr-2" />
-            {promptOpen ? "Fechar prompt avançado" : "Editar prompt avançado"}
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          💡 Personalize o comportamento do seu Copiloto editando o prompt acima. Use as variáveis disponíveis para torná-lo dinâmico:{" "}
+          <span className="text-foreground font-medium">{"{personalidade}"}</span>,{" "}
+          <span className="text-foreground font-medium">{"{regra_emojis}"}</span>,{" "}
+          <span className="text-foreground font-medium">{"{nivel_persuasao}"}</span>,{" "}
+          <span className="text-foreground font-medium">{"{nome_corretor}"}</span>,{" "}
+          <span className="text-foreground font-medium">{"{contexto_lead}"}</span>,{" "}
+          <span className="text-foreground font-medium">{"{contexto_empreendimento}"}</span>
+        </p>
+        {form.custom_system_prompt && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => update("custom_system_prompt", null)}
+            className="text-xs border-border text-muted-foreground"
+          >
+            Restaurar prompt padrão
           </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-3 space-y-2">
-          <Textarea
-            value={form.custom_system_prompt || ""}
-            onChange={(e) => update("custom_system_prompt", e.target.value || null)}
-            className="bg-background border-border text-foreground min-h-[200px] text-xs font-mono"
-            placeholder={DEFAULT_SYSTEM_PROMPT}
-          />
-          <p className="text-[10px] text-muted-foreground">
-            Variáveis: {"{personalidade}"}, {"{regra_emojis}"}, {"{nivel_persuasao}"}, {"{nome_corretor}"}, {"{contexto_lead}"}, {"{contexto_empreendimento}"}
-          </p>
-          {form.custom_system_prompt && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => update("custom_system_prompt", null)}
-              className="text-xs border-border text-muted-foreground"
-            >
-              Restaurar prompt padrão
-            </Button>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
-
-      <div className="flex items-center justify-between pt-2">
-        <div>
-          <Label className="text-sm text-foreground">Copiloto ativo</Label>
-          <p className="text-xs text-muted-foreground">Ativar ou desativar o copiloto</p>
-        </div>
-        <Switch checked={form.is_active} onCheckedChange={(v) => update("is_active", v)} />
+        )}
       </div>
     </div>
   );
@@ -627,7 +600,8 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const success = await saveConfig(form);
+    // Ao clicar em "Decolar", ativa o copiloto automaticamente
+    const success = await saveConfig({ ...form, is_active: true });
     setIsSaving(false);
     if (success) {
       setIsEditing(false);
@@ -659,7 +633,7 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
   }
 
   if (config && !isEditing) {
-    return <CopilotSummary config={config} onEdit={() => setIsEditing(true)} onDelete={handleDelete} />;
+    return <CopilotSummary config={config} onEdit={() => setIsEditing(true)} onDelete={handleDelete} onRefresh={fetchConfig} />;
   }
 
   const isFirstTime = !config;
@@ -749,8 +723,8 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
               disabled={isSaving}
               className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
             >
-              <Save className="w-4 h-4 mr-2" />
-              {isSaving ? "Salvando..." : isFirstTime ? "Criar Copiloto" : "Salvar Configurações"}
+              <Plane className="w-4 h-4 mr-2" />
+              {isSaving ? "Decolando..." : "Decolar"}
             </Button>
           )}
         </div>
