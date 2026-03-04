@@ -12,6 +12,8 @@ interface BrokerSidebarProps {
   onAddLead?: () => void;
   brokerInitial?: string;
   isLeader?: boolean;
+  inboxEnabled?: boolean;
+  copilotEnabled?: boolean;
 }
 
 const NAV_ITEMS = [
@@ -27,6 +29,8 @@ export function BrokerSidebar({
   onAddLead,
   brokerInitial = "C",
   isLeader = false,
+  inboxEnabled = true,
+  copilotEnabled = true,
 }: BrokerSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,34 +86,38 @@ export function BrokerSidebar({
         })}
 
         {/* Inbox */}
-        <button
-          onClick={() => navigate("/corretor/inbox")}
-          className={cn(
-            "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative",
-            isInboxPage ? "bg-[#2a2a2e] text-[hsl(145,80%,55%)]" : "text-[hsl(145,80%,55%)]/70 hover:text-[hsl(145,80%,55%)]"
-          )}
-          title="Inbox"
-        >
-          <Inbox className="w-5 h-5" />
-          <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Inbox
-          </span>
-        </button>
+        {inboxEnabled && (
+          <button
+            onClick={() => navigate("/corretor/inbox")}
+            className={cn(
+              "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative",
+              isInboxPage ? "bg-[#2a2a2e] text-[hsl(145,80%,55%)]" : "text-[hsl(145,80%,55%)]/70 hover:text-[hsl(145,80%,55%)]"
+            )}
+            title="Inbox"
+          >
+            <Inbox className="w-5 h-5" />
+            <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              Inbox
+            </span>
+          </button>
+        )}
 
         {/* Copiloto */}
-        <button
-          onClick={() => navigate("/corretor/copiloto")}
-          className={cn(
-            "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative",
-            isCopilotPage ? "bg-[#2a2a2e] text-blue-400" : "text-slate-400 hover:text-white"
-          )}
-          title="Copiloto"
-        >
-          <Bot className="w-5 h-5" />
-          <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Copiloto
-          </span>
-        </button>
+        {copilotEnabled && (
+          <button
+            onClick={() => navigate("/corretor/copiloto")}
+            className={cn(
+              "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative",
+              isCopilotPage ? "bg-[#2a2a2e] text-blue-400" : "text-slate-400 hover:text-white"
+            )}
+            title="Copiloto"
+          >
+            <Bot className="w-5 h-5" />
+            <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              Copiloto
+            </span>
+          </button>
+        )}
 
         {/* Removed: WhatsApp is now inside Copiloto */}
 
