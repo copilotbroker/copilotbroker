@@ -231,23 +231,37 @@ async function processReply(
     }
   }
 
-  // Register reply per-phone per-campaign
+  // Register reply per-phone per-campaign (deduplicated)
+  // Track which campaigns got a NEW reply (not a duplicate)
+  const newReplyCampaignIds: string[] = [];
   for (const campaignId of campaignIds) {
     try {
-      await supabase
+      // Check if this phone already replied to this campaign
+      const { data: existing } = await supabase
         .from("whatsapp_lead_replies")
-        .upsert(
-          { phone, campaign_id: campaignId, replied_at: new Date().toISOString() },
-          { onConflict: "phone,campaign_id" }
-        );
+        .select("phone")
+        .eq("phone", phone)
+        .eq("campaign_id", campaignId)
+        .maybeSingle();
+
+      if (!existing) {
+        // New unique reply - insert it
+        await supabase
+          .from("whatsapp_lead_replies")
+          .upsert(
+            { phone, campaign_id: campaignId, replied_at: new Date().toISOString() },
+            { onConflict: "phone,campaign_id" }
+          );
+        newReplyCampaignIds.push(campaignId);
+      }
     } catch (err) {
       await logError(supabase, "registerReply", err, { phone, campaignId });
     }
   }
-  console.log(`📝 Registered reply for ${phone} in ${campaignIds.length} campaign(s)`);
+  console.log(`📝 Registered ${newReplyCampaignIds.length} NEW reply(ies) for ${phone} (${campaignIds.length} campaign(s) checked)`);
 
-  // Update campaign reply counts
-  for (const campaignId of campaignIds) {
+  // Update campaign reply counts ONLY for new replies
+  for (const campaignId of newReplyCampaignIds) {
     try {
       const { data: campaign } = await supabase
         .from("whatsapp_campaigns")
@@ -266,24 +280,26 @@ async function processReply(
     }
   }
 
-  // Update daily stats reply_count
-  try {
-    const today = new Date().toISOString().split("T")[0];
-    const { data: stats } = await supabase
-      .from("whatsapp_daily_stats")
-      .select("*")
-      .eq("broker_id", firstMsg.broker_id)
-      .eq("date", today)
-      .maybeSingle();
-
-    if (stats) {
-      await supabase
+  // Update daily stats reply_count ONLY if there was at least one new reply
+  if (newReplyCampaignIds.length > 0) {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const { data: stats } = await supabase
         .from("whatsapp_daily_stats")
-        .update({ reply_count: ((stats as { reply_count: number }).reply_count || 0) + 1 })
-        .eq("id", (stats as { id: string }).id);
+        .select("*")
+        .eq("broker_id", firstMsg.broker_id)
+        .eq("date", today)
+        .maybeSingle();
+
+      if (stats) {
+        await supabase
+          .from("whatsapp_daily_stats")
+          .update({ reply_count: ((stats as { reply_count: number }).reply_count || 0) + 1 })
+          .eq("id", (stats as { id: string }).id);
+      }
+    } catch (err) {
+      await logError(supabase, "updateDailyReplyStats", err, { broker_id: firstMsg.broker_id });
     }
-  } catch (err) {
-    await logError(supabase, "updateDailyReplyStats", err, { broker_id: firstMsg.broker_id });
   }
 }
 

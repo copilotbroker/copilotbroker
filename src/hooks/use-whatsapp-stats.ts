@@ -77,7 +77,7 @@ export function useWhatsAppGlobalStats(): {
 } {
   const sevenDaysAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
 
-  const { data: allStats = [], isLoading, refetch } = useQuery({
+  const { data: allStats = [], isLoading: isLoadingStats, refetch } = useQuery({
     queryKey: ["whatsapp-global-stats", sevenDaysAgo],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -91,21 +91,34 @@ export function useWhatsAppGlobalStats(): {
     },
   });
 
+  // Query unique replies from whatsapp_lead_replies for accurate count
+  const { data: uniqueReplyCount = 0, isLoading: isLoadingReplies } = useQuery({
+    queryKey: ["whatsapp-unique-replies"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("whatsapp_lead_replies")
+        .select("*", { count: "exact", head: true });
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   const globalTotals = allStats.reduce(
     (acc, stat) => ({
       sent: acc.sent + (stat.sent_count || 0),
       failed: acc.failed + (stat.failed_count || 0),
-      replies: acc.replies + (stat.reply_count || 0),
+      replies: acc.replies,
       optouts: acc.optouts + (stat.optout_count || 0),
       errors: acc.errors + (stat.error_count || 0),
     }),
-    { sent: 0, failed: 0, replies: 0, optouts: 0, errors: 0 }
+    { sent: 0, failed: 0, replies: uniqueReplyCount, optouts: 0, errors: 0 }
   );
 
   return {
     allStats,
     globalTotals,
-    isLoading,
+    isLoading: isLoadingStats || isLoadingReplies,
     refetch,
   };
 }
