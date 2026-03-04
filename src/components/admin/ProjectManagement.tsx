@@ -60,6 +60,7 @@ interface ProjectFormData {
   hero_title: string;
   hero_subtitle: string;
   webhook_url: string;
+  ai_prompt: string;
 }
 
 const initialFormData: ProjectFormData = {
@@ -72,6 +73,7 @@ const initialFormData: ProjectFormData = {
   hero_title: "",
   hero_subtitle: "",
   webhook_url: "",
+  ai_prompt: "",
 };
 
 export default function ProjectManagement() {
@@ -93,6 +95,7 @@ export default function ProjectManagement() {
         hero_title: project.hero_title || "",
         hero_subtitle: project.hero_subtitle || "",
         webhook_url: project.webhook_url || "",
+        ai_prompt: (project as any).ai_prompt || "",
       });
     } else {
       setEditingProject(null);
@@ -118,6 +121,7 @@ export default function ProjectManagement() {
       hero_title: formData.hero_title.trim() || null,
       hero_subtitle: formData.hero_subtitle.trim() || null,
       webhook_url: formData.webhook_url.trim() || null,
+      ai_prompt: formData.ai_prompt.trim() || null,
     };
 
     if (editingProject) {
@@ -274,6 +278,20 @@ export default function ProjectManagement() {
                       onChange={(e) => setFormData(prev => ({ ...prev, hero_subtitle: e.target.value }))}
                       placeholder="Terrenos a partir de 500m²"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ai_prompt">Prompt do Agente IA (para Copiloto e Piloto Automático)</Label>
+                    <Textarea
+                      id="ai_prompt"
+                      value={formData.ai_prompt}
+                      onChange={(e) => setFormData(prev => ({ ...prev, ai_prompt: e.target.value }))}
+                      placeholder={`Faça uma descrição completa sobre o empreendimento, para ensinar seu agente. Dados importantes:\n- Características importantes\n- Diferenciais\n- Entorno e localização, endereço, cidade do empreendimento\n- Preço e condições de pagamento\n- Objetivo: converter o lead para visita na imobiliária, no plantão de vendas da incorporadora, ou visita no próprio imóvel?`}
+                      rows={6}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Este prompt será enviado ao Copiloto e Piloto Automático dos corretores para contextualizar o atendimento deste empreendimento.
+                    </p>
                   </div>
 
                   <div className="space-y-2">

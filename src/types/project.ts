@@ -11,6 +11,7 @@ export interface Project {
   hero_subtitle: string | null;
   features: ProjectFeatures | null;
   webhook_url: string | null;
+  ai_prompt: string | null;
   created_at: string;
   updated_at: string;
 }
