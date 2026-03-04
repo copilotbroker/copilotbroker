@@ -93,21 +93,23 @@ export default function AdminCopilotConfig() {
   // Sync all instance statuses against UAZAPI
   const syncAllMutation = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("No session");
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-instance-manager/sync-all`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Sync failed");
-      return data as { total: number; synced: number };
+      const { data, error } = await supabase.functions.invoke("whatsapp-instance-manager/sync-all", {
+        body: {},
+      });
+
+      if (error) {
+        throw new Error(error.message || "Sync failed");
+      }
+
+      const parsed = data as { error?: string; total?: number; synced?: number } | null;
+      if (!parsed || parsed.error) {
+        throw new Error(parsed?.error || "Sync failed");
+      }
+
+      return {
+        total: parsed.total ?? 0,
+        synced: parsed.synced ?? 0,
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-whatsapp-instances"] });
