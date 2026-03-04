@@ -52,6 +52,41 @@ export type Database = {
           },
         ]
       }
+      autopilot_followups: {
+        Row: {
+          attempt_number: number
+          broker_id: string
+          conversation_id: string
+          id: string
+          message_preview: string | null
+          sent_at: string
+        }
+        Insert: {
+          attempt_number?: number
+          broker_id: string
+          conversation_id: string
+          id?: string
+          message_preview?: string | null
+          sent_at?: string
+        }
+        Update: {
+          attempt_number?: number
+          broker_id?: string
+          conversation_id?: string
+          id?: string
+          message_preview?: string | null
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autopilot_followups_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       broker_activity_logs: {
         Row: {
           activity_type: string
@@ -588,6 +623,9 @@ export type Database = {
           created_at: string
           custom_system_prompt: string | null
           followup_auto: boolean
+          followup_enabled: boolean
+          followup_max_attempts: number
+          followup_period_days: number
           followup_tone: string
           id: string
           incentive_call: boolean
@@ -616,6 +654,9 @@ export type Database = {
           created_at?: string
           custom_system_prompt?: string | null
           followup_auto?: boolean
+          followup_enabled?: boolean
+          followup_max_attempts?: number
+          followup_period_days?: number
           followup_tone?: string
           id?: string
           incentive_call?: boolean
@@ -644,6 +685,9 @@ export type Database = {
           created_at?: string
           custom_system_prompt?: string | null
           followup_auto?: boolean
+          followup_enabled?: boolean
+          followup_max_attempts?: number
+          followup_period_days?: number
           followup_tone?: string
           id?: string
           incentive_call?: boolean

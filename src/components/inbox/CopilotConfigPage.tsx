@@ -206,7 +206,7 @@ function CopilotSummary({ config, onEdit, onDelete }: { config: CopilotConfig; o
         <DetailRow label="Tipo de imóvel" value={propertyType?.label || config.property_type} />
         <DetailRow label="Gatilhos mentais" value={config.use_mental_triggers ? "Ativado" : "Desativado"} highlight={config.use_mental_triggers} />
         <DetailRow label="Emojis" value={config.allow_emojis ? "Ativado" : "Desativado"} highlight={config.allow_emojis} />
-        <DetailRow label="Follow-up automático" value={config.followup_auto ? "Ativado" : "Desativado"} highlight={config.followup_auto} />
+        <DetailRow label="Follow-up automático" value={config.followup_enabled ? `Ativado (${config.followup_max_attempts}x em ${config.followup_period_days}d)` : "Desativado"} highlight={config.followup_enabled} />
         <DetailRow label="Visita presencial" value={config.incentive_visit ? "Sim" : "Não"} highlight={config.incentive_visit} />
         {config.region && <DetailRow label="Região" value={config.region} />}
         {config.target_audience && <DetailRow label="Público-alvo" value={config.target_audience} />}
@@ -388,6 +388,10 @@ function StepStyle({ form, update }: { form: Partial<CopilotConfig>; update: (k:
 }
 
 function StepStrategy({ form, update }: { form: Partial<CopilotConfig>; update: (k: string, v: unknown) => void }) {
+  const followupEnabled = form.followup_enabled ?? true;
+  const maxAttempts = form.followup_max_attempts ?? 7;
+  const periodDays = form.followup_period_days ?? 10;
+
   return (
     <div className="space-y-5">
       <div className="text-center mb-2">
@@ -426,13 +430,58 @@ function StepStrategy({ form, update }: { form: Partial<CopilotConfig>; update: 
           </div>
           <Switch checked={form.incentive_call} onCheckedChange={(v) => update("incentive_call", v)} />
         </div>
+      </div>
+
+      {/* Follow-up por inatividade — controle real */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-sm text-foreground">Follow-up automático</Label>
-            <p className="text-xs text-muted-foreground">Envia lembretes quando o lead esfria</p>
+            <Label className="text-sm text-foreground font-semibold">Follow-up por inatividade</Label>
+            <p className="text-xs text-muted-foreground">Reengaja leads que param de responder no Piloto Automático</p>
           </div>
-          <Switch checked={form.followup_auto} onCheckedChange={(v) => update("followup_auto", v)} />
+          <Switch
+            checked={followupEnabled}
+            onCheckedChange={(v) => {
+              update("followup_enabled", v);
+              update("followup_auto", v); // keep legacy field in sync
+            }}
+          />
         </div>
+
+        {followupEnabled && (
+          <div className="space-y-4 pt-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Tentativas</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={15}
+                  value={maxAttempts}
+                  onChange={(e) => update("followup_max_attempts", Math.min(15, Math.max(1, Number(e.target.value) || 1)))}
+                  className="bg-background border-border text-foreground mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Período (dias)</Label>
+                <Input
+                  type="number"
+                  min={3}
+                  max={30}
+                  value={periodDays}
+                  onChange={(e) => update("followup_period_days", Math.min(30, Math.max(3, Number(e.target.value) || 3)))}
+                  className="bg-background border-border text-foreground mt-1"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              O Copiloto vai tentar reengajar leads que não respondem, enviando até{" "}
+              <span className="text-foreground font-medium">{maxAttempts} mensagens</span> em{" "}
+              <span className="text-foreground font-medium">{periodDays} dias</span> com intervalos crescentes.
+              Funciona apenas com o Piloto Automático ativo na conversa.
+            </p>
+          </div>
+        )}
       </div>
 
       {form.copilot_mode === "autonomo" && (
@@ -554,6 +603,9 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
     incentive_visit: true,
     incentive_call: false,
     followup_auto: false,
+    followup_enabled: true,
+    followup_max_attempts: 7,
+    followup_period_days: 10,
     followup_tone: "consultivo",
     auto_close_inactive: false,
     max_autonomy: "suggest_only",

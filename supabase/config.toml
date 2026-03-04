@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.inbox-send-message]
 verify_jwt = false
+
+[functions.autopilot-followup]
+verify_jwt = false
