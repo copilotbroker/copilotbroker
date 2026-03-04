@@ -6,25 +6,42 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Você é um especialista em copywriting imobiliário e design de landing pages de altíssima qualidade. Sua missão é gerar conteúdo persuasivo, emocional e altamente personalizado para landing pages de empreendimentos imobiliários.
+const SYSTEM_PROMPT = `Você é um expert de altíssimo nível em copywriting imobiliário, design de landing pages e marketing digital. Sua missão é gerar conteúdo de QUALIDADE PROFISSIONAL para landing pages de empreendimentos imobiliários — no mesmo nível de uma agência de marketing premium.
 
-REGRAS CRÍTICAS:
-1. NUNCA use textos genéricos. Cada projeto deve ter uma identidade única.
-2. Use gatilhos mentais: escassez, exclusividade, urgência, prova social, autoridade.
-3. O tom deve variar conforme o público: luxo para alto padrão, acessível para famílias, moderno para jovens investidores.
-4. Títulos devem ser impactantes e curtos (máximo 8 palavras).
-5. Subtítulos devem complementar com benefício concreto.
-6. Parágrafos do "about" devem contar uma história, não listar features.
-7. Ícones devem ser nomes válidos do Lucide React (ex: "MapPin", "Trees", "Shield", "Home", "Star", "Clock", "TrendingUp", "Heart", "Gem", "Mountain", "Waves", "Sun", "Building2", "Car", "Leaf", "Award", "CheckCircle", "Target", "Zap", "Users").
-8. Cores devem ser em formato HEX e combinar com o estilo do empreendimento.
-9. O warning da urgência deve criar senso real de oportunidade perdida.
-10. O quote do CTA deve ser uma frase aspiracional memorável.
+REGRAS FUNDAMENTAIS:
+1. NUNCA use textos genéricos ou clichês. Cada projeto deve ter uma identidade ÚNICA e memorável.
+2. Escreva como um copywriter sênior: use gatilhos mentais (escassez, exclusividade, urgência, prova social, autoridade), storytelling emocional e linguagem persuasiva.
+3. ADAPTE o tom conforme o conteúdo fornecido: luxo para alto padrão, acolhedor para famílias, moderno para investidores jovens.
+4. Títulos IMPACTANTES: máximo 8 palavras, crie curiosidade ou desejo imediato.
+5. Subtítulos: complementem com benefício CONCRETO e tangível.
+6. Parágrafos do "about": conte uma HISTÓRIA, crie uma visão de vida, não liste features.
+7. Cada seção deve ter propósito de conversão: mover o visitante para a ação.
 
-ESTILOS DISPONÍVEIS:
+CAPACIDADES AVANÇADAS — IMPORTANTE:
+8. Se o usuário fornecer links de MAPAS INTERATIVOS, VÍDEOS DO YOUTUBE, ou qualquer URL externa:
+   - Inclua no campo "customSections" como iframes ou embeds
+   - Use o campo "embedUrl" para mapas e vídeos
+   - O sistema renderizará automaticamente como iframe responsivo
+9. Se o usuário mencionar FOTOS ou IMAGENS com URLs, inclua no campo "mediaUrls" da seção relevante
+10. Crie seções adicionais quando necessário (galeria, mapa, vídeo, depoimentos, planta, etc.)
+
+ÍCONES VÁLIDOS (Lucide React):
+"MapPin", "Trees", "Shield", "Home", "Star", "Clock", "TrendingUp", "Heart", "Gem", "Mountain", "Waves", "Sun", "Building2", "Car", "Leaf", "Award", "CheckCircle", "Target", "Zap", "Users", "Key", "Compass", "Camera", "Play", "Map", "Phone", "Mail", "Globe", "Wifi", "Lock", "Eye", "Palette", "Dumbbell", "Music", "Coffee", "Utensils", "Baby", "Dog", "Bike", "Plane", "Ship", "Train"
+
+CORES: formato HEX, devem combinar com o estilo do empreendimento.
+
+ESTILOS:
 - "luxury": Tons dourados, escuros, tipografia elegante. Para alto padrão.
 - "modern": Tons vibrantes, clean. Para projetos urbanos e jovens.
 - "nature": Tons verdes, terrosos. Para projetos com natureza/campo.
-- "urban": Tons industriais, neutros. Para projetos em centros urbanos.`;
+- "urban": Tons industriais, neutros. Para projetos em centros urbanos.
+
+REGRAS DE QUALIDADE:
+- O warning da urgência deve criar senso REAL de oportunidade perdida com dados específicos
+- O quote do CTA deve ser uma frase ASPIRACIONAL memorável que o cliente imagina dizendo
+- Features devem ser benefícios, não especificações técnicas
+- Use números e dados específicos sempre que possível
+- Crie contrastes emocionais: "de X para Y", "enquanto outros... você..."`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -40,7 +57,6 @@ serve(async (req) => {
     let userPrompt: string;
 
     if (currentContent && userMessage) {
-      // Refinement mode
       userPrompt = `O conteúdo atual da landing page é:
 \`\`\`json
 ${JSON.stringify(currentContent, null, 2)}
@@ -48,24 +64,25 @@ ${JSON.stringify(currentContent, null, 2)}
 
 O usuário pediu a seguinte alteração: "${userMessage}"
 
-Aplique APENAS as alterações solicitadas, mantendo todo o resto intacto. Retorne o JSON completo atualizado.`;
+INSTRUÇÕES:
+- Aplique as alterações solicitadas mantendo o resto intacto
+- Se o usuário pedir para adicionar mapa interativo, vídeo, galeria ou qualquer elemento externo, use o campo "customSections"
+- Se o usuário fornecer uma URL, inclua como "embedUrl" em uma customSection
+- Retorne o JSON completo atualizado com TODAS as seções`;
     } else {
-      // First generation
-      userPrompt = `Gere o conteúdo completo para a landing page de um empreendimento imobiliário com as seguintes características:
+      userPrompt = `Gere o conteúdo completo para a landing page de um empreendimento imobiliário:
 
 NOME: ${projectData.name}
 CIDADE: ${projectData.city}
-${projectData.description ? `DESCRIÇÃO: ${projectData.description}` : ""}
-${projectData.projectType ? `TIPO: ${projectData.projectType}` : ""}
-${projectData.targetAudience ? `PÚBLICO-ALVO: ${projectData.targetAudience}` : ""}
-${projectData.tone ? `TOM DE COMUNICAÇÃO: ${projectData.tone}` : ""}
-${projectData.sellingPoints ? `ARGUMENTOS DE VENDA: ${projectData.sellingPoints}` : ""}
-${projectData.priceRange ? `FAIXA DE PREÇO: ${projectData.priceRange}` : ""}
-${projectData.differentials ? `DIFERENCIAIS: ${projectData.differentials}` : ""}
-${projectData.location ? `LOCALIZAÇÃO/ENDEREÇO: ${projectData.location}` : ""}
+${projectData.description ? `\nCONTEÚDO COMPLETO FORNECIDO PELO CLIENTE:\n${projectData.description}\n\nANALISE TODO O CONTEÚDO ACIMA E EXTRAIA: diferenciais, público-alvo, argumentos de venda, faixa de preço, infraestrutura, localização e qualquer link/URL mencionado.` : ""}
+${projectData.location ? `LOCALIZAÇÃO: ${projectData.location}` : ""}
+${projectData.mediaUrls?.length ? `\nMÍDIA DISPONÍVEL (URLs de imagens/vídeos):\n${projectData.mediaUrls.join("\n")}` : ""}
 STATUS: ${projectData.status || "pre_launch"}
 
-Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreendimento específico. NÃO use templates genéricos.`;
+IMPORTANTE:
+- Se houver links de mapas interativos ou vídeos no conteúdo, inclua-os como customSections com embedUrl
+- Crie conteúdo ÚNICO, persuasivo e de alta qualidade profissional
+- NÃO use templates genéricos — crie algo memorável para ESTE empreendimento`;
     }
 
     const response = await fetch(
@@ -77,7 +94,7 @@ Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreen
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
@@ -87,26 +104,16 @@ Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreen
               type: "function",
               function: {
                 name: "generate_landing_content",
-                description:
-                  "Generate the complete landing page content as structured JSON",
+                description: "Generate the complete landing page content as structured JSON",
                 parameters: {
                   type: "object",
                   properties: {
                     theme: {
                       type: "object",
                       properties: {
-                        primaryColor: {
-                          type: "string",
-                          description: "HEX color for primary elements",
-                        },
-                        accentColor: {
-                          type: "string",
-                          description: "HEX color for accent/background",
-                        },
-                        style: {
-                          type: "string",
-                          enum: ["luxury", "modern", "nature", "urban"],
-                        },
+                        primaryColor: { type: "string", description: "HEX color for primary elements" },
+                        accentColor: { type: "string", description: "HEX color for accent/background" },
+                        style: { type: "string", enum: ["luxury", "modern", "nature", "urban"] },
                       },
                       required: ["primaryColor", "accentColor", "style"],
                       additionalProperties: false,
@@ -120,31 +127,19 @@ Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreen
                         description: { type: "string" },
                         ctaText: { type: "string" },
                       },
-                      required: [
-                        "badge",
-                        "title",
-                        "subtitle",
-                        "description",
-                        "ctaText",
-                      ],
+                      required: ["badge", "title", "subtitle", "description", "ctaText"],
                       additionalProperties: false,
                     },
                     about: {
                       type: "object",
                       properties: {
                         title: { type: "string" },
-                        paragraphs: {
-                          type: "array",
-                          items: { type: "string" },
-                        },
+                        paragraphs: { type: "array", items: { type: "string" } },
                         highlights: {
                           type: "array",
                           items: {
                             type: "object",
-                            properties: {
-                              icon: { type: "string" },
-                              text: { type: "string" },
-                            },
+                            properties: { icon: { type: "string" }, text: { type: "string" } },
                             required: ["icon", "text"],
                             additionalProperties: false,
                           },
@@ -161,10 +156,7 @@ Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreen
                           type: "array",
                           items: {
                             type: "object",
-                            properties: {
-                              icon: { type: "string" },
-                              text: { type: "string" },
-                            },
+                            properties: { icon: { type: "string" }, text: { type: "string" } },
                             required: ["icon", "text"],
                             additionalProperties: false,
                           },
@@ -181,10 +173,7 @@ Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreen
                           type: "array",
                           items: {
                             type: "object",
-                            properties: {
-                              icon: { type: "string" },
-                              text: { type: "string" },
-                            },
+                            properties: { icon: { type: "string" }, text: { type: "string" } },
                             required: ["icon", "text"],
                             additionalProperties: false,
                           },
@@ -202,10 +191,7 @@ Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreen
                           type: "array",
                           items: {
                             type: "object",
-                            properties: {
-                              icon: { type: "string" },
-                              text: { type: "string" },
-                            },
+                            properties: { icon: { type: "string" }, text: { type: "string" } },
                             required: ["icon", "text"],
                             additionalProperties: false,
                           },
@@ -222,10 +208,7 @@ Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreen
                           type: "array",
                           items: {
                             type: "object",
-                            properties: {
-                              icon: { type: "string" },
-                              text: { type: "string" },
-                            },
+                            properties: { icon: { type: "string" }, text: { type: "string" } },
                             required: ["icon", "text"],
                             additionalProperties: false,
                           },
@@ -235,6 +218,35 @@ Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreen
                       },
                       required: ["title", "features", "quote", "buttonText"],
                       additionalProperties: false,
+                    },
+                    customSections: {
+                      type: "array",
+                      description: "Additional custom sections like maps, videos, galleries, etc.",
+                      items: {
+                        type: "object",
+                        properties: {
+                          type: { type: "string", enum: ["embed", "gallery", "text", "stats"] },
+                          title: { type: "string" },
+                          embedUrl: { type: "string", description: "URL for iframe embed (maps, videos)" },
+                          description: { type: "string" },
+                          items: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                icon: { type: "string" },
+                                text: { type: "string" },
+                                value: { type: "string" },
+                                imageUrl: { type: "string" },
+                              },
+                              required: ["text"],
+                              additionalProperties: false,
+                            },
+                          },
+                        },
+                        required: ["type", "title"],
+                        additionalProperties: false,
+                      },
                     },
                     footer: {
                       type: "object",
@@ -246,16 +258,7 @@ Crie um conteúdo ÚNICO, persuasivo e altamente personalizado para este empreen
                       additionalProperties: false,
                     },
                   },
-                  required: [
-                    "theme",
-                    "hero",
-                    "about",
-                    "features",
-                    "urgency",
-                    "benefits",
-                    "cta",
-                    "footer",
-                  ],
+                  required: ["theme", "hero", "about", "features", "urgency", "benefits", "cta", "footer"],
                   additionalProperties: false,
                 },
               },
