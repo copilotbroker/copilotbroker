@@ -74,6 +74,52 @@ export function useConversations(options: UseConversationsOptions = {}) {
 
       let filtered = (data || []) as unknown as Conversation[];
 
+      // Enrich conversations without lead_id: try to find lead name by phone
+      const noLeadConvs = filtered.filter(c => !c.lead_id && c.phone_normalized);
+      if (noLeadConvs.length > 0) {
+        const phones = noLeadConvs.map(c => c.phone_normalized);
+        // Also try with +55 prefix variants
+        const phoneVariants = phones.flatMap(p => {
+          const cleaned = p.replace(/\D/g, "");
+          return [cleaned, `+${cleaned}`, `+55${cleaned}`, cleaned.startsWith("55") ? cleaned.substring(2) : cleaned];
+        });
+        const uniqueVariants = [...new Set(phoneVariants)].filter(Boolean);
+
+        const { data: matchedLeads } = await supabase
+          .from("leads")
+          .select("id, name, whatsapp, status, project_id, notes, lead_origin")
+          .in("whatsapp", uniqueVariants.slice(0, 100));
+
+        if (matchedLeads && matchedLeads.length > 0) {
+          // Build phone->lead map (normalize whatsapp for matching)
+          const phoneToLead = new Map<string, typeof matchedLeads[0]>();
+          for (const lead of matchedLeads) {
+            const normalized = (lead.whatsapp || "").replace(/\D/g, "");
+            if (!phoneToLead.has(normalized)) {
+              phoneToLead.set(normalized, lead);
+            }
+          }
+
+          // Enrich conversations
+          filtered = filtered.map(c => {
+            if (c.lead_id || c.lead) return c;
+            const normalized = c.phone_normalized.replace(/\D/g, "");
+            // Try full match, then last 11 digits
+            const match = phoneToLead.get(normalized) ||
+              [...phoneToLead.entries()].find(([k]) =>
+                k.endsWith(normalized.slice(-11)) || normalized.endsWith(k.slice(-11))
+              )?.[1];
+            if (match) {
+              return {
+                ...c,
+                lead: { id: match.id, name: match.name, status: match.status, project_id: match.project_id, notes: match.notes, lead_origin: match.lead_origin } as any,
+              };
+            }
+            return c;
+          });
+        }
+      }
+
       // Client-side search
       if (options.search) {
         const s = options.search.toLowerCase();
