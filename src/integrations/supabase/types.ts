@@ -1155,6 +1155,7 @@ export type Database = {
           hero_title: string | null
           id: string
           is_active: boolean
+          landing_content: Json | null
           name: string
           slug: string
           status: string
@@ -1172,6 +1173,7 @@ export type Database = {
           hero_title?: string | null
           id?: string
           is_active?: boolean
+          landing_content?: Json | null
           name: string
           slug: string
           status?: string
@@ -1189,6 +1191,7 @@ export type Database = {
           hero_title?: string | null
           id?: string
           is_active?: boolean
+          landing_content?: Json | null
           name?: string
           slug?: string
           status?: string

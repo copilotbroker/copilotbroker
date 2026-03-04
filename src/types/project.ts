@@ -12,6 +12,7 @@ export interface Project {
   features: ProjectFeatures | null;
   webhook_url: string | null;
   ai_prompt: string | null;
+  landing_content: LandingContent | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +24,49 @@ export interface ProjectFeatures {
   min_lot_size?: number;
   amenities?: string[];
   highlights?: string[];
+}
+
+export interface LandingContent {
+  theme: {
+    primaryColor: string;
+    accentColor: string;
+    style: "luxury" | "modern" | "nature" | "urban";
+  };
+  hero: {
+    badge: string;
+    title: string;
+    subtitle: string;
+    description: string;
+    ctaText: string;
+  };
+  about: {
+    title: string;
+    paragraphs: string[];
+    highlights: { icon: string; text: string }[];
+  };
+  features: {
+    title: string;
+    items: { icon: string; text: string }[];
+  };
+  urgency: {
+    title: string;
+    items: { icon: string; text: string }[];
+    warning: string;
+  };
+  benefits: {
+    title: string;
+    items: { icon: string; text: string }[];
+  };
+  cta: {
+    title: string;
+    features: { icon: string; text: string }[];
+    quote: string;
+    buttonText: string;
+  };
+  footer: {
+    companyName: string;
+    disclaimer: string;
+  };
 }
 
 export const PROJECT_STATUS_CONFIG: Record<ProjectStatus, { 
