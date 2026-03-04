@@ -1,38 +1,41 @@
 
 
-## Proposta: Preview ao Vivo do Novo Esquema de Cores
+## Análise Completa do Painel "Copiloto" (`/admin/copiloto`)
 
-Como não consigo capturar screenshots da Inbox (requer login), proponho **aplicar as mudanças diretamente** — assim você verá o resultado ao vivo no preview. Se não gostar, posso reverter instantaneamente ou ajustar.
+### Problemas Identificados
 
-### Antes de aplicar, aqui está o comparativo textual:
+**1. Botão "Sincronizar Status" não existe nesta página**
+O botão foi adicionado em `AdminWhatsApp.tsx` (rota `/admin/whatsapp`), mas essa rota faz redirect para `/admin/copiloto` (que usa `AdminCopilotConfig.tsx`). O usuário nunca vê o `AdminWhatsApp` — é código morto.
 
-```text
-╔══════════════════════════════════════════════════════════╗
-║  ANTES (atual)              →  DEPOIS (proposto)        ║
-╠══════════════════════════════════════════════════════════╣
-║  Fundo: #141417 (preto)     →  #0F1117 (slate-950)      ║
-║  Cards: #1e1e22 (cinza)     →  #1A1D27 (slate-900)      ║
-║  Bordas: #2a2a2e            →  #2A2D37 (slate-800)      ║
-║  Avatar: amarelo neon       →  indigo-500 suave          ║
-║  Seleção: amarelo/15        →  indigo-500/10             ║
-║  Botão enviar: amarelo      →  indigo-500                ║
-║  Bolha outbound: verde/20   →  indigo-600/20             ║
-║  Spinner: amarelo           →  indigo-500                ║
-║  Hover ícones: amarelo      →  indigo-400                ║
-╚══════════════════════════════════════════════════════════╝
-```
+**2. Grupo "Inteligência" aparece vazio na barra de abas**
+O `TAB_GROUPS` tem um grupo "Inteligência" com array de tabs vazio (copilot está comentado). Isso renderiza o label "Inteligência" + o separador vertical sem nenhum botão clicável — são os "botões inativos" que o usuário vê.
 
-### Componentes afetados (apenas Inbox)
-1. `ConversationList.tsx` — KPIs, filtros, avatares, card selecionado
-2. `ConversationThread.tsx` — header, bolhas, composer, banners
-3. `LeadContextPanel.tsx` — header e cards
-4. `CadenceCountdown.tsx` — card de cadência
+**3. Tab padrão é "copilot" mas não existe conteúdo**
+`useState("copilot")` é o estado inicial, mas não há `TabsContent value="copilot"`. O usuário abre a página e não vê nada até clicar em outra aba.
 
-### O que NÃO muda
-- Resto do app (admin, CRM, landing pages)
-- Cores semânticas (vermelho=risco, laranja=quente, verde=copilot ativo)
-- Layout e funcionalidades
+**4. Visão Global não sincroniza status automaticamente**
+A aba "Visão Global" lê `broker_whatsapp_instances` direto do banco sem verificar o status real na UAZAPI.
 
-### Abordagem
-Aplicar as mudanças e você avalia ao vivo. Se não aprovar, reverto em um clique.
+### Plano de Correção
+
+**A. Limpar TAB_GROUPS — remover grupo "Inteligência" vazio**
+- Remover o grupo com array vazio do `TAB_GROUPS`
+- Manter apenas o grupo "WhatsApp" com suas 7 abas
+
+**B. Corrigir tab padrão para "overview"**
+- `useState("overview")` em vez de `useState("copilot")`
+
+**C. Adicionar auto-sync ao abrir "Visão Global"**
+- Mover a lógica `syncAllMutation` de `AdminWhatsApp.tsx` para `AdminCopilotConfig.tsx`
+- Disparar sync automaticamente quando `activeTab === "overview"` (via `useEffect`)
+- Adicionar botão "Sincronizar Status" visível no header da página
+
+**D. Remover página morta `AdminWhatsApp.tsx`**
+- A rota `/admin/whatsapp` já redireciona para `/admin/copiloto`
+- Remover o import e a referência no `App.tsx` (limpeza)
+
+### Arquivos Alterados
+- `src/pages/AdminCopilotConfig.tsx` — correções A, B, C
+- `src/App.tsx` — limpeza D (remover import de AdminWhatsApp)
+- `src/pages/AdminWhatsApp.tsx` — pode ser deletado (código morto)
 
