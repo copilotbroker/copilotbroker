@@ -106,23 +106,23 @@ export function CadenceCountdown({ leadId, brokerId }: CadenceCountdownProps) {
     : "Mensagem automática";
 
   return (
-    <div className="mx-3 mb-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 animate-in fade-in slide-in-from-top-1 duration-300">
+    <div className="mx-3 mb-2 p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 animate-in fade-in slide-in-from-top-1 duration-300">
       <div className="flex items-center gap-2 mb-1.5">
-        <Timer className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-        <span className="text-[11px] font-medium text-emerald-400">
+        <Timer className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+        <span className="text-[11px] font-medium text-indigo-400">
           Cadência ativa — {stepLabel}
         </span>
-        <span className="ml-auto text-[11px] font-mono font-bold text-emerald-300 tabular-nums">
+        <span className="ml-auto text-[11px] font-mono font-bold text-indigo-300 tabular-nums">
           {timeLeft}
         </span>
       </div>
       <div className="flex items-start gap-1.5">
-        <MessageSquare className="w-3 h-3 text-emerald-500/50 mt-0.5 flex-shrink-0" />
+        <MessageSquare className="w-3 h-3 text-indigo-500/50 mt-0.5 flex-shrink-0" />
         <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">
           {preview}
         </p>
       </div>
-      <div className="flex items-center gap-1.5 mt-1.5 pt-1.5 border-t border-emerald-500/10">
+      <div className="flex items-center gap-1.5 mt-1.5 pt-1.5 border-t border-indigo-500/10">
         {pending.sendIfReplied ? (
           <>
             <ShieldAlert className="w-3 h-3 text-amber-400 flex-shrink-0" />
@@ -130,8 +130,8 @@ export function CadenceCountdown({ leadId, brokerId }: CadenceCountdownProps) {
           </>
         ) : (
           <>
-            <ShieldCheck className="w-3 h-3 text-emerald-400/70 flex-shrink-0" />
-            <span className="text-[10px] text-emerald-400/70">Só será enviada se o lead não responder</span>
+            <ShieldCheck className="w-3 h-3 text-indigo-400/70 flex-shrink-0" />
+            <span className="text-[10px] text-indigo-400/70">Só será enviada se o lead não responder</span>
           </>
         )}
       </div>

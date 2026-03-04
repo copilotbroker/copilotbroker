@@ -33,7 +33,7 @@ export function LeadContextPanel({ conversation, onClose, onAdvanceStatus, onCre
   const lead = conversation.lead as any;
   if (!lead) {
     return (
-      <div className="h-full bg-[#1a1a1e] border-l border-[#2a2a2e] p-4 flex flex-col">
+      <div className="h-full bg-[#0F1117] border-l border-[#2A2D37] p-4 flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-white">Contexto</h3>
           <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 text-slate-400">
@@ -67,16 +67,16 @@ export function LeadContextPanel({ conversation, onClose, onAdvanceStatus, onCre
     : null;
 
   return (
-    <div className="h-full bg-[#1a1a1e] border-l border-[#2a2a2e] flex flex-col overflow-y-auto">
+    <div className="h-full bg-[#0F1117] border-l border-[#2A2D37] flex flex-col overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-[#2a2a2e]">
+      <div className="flex items-center justify-between p-3 border-b border-[#2A2D37]">
         <h3 className="text-sm font-bold text-white">Contexto do Lead</h3>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onOpenLead ? onOpenLead(lead.id) : navigate(`/corretor/lead/${lead.id}`)}
-            className="h-7 w-7 text-slate-400 hover:text-[#FFFF00]"
+            className="h-7 w-7 text-slate-400 hover:text-indigo-400"
             title="Ver perfil do lead"
           >
             <UserRoundSearch className="w-3.5 h-3.5" />
@@ -91,12 +91,12 @@ export function LeadContextPanel({ conversation, onClose, onAdvanceStatus, onCre
         {/* Lead info */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-[#FFFF00]/20 flex items-center justify-center text-[#FFFF00] font-bold">
+            <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">
               {lead.name?.charAt(0)?.toUpperCase() || "?"}
             </div>
             <div>
               <p className="text-sm font-medium text-white">{lead.name}</p>
-              <Badge variant="outline" className="text-[10px] border-[#2a2a2e] text-slate-400">
+              <Badge variant="outline" className="text-[10px] border-[#2A2D37] text-slate-400">
                 {STATUS_LABELS[currentStatus] || currentStatus}
               </Badge>
             </div>
@@ -122,7 +122,7 @@ export function LeadContextPanel({ conversation, onClose, onAdvanceStatus, onCre
               <div
                 key={step}
                 className={`h-1.5 flex-1 rounded-full ${
-                  i <= currentIndex ? "bg-[#FFFF00]" : "bg-[#2a2a2e]"
+                  i <= currentIndex ? "bg-indigo-500" : "bg-[#2A2D37]"
                 }`}
               />
             ))}
@@ -130,7 +130,7 @@ export function LeadContextPanel({ conversation, onClose, onAdvanceStatus, onCre
           {nextStep && (
             <Button
               size="sm"
-              className="w-full h-8 text-xs bg-[#FFFF00] text-black hover:bg-[#FFFF00]/80 mt-2"
+              className="w-full h-8 text-xs bg-indigo-500 text-white hover:bg-indigo-400 mt-2"
               onClick={() => onAdvanceStatus(nextStep)}
             >
               Avançar para {STATUS_LABELS[nextStep]}
@@ -142,7 +142,7 @@ export function LeadContextPanel({ conversation, onClose, onAdvanceStatus, onCre
         {/* Temperature */}
         <div className="space-y-1">
           <p className="text-xs font-medium text-slate-300">Temperatura: {conversation.temperature}/10</p>
-          <div className="h-2 bg-[#2a2a2e] rounded-full overflow-hidden">
+          <div className="h-2 bg-[#2A2D37] rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
               style={{
@@ -159,7 +159,7 @@ export function LeadContextPanel({ conversation, onClose, onAdvanceStatus, onCre
         {lead.notes && (
           <div className="space-y-1">
             <p className="text-xs font-medium text-slate-300">Notas</p>
-            <p className="text-xs text-slate-400 bg-[#2a2a2e] rounded p-2">{lead.notes}</p>
+            <p className="text-xs text-slate-400 bg-[#2A2D37] rounded p-2">{lead.notes}</p>
           </div>
         )}
 
