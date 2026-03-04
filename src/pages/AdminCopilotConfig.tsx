@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Loader2, Wifi, Send, Shield, Megaphone, Bot, Sparkles,
+  Loader2, Wifi, Send, Shield, Megaphone, Bot,
   Eye, Globe, RefreshCw, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,12 +49,6 @@ interface BrokerInstance {
 
 const TAB_GROUPS = [
   {
-    label: "Inteligência",
-    tabs: [
-      // { id: "copilot", label: "Copiloto", icon: Sparkles }, // temporarily disabled
-    ],
-  },
-  {
     label: "WhatsApp",
     tabs: [
       { id: "overview", label: "Visão Global", icon: Eye },
@@ -72,7 +66,8 @@ export default function AdminCopilotConfig() {
   const navigate = useNavigate();
   const { role, isLoading: roleLoading } = useUserRole();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("copilot");
+  const [activeTab, setActiveTab] = useState("overview");
+  const [hasSynced, setHasSynced] = useState(false);
   const [_selectedBrokerId, _setSelectedBrokerId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -94,6 +89,46 @@ export default function AdminCopilotConfig() {
     },
     enabled: role === "admin",
   });
+
+  // Sync all instance statuses against UAZAPI
+  const syncAllMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No session");
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-instance-manager/sync-all`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Sync failed");
+      return data as { total: number; synced: number };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-whatsapp-instances"] });
+      if (data.synced === 0) {
+        toast.info("Todos os status já estão atualizados");
+      } else {
+        toast.success(`${data.synced} instância(s) atualizada(s) de ${data.total}`);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error("Erro ao sincronizar: " + error.message);
+    },
+  });
+
+  // Auto-sync when overview tab is active
+  useEffect(() => {
+    if (activeTab === "overview" && role === "admin" && !hasSynced) {
+      setHasSynced(true);
+      syncAllMutation.mutate();
+    }
+  }, [activeTab, role, hasSynced]);
 
   const { data: instances = [], isLoading: isLoadingInstances, refetch: refetchInstances } = useQuery({
     queryKey: ["admin-whatsapp-instances"],
@@ -207,16 +242,28 @@ export default function AdminCopilotConfig() {
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refetchInstances()}
-                disabled={isLoadingInstances}
-                className="border-border text-muted-foreground hover:text-foreground hover:bg-accent/50"
-              >
-                <RefreshCw className={cn("w-4 h-4 mr-2", isLoadingInstances && "animate-spin")} />
-                Atualizar
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => syncAllMutation.mutate()}
+                  disabled={syncAllMutation.isPending}
+                  className="border-border text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                >
+                  <RefreshCw className={cn("w-4 h-4 mr-2", syncAllMutation.isPending && "animate-spin")} />
+                  Sincronizar Status
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetchInstances()}
+                  disabled={isLoadingInstances}
+                  className="border-border text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                >
+                  <RefreshCw className={cn("w-4 h-4 mr-2", isLoadingInstances && "animate-spin")} />
+                  Atualizar
+                </Button>
+              </div>
             </div>
           </div>
 
