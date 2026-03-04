@@ -32,6 +32,13 @@ const corsHeaders = {
 
 const app = new Hono().basePath("/whatsapp-global-instance-manager");
 
+// Enforce dynamic CORS on every response path (including errors)
+app.use("*", async (c, next) => {
+  await next();
+  const cors = getHonoCors(c);
+  Object.entries(cors).forEach(([key, value]) => c.res.headers.set(key, value));
+});
+
 // Configuration
 interface Config {
   baseUrl: string;
