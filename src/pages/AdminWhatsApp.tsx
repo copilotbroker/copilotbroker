@@ -82,6 +82,39 @@ const AdminWhatsApp = () => {
     enabled: role === "admin",
   });
 
+  // Sync all instance statuses against UAZAPI
+  const syncAllMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No session");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-instance-manager/sync-all`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Sync failed");
+      return data as { total: number; synced: number; results: { instance_name: string; old_status: string; new_status: string }[] };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-whatsapp-instances"] });
+      if (data.synced === 0) {
+        toast.info("Todos os status já estão atualizados");
+      } else {
+        toast.success(`${data.synced} instância(s) atualizada(s) de ${data.total}`);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error("Erro ao sincronizar: " + error.message);
+    },
+  });
+
   const { allStats, globalTotals, isLoading: isLoadingStats } = useWhatsAppGlobalStats();
   const { optouts, isLoading: isLoadingOptouts } = useWhatsAppOptouts();
 
@@ -176,16 +209,28 @@ const AdminWhatsApp = () => {
                 Gerencie conexões e dispare mensagens automatizadas
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetchInstances()}
-              disabled={isLoadingInstances}
-              className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingInstances ? 'animate-spin' : ''}`} />
-              Atualizar
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => syncAllMutation.mutate()}
+                disabled={syncAllMutation.isPending}
+                className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${syncAllMutation.isPending ? 'animate-spin' : ''}`} />
+                Sincronizar Status
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetchInstances()}
+                disabled={isLoadingInstances}
+                className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingInstances ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+            </div>
           </div>
 
           {/* Tabs */}
