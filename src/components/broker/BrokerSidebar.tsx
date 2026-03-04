@@ -81,7 +81,20 @@ export function BrokerSidebar({
           );
         })}
 
-        {/* Inbox - temporarily disabled */}
+        {/* Inbox */}
+        <button
+          onClick={() => navigate("/corretor/inbox")}
+          className={cn(
+            "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative",
+            isInboxPage ? "bg-[#2a2a2e] text-[hsl(145,80%,55%)]" : "text-[hsl(145,80%,55%)]/70 hover:text-[hsl(145,80%,55%)]"
+          )}
+          title="Inbox"
+        >
+          <Inbox className="w-5 h-5" />
+          <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            Inbox
+          </span>
+        </button>
 
         {/* Copiloto */}
         <button

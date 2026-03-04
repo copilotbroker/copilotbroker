@@ -25,7 +25,7 @@ interface MobileBottomNavProps {
 }
 
 const DRAWER_ITEMS_STATIC = [
-  // { id: "inbox", label: "Inbox", icon: MessageCircle }, // temporarily disabled
+  { id: "inbox", label: "Inbox", icon: MessageCircle },
   { id: "brokers", label: "Corretores", icon: Users },
   { id: "roletas", label: "Roletas", icon: Shuffle },
   { id: "projects", label: "Empreendimentos", icon: Building2 },

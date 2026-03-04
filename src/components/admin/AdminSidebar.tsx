@@ -35,7 +35,7 @@ interface AdminSidebarProps {
 const NAV_ITEMS = [
   { id: "crm", label: "CRM", icon: LayoutDashboard },
   { id: "leads", label: "Leads", icon: Users },
-  // { id: "inbox", label: "Inbox", icon: MessageCircle }, // temporarily disabled
+  { id: "inbox", label: "Inbox", icon: MessageCircle },
   { id: "brokers", label: "Corretores", icon: Users },
   { id: "roletas", label: "Roletas", icon: Shuffle },
   { id: "projects", label: "Empreendimentos", icon: Building2 },
