@@ -26,6 +26,14 @@ export interface ProjectFeatures {
   highlights?: string[];
 }
 
+export interface CustomSection {
+  type: "embed" | "gallery" | "text" | "stats";
+  title: string;
+  embedUrl?: string;
+  description?: string;
+  items?: { icon?: string; text: string; value?: string; imageUrl?: string }[];
+}
+
 export interface LandingContent {
   theme: {
     primaryColor: string;
@@ -63,6 +71,7 @@ export interface LandingContent {
     quote: string;
     buttonText: string;
   };
+  customSections?: CustomSection[];
   footer: {
     companyName: string;
     disclaimer: string;

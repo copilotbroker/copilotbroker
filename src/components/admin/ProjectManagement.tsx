@@ -10,11 +10,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
-  Building2, Plus, MapPin, Users, ExternalLink, Pencil, RefreshCw, Sparkles,
+  Building2, MapPin, Users, ExternalLink, Pencil, RefreshCw, Sparkles,
 } from "lucide-react";
 import ProjectWizard from "./ProjectWizard";
 
@@ -51,7 +51,7 @@ export default function ProjectManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState<ProjectFormData>(initialFormData);
-  const [wizardOpen, setWizardOpen] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [editLandingProject, setEditLandingProject] = useState<Project | null>(null);
 
   const handleOpenDialog = (project?: Project) => {
@@ -104,9 +104,35 @@ export default function ProjectManagement() {
     setEditingProject(null);
   };
 
-  const handleSlugChange = (value: string) => {
-    setFormData(prev => ({ ...prev, slug: value.toLowerCase().replace(/[^a-z0-9-]/g, "") }));
-  };
+  // If wizard is open, render it inline instead of the project list
+  if (showWizard) {
+    return (
+      <ProjectWizard
+        inline
+        onBack={() => { setShowWizard(false); fetchProjects(true); }}
+        onComplete={() => fetchProjects(true)}
+      />
+    );
+  }
+
+  if (editLandingProject) {
+    return (
+      <ProjectWizard
+        inline
+        onBack={() => { setEditLandingProject(null); fetchProjects(true); }}
+        editProject={{
+          id: editLandingProject.id,
+          name: editLandingProject.name,
+          slug: editLandingProject.slug,
+          city: editLandingProject.city,
+          city_slug: editLandingProject.city_slug,
+          landing_content: editLandingProject.landing_content,
+          webhook_url: editLandingProject.webhook_url,
+        }}
+        onComplete={() => fetchProjects(true)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -124,37 +150,12 @@ export default function ProjectManagement() {
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
-          <Button onClick={() => setWizardOpen(true)} className="bg-[#FFFF00] text-black hover:brightness-110 gap-1.5">
+          <Button onClick={() => setShowWizard(true)} className="bg-[#FFFF00] text-black hover:brightness-110 gap-1.5">
             <Sparkles className="h-4 w-4" />
             Novo Empreendimento
           </Button>
         </div>
       </div>
-
-      {/* Wizard for new project */}
-      <ProjectWizard
-        open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        onComplete={() => fetchProjects(true)}
-      />
-
-      {/* Wizard for editing landing */}
-      {editLandingProject && (
-        <ProjectWizard
-          open={!!editLandingProject}
-          onOpenChange={(open) => { if (!open) setEditLandingProject(null); }}
-          editProject={{
-            id: editLandingProject.id,
-            name: editLandingProject.name,
-            slug: editLandingProject.slug,
-            city: editLandingProject.city,
-            city_slug: editLandingProject.city_slug,
-            landing_content: editLandingProject.landing_content,
-            webhook_url: editLandingProject.webhook_url,
-          }}
-          onComplete={() => fetchProjects(true)}
-        />
-      )}
 
       {/* Edit dialog for non-wizard fields */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -181,7 +182,7 @@ export default function ProjectManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug do Projeto (URL) *</Label>
-                  <Input id="slug" value={formData.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="goldenview" required />
+                  <Input id="slug" value={formData.slug} onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))} placeholder="goldenview" required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
@@ -199,14 +200,6 @@ export default function ProjectManagement() {
               <div className="space-y-2">
                 <Label htmlFor="description">Descrição</Label>
                 <Textarea id="description" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="Descrição curta do empreendimento..." rows={2} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hero_title">Título do Hero</Label>
-                <Input id="hero_title" value={formData.hero_title} onChange={(e) => setFormData(prev => ({ ...prev, hero_title: e.target.value }))} placeholder="Seu Futuro Endereço de Alto Padrão" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hero_subtitle">Subtítulo do Hero</Label>
-                <Input id="hero_subtitle" value={formData.hero_subtitle} onChange={(e) => setFormData(prev => ({ ...prev, hero_subtitle: e.target.value }))} placeholder="Terrenos a partir de 500m²" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai_prompt">Prompt do Agente IA (para Copiloto e Piloto Automático)</Label>
@@ -238,7 +231,7 @@ export default function ProjectManagement() {
             <Button
               variant="outline"
               className="mt-4 bg-[#1e1e22] border-[#2a2a2e] hover:bg-[#2a2a2e] text-white"
-              onClick={() => setWizardOpen(true)}
+              onClick={() => setShowWizard(true)}
             >
               <Sparkles className="h-4 w-4 mr-2" />
               Criar primeiro empreendimento

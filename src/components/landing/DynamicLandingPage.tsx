@@ -1,4 +1,4 @@
-import { Project, LandingContent } from "@/types/project";
+import { Project, LandingContent, CustomSection } from "@/types/project";
 import DynamicHero from "./DynamicHero";
 import DynamicAbout from "./DynamicAbout";
 import DynamicFeatures from "./DynamicFeatures";
@@ -8,10 +8,69 @@ import DynamicCTA from "./DynamicCTA";
 import DynamicFooter from "./DynamicFooter";
 import FormSection from "@/components/FormSection";
 import FloatingCTA from "@/components/FloatingCTA";
+import iconMap from "./iconMap";
+
+function DynamicCustomSection({ section, theme }: { section: CustomSection; theme: LandingContent["theme"] }) {
+  return (
+    <section className="py-16 px-4 md:px-8" style={{ backgroundColor: `${theme.accentColor}08` }}>
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8" style={{ color: theme.primaryColor }}>
+          {section.title}
+        </h2>
+        {section.description && (
+          <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">{section.description}</p>
+        )}
+        {section.type === "embed" && section.embedUrl && (
+          <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200">
+            <iframe
+              src={section.embedUrl}
+              className="w-full"
+              style={{ height: "500px" }}
+              frameBorder="0"
+              allowFullScreen
+              loading="lazy"
+              title={section.title}
+            />
+          </div>
+        )}
+        {section.type === "gallery" && section.items && (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {section.items.map((item, i) => (
+              <div key={i} className="rounded-xl overflow-hidden shadow-lg">
+                {item.imageUrl && <img src={item.imageUrl} alt={item.text} className="w-full h-48 object-cover" />}
+                <p className="p-3 text-sm text-gray-700 text-center">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        {section.type === "stats" && section.items && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {section.items.map((item, i) => {
+              const Icon = item.icon ? iconMap[item.icon] : null;
+              return (
+                <div key={i} className="text-center p-6 rounded-xl bg-white shadow-md border border-gray-100">
+                  {Icon && <Icon className="w-8 h-8 mx-auto mb-3" style={{ color: theme.primaryColor }} />}
+                  {item.value && <p className="text-3xl font-bold mb-1" style={{ color: theme.primaryColor }}>{item.value}</p>}
+                  <p className="text-sm text-gray-600">{item.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {section.type === "text" && section.items && (
+          <div className="space-y-4 max-w-3xl mx-auto">
+            {section.items.map((item, i) => (
+              <p key={i} className="text-gray-700 leading-relaxed">{item.text}</p>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
 interface Props {
   project: Project;
-  /** If passed, renders in preview mode using this content instead of project.landing_content */
   previewContent?: LandingContent;
 }
 
@@ -25,6 +84,9 @@ export default function DynamicLandingPage({ project, previewContent }: Props) {
         <DynamicHero content={content.hero} theme={content.theme} />
         <DynamicAbout content={content.about} theme={content.theme} />
         <DynamicFeatures content={content.features} theme={content.theme} />
+        {content.customSections?.map((section, i) => (
+          <DynamicCustomSection key={i} section={section} theme={content.theme} />
+        ))}
         <DynamicUrgency content={content.urgency} theme={content.theme} />
         <DynamicBenefits content={content.benefits} theme={content.theme} />
         <DynamicCTA content={content.cta} theme={content.theme} />
