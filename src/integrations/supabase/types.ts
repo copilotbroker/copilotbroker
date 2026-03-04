@@ -585,6 +585,7 @@ export type Database = {
           commercial_focus: string
           commercial_priority: string
           created_at: string
+          custom_system_prompt: string | null
           followup_auto: boolean
           followup_tone: string
           id: string
@@ -611,6 +612,7 @@ export type Database = {
           commercial_focus?: string
           commercial_priority?: string
           created_at?: string
+          custom_system_prompt?: string | null
           followup_auto?: boolean
           followup_tone?: string
           id?: string
@@ -637,6 +639,7 @@ export type Database = {
           commercial_focus?: string
           commercial_priority?: string
           created_at?: string
+          custom_system_prompt?: string | null
           followup_auto?: boolean
           followup_tone?: string
           id?: string
@@ -1095,6 +1098,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          ai_prompt: string | null
           city: string
           city_slug: string | null
           created_at: string
@@ -1111,6 +1115,7 @@ export type Database = {
           webhook_url: string | null
         }
         Insert: {
+          ai_prompt?: string | null
           city: string
           city_slug?: string | null
           created_at?: string
@@ -1127,6 +1132,7 @@ export type Database = {
           webhook_url?: string | null
         }
         Update: {
+          ai_prompt?: string | null
           city?: string
           city_slug?: string | null
           created_at?: string

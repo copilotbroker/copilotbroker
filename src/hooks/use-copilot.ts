@@ -24,6 +24,7 @@ export interface CopilotConfig {
   region: string | null;
   target_audience: string | null;
   brand_positioning: string | null;
+  custom_system_prompt: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

@@ -653,10 +653,12 @@ async function handleAutoResponse(
 
       if (lead) {
         let projectName = "";
+        let projectAiPrompt = "";
         if (lead.project_id) {
           const { data: proj } = await supabase
-            .from("projects").select("name").eq("id", lead.project_id).maybeSingle();
+            .from("projects").select("name, ai_prompt").eq("id", lead.project_id).maybeSingle();
           projectName = proj?.name || "";
+          projectAiPrompt = proj?.ai_prompt || "";
         }
         leadContext = {
           name: lead.name || senderName || "Não informado",
@@ -664,6 +666,7 @@ async function handleAutoResponse(
           project: projectName || "Não informado",
           origin: lead.lead_origin || "Não informado",
           notes: lead.notes || "Nenhuma",
+          projectAiPrompt: projectAiPrompt,
         };
       }
     }
@@ -681,7 +684,38 @@ async function handleAutoResponse(
     const personality = personalityMap[copilotConfig.personality] || personalityMap.consultivo;
     const emojiRule = copilotConfig.allow_emojis !== false ? "Use emojis com moderação para humanizar." : "Não use emojis.";
 
-    const systemPrompt = `Você é o assistente ${brokerPrep} especialista ${brokerName}. Você ajuda ${brokerArticle} ${brokerName} respondendo leads via WhatsApp.
+    // Check if broker has a custom system prompt
+    const customBase = copilotConfig.custom_system_prompt as string | null;
+
+    // Project AI prompt injection
+    const projectAiBlock = leadContext.projectAiPrompt
+      ? `\nINFORMAÇÕES DO EMPREENDIMENTO:\n${leadContext.projectAiPrompt}`
+      : "";
+
+    let systemPrompt: string;
+
+    if (customBase) {
+      // Use custom prompt with variable replacement
+      systemPrompt = customBase
+        .replace(/\{personalidade\}/g, personality)
+        .replace(/\{regra_emojis\}/g, emojiRule)
+        .replace(/\{nivel_persuasao\}/g, String(copilotConfig.persuasion_level || 50))
+        .replace(/\{nome_corretor\}/g, brokerName)
+        .replace(/\{contexto_lead\}/g, `\nCONTEXTO DO LEAD:\n- Nome: ${leadContext.name}\n- Status no funil: ${leadContext.status || "Não informado"}\n- Empreendimento: ${leadContext.project || "Não informado"}\n- Origem: ${leadContext.origin || "Não informado"}\n- Notas: ${leadContext.notes || "Nenhuma"}`)
+        .replace(/\{contexto_empreendimento\}/g, projectAiBlock);
+
+      // Append WhatsApp-specific rules that must always be present
+      systemPrompt += `\n\nREGRAS WHATSAPP (obrigatórias):
+- Fale em nome ${brokerPrep} especialista ${brokerName}, como se fosse ${brokerPronoun}
+- NUNCA diga que é uma IA, assistente virtual ou bot
+- Seja MUITO conciso: máximo 2-3 frases curtas por mensagem (estilo WhatsApp real)
+- Use os artigos corretos: "${brokerArticle} ${brokerName}", "${brokerPrep} ${brokerName}"
+- NUNCA prometa enviar arquivos (PDFs, tabelas, fotos)
+- Se não souber algo, redirecione: "Essa informação ${brokerArticle} especialista ${brokerName} pode te passar com mais detalhes! Quer agendar um bate-papo?"
+- Você SÓ pode enviar texto via WhatsApp`;
+    } else {
+      // Default prompt (original behavior)
+      systemPrompt = `Você é o assistente ${brokerPrep} especialista ${brokerName}. Você ajuda ${brokerArticle} ${brokerName} respondendo leads via WhatsApp.
 ${personality}
 ${emojiRule}
 Nível de persuasão: ${copilotConfig.persuasion_level || 50}/100.
@@ -715,6 +749,7 @@ REGRA ABSOLUTA - NUNCA PROMETA ENVIAR ARQUIVOS:
 - NUNCA diga "vou enviar", "vou mandar", "segue o PDF", "segue a tabela", "vou te passar o material"
 - Se o cliente pedir um arquivo/PDF/tabela/material, responda: "Para te enviar esse material, vou pedir ${brokerPrepPro} especialista ${brokerName} te mandar diretamente! Quer agendar um bate-papo rápido com ${brokerPronoun}? Pode ser por ligação, videochamada ou presencial 😊"
 - Você SÓ pode enviar texto via WhatsApp, nada mais
+${projectAiBlock}
 
 CONTEXTO DO LEAD:
 - Nome: ${leadContext.name}
@@ -722,6 +757,7 @@ CONTEXTO DO LEAD:
 - Empreendimento: ${leadContext.project || "Não informado"}
 - Origem: ${leadContext.origin || "Não informado"}
 - Notas: ${leadContext.notes || "Nenhuma"}`;
+    }
 
     // Build messages array from conversation history
     const aiMessages: Array<{ role: string; content: string }> = [

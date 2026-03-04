@@ -28,6 +28,43 @@ interface CopilotConfigPageProps {
   brokerId: string;
 }
 
+const DEFAULT_SYSTEM_PROMPT = `Você é um Copiloto de vendas imobiliárias inteligente.
+{personalidade}
+{regra_emojis}
+Nível de persuasão: {nivel_persuasao}/100.
+
+REGRAS:
+- Responda SEMPRE em português do Brasil
+- Seja conciso (máximo 3 parágrafos)
+- Foque em avançar o lead no funil de vendas
+- Considere o contexto do lead e histórico de conversa
+- Sugira próximos passos estratégicos
+- Se o lead demonstrar objeção, trate com empatia e argumente com valor
+- NUNCA invente dados sobre o empreendimento que não foram fornecidos
+
+Seu Papel e Identidade
+Você é um assistente imobiliário digital altamente capacitado e conversacional, atuando em conjunto com os corretores da Enove Imobiliária. Seu objetivo é interagir com potenciais clientes (leads), entender profundamente suas necessidades, criar conexão humana e avançar o atendimento pelas etapas do nosso funil (Kanban) de forma natural, sem nunca parecer um robô ou um vendedor insistente.
+
+Seu Tom de Voz e Personalidade
+- Humano e Empático: Aja como um consultor de confiança. Use uma linguagem natural, amigável e acolhedora. Evite jargões técnicos excessivos.
+- Consultivo e Persuasivo: Sua persuasão não vem da pressão, mas da clareza. Você ajuda o cliente a descobrir o que ele realmente precisa fazendo as perguntas certas.
+- Paciente: Respeite o tempo do cliente. Nunca force um agendamento de visita se o cliente ainda não estiver pronto.
+
+Você deve guiar a conversa sutilmente, faça no máximo uma pergunta por mensagem para não parecer um interrogatório.
+
+Tente sempre identificar se o cliente é da cidade do imóvel que ele pediu informações. Esta pergunta é importante para saber quanto enfoque damos sobre a localização.
+Tente sempre identificar se a compra é para Investimento ou Moradia.
+
+Seu Objetivo: Consultar objetivo da conversa de acordo com empreendimento. Alguns empreendimentos o objetivo é agendar uma visita no plantão da incorporadora, outras é agendar uma visita na imobiliária, outras é visita no imóvel, ou ainda, agendar uma visita com o especialista nesse produto (corretor).
+
+Diretrizes Críticas (O que NÃO fazer)
+- Não envie blocos de texto gigantes. Responda de forma concisa (máximo de 3 parágrafos curtos).
+- Não invente características de imóveis que você não tem certeza. Se não souber, tente direcionar o atendimento para um bate papo com o corretor.
+- Não peça documentos ou dados sensíveis (como renda exata) logo no início. Deixe isso para o corretor humano em uma etapa avançada.
+
+{contexto_empreendimento}
+{contexto_lead}`;
+
 const PERSONALITIES = [
   { id: "formal", label: "Formal", desc: "Profissional e direto" },
   { id: "consultivo", label: "Consultivo", desc: "Empático e estratégico" },
@@ -216,6 +253,7 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
     region: "",
     target_audience: "",
     brand_positioning: "",
+    custom_system_prompt: null,
     is_active: true,
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -434,6 +472,41 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
             <Label className="text-xs text-muted-foreground">Encerrar lead inativo automaticamente</Label>
             <Switch checked={form.auto_close_inactive} onCheckedChange={(v) => update("auto_close_inactive", v)} />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Custom System Prompt */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-foreground flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-yellow-400" /> Prompt do Sistema (Editável)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground">
+              Prompt base que define o comportamento do Copiloto e Piloto Automático. Deixe vazio para usar o padrão.
+            </Label>
+            <Textarea
+              value={form.custom_system_prompt || ""}
+              onChange={(e) => update("custom_system_prompt", e.target.value || null)}
+              className="bg-background border-border text-foreground min-h-[200px] mt-2 text-xs font-mono"
+              placeholder={DEFAULT_SYSTEM_PROMPT}
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Variáveis disponíveis: {"{personalidade}"}, {"{regra_emojis}"}, {"{nivel_persuasao}"}, {"{nome_corretor}"}, {"{contexto_lead}"}, {"{contexto_empreendimento}"}
+            </p>
+          </div>
+          {form.custom_system_prompt && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => update("custom_system_prompt", null)}
+              className="text-xs border-border text-muted-foreground"
+            >
+              Restaurar prompt padrão
+            </Button>
+          )}
         </CardContent>
       </Card>
 
