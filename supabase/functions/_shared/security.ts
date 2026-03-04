@@ -5,15 +5,14 @@
  * - PII masking for logs
  */
 
-const ALLOWED_ORIGINS = [
-  "https://onovocondominio.com.br",
-  "https://onovocondominio.lovable.app",
-  "https://id-preview--8855e0c5-1ec6-49e7-83f4-12e453004e21.lovable.app",
-];
-
 export function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get("origin") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const isAllowed =
+    origin === "https://onovocondominio.com.br" ||
+    origin.endsWith(".lovable.app") ||
+    origin.endsWith(".lovableproject.com");
+
+  const allowedOrigin = isAllowed ? origin : "https://onovocondominio.com.br";
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers":
