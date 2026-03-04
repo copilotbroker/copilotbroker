@@ -1419,7 +1419,7 @@ app.post("/sync", async (c) => {
 app.post("/sync-all", async (c) => {
   try {
     if (!UAZAPI_BASE_URL || !UAZAPI_DEFAULT_TOKEN) {
-      return c.json({ error: "UAZAPI not configured" }, 500, corsHeaders);
+      return c.json({ error: "UAZAPI not configured" }, 500, getHonoCors(c));
     }
 
     const authHeader = c.req.header("Authorization");
@@ -1429,7 +1429,7 @@ app.post("/sync-all", async (c) => {
     // Verify user is admin
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
     if (authError || !user) {
-      return c.json({ error: "Unauthorized" }, 401, corsHeaders);
+      return c.json({ error: "Unauthorized" }, 401, getHonoCors(c));
     }
 
     const { data: roleData } = await supabaseAdmin
@@ -1440,7 +1440,7 @@ app.post("/sync-all", async (c) => {
       .maybeSingle();
 
     if (!roleData) {
-      return c.json({ error: "Admin access required" }, 403, corsHeaders);
+      return c.json({ error: "Admin access required" }, 403, getHonoCors(c));
     }
 
     // Fetch all UAZAPI instances
@@ -1463,7 +1463,7 @@ app.post("/sync-all", async (c) => {
       .select("*");
 
     if (!localInstances || localInstances.length === 0) {
-      return c.json({ success: true, synced: 0, results: [] }, 200, corsHeaders);
+      return c.json({ success: true, synced: 0, results: [] }, 200, getHonoCors(c));
     }
 
     const results: { broker_id: string; instance_name: string; old_status: string; new_status: string; }[] = [];
@@ -1527,12 +1527,12 @@ app.post("/sync-all", async (c) => {
       total: localInstances.length,
       synced: results.length,
       results,
-    }, 200, corsHeaders);
+    }, 200, getHonoCors(c));
 
   } catch (err) {
     const error = err as Error;
     console.error("Sync-All Error:", error);
-    return c.json({ error: error.message }, 500, corsHeaders);
+    return c.json({ error: error.message }, 500, getHonoCors(c));
   }
 });
 
