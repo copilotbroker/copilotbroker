@@ -1415,6 +1415,127 @@ app.post("/sync", async (c) => {
   }
 });
 
+// POST /sync-all - Admin endpoint: verify all broker instances against UAZAPI and update statuses
+app.post("/sync-all", async (c) => {
+  try {
+    if (!UAZAPI_BASE_URL || !UAZAPI_DEFAULT_TOKEN) {
+      return c.json({ error: "UAZAPI not configured" }, 500, corsHeaders);
+    }
+
+    const authHeader = c.req.header("Authorization");
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabaseUser = getSupabaseClient(authHeader);
+
+    // Verify user is admin
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !user) {
+      return c.json({ error: "Unauthorized" }, 401, corsHeaders);
+    }
+
+    const { data: roleData } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!roleData) {
+      return c.json({ error: "Admin access required" }, 403, corsHeaders);
+    }
+
+    // Fetch all UAZAPI instances
+    const listResponse = await uazapiFetchWithAuthFallback(
+      `${UAZAPI_BASE_URL}/instance/fetchInstances`,
+      { method: "GET" },
+      UAZAPI_DEFAULT_TOKEN,
+      true,
+    );
+
+    let uazapiInstances: Record<string, unknown>[] = [];
+    if (listResponse.ok) {
+      const data = await listResponse.json();
+      uazapiInstances = Array.isArray(data) ? data : [];
+    }
+
+    // Fetch all local instances
+    const { data: localInstances } = await supabaseAdmin
+      .from("broker_whatsapp_instances")
+      .select("*");
+
+    if (!localInstances || localInstances.length === 0) {
+      return c.json({ success: true, synced: 0, results: [] }, 200, corsHeaders);
+    }
+
+    const results: { broker_id: string; instance_name: string; old_status: string; new_status: string; }[] = [];
+
+    for (const local of localInstances) {
+      const instanceName = local.instance_name;
+      
+      // Find matching UAZAPI instance
+      const uazInstance = uazapiInstances.find((inst: Record<string, unknown>) =>
+        inst.name === instanceName || inst.instanceName === instanceName
+      );
+
+      let newStatus: string;
+      let phoneNumber = local.phone_number;
+
+      if (!uazInstance) {
+        // Instance doesn't exist in UAZAPI → disconnected
+        newStatus = "disconnected";
+      } else {
+        const normalized = normalizeUazapiStatus(uazInstance);
+        newStatus = normalized.status;
+        if (normalized.phoneNumber) {
+          phoneNumber = normalized.phoneNumber.startsWith("+")
+            ? normalized.phoneNumber
+            : `+${normalized.phoneNumber}`;
+        }
+      }
+
+      if (newStatus !== local.status || phoneNumber !== local.phone_number) {
+        const updateData: Record<string, unknown> = {
+          status: newStatus,
+          last_seen_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        if (phoneNumber) updateData.phone_number = phoneNumber;
+        if (newStatus === "connected" && !local.connected_at) {
+          updateData.connected_at = new Date().toISOString();
+        }
+        if (newStatus !== "connected") {
+          // Clear connected_at when disconnected
+        }
+
+        await supabaseAdmin
+          .from("broker_whatsapp_instances")
+          .update(updateData)
+          .eq("id", local.id);
+
+        results.push({
+          broker_id: local.broker_id,
+          instance_name: instanceName,
+          old_status: local.status,
+          new_status: newStatus,
+        });
+      }
+    }
+
+    console.log(`[SYNC-ALL] Synced ${results.length} instances of ${localInstances.length} total`);
+
+    return c.json({
+      success: true,
+      total: localInstances.length,
+      synced: results.length,
+      results,
+    }, 200, corsHeaders);
+
+  } catch (err) {
+    const error = err as Error;
+    console.error("Sync-All Error:", error);
+    return c.json({ error: error.message }, 500, corsHeaders);
+  }
+});
+
 // GET /debug/instances - List all instances from UAZAPI (admin diagnostic)
 app.get("/debug/instances", async (c) => {
   try {
