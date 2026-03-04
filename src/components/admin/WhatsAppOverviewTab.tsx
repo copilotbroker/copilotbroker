@@ -111,9 +111,10 @@ export function WhatsAppOverviewTab({
 }: WhatsAppOverviewTabProps) {
   const totalInstances = instances.length;
   const connectedInstances = instances.filter(i => i.status === "connected").length;
-  const todaySent = instances.reduce((acc, i) => acc + (i.daily_sent_count || 0), 0);
+  // Cap replies at sent count to ensure max 1 reply per send
+  const cappedReplies = Math.min(globalTotals.replies, globalTotals.sent);
   const replyRate = globalTotals.sent > 0 
-    ? Math.round((globalTotals.replies / globalTotals.sent) * 100) 
+    ? Math.round((cappedReplies / globalTotals.sent) * 100) 
     : 0;
 
   return (
@@ -155,8 +156,8 @@ export function WhatsAppOverviewTab({
                 <Send className="w-6 h-6 text-blue-500" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Enviados Hoje</p>
-                <p className="text-2xl font-bold text-white">{todaySent}</p>
+                <p className="text-sm text-slate-400">Enviados</p>
+                <p className="text-2xl font-bold text-white">{globalTotals.sent}</p>
               </div>
             </div>
           </CardContent>
