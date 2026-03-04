@@ -1,41 +1,43 @@
 
 
-## Análise Completa do Painel "Copiloto" (`/admin/copiloto`)
+## Diagnóstico: Erro de Sincronização
 
-### Problemas Identificados
+### Causa raiz: CORS bloqueando a requisição
 
-**1. Botão "Sincronizar Status" não existe nesta página**
-O botão foi adicionado em `AdminWhatsApp.tsx` (rota `/admin/whatsapp`), mas essa rota faz redirect para `/admin/copiloto` (que usa `AdminCopilotConfig.tsx`). O usuário nunca vê o `AdminWhatsApp` — é código morto.
+A requisição do preview (`https://...lovableproject.com`) está sendo bloqueada pelo CORS. O arquivo `_shared/security.ts` só permite 3 origens:
+- `onovocondominio.com.br`
+- `onovocondominio.lovable.app`
+- `id-preview--...lovable.app`
 
-**2. Grupo "Inteligência" aparece vazio na barra de abas**
-O `TAB_GROUPS` tem um grupo "Inteligência" com array de tabs vazio (copilot está comentado). Isso renderiza o label "Inteligência" + o separador vertical sem nenhum botão clicável — são os "botões inativos" que o usuário vê.
+O preview atual usa `lovableproject.com`, que não está na lista. O navegador bloqueia a resposta e o frontend recebe "Failed to fetch".
 
-**3. Tab padrão é "copilot" mas não existe conteúdo**
-`useState("copilot")` é o estado inicial, mas não há `TabsContent value="copilot"`. O usuário abre a página e não vê nada até clicar em outra aba.
+Isso não tem relação com trocar Cloud/Supabase em outro projeto — cada projeto é independente.
 
-**4. Visão Global não sincroniza status automaticamente**
-A aba "Visão Global" lê `broker_whatsapp_instances` direto do banco sem verificar o status real na UAZAPI.
+### Correção
 
-### Plano de Correção
+**Arquivo: `supabase/functions/_shared/security.ts`**
 
-**A. Limpar TAB_GROUPS — remover grupo "Inteligência" vazio**
-- Remover o grupo com array vazio do `TAB_GROUPS`
-- Manter apenas o grupo "WhatsApp" com suas 7 abas
+Atualizar `ALLOWED_ORIGINS` para aceitar **qualquer** subdomínio `lovable.app` e `lovableproject.com` dinamicamente, em vez de uma lista hardcoded:
 
-**B. Corrigir tab padrão para "overview"**
-- `useState("overview")` em vez de `useState("copilot")`
+```typescript
+export function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") || "";
+  const isAllowed =
+    origin === "https://onovocondominio.com.br" ||
+    origin.endsWith(".lovable.app") ||
+    origin.endsWith(".lovableproject.com");
+  
+  const allowedOrigin = isAllowed ? origin : "https://onovocondominio.com.br";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, ...",
+  };
+}
+```
 
-**C. Adicionar auto-sync ao abrir "Visão Global"**
-- Mover a lógica `syncAllMutation` de `AdminWhatsApp.tsx` para `AdminCopilotConfig.tsx`
-- Disparar sync automaticamente quando `activeTab === "overview"` (via `useEffect`)
-- Adicionar botão "Sincronizar Status" visível no header da página
+Isso corrige o sync-all e também previne futuros problemas de CORS em qualquer Edge Function que use esse shared helper.
 
-**D. Remover página morta `AdminWhatsApp.tsx`**
-- A rota `/admin/whatsapp` já redireciona para `/admin/copiloto`
-- Remover o import e a referência no `App.tsx` (limpeza)
-
-### Arquivos Alterados
-- `src/pages/AdminCopilotConfig.tsx` — correções A, B, C
-- `src/App.tsx` — limpeza D (remover import de AdminWhatsApp)
-- `src/pages/AdminWhatsApp.tsx` — pode ser deletado (código morto)
+### Arquivos alterados
+- `supabase/functions/_shared/security.ts` — CORS dinâmico
+- Todas as Edge Functions que importam `getCorsHeaders` serão beneficiadas automaticamente (redeploy necessário)
 
