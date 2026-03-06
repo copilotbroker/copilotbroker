@@ -423,7 +423,8 @@ const DesignSystem = () => {
           </TabsContent>
 
           <TabsContent value="crm">
-            <div className="flex justify-end mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <h3 className="font-serif text-xl sm:text-2xl font-semibold">🖥️ Design System — Dashboard / Admin / Auth</h3>
               <CopyButton text={CRM_PROMPT} label="Copiar Dashboard" copyKey="crm" />
             </div>
             <div className="relative group">
