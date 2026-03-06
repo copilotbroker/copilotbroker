@@ -3,11 +3,11 @@ import { Building2, Users, Layers, Store, Ruler, Check } from "lucide-react";
 import piscinaImage from "@/assets/mauriciocardoso/piscina-wellness.jpg";
 
 const features = [
-  { icon: Building2, text: "20 andares com implantação imponente e arquitetura autoral" },
-  { icon: Users, text: "Apenas 4 apartamentos por andar — máxima privacidade" },
-  { icon: Ruler, text: "Plantas inteligentes de 95 a 125m², 2 e 3 dormitórios" },
+  { icon: Building2, text: "Implantação imponente e arquitetura autoral" },
+  { icon: Users, text: "Máxima privacidade" },
+  { icon: Ruler, text: "Plantas inteligentes, 2 e 3 dormitórios" },
   { icon: Layers, text: "1.800m² de lazer e wellness: piscina, fitness, solário, jardins" },
-  { icon: Store, text: "5 lojas no térreo que qualificam o entorno com conveniência" },
+  { icon: Store, text: "Lojas no térreo que qualificam o entorno com conveniência" },
 ];
 
 const MCFeaturesSection = () => {
