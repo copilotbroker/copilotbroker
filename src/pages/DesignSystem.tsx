@@ -241,7 +241,7 @@ const DesignSystem = () => {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </button>
-          <h1 className="font-serif text-lg font-semibold">Enove Design System</h1>
+          <h1 className="font-serif text-lg font-semibold">Design System</h1>
           <Button
             onClick={handleCopy}
             size="sm"
