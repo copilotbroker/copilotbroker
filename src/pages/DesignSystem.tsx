@@ -408,7 +408,8 @@ const DesignSystem = () => {
           </TabsList>
 
           <TabsContent value="landing">
-            <div className="flex justify-end mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <h3 className="font-serif text-xl sm:text-2xl font-semibold">🎨 Design System — Landing Pages</h3>
               <CopyButton text={LANDING_PROMPT} label="Copiar Landing" copyKey="landing" />
             </div>
             <div className="relative group">
