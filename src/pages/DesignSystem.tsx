@@ -3,7 +3,7 @@ import { Copy, Check, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-const DESIGN_PROMPT = `## 🎨 Design System Prompt — Enove Platform
+const DESIGN_PROMPT = `## 🎨 Design System Prompt
 
 ### Filosofia Visual
 **"Dark Luxury Corporate"** — Elegância minimalista no admin, cinematográfico nas landing pages. Sem estética genérica de startup (gradientes roxos, azuis). Premium, sóbrio, diferenciado.
@@ -241,7 +241,7 @@ const DesignSystem = () => {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </button>
-          <h1 className="font-serif text-lg font-semibold">Enove Design System</h1>
+          <h1 className="font-serif text-lg font-semibold">Design System</h1>
           <Button
             onClick={handleCopy}
             size="sm"
