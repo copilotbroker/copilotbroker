@@ -390,7 +390,7 @@ const DesignSystem = () => {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto max-w-4xl px-6 py-12">
+      <div className="container mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-12">
         <div className="mb-8 text-center">
           <h2 className="font-serif text-3xl md:text-4xl font-semibold mb-3">
             Design System <span className="text-primary">Prompt</span>
