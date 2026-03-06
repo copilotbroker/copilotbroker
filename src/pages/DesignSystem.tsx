@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const LANDING_PROMPT = `## 🎨 Design System — Landing Pages
 
 ### Filosofia Visual
-**"Dark Luxury Corporate"** — Cinematográfico, premium, diferenciado. Sem estética genérica de startup (gradientes roxos, azuis).
+**"Dark Luxury Corporate"** — Cinematográfico, premium, diferenciado. Sem estética genérica de startup (gradientes roxos, azuis). Cada projeto deve ter personalidade visual própria.
 
 ---
 
@@ -21,16 +21,19 @@ const LANDING_PROMPT = `## 🎨 Design System — Landing Pages
 | \`--foreground\` | \`20 14% 15%\` | \`#252220\` | Texto principal |
 | \`--border\` | \`40 15% 85%\` | \`#ddd8cd\` | Bordas leves |
 
-#### Acentos (ambos modos)
+#### Acentos
 | Token | HSL | Hex | Uso |
 |---|---|---|---|
-| \`--primary\` | \`60 100% 50%\` | \`#FFFF00\` | CTAs, destaques, botões |
-| \`--primary-foreground\` | dark: \`240 6% 4%\` / light: \`20 14% 4%\` | — | Texto sobre primary |
-| \`--gold\` | \`60 100% 50%\` | \`#FFFF00\` | Gradientes dourados |
-| \`--gold-light\` | \`48 90% 65%\` | \`#f5d44a\` | Gradiente secundário |
-| \`--gold-dark\` | \`40 85% 40%\` | \`#bc8c0a\` | Sombras douradas |
+| \`--primary\` | Definir por projeto | — | CTAs, destaques, botões |
+| \`--primary-foreground\` | Contraste com primary | — | Texto sobre primary |
+| \`--accent\` | Variação de primary | — | Gradientes, hovers |
 | \`--destructive\` | \`0 84% 60%\` | \`#ef4444\` | Erros, exclusões |
-| WhatsApp Green | — | \`#25D366\` | Botões WhatsApp |
+
+#### Regras de Cor
+- ❌ **NUNCA** usar preto puro \`#000\` ou branco puro \`#fff\`
+- ❌ **NUNCA** usar cores hardcoded nos componentes — sempre tokens semânticos
+- ✅ Todas as cores devem ser HSL no \`index.css\` e \`tailwind.config.ts\`
+- ✅ Usar \`hsl(var(--token))\` em CSS e classes Tailwind configuradas
 
 ---
 
@@ -38,16 +41,16 @@ const LANDING_PROMPT = `## 🎨 Design System — Landing Pages
 
 | Contexto | Fonte | Pesos |
 |---|---|---|
-| Títulos, Hero, Luxo | \`Cormorant Garamond\` (Serif) | 400, 500, 600, 700 |
-| UI funcional | \`Inter\` (Sans-serif) | 300, 400, 500, 600, 700 |
+| Títulos, Hero, Luxo | Fonte Serif do projeto (ex: \`Cormorant Garamond\`, \`Playfair Display\`) | 400–700 |
+| UI funcional, corpo | Fonte Sans-serif do projeto (ex: \`Inter\`, \`DM Sans\`) | 300–700 |
 
 #### Hierarquia Tipográfica
-| Elemento | Classe | Exemplo |
-|---|---|---|
-| Hero Title | \`font-serif text-4xl md:text-6xl font-semibold\` | Landing page H1 |
-| Section Title | \`font-serif text-3xl md:text-5xl font-semibold\` | Seções de conteúdo |
-| Body | \`font-sans text-sm md:text-base\` | Textos gerais |
-| Label/Meta | \`font-sans text-xs uppercase tracking-widest\` | Tags, badges |
+| Elemento | Classe |
+|---|---|
+| Hero Title | \`font-serif text-4xl md:text-6xl font-semibold\` |
+| Section Title | \`font-serif text-3xl md:text-5xl font-semibold\` |
+| Body | \`font-sans text-sm md:text-base\` |
+| Label/Meta | \`font-sans text-xs uppercase tracking-widest\` |
 
 ---
 
@@ -56,7 +59,7 @@ const LANDING_PROMPT = `## 🎨 Design System — Landing Pages
 #### Cards
 \`\`\`
 bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-6 md:p-8
-hover:border-primary/30 hover:shadow-[0_0_40px_hsl(var(--gold)/0.1)]
+hover:border-primary/30 hover:shadow-[0_0_40px_hsl(var(--primary)/0.1)]
 transition-all duration-500
 \`\`\`
 
@@ -64,8 +67,16 @@ transition-all duration-500
 \`\`\`
 bg-primary text-primary-foreground px-8 py-4
 text-sm font-semibold uppercase tracking-widest rounded-sm
-hover:shadow-[0_0_30px_hsl(var(--gold)/0.5)] hover:scale-[1.02]
+hover:shadow-[0_0_30px_hsl(var(--primary)/0.5)] hover:scale-[1.02]
 active:scale-[0.98] transition-all duration-300
+\`\`\`
+
+#### Botão Outline
+\`\`\`
+bg-transparent text-primary border-2 border-primary rounded-sm
+px-8 py-4 text-sm font-semibold uppercase tracking-widest
+hover:bg-primary hover:text-primary-foreground
+hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)]
 \`\`\`
 
 #### Floating CTA
@@ -73,8 +84,8 @@ active:scale-[0.98] transition-all duration-300
 fixed bottom-6 left-1/2 -translate-x-1/2 z-50
 px-6 py-4 bg-primary text-primary-foreground
 font-semibold uppercase tracking-wider text-sm rounded-full
-shadow-[0_10px_40px_hsl(var(--gold)/0.4)]
-hover:shadow-[0_15px_50px_hsl(var(--gold)/0.6)] hover:scale-105
+shadow-[0_10px_40px_hsl(var(--primary)/0.4)]
+hover:shadow-[0_15px_50px_hsl(var(--primary)/0.6)] hover:scale-105
 animate-float
 \`\`\`
 
@@ -91,10 +102,12 @@ w-20 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent
 |---|---|---|---|
 | \`fade-up\` | 0.8s | \`cubic-bezier(0.22, 1, 0.36, 1)\` | Entrada de seções |
 | \`fade-in\` | 0.8s | \`ease-out\` | Elementos gerais |
+| \`fade-in-left/right\` | 0.8s | cubic-bezier | Slides laterais |
 | \`slide-up\` | 0.9s | cubic-bezier | Hero elements |
 | \`scale-in\` | 0.6s | cubic-bezier | Cards, modais |
 | \`float\` | 3s loop | ease-in-out | CTAs flutuantes |
 | \`glow\` | 2s loop | ease-in-out | Destaque primary |
+| \`shimmer\` | 2s linear loop | — | Loading states |
 
 **Delays escalonados:** \`delay-100\` a \`delay-800\` (100ms increments)
 
@@ -103,8 +116,12 @@ w-20 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent
 ### 🌗 Gradientes & Sombras
 
 \`\`\`css
---gradient-gold: linear-gradient(135deg, hsl(60 100% 50%), hsl(48 90% 65%), hsl(60 100% 50%));
---shadow-gold: 0 0 40px hsl(var(--gold) / 0.2);
+/* Gradientes — adaptar com cores do projeto */
+--gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)));
+--gradient-dark: linear-gradient(180deg, hsl(var(--background)), hsl(var(--card)));
+
+/* Sombras */
+--shadow-primary: 0 0 40px hsl(var(--primary) / 0.2);
 --shadow-elegant: 0 25px 50px -12px rgba(0,0,0,0.15);
 \`\`\`
 
@@ -113,125 +130,114 @@ w-20 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent
 ### 📜 Scrollbars (Landing Pages)
 | Largura | Cor |
 |---|---|
-| 8px | Dourado (\`--gold / 0.3\`) sobre carvão |
-
----
-
-### 🏗️ Contexto de Aplicação
-- Tipografia Serif nos títulos
-- Gradientes dourados, \`animate-fade-up\`, parallax
-- Sequência: Localização → Diferenciais → Urgência → Investimento
-- Background cinematográfico com overlays
+| 8px | Primary com opacidade (\`--primary / 0.3\`) sobre fundo escuro |
 
 ---
 
 ### ⛔ Regras de Ouro
-1. **Tokens sempre** — Nunca \`text-white\`, \`bg-black\` direto
-2. **HSL sempre** — Nunca hex no \`index.css\`
+1. **Tokens sempre** — Nunca \`text-white\`, \`bg-black\` direto em componentes
+2. **HSL sempre** — Nunca hex direto no CSS
 3. **Sem gradientes genéricos** — Nada de roxo/azul "AI startup"
-4. **Dark mode first** — Admin é dark por padrão
-5. **Contrast check** — Texto sobre \`--primary\` (#FFFF00) deve ser escuro
-6. **Mobile-first** — Responsive com breakpoints Tailwind`;
+4. **Sem fontes genéricas** — Escolher fontes com personalidade para cada projeto
+5. **Contrast check** — Garantir contraste WCAG sobre cores de destaque
+6. **Mobile-first** — Responsive com breakpoints Tailwind padrão
+7. **Safe areas** — \`pt-safe\`, \`pb-safe\` para PWA/mobile`;
 
-const CRM_PROMPT = `## 🖥️ Design System — CRM / Admin / Login
+const CRM_PROMPT = `## 🖥️ Design System — Dashboard / Admin / Auth
 
 ### Filosofia Visual
-**"Dark Professional"** — Interface funcional de alta densidade, dark mode padrão. Sem elementos de luxo — foco em produtividade, clareza de informação e ações rápidas.
+**"Dark Professional"** — Interface funcional de alta densidade, dark mode padrão. Foco em produtividade, clareza de informação e ações rápidas. Sem elementos decorativos desnecessários.
 
 ---
 
 ### 🎨 Paleta de Cores (HSL)
 
-#### Dark Mode (Padrão CRM)
+#### Dark Mode (Padrão Dashboard)
 | Token | HSL | Hex aprox. | Uso |
 |---|---|---|---|
-| \`--background\` | \`240 6% 4%\` | \`#0a0a0f\` | Fundo principal |
-| Layout bg | — | \`#0f0f12\` | Background do layout admin |
-| \`--card\` / Surfaces | — | \`#1e1e22\` | Cards, modais, painéis |
-| \`--border\` | \`220 8% 18%\` | \`#2a2a2e\` | Bordas sutis |
-| \`--muted\` | \`220 8% 18%\` | \`#2a2a2e\` | Áreas secundárias |
-| \`--muted-foreground\` | \`220 10% 55%\` | \`#838a96\` | Texto secundário |
-| \`--secondary\` | \`220 8% 15%\` | \`#232328\` | Botões secundários |
-| \`--foreground\` | \`45 30% 96%\` | \`#f7f4ed\` | Texto principal |
+| Background | \`240 6% 4%\` | \`#0a0a0f\` | Fundo da aplicação |
+| Layout bg | \`240 5% 7%\` | \`#0f0f12\` | Background do layout |
+| Surfaces | \`240 4% 12%\` | \`#1e1e22\` | Cards, modais, painéis |
+| Borders | \`220 8% 18%\` | \`#2a2a2e\` | Bordas e separadores |
+| Muted | \`220 10% 55%\` | \`#838a96\` | Texto secundário |
+| Foreground | \`45 30% 96%\` | \`#f7f4ed\` | Texto principal |
 
-#### Acentos CRM
-| Token | Hex | Uso |
+#### Cores Funcionais
+| Contexto | Cor | Uso |
 |---|---|---|
-| \`--primary\` | \`#FFFF00\` (HSL 60 100% 50%) | CTAs, seleção, foco |
-| Status: Novo | \`bg-blue-500\` | Coluna "Novo" |
-| Status: Info Enviada | \`bg-enove-yellow\` | Coluna "Info Enviada" |
-| Status: Agendamento | \`bg-orange-500\` | Coluna "Agendamento" |
-| Status: Docs Recebidos | \`bg-emerald-500\` | Coluna "Docs Recebidos" |
-| Status: Registrado | \`bg-slate-400\` | Coluna "Registrado" |
-| Status: Inativo | \`bg-red-500\` | Coluna "Inativo" |
-| WhatsApp | \`#25D366\` | Botões WhatsApp |
+| Sucesso | \`bg-emerald-500\` | Ações positivas, confirmações |
+| Alerta | \`bg-orange-500\` | Avisos, pendências |
+| Info | \`bg-blue-500\` | Informações, estados neutros |
+| Perigo | \`bg-red-500\` | Erros, exclusões, alertas |
+| Neutro | \`bg-slate-400\` | Estados inativos, finalizados |
+| Primary | \`hsl(var(--primary))\` | CTAs, seleção, foco |
 
-#### Cores de Origem (Kanban Cards)
-| Tipo | Classes |
+#### Badges / Tags (Dark Theme)
+| Variante | Padrão de Classes |
 |---|---|
-| Pago | \`bg-purple-500/20 text-purple-300 border-purple-500/40\` |
-| Orgânico | \`bg-emerald-500/20 text-emerald-300 border-emerald-500/40\` |
-| Indicação | \`bg-blue-500/20 text-blue-300 border-blue-500/40\` |
-| Manual | \`bg-enove-yellow/20 text-enove-yellow border-enove-yellow/40\` |
-| Desconhecido | \`bg-slate-500/20 text-slate-400 border-slate-500/40\` |
+| Tipo A | \`bg-purple-500/20 text-purple-300 border-purple-500/40\` |
+| Tipo B | \`bg-emerald-500/20 text-emerald-300 border-emerald-500/40\` |
+| Tipo C | \`bg-blue-500/20 text-blue-300 border-blue-500/40\` |
+| Tipo D | \`bg-yellow-500/20 text-yellow-300 border-yellow-500/40\` |
+| Default | \`bg-slate-500/20 text-slate-400 border-slate-500/40\` |
 
 ---
 
-### 🔤 Tipografia CRM
+### 🔤 Tipografia Dashboard
 
 | Contexto | Fonte | Classe |
 |---|---|---|
-| **Toda a UI** | \`Inter\` (Sans-serif) | \`font-sans\` |
-| Card Title | \`font-sans text-lg font-semibold\` | Dashboard cards |
-| Body | \`font-sans text-sm md:text-base\` | Textos gerais |
-| Label/Meta | \`font-sans text-xs uppercase tracking-widest\` | Tags, badges |
-| Exceção: Login H1 | \`font-serif text-5xl font-bold\` | Apenas no hero do login |
+| **Toda a UI** | Sans-serif do projeto | \`font-sans\` |
+| Card Title | \`font-sans text-lg font-semibold\` | Headers de cards |
+| Body | \`font-sans text-sm\` | Textos gerais |
+| Label/Meta | \`font-sans text-xs text-muted-foreground\` | Labels, timestamps |
+| Heading | \`font-sans text-xl font-bold\` | Títulos de seção |
 
-⚠️ **Sem Serif no CRM** — exceto título do painel visual de login.
+⚠️ **Sans-serif only** — Nunca usar \`font-serif\` no dashboard (exceção: tela de login).
 
 ---
 
-### 🔐 Tela de Login
+### 🔐 Tela de Login / Auth
 
 #### Layout
-- Desktop: Split \`3/5\` visual + \`2/5\` form
-- Mobile: Form-only com header compacto
+- Desktop: Split \`3/5\` painel visual + \`2/5\` formulário
+- Mobile: Formulário-only com header compacto
 
 #### Painel Visual (Desktop)
 \`\`\`
-bg-gradient-to-br from-[#0a0a0c] via-[#0f0f12] to-[#1a1a1e]
-Grid pattern sutil: rgba(255,255,0,0.1) 1px lines, 60px gap
-Central glow: bg-[#FFFF00]/5 rounded-full blur-3xl
+bg-gradient-to-br from-[background] via-[layout-bg] to-[surface]
+Pattern sutil com linhas de primary em baixa opacidade
+Central glow: bg-primary/5 rounded-full blur-3xl
 \`\`\`
 
-#### Card de Login
+#### Card de Auth
 \`\`\`
-bg-[#1e1e22] border border-[#2a2a2e] rounded-2xl p-8
+bg-[surface] border border-[border] rounded-2xl p-8
 shadow-2xl shadow-black/50
 \`\`\`
 
 #### Inputs
 \`\`\`
-bg-[#141417] border border-[#2a2a2e] rounded-lg
-text-white placeholder:text-slate-500
-focus:border-[#FFFF00] focus:ring-1 focus:ring-[#FFFF00]/20
+bg-[background-darker] border border-[border] rounded-lg
+text-foreground placeholder:text-muted-foreground
+focus:border-primary focus:ring-1 focus:ring-primary/20
 pl-10 (com ícone à esquerda)
 \`\`\`
 
-#### Botão de Login
+#### Botão de Auth
 \`\`\`
-w-full py-3 bg-[#FFFF00] text-[#0a0a0c] rounded-lg
+w-full py-3 bg-primary text-primary-foreground rounded-lg
 font-semibold uppercase tracking-wider text-sm
-hover:shadow-[0_0_30px_rgba(255,255,0,0.4)] hover:scale-[1.02]
+hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:scale-[1.02]
 disabled:opacity-50
 \`\`\`
 
 #### Loading Spinner
 \`\`\`
-border-2 border-[#FFFF00] border-t-transparent rounded-full animate-spin
+border-2 border-primary border-t-transparent rounded-full animate-spin
 \`\`\`
 
-#### Animações Login
+#### Animações Auth
 | Elemento | Animação | Delay |
 |---|---|---|
 | Logo | \`animate-fade-in-down\` | 0ms |
@@ -243,63 +249,52 @@ border-2 border-[#FFFF00] border-t-transparent rounded-full animate-spin
 
 ---
 
-### 📋 Kanban Board
+### 📋 Boards / Listas (Kanban, Tabelas)
 
-#### Layout
-- Scroll horizontal com \`scrollbar-subtle\` (4px)
-- Colunas lado a lado, virtualização com \`@tanstack/react-virtual\`
-
-#### Coluna Kanban
+#### Cards de Item
 \`\`\`
-Header: Badge com cor do status + contagem
-Background: bg-[#0f0f12] (mesmo que layout)
-Scroll interno: overflow-y-auto com scrollbar-subtle
-\`\`\`
-
-#### Kanban Card
-\`\`\`
-bg-[#1e1e22] border border-[#2a2a2e] rounded-xl
+bg-[surface] border border-[border] rounded-xl
 hover:border-primary/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)]
 transition-[border-color,transform,opacity] duration-200 ease-out
 \`\`\`
 
-##### Elementos do Card
+#### Elementos do Card
 | Elemento | Estilo |
 |---|---|
 | Avatar | \`bg-slate-700/50 text-slate-400\` com iniciais |
-| Nome do Lead | \`text-sm font-medium text-white truncate\` |
-| Telefone | \`text-xs text-slate-400\` |
-| Badge de Origem | Cores por tipo (ver tabela acima) |
-| Barra de Progresso | 2px, cor varia por status |
-| Botão de Ação | Cor contextual por status |
-| Ícones de Comunicação | WhatsApp green, Phone slate |
-| Card Stale (>48h) | \`opacity-60\` |
-| Card Novo | \`ring-pulse\` animation + glow verde |
+| Título | \`text-sm font-medium text-foreground truncate\` |
+| Subtítulo | \`text-xs text-muted-foreground\` |
+| Badge | Usar padrão de badges (ver tabela acima) |
+| Progress Bar | \`h-0.5\` com cor contextual |
+| Item "stale" | \`opacity-60\` para itens sem interação >48h |
+| Item novo | \`ring-pulse\` animation com glow |
 
-##### Botões de Ação por Status
-| Status | Label | Cor |
-|---|---|---|
-| Novo | "Iniciar Atendimento" | \`bg-emerald-500/90\` |
-| Info Enviada | "Agendar" | \`bg-orange-500/90\` |
-| Agendamento | "Comparecimento" | \`bg-blue-500/90\` |
-| Docs Recebidos | "Confirmar Venda" | \`bg-emerald-600/90\` |
+#### Botões de Ação Contextual
+\`\`\`
+Cores variam por contexto/status:
+- Positivo: bg-emerald-500/90 hover:bg-emerald-500
+- Neutro: bg-blue-500/90 hover:bg-blue-500
+- Alerta: bg-orange-500/90 hover:bg-orange-500
+- Destaque: bg-violet-500/90 hover:bg-violet-500
+Todos com text-white, text-xs, rounded-md, px-2 py-1
+\`\`\`
 
 ---
 
-### 📊 Admin Layout
+### 📊 Layout Admin
 
 #### Estrutura
 \`\`\`
 Sidebar fixa à esquerda (hidden mobile)
-Bottom Nav no mobile
-bg-[#0f0f12] admin-scrollbar
+Bottom Nav no mobile (5 itens máximo)
+bg-[layout-bg] com classe admin-scrollbar
 \`\`\`
 
 #### Sidebar
 \`\`\`
-bg-[#0f0f12] border-r border-[#2a2a2e]
-Items: hover:bg-[#1e1e22] rounded-lg
-Item ativo: bg-[#1e1e22] text-primary
+bg-[layout-bg] border-r border-[border]
+Items: hover:bg-[surface] rounded-lg
+Item ativo: bg-[surface] text-primary
 \`\`\`
 
 #### Scrollbar Admin
@@ -311,36 +306,36 @@ track: transparent
 
 ---
 
-### 🗂️ Sheets / Modais (Lead Detail)
+### 🗂️ Sheets / Modais / Drawers
 
 \`\`\`
-SheetContent: bg-[#1e1e22] border-[#2a2a2e]
+Background: bg-[surface] border-[border]
 ScrollArea interna com scrollbar-subtle
-Seções separadas por border-b border-[#2a2a2e]
+Seções separadas por border-b border-[border]
+Header sticky com backdrop-blur
 \`\`\`
 
-#### Quick Notes (Observações Rápidas)
-| Categoria | Cores |
-|---|---|
-| Contato | \`bg-slate-500/20 text-slate-300 border-slate-500/40\` |
-| Interesse | \`bg-emerald-500/20 text-emerald-300 border-emerald-500/40\` |
-| Documentos | \`bg-yellow-500/20 text-yellow-300 border-yellow-500/40\` |
-| Financeiro | \`bg-purple-500/20 text-purple-300 border-purple-500/40\` |
-| Selecionado | \`ring-2 ring-[#FFFF00] ring-offset-1 ring-offset-[#1e1e22]\` |
+#### Categorias de Tags/Chips
+\`\`\`
+Padrão: bg-[cor]/20 text-[cor]-300 border-[cor]/40
+Selecionado: ring-2 ring-primary ring-offset-1 ring-offset-[surface]
+Hover: opacity aumentada
+\`\`\`
 
 ---
 
-### ⛔ Regras CRM
+### ⛔ Regras Dashboard
 
-1. **Sans-serif only** — Nunca usar \`font-serif\` no CRM (exceto login hero)
+1. **Sans-serif only** — Nunca \`font-serif\` no dashboard (exceção: auth hero)
 2. **Tokens semânticos** — Usar variáveis CSS, não hex direto
-3. **Dark mode fixo** — CRM é sempre dark, sem toggle
+3. **Dark mode fixo** — Dashboard sempre dark, sem toggle
 4. **Densidade alta** — Padding compacto (\`p-2\` a \`p-4\`), text-sm como base
-5. **Scrollbars finas** — \`admin-scrollbar\` (4px) em todo o admin
+5. **Scrollbars finas** — 4px em todo o admin
 6. **Feedback visual** — Hover states em todos os elementos interativos
-7. **Status = Cor** — Cada status do lead tem cor fixa, consistente em todo CRM
+7. **Status = Cor** — Cada status tem cor fixa e consistente
 8. **Mobile-first** — Bottom nav no mobile, sidebar no desktop
-9. **Safe areas** — \`pt-safe\`, \`pb-safe\` para PWA/mobile`;
+9. **Safe areas** — \`pt-safe\`, \`pb-safe\` para PWA/mobile
+10. **Loading states** — Skeleton com \`animate-shimmer\`, spinners com primary color`;
 
 const FULL_PROMPT = `${LANDING_PROMPT}\n\n---\n\n${CRM_PROMPT}`;
 
@@ -405,14 +400,14 @@ const DesignSystem = () => {
             Design System <span className="text-primary">Prompt</span>
           </h2>
           <p className="text-muted-foreground text-base max-w-xl mx-auto">
-            Copie estes prompts e cole na seção <strong>Knowledge</strong> dos seus projetos Lovable para manter consistência visual.
+            Prompts genéricos para manter consistência visual em qualquer projeto. Cole na seção <strong>Knowledge</strong> do Lovable.
           </p>
         </div>
 
         <Tabs defaultValue="landing" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="landing">Landing Pages</TabsTrigger>
-            <TabsTrigger value="crm">CRM / Admin</TabsTrigger>
+            <TabsTrigger value="crm">Dashboard / Admin</TabsTrigger>
             <TabsTrigger value="full">Prompt Completo</TabsTrigger>
           </TabsList>
 
@@ -432,7 +427,7 @@ const DesignSystem = () => {
 
           <TabsContent value="crm">
             <div className="flex justify-end mb-4">
-              <CopyButton text={CRM_PROMPT} label="Copiar CRM" copyKey="crm" />
+              <CopyButton text={CRM_PROMPT} label="Copiar Dashboard" copyKey="crm" />
             </div>
             <div className="relative group">
               <div className="absolute -inset-px rounded-lg bg-gradient-to-b from-primary/20 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
