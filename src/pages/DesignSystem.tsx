@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const LANDING_PROMPT = `## 🎨 Design System — Landing Pages
-
-### Filosofia Visual
+const LANDING_PROMPT = `### Filosofia Visual
 **"Dark Luxury Corporate"** — Cinematográfico, premium, diferenciado. Sem estética genérica de startup (gradientes roxos, azuis). Cada projeto deve ter personalidade visual própria.
 
 ---
@@ -143,9 +141,7 @@ w-20 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent
 6. **Mobile-first** — Responsive com breakpoints Tailwind padrão
 7. **Safe areas** — \`pt-safe\`, \`pb-safe\` para PWA/mobile`;
 
-const CRM_PROMPT = `## 🖥️ Design System — Dashboard / Admin / Auth
-
-### Filosofia Visual
+const CRM_PROMPT = `### Filosofia Visual
 **"Dark Professional"** — Interface funcional de alta densidade, dark mode padrão. Foco em produtividade, clareza de informação e ações rápidas. Sem elementos decorativos desnecessários.
 
 ---
@@ -394,7 +390,7 @@ const DesignSystem = () => {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto max-w-4xl px-6 py-12">
+      <div className="container mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-12">
         <div className="mb-8 text-center">
           <h2 className="font-serif text-3xl md:text-4xl font-semibold mb-3">
             Design System <span className="text-primary">Prompt</span>
@@ -405,14 +401,15 @@ const DesignSystem = () => {
         </div>
 
         <Tabs defaultValue="landing" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="landing">Landing Pages</TabsTrigger>
-            <TabsTrigger value="crm">Dashboard / Admin</TabsTrigger>
-            <TabsTrigger value="full">Prompt Completo</TabsTrigger>
+          <TabsList className="flex w-full flex-wrap gap-1 h-auto p-1 mb-6">
+            <TabsTrigger value="landing" className="flex-1 min-w-[100px] text-xs sm:text-sm">Landing Pages</TabsTrigger>
+            <TabsTrigger value="crm" className="flex-1 min-w-[100px] text-xs sm:text-sm">Dashboard / Admin</TabsTrigger>
+            <TabsTrigger value="full" className="flex-1 min-w-[100px] text-xs sm:text-sm">Prompt Completo</TabsTrigger>
           </TabsList>
 
           <TabsContent value="landing">
-            <div className="flex justify-end mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <h3 className="font-serif text-xl sm:text-2xl font-semibold">🎨 Design System — Landing Pages</h3>
               <CopyButton text={LANDING_PROMPT} label="Copiar Landing" copyKey="landing" />
             </div>
             <div className="relative group">
@@ -426,7 +423,8 @@ const DesignSystem = () => {
           </TabsContent>
 
           <TabsContent value="crm">
-            <div className="flex justify-end mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <h3 className="font-serif text-xl sm:text-2xl font-semibold">🖥️ Design System — Dashboard / Admin / Auth</h3>
               <CopyButton text={CRM_PROMPT} label="Copiar Dashboard" copyKey="crm" />
             </div>
             <div className="relative group">
