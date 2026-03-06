@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const LANDING_PROMPT = `## 🎨 Design System — Landing Pages
-
-### Filosofia Visual
+const LANDING_PROMPT = `### Filosofia Visual
 **"Dark Luxury Corporate"** — Cinematográfico, premium, diferenciado. Sem estética genérica de startup (gradientes roxos, azuis). Cada projeto deve ter personalidade visual própria.
 
 ---
