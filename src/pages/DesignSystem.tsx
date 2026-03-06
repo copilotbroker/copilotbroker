@@ -401,10 +401,10 @@ const DesignSystem = () => {
         </div>
 
         <Tabs defaultValue="landing" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="landing">Landing Pages</TabsTrigger>
-            <TabsTrigger value="crm">Dashboard / Admin</TabsTrigger>
-            <TabsTrigger value="full">Prompt Completo</TabsTrigger>
+          <TabsList className="flex w-full flex-wrap gap-1 h-auto p-1 mb-6">
+            <TabsTrigger value="landing" className="flex-1 min-w-[100px] text-xs sm:text-sm">Landing Pages</TabsTrigger>
+            <TabsTrigger value="crm" className="flex-1 min-w-[100px] text-xs sm:text-sm">Dashboard / Admin</TabsTrigger>
+            <TabsTrigger value="full" className="flex-1 min-w-[100px] text-xs sm:text-sm">Prompt Completo</TabsTrigger>
           </TabsList>
 
           <TabsContent value="landing">
