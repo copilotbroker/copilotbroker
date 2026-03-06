@@ -95,6 +95,7 @@ const App = () => (
             <Route path="/corretor/copiloto" element={<BrokerCopilotConfig />} />
             <Route path="/corretor/lead/:leadId" element={<LeadPage />} />
             <Route path="/termos" element={<Termos />} />
+            <Route path="/designsystem" element={<DesignSystem />} />
             
             {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
             <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />
