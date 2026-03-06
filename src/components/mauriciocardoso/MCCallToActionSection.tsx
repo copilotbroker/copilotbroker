@@ -70,32 +70,8 @@ const MCCallToActionSection = () => {
           </div>
 
 
-          {/* Quote */}
-          <div className={`mb-12 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-            <p className="text-muted-foreground mb-4">
-              Esse é o tipo de empreendimento que, meses depois, as pessoas dizem:
-            </p>
-            <p className="font-serif text-2xl md:text-3xl italic text-foreground mb-8">
-              "Eu quase comprei."
-            </p>
-            <div className="space-y-2">
-              <p className="text-muted-foreground line-through">Quase não constrói patrimônio.</p>
-              <p className="text-muted-foreground line-through">Quase não garante qualidade de vida.</p>
-              <p className="font-serif text-xl font-semibold text-destructive">Quase não vale nada.</p>
-            </div>
-          </div>
-
-          {/* Final CTA */}
-          <div className={`transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-            <div className="divider-gold mx-auto mb-8" />
-            <p className="text-lg text-muted-foreground mb-4">
-              Este empreendimento vai acontecer com ou sem você.
-            </p>
-            <p className="text-muted-foreground mb-8">A diferença é:</p>
-            <p className="font-serif text-xl md:text-2xl font-semibold text-foreground mb-8">
-              <span className="text-primary">👉</span>{" "}
-              Você vai comprar ou vai assistir outros comprarem?
-            </p>
+          {/* CTA Button */}
+          <div className={`transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
             <button
               onClick={scrollToForm}
               className="btn-primary text-base px-10 py-5 animate-pulse-slow"
