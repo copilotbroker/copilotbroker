@@ -66,15 +66,6 @@ const MCBenefitsSection = () => {
             </div>
           </div>
 
-          <div className={`text-center transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="divider-gold mx-auto mb-8" />
-            <p className="text-lg text-muted-foreground mb-2">
-              Sem cadastro, você entra na fila.
-            </p>
-            <p className="font-serif text-xl md:text-2xl font-semibold text-foreground">
-              E fila não escolhe apartamento.
-            </p>
-          </div>
         </div>
       </div>
     </section>
