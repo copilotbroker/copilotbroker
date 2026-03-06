@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MapPin, Star, Building2, Layers } from "lucide-react";
+import { MapPin, Star, Layers } from "lucide-react";
 
 const features = [
   { icon: MapPin, text: "Endereço nobre" },
