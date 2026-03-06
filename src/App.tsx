@@ -23,6 +23,7 @@ import TermosGoldenView from "./pages/goldenview/TermosGoldenView";
 import TermosMauricioCardoso from "./pages/mauriciocardoso/TermosMauricioCardoso";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import DesignSystem from "./pages/DesignSystem";
 
 import BrokerAdmin from "./pages/BrokerAdmin";
 import BrokerProjects from "./pages/BrokerProjects";
