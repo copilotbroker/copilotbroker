@@ -3,7 +3,7 @@ import { Copy, Check, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-const DESIGN_PROMPT = `## 🎨 Design System Prompt — Enove Platform
+const DESIGN_PROMPT = `## 🎨 Design System Prompt
 
 ### Filosofia Visual
 **"Dark Luxury Corporate"** — Elegância minimalista no admin, cinematográfico nas landing pages. Sem estética genérica de startup (gradientes roxos, azuis). Premium, sóbrio, diferenciado.
