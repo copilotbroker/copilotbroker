@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 20 14% 15%;
 
-    --primary: 48 96% 53%;
+    --primary: 60 100% 50%;
     --primary-foreground: 20 14% 4%;
 
     --secondary: 40 15% 92%;
@@ -24,7 +24,7 @@
     --muted: 40 10% 92%;
     --muted-foreground: 20 10% 45%;
 
-    --accent: 48 96% 53%;
+    --accent: 60 100% 50%;
     --accent-foreground: 20 14% 4%;
 
     --destructive: 0 84.2% 60.2%;
@@ -32,12 +32,12 @@
 
     --border: 40 15% 85%;
     --input: 40 15% 85%;
-    --ring: 48 96% 53%;
+    --ring: 60 100% 50%;
 
     --radius: 0.5rem;
 
     /* Custom tokens for luxury real estate */
-    --gold: 48 96% 53%;
+    --gold: 60 100% 50%;
     --gold-light: 48 90% 65%;
     --gold-dark: 40 85% 40%;
     --cream: 45 30% 96%;
@@ -86,7 +86,7 @@
     --popover: 240 6% 9%;
     --popover-foreground: 45 30% 96%;
 
-    --primary: 48 96% 53%;
+    --primary: 60 100% 50%;
     --primary-foreground: 240 6% 4%;
 
     --secondary: 220 8% 15%;
@@ -95,7 +95,7 @@
     --muted: 220 8% 18%;
     --muted-foreground: 220 10% 55%;
 
-    --accent: 48 96% 53%;
+    --accent: 60 100% 50%;
     --accent-foreground: 240 6% 4%;
 
     --destructive: 0 62.8% 30.6%;
@@ -103,10 +103,10 @@
 
     --border: 220 8% 18%;
     --input: 220 8% 18%;
-    --ring: 48 96% 53%;
+    --ring: 60 100% 50%;
 
     /* Custom tokens for luxury real estate */
-    --gold: 48 96% 53%;
+    --gold: 60 100% 50%;
     --gold-light: 48 90% 65%;
     --gold-dark: 40 85% 40%;
     --cream: 45 30% 96%;
