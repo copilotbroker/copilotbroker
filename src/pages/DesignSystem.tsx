@@ -141,9 +141,7 @@ w-20 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent
 6. **Mobile-first** — Responsive com breakpoints Tailwind padrão
 7. **Safe areas** — \`pt-safe\`, \`pb-safe\` para PWA/mobile`;
 
-const CRM_PROMPT = `## 🖥️ Design System — Dashboard / Admin / Auth
-
-### Filosofia Visual
+const CRM_PROMPT = `### Filosofia Visual
 **"Dark Professional"** — Interface funcional de alta densidade, dark mode padrão. Foco em produtividade, clareza de informação e ações rápidas. Sem elementos decorativos desnecessários.
 
 ---
