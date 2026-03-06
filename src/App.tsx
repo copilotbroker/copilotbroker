@@ -23,6 +23,7 @@ import TermosGoldenView from "./pages/goldenview/TermosGoldenView";
 import TermosMauricioCardoso from "./pages/mauriciocardoso/TermosMauricioCardoso";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import DesignSystem from "./pages/DesignSystem";
 
 import BrokerAdmin from "./pages/BrokerAdmin";
 import BrokerProjects from "./pages/BrokerProjects";
@@ -94,6 +95,7 @@ const App = () => (
             <Route path="/corretor/copiloto" element={<BrokerCopilotConfig />} />
             <Route path="/corretor/lead/:leadId" element={<LeadPage />} />
             <Route path="/termos" element={<Termos />} />
+            <Route path="/designsystem" element={<DesignSystem />} />
             
             {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
             <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />
