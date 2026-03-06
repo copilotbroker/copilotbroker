@@ -69,26 +69,6 @@ const MCCallToActionSection = () => {
             </p>
           </div>
 
-          {/* Investment Info */}
-          <div className={`mb-12 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-              {[
-                { value: "20%", label: "Entrada" },
-                { value: "71x", label: "Parcelas" },
-                { value: "0%", label: "Sem juros" },
-                { value: "Dez/31", label: "Entrega" },
-              ].map((item, index) => (
-                <div key={index} className="text-center">
-                  <div className="font-serif text-2xl sm:text-3xl md:text-4xl text-primary mb-1">
-                    {item.value}
-                  </div>
-                  <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground">
-                    {item.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Quote */}
           <div className={`mb-12 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
