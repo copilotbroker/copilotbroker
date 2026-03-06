@@ -4,7 +4,6 @@ import { MapPin, Star, Building2, Layers } from "lucide-react";
 const features = [
   { icon: MapPin, text: "Endereço nobre" },
   { icon: Star, text: "Alto padrão" },
-  { icon: Building2, text: "20 andares" },
   { icon: Layers, text: "1.800m² wellness" }
 ];
 
