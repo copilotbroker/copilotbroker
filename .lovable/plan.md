@@ -1,120 +1,60 @@
 
 
-## Plano: Unificação Automática de Leads Duplicados
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-### Problema
+### Problema 1: Nomes dos leads não aparecem
 
-Quando um lead é cadastrado manualmente ou importado via CSV com um telefone que já existe no escopo do mesmo corretor, o sistema cria um registro duplicado. O esperado é que o lead existente (mais antigo) seja preservado e atualizado com os novos dados, sem perder histórico.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-### Estratégia
-
-Criar uma **database function** `unify_lead` que centraliza toda a lógica de unificação. Tanto o `AddLeadModal` quanto o `CsvImportModal` chamarão essa função ao detectar duplicata, em vez de inserir um novo registro.
-
-### Mudanças
-
-#### 1. Migration: adicionar `lead_unificado` ao enum `interaction_type` e criar função `unify_lead`
-
-A função `unify_lead` recebe o ID do lead novo (recém-inserido) e faz:
-- Busca lead existente com mesmo `whatsapp` e `broker_id` (o mais antigo)
-- Se não encontrar duplicata, retorna sem fazer nada
-- Transfere dados preenchidos do novo para o antigo (nome, email, CPF, notas, project_id, lead_origin) sem sobrescrever campos já preenchidos no antigo
-- Transfere registros vinculados: `lead_interactions`, `lead_documents`, `lead_attribution`, `propostas`, `conversations`, `whatsapp_message_queue`
-- Reseta o lead antigo para status `new` (Pré-Atendimento)
-- Registra interação `lead_unificado` no lead principal
-- Deleta o lead duplicado
-- Retorna o ID do lead principal
-
-#### 2. `AddLeadModal.tsx` — verificar duplicata antes de inserir
-
-Após inserir o lead, chamar `supabase.rpc('unify_lead', { new_lead_id: leadId })`. Se a função retornar um ID diferente, significa que houve unificação. Mostrar toast informativo: "Lead unificado com registro existente".
-
-#### 3. `CsvImportModal.tsx` — unificar em vez de ignorar duplicatas
-
-Remover a lógica atual de "ignorar duplicatas" (que apenas descarta). Em vez disso:
-- Inserir todos os leads normalmente
-- Após cada batch, chamar `unify_lead` para cada lead inserido
-- Contar unificações separadamente no resultado final
-
-### Detalhes técnicos
-
-**Função SQL `unify_lead`** (SECURITY DEFINER):
-
-```sql
-CREATE OR REPLACE FUNCTION public.unify_lead(_new_lead_id uuid)
-RETURNS uuid
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-DECLARE
-  _new_lead RECORD;
-  _old_lead RECORD;
-BEGIN
-  SELECT * INTO _new_lead FROM leads WHERE id = _new_lead_id;
-  IF NOT FOUND THEN RETURN _new_lead_id; END IF;
-
-  -- Find oldest lead with same phone + broker
-  SELECT * INTO _old_lead FROM leads
-  WHERE whatsapp = _new_lead.whatsapp
-    AND broker_id IS NOT DISTINCT FROM _new_lead.broker_id
-    AND id != _new_lead_id
-  ORDER BY created_at ASC LIMIT 1;
-
-  IF NOT FOUND THEN RETURN _new_lead_id; END IF;
-
-  -- Merge fields (new overwrites old only if old is null)
-  UPDATE leads SET
-    name = COALESCE(_old_lead.name, _new_lead.name),
-    email = COALESCE(_old_lead.email, _new_lead.email),
-    cpf = COALESCE(_old_lead.cpf, _new_lead.cpf),
-    notes = CASE 
-      WHEN _old_lead.notes IS NOT NULL AND _new_lead.notes IS NOT NULL 
-      THEN _old_lead.notes || E'\n---\n' || _new_lead.notes
-      ELSE COALESCE(_old_lead.notes, _new_lead.notes) END,
-    project_id = COALESCE(_new_lead.project_id, _old_lead.project_id),
-    lead_origin = COALESCE(_new_lead.lead_origin, _old_lead.lead_origin),
-    status = 'new',
-    updated_at = now()
-  WHERE id = _old_lead.id;
-
-  -- Transfer related records
-  UPDATE lead_interactions SET lead_id = _old_lead.id WHERE lead_id = _new_lead_id;
-  UPDATE lead_documents SET lead_id = _old_lead.id WHERE lead_id = _new_lead_id;
-  UPDATE lead_attribution SET lead_id = _old_lead.id WHERE lead_id = _new_lead_id;
-  UPDATE propostas SET lead_id = _old_lead.id WHERE lead_id = _new_lead_id;
-  UPDATE conversations SET lead_id = _old_lead.id WHERE lead_id = _new_lead_id;
-  UPDATE whatsapp_message_queue SET lead_id = _old_lead.id WHERE lead_id = _new_lead_id;
-
-  -- Log unification
-  INSERT INTO lead_interactions (lead_id, interaction_type, notes)
-  VALUES (_old_lead.id, 'lead_unificado',
-    'Lead duplicado unificado. Registro removido: ' || _new_lead_id);
-
-  -- Delete duplicate
-  DELETE FROM leads WHERE id = _new_lead_id;
-
-  RETURN _old_lead.id;
-END;
-$$;
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
 ```
 
-**Enum update**: `ALTER TYPE interaction_type ADD VALUE 'lead_unificado';`
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-**AddLeadModal** — após o insert com sucesso, adicionar:
-```typescript
-const { data: unifiedId } = await supabase.rpc('unify_lead', { _new_lead_id: leadId });
-if (unifiedId && unifiedId !== leadId) {
-  toast.info("Lead unificado com registro existente");
-}
-```
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-**CsvImportModal** — após cada batch insert, iterar e chamar `unify_lead` para cada lead, contando unificações. Remover a lógica de pré-filtragem por `existingPhones`.
+### Problema 2: Marcar como lida quando lida no celular
+
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
+
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
 ### Arquivos a editar
 
 | Ação | Arquivo |
 |------|---------|
-| Migration | Adicionar `lead_unificado` ao enum + criar função `unify_lead` |
-| Editar | `src/components/admin/AddLeadModal.tsx` — chamar `unify_lead` pós-insert |
-| Editar | `src/components/admin/CsvImportModal.tsx` — substituir lógica de duplicatas por `unify_lead` |
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
 

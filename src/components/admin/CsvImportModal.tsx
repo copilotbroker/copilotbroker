@@ -450,32 +450,7 @@ export function CsvImportModal({
     let failedCount = 0;
     let duplicatesIgnored = 0;
 
-    // Check DB duplicates
-    if (duplicateStrategy === "ignore") {
-      const phones = leadsToImport.map(r => r.phone);
-      const batchSize = 500;
-      const existingPhones = new Set<string>();
-
-      for (let i = 0; i < phones.length; i += batchSize) {
-        const batch = phones.slice(i, i + batchSize);
-        const { data } = await (supabase
-          .from("leads" as any)
-          .select("whatsapp")
-          .in("whatsapp", batch) as any);
-        if (data) data.forEach((d: any) => existingPhones.add(d.whatsapp));
-      }
-
-      // Remove duplicates
-      const filtered = leadsToImport.filter(r => {
-        if (existingPhones.has(r.phone)) {
-          duplicatesIgnored++;
-          return false;
-        }
-        return true;
-      });
-      leadsToImport.length = 0;
-      leadsToImport.push(...filtered);
-    }
+    // Duplicates will be handled by unify_lead after insert
 
     const total = leadsToImport.length;
     setImportProgress({ current: 0, total });
@@ -532,6 +507,19 @@ export function CsvImportModal({
             broker_id: resolvedBrokerId,
           }));
           await (supabase.from("lead_interactions" as any).insert(interactions as any) as any);
+
+          // Unify duplicates — call unify_lead for each inserted lead
+          for (const l of leadsData) {
+            try {
+              const { data: unifiedId } = await supabase.rpc('unify_lead' as any, { _new_lead_id: l.id });
+              if (unifiedId && unifiedId !== l.id) {
+                duplicatesIgnored++;
+                successCount--; // don't double-count unified leads
+              }
+            } catch (e) {
+              console.warn("Unificação falhou para lead:", l.id, e);
+            }
+          }
         }
       } catch (err) {
         console.error("Erro no batch:", err);
@@ -1167,7 +1155,7 @@ export function CsvImportModal({
                       <div className="grid grid-cols-2 gap-3">
                         <MetricCard icon={CheckCircle2} label="Importados" value={importResult.success} color="text-green-500" />
                         <MetricCard icon={XCircle} label="Erros" value={importResult.failed} color="text-red-500" />
-                        <MetricCard icon={Ban} label="Duplicados ignorados" value={importResult.duplicatesIgnored} color="text-slate-400" />
+                        <MetricCard icon={Ban} label="Duplicados unificados" value={importResult.duplicatesIgnored} color="text-slate-400" />
                         <MetricCard icon={Wrench} label="Telefones corrigidos" value={importResult.phonesFixed} color="text-amber-500" />
                       </div>
 

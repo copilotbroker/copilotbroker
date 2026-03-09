@@ -1904,6 +1904,7 @@ export type Database = {
         Args: { _lead_id: string; _new_broker_id: string }
         Returns: undefined
       }
+      unify_lead: { Args: { _new_lead_id: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "broker" | "leader"
@@ -1936,6 +1937,7 @@ export type Database = {
         | "whatsapp_manual"
         | "reactivation"
         | "ligacao"
+        | "lead_unificado"
       lead_status:
         | "new"
         | "info_sent"
@@ -2102,6 +2104,7 @@ export const Constants = {
         "whatsapp_manual",
         "reactivation",
         "ligacao",
+        "lead_unificado",
       ],
       lead_status: [
         "new",
