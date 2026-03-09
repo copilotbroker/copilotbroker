@@ -450,32 +450,7 @@ export function CsvImportModal({
     let failedCount = 0;
     let duplicatesIgnored = 0;
 
-    // Check DB duplicates
-    if (duplicateStrategy === "ignore") {
-      const phones = leadsToImport.map(r => r.phone);
-      const batchSize = 500;
-      const existingPhones = new Set<string>();
-
-      for (let i = 0; i < phones.length; i += batchSize) {
-        const batch = phones.slice(i, i + batchSize);
-        const { data } = await (supabase
-          .from("leads" as any)
-          .select("whatsapp")
-          .in("whatsapp", batch) as any);
-        if (data) data.forEach((d: any) => existingPhones.add(d.whatsapp));
-      }
-
-      // Remove duplicates
-      const filtered = leadsToImport.filter(r => {
-        if (existingPhones.has(r.phone)) {
-          duplicatesIgnored++;
-          return false;
-        }
-        return true;
-      });
-      leadsToImport.length = 0;
-      leadsToImport.push(...filtered);
-    }
+    // Duplicates will be handled by unify_lead after insert
 
     const total = leadsToImport.length;
     setImportProgress({ current: 0, total });

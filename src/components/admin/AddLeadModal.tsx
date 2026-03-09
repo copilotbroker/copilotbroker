@@ -188,7 +188,18 @@ export function AddLeadModal({ isOpen, onClose, onSuccess, defaultBrokerId, hide
         // Don't fail the whole operation
       }
 
-      toast.success("Lead adicionado com sucesso!");
+      // Try to unify with existing lead (same phone + broker)
+      try {
+        const { data: unifiedId } = await supabase.rpc('unify_lead' as any, { _new_lead_id: leadId });
+        if (unifiedId && unifiedId !== leadId) {
+          toast.success("Lead unificado com registro existente e movido para Pré Atendimento");
+        } else {
+          toast.success("Lead adicionado com sucesso!");
+        }
+      } catch {
+        toast.success("Lead adicionado com sucesso!");
+      }
+
       handleClose();
       onSuccess?.();
     } catch (error) {
