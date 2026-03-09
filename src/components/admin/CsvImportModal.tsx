@@ -507,6 +507,19 @@ export function CsvImportModal({
             broker_id: resolvedBrokerId,
           }));
           await (supabase.from("lead_interactions" as any).insert(interactions as any) as any);
+
+          // Unify duplicates — call unify_lead for each inserted lead
+          for (const l of leadsData) {
+            try {
+              const { data: unifiedId } = await supabase.rpc('unify_lead' as any, { _new_lead_id: l.id });
+              if (unifiedId && unifiedId !== l.id) {
+                duplicatesIgnored++;
+                successCount--; // don't double-count unified leads
+              }
+            } catch (e) {
+              console.warn("Unificação falhou para lead:", l.id, e);
+            }
+          }
         }
       } catch (err) {
         console.error("Erro no batch:", err);
