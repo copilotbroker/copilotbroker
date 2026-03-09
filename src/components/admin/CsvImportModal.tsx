@@ -1155,7 +1155,7 @@ export function CsvImportModal({
                       <div className="grid grid-cols-2 gap-3">
                         <MetricCard icon={CheckCircle2} label="Importados" value={importResult.success} color="text-green-500" />
                         <MetricCard icon={XCircle} label="Erros" value={importResult.failed} color="text-red-500" />
-                        <MetricCard icon={Ban} label="Duplicados ignorados" value={importResult.duplicatesIgnored} color="text-slate-400" />
+                        <MetricCard icon={Ban} label="Duplicados unificados" value={importResult.duplicatesIgnored} color="text-slate-400" />
                         <MetricCard icon={Wrench} label="Telefones corrigidos" value={importResult.phonesFixed} color="text-amber-500" />
                       </div>
 
