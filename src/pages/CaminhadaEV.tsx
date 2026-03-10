@@ -91,7 +91,7 @@ const CaminhadaEV = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.whatsapp.trim() || !formData.shirtSize) {
-      toast.error("Por favor, preencha nome e WhatsApp.");
+      toast.error("Por favor, preencha nome, WhatsApp e tamanho de camiseta.");
       return;
     }
     if (!isValidWhatsApp(formData.whatsapp)) {
