@@ -142,7 +142,7 @@ const CaminhadaEV = () => {
       }
 
       toast.success("Inscrição realizada com sucesso! Em breve entraremos em contato.");
-      setFormData({ name: "", whatsapp: "", email: "" });
+      setFormData({ name: "", whatsapp: "", email: "", shirtSize: "" });
       setAcceptedTerms(false);
     } catch (error) {
       console.error("Erro ao salvar lead:", error);
