@@ -67,7 +67,7 @@ const IconBox = ({ icon: Icon, className = "" }: { icon: React.ElementType; clas
 );
 
 const CaminhadaEV = () => {
-  const [formData, setFormData] = useState({ name: "", whatsapp: "", email: "" });
+  const [formData, setFormData] = useState({ name: "", whatsapp: "", email: "", shirtSize: "" });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
