@@ -25,7 +25,17 @@ import {
   BookOpen,
   ArrowDown,
   Ticket,
+  Package,
+  Shirt,
+  Building2,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const SECTION_CLASSES = "py-16 md:py-24 px-4 relative";
 
