@@ -580,7 +580,7 @@ const CaminhadaEV = () => {
                 </Select>
               </div>
 
-                <Checkbox
+                <div className="flex items-start gap-3">
                   id="cam-terms"
                   checked={acceptedTerms}
                   onCheckedChange={(c) => setAcceptedTerms(c === true)}
