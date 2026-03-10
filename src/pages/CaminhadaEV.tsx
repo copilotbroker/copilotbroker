@@ -114,6 +114,7 @@ const CaminhadaEV = () => {
         source: "caminhada-ev",
         lead_origin: getLeadOriginFromUTM() || "caminhada",
         lead_origin_detail: getLeadOriginDetailFromUTM() || "caminhada-estancia-velha-abril",
+        notes: `Tamanho camiseta: ${formData.shirtSize}`,
       };
       if (projectId) leadData.project_id = projectId;
 
