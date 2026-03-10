@@ -160,9 +160,13 @@ const CaminhadaEV = () => {
       </Helmet>
 
       <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+        {/* Fixed urgency banner */}
+        <div className="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white text-center py-2 px-4 text-xs sm:text-sm font-semibold tracking-wide shadow-md">
+          Inscrições somente até o dia 22/03 — Vagas Limitadas
+        </div>
 
         {/* ───── HERO ───── */}
-        <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[hsl(var(--charcoal))] via-[hsl(var(--charcoal-light))] to-background">
+        <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[hsl(var(--charcoal))] via-[hsl(var(--charcoal-light))] to-background pt-10">
           {/* Decorative blurred orbs */}
           <div className="absolute top-20 -left-32 w-72 h-72 bg-primary/10 rounded-full blur-[120px]" aria-hidden="true" />
           <div className="absolute bottom-40 -right-24 w-60 h-60 bg-primary/8 rounded-full blur-[100px]" aria-hidden="true" />
