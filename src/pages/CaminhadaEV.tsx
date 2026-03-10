@@ -82,7 +82,7 @@ const CaminhadaEV = () => {
       await trackLeadAttribution(leadId, projectId || undefined, "landing_page");
 
       // Unify if duplicate
-      supabase.rpc("unify_lead", { _new_lead_id: leadId }).catch(() => {});
+      supabase.rpc("unify_lead", { _new_lead_id: leadId } as any).then(() => {}).catch(() => {});
 
       // Auto first message
       supabase.functions.invoke("auto-first-message", { body: { leadId } }).catch(() => {});
