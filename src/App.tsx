@@ -38,6 +38,7 @@ import Prontos from "./pages/Prontos";
 import ProntosBrokerPage from "./pages/ProntosBrokerPage";
 import Termos from "./pages/Termos";
 import LeadPage from "./pages/LeadPage";
+import CaminhadaEV from "./pages/CaminhadaEV";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
