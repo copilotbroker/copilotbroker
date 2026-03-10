@@ -560,7 +560,26 @@ const CaminhadaEV = () => {
                 />
               </div>
 
-              <div className="flex items-start gap-3">
+              <div>
+                <label htmlFor="cam-shirt" className="block text-sm font-medium text-foreground/80 mb-2">
+                  <Shirt className="w-4 h-4 inline mr-1.5 -mt-0.5 text-primary" />
+                  Tamanho da Camiseta
+                </label>
+                <Select
+                  value={formData.shirtSize}
+                  onValueChange={(value) => setFormData({ ...formData, shirtSize: value })}
+                >
+                  <SelectTrigger className="w-full py-3 bg-background/60 border-border text-foreground">
+                    <SelectValue placeholder="Selecione o tamanho" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    {["PP", "P", "M", "G", "GG", "XGG"].map((size) => (
+                      <SelectItem key={size} value={size}>{size}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
                 <Checkbox
                   id="cam-terms"
                   checked={acceptedTerms}
