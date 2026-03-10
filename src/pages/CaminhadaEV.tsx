@@ -25,7 +25,17 @@ import {
   BookOpen,
   ArrowDown,
   Ticket,
+  Package,
+  Shirt,
+  Building2,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const SECTION_CLASSES = "py-16 md:py-24 px-4 relative";
 
@@ -57,7 +67,7 @@ const IconBox = ({ icon: Icon, className = "" }: { icon: React.ElementType; clas
 );
 
 const CaminhadaEV = () => {
-  const [formData, setFormData] = useState({ name: "", whatsapp: "", email: "" });
+  const [formData, setFormData] = useState({ name: "", whatsapp: "", email: "", shirtSize: "" });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -80,8 +90,8 @@ const CaminhadaEV = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.whatsapp.trim()) {
-      toast.error("Por favor, preencha nome e WhatsApp.");
+    if (!formData.name.trim() || !formData.whatsapp.trim() || !formData.shirtSize) {
+      toast.error("Por favor, preencha nome, WhatsApp e tamanho de camiseta.");
       return;
     }
     if (!isValidWhatsApp(formData.whatsapp)) {
@@ -104,6 +114,7 @@ const CaminhadaEV = () => {
         source: "caminhada-ev",
         lead_origin: getLeadOriginFromUTM() || "caminhada",
         lead_origin_detail: getLeadOriginDetailFromUTM() || "caminhada-estancia-velha-abril",
+        notes: `Tamanho camiseta: ${formData.shirtSize}`,
       };
       if (projectId) leadData.project_id = projectId;
 
@@ -131,7 +142,7 @@ const CaminhadaEV = () => {
       }
 
       toast.success("Inscrição realizada com sucesso! Em breve entraremos em contato.");
-      setFormData({ name: "", whatsapp: "", email: "" });
+      setFormData({ name: "", whatsapp: "", email: "", shirtSize: "" });
       setAcceptedTerms(false);
     } catch (error) {
       console.error("Erro ao salvar lead:", error);
@@ -400,7 +411,76 @@ const CaminhadaEV = () => {
           </FadeInSection>
         </section>
 
-        {/* ───── CTA + FRASE ───── */}
+        {/* ───── RETIRADA DO KIT ───── */}
+        <section className={SECTION_CLASSES}>
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-primary/[0.03] rounded-full blur-[100px]" aria-hidden="true" />
+
+          <FadeInSection className="max-w-2xl mx-auto text-center">
+            <IconBox icon={Package} />
+            <h2 className="font-display text-3xl sm:text-4xl font-bold mb-4">
+              Retirada do <span className="text-primary">Kit</span>
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-8">
+              Todos os participantes receberão um kit exclusivo contendo:
+            </p>
+
+            <div className="grid grid-cols-2 gap-4 mb-8 max-w-md mx-auto">
+              <GlassCard className="p-5 bg-card/40 border-border/30 text-center">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-3 mx-auto">
+                  <Shirt className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-sm text-foreground/80 font-medium">Camiseta personalizada</p>
+              </GlassCard>
+              <GlassCard className="p-5 bg-card/40 border-border/30 text-center">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-3 mx-auto">
+                  <Package className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-sm text-foreground/80 font-medium">Squeezy personalizada</p>
+              </GlassCard>
+            </div>
+
+            <GlassCard className="p-6 sm:p-8 bg-card/60 border-border/40">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <Building2 className="w-4 h-4 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Local de retirada</p>
+                  <p className="text-sm sm:text-base text-foreground/90 font-medium">Imobiliária Enove</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <MapPin className="w-4 h-4 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Endereço</p>
+                  <p className="text-sm sm:text-base text-foreground/90 font-medium">Av. Brasil, 1213 - Centro, Estância Velha - RS</p>
+                  <p className="text-xs text-muted-foreground">CEP 93600-010</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Período</p>
+                  <p className="text-sm sm:text-base text-foreground/90 font-medium">30/03 a 02/04</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <Clock className="w-4 h-4 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Horário</p>
+                  <p className="text-sm sm:text-base text-foreground/90 font-medium">08h15 às 18h</p>
+                </div>
+              </div>
+            </GlassCard>
+          </FadeInSection>
+        </section>
+
         <section className={`${SECTION_CLASSES} bg-gradient-to-b from-card/50 to-background`}>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/[0.04] rounded-full blur-[120px]" aria-hidden="true" />
 
@@ -478,6 +558,26 @@ const CaminhadaEV = () => {
                   className="w-full px-4 py-3 bg-background/60 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-base"
                   placeholder="seu@email.com"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="cam-shirt" className="block text-sm font-medium text-foreground/80 mb-2">
+                  <Shirt className="w-4 h-4 inline mr-1.5 -mt-0.5 text-primary" />
+                  Tamanho da Camiseta
+                </label>
+                <Select
+                  value={formData.shirtSize}
+                  onValueChange={(value) => setFormData({ ...formData, shirtSize: value })}
+                >
+                  <SelectTrigger className="w-full py-3 bg-background/60 border-border text-foreground">
+                    <SelectValue placeholder="Selecione o tamanho" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    {["PP", "P", "M", "G", "GG", "XGG"].map((size) => (
+                      <SelectItem key={size} value={size}>{size}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex items-start gap-3">
