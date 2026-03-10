@@ -166,7 +166,7 @@ const CaminhadaEV = () => {
         </div>
 
         {/* ───── HERO ───── */}
-        <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[hsl(var(--charcoal))] via-[hsl(var(--charcoal-light))] to-background">
+        <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[hsl(var(--charcoal))] via-[hsl(var(--charcoal-light))] to-background pt-10">
           {/* Decorative blurred orbs */}
           <div className="absolute top-20 -left-32 w-72 h-72 bg-primary/10 rounded-full blur-[120px]" aria-hidden="true" />
           <div className="absolute bottom-40 -right-24 w-60 h-60 bg-primary/8 rounded-full blur-[100px]" aria-hidden="true" />
