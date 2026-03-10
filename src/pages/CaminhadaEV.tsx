@@ -194,7 +194,7 @@ const CaminhadaEV = () => {
 
             <FadeInSection className="delay-200">
               <p className="text-lg sm:text-xl text-white/65 max-w-xl mx-auto mb-4 leading-relaxed">
-                Participe de uma experiência única no terreno do Novo Condomínio de Estância Velha — <strong className="text-white/90">Enove Select</strong>.
+                Participe de uma experiência única no terreno do <strong className="text-white/90">Novo Condomínio de Estância Velha</strong>.
               </p>
               <p className="text-base sm:text-lg text-white/45 max-w-lg mx-auto mb-10">
                 Uma caminhada especial onde você poderá conhecer o lugar antes mesmo da construção… e imaginar como seria viver ali.
