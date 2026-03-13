@@ -425,7 +425,13 @@ const BrokerProjects = () => {
           </div>
 
           <div className="grid gap-3">
-            {myCreatedProjects.length === 0 ? (
+            {/* Draft projects first */}
+            {myDraftProjects.map((bp) => renderDraftCard(bp))}
+
+            {/* Published projects */}
+            {myCreatedProjects.map((bp) => renderProjectCard(bp, true))}
+
+            {myCreatedProjects.length === 0 && myDraftProjects.length === 0 && (
               <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
                 <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-2">Crie seus próprios empreendimentos e imóveis.</p>
@@ -435,8 +441,6 @@ const BrokerProjects = () => {
                   Criar meu primeiro
                 </Button>
               </div>
-            ) : (
-              myCreatedProjects.map((bp) => renderProjectCard(bp, true))
             )}
           </div>
         </TabsContent>
