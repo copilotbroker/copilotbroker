@@ -17,6 +17,8 @@ import {
   Building2, MapPin, Rocket, X, Upload, Image, Trash2, FileVideo, Home, Save,
 } from "lucide-react";
 import DynamicLandingPage from "@/components/landing/DynamicLandingPage";
+import WizardMethodSelector from "@/components/admin/WizardMethodSelector";
+import LinkImportStep, { ScrapedData } from "@/components/admin/LinkImportStep";
 
 interface WizardProps {
   inline?: boolean;
