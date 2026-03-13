@@ -894,11 +894,10 @@ Faixa de preço: A partir de R$ 320.000`}
 
       {/* Content */}
       <div className={cn(
-        "flex-1 overflow-y-auto min-h-0",
         isLastStep ? "" : "pb-4",
       )}>
-        <div className={cn(isLastStep ? "h-full" : "")}>
-          <div className={cn(isLastStep ? "h-full" : "min-h-[340px]")}>
+        <div className={cn(isLastStep ? "" : "")}>
+          <div className={cn(isLastStep ? "" : "min-h-[340px]")}>
             {stepContent[step]}
           </div>
         </div>
