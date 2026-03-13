@@ -174,7 +174,7 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
     const canContinue = propertyName.trim().length > 0;
 
     return (
-      <div className="max-w-2xl mx-auto space-y-5 pb-[calc(env(safe-area-inset-bottom,0px)+6rem)] md:pb-0">
+      <div className="max-w-2xl mx-auto space-y-5">
         <div className="text-center mb-2">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-3">
             <CheckCircle className="w-7 h-7 text-green-400" />
@@ -311,7 +311,7 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
         <div ref={bottomSentinelRef} className="h-1" />
 
         {hasScrolledToBottom && (
-          <div className="border-t border-[#2a2a2e] pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] md:pb-0">
+          <div className="border-t border-[#2a2a2e] pt-3 pb-safe">
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleRetry} size="sm" className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
                 <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
