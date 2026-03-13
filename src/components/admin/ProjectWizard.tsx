@@ -365,7 +365,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     if (!brokerMode || !brokerId || !data.name.trim()) return;
     setIsSaving(true);
     try {
-      const payload = {
+      const payload: any = {
         name: data.name.trim(),
         slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
         city: data.city.trim(),
@@ -376,6 +376,11 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
         created_by_broker_id: brokerId,
         is_active: false,
       };
+
+      // Preserve landing_content if already generated
+      if (landingContent) {
+        payload.landing_content = landingContent;
+      }
 
       if (editProject) {
         // Update existing draft
