@@ -404,11 +404,21 @@ const BrokerProjects = () => {
           </div>
 
           <div className="grid gap-3">
-            {/* Draft projects first */}
-            {myDraftProjects.map((bp) => renderDraftCard(bp))}
-
             {/* Published projects */}
-            {myCreatedProjects.map((bp) => renderProjectCard(bp, true))}
+            {myCreatedProjects.length > 0 && (
+              <>
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Publicados</p>
+                {myCreatedProjects.map((bp) => renderProjectCard(bp, true))}
+              </>
+            )}
+
+            {/* Draft projects */}
+            {myDraftProjects.length > 0 && (
+              <>
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-2">Rascunhos</p>
+                {myDraftProjects.map((bp) => renderDraftCard(bp))}
+              </>
+            )}
 
             {myCreatedProjects.length === 0 && myDraftProjects.length === 0 && (
               <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
