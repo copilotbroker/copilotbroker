@@ -72,12 +72,12 @@ export function BrokerSidebar({
       <nav className="flex-1 flex flex-col items-center gap-1 px-2 py-4">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = viewMode === item.id;
+          const isActive = isAdminPage && viewMode === item.id;
 
           return (
             <button
               key={item.id}
-              onClick={() => onViewChange(item.id)}
+              onClick={() => handleNavClick(item.id)}
               className={cn(
                 "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
                 "hover:bg-[#2a2a2e] group relative",
