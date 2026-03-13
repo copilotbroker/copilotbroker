@@ -833,9 +833,9 @@ Faixa de preço: A partir de R$ 320.000`}
     : [stepDados, stepConteudo, stepConfig, stepIA];
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col">
       {/* Header */}
-      <div className="flex-shrink-0 mb-6">
+      <div className="mb-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FFFF00]/80 to-[#FFFF00] flex items-center justify-center">
             {data.type === "imovel" ? <Home className="w-5 h-5 text-black" /> : <Building2 className="w-5 h-5 text-black" />}
@@ -894,18 +894,17 @@ Faixa de preço: A partir de R$ 320.000`}
 
       {/* Content */}
       <div className={cn(
-        "flex-1 overflow-y-auto min-h-0",
         isLastStep ? "" : "pb-4",
       )}>
-        <div className={cn(isLastStep ? "h-full" : "")}>
-          <div className={cn(isLastStep ? "h-full" : "min-h-[340px]")}>
+        <div className={cn(isLastStep ? "" : "")}>
+          <div className={cn(isLastStep ? "" : "min-h-[340px]")}>
             {stepContent[step]}
           </div>
         </div>
       </div>
 
       {/* Bottom nav */}
-      <div className="flex-shrink-0 border-t border-[#2a2a2e] pt-4 mt-4">
+      <div className="border-t border-[#2a2a2e] pt-4 mt-4">
         <div className="flex gap-3">
           {step > 0 && !editProject ? (
             <Button
