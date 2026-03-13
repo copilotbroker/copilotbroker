@@ -1089,6 +1089,7 @@ Faixa de preço: A partir de R$ 320.000`}
         <LinkImportStep
           onImportSuccess={handleLinkImportSuccess}
           onBack={() => setImportMode(null)}
+          onSaveDraft={brokerMode ? handleLinkDraftSave : undefined}
         />
       </div>
     );
