@@ -426,6 +426,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
         await createProject(projectPayload as any);
         toast.success("Empreendimento criado com landing page!");
       }
+      clearDraft();
       onComplete?.();
       onBack?.();
     } catch (err) {
