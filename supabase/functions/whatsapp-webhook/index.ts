@@ -222,7 +222,7 @@ async function processReply(
         // Get campaign lead_id before completing
         const { data: campaignData } = await supabase
           .from("whatsapp_campaigns")
-          .select("lead_id")
+          .select("lead_id, lead_previous_status")
           .eq("id", campaignId)
           .eq("status", "running")
           .maybeSingle();
@@ -243,19 +243,20 @@ async function processReply(
             .single();
 
           if (lead && (lead as { status: string }).status === "awaiting_docs") {
+            const restoreStatus = (campaignData as any).lead_previous_status || "info_sent";
             await supabase
               .from("leads")
-              .update({ status: "info_sent", updated_at: new Date().toISOString() })
+              .update({ status: restoreStatus, updated_at: new Date().toISOString() })
               .eq("id", campaignData.lead_id);
 
             await supabase.from("lead_interactions").insert({
               lead_id: campaignData.lead_id,
               interaction_type: "status_change",
               old_status: "awaiting_docs",
-              new_status: "info_sent",
-              notes: "Cadência concluída — lead movido para Atendimento",
+              new_status: restoreStatus,
+              notes: `Cadência concluída — lead restaurado para ${restoreStatus}`,
             });
-            console.log(`Lead ${campaignData.lead_id} moved back to info_sent after cadence completion`);
+            console.log(`Lead ${campaignData.lead_id} restored to ${restoreStatus} after cadence completion`);
           }
         }
       }

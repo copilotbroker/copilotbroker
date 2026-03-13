@@ -86,6 +86,15 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
     mutationFn: async () => {
       if (!data?.campaignId) return;
 
+      // Fetch previous status before cancelling
+      const { data: campaignInfo } = await (supabase
+        .from("whatsapp_campaigns")
+        .select("lead_previous_status") as any)
+        .eq("id", data.campaignId)
+        .maybeSingle();
+
+      const restoreStatus = campaignInfo?.lead_previous_status || "info_sent";
+
       // Cancel campaign
       const { error: campError } = await supabase
         .from("whatsapp_campaigns")
@@ -101,7 +110,7 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
         .eq("campaign_id", data.campaignId)
         .in("status", ["scheduled", "queued", "paused_by_system"]);
 
-      // Move lead back from Copiloto Ativo to Atendimento
+      // Restore lead to previous status
       if (leadId) {
         const { data: lead } = await supabase
           .from("leads")
@@ -112,7 +121,7 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
         if (lead && (lead as any).status === "awaiting_docs") {
           await supabase
             .from("leads")
-            .update({ status: "info_sent", updated_at: new Date().toISOString() })
+            .update({ status: restoreStatus, updated_at: new Date().toISOString() })
             .eq("id", leadId);
         }
       }
@@ -139,13 +148,15 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
 export async function cancelCadenciaForLead(leadId: string): Promise<void> {
   const { data: campaigns } = await (supabase
     .from("whatsapp_campaigns")
-    .select("id") as any)
+    .select("id, lead_previous_status") as any)
     .eq("lead_id", leadId)
     .eq("status", "running");
 
   if (!campaigns || campaigns.length === 0) return;
 
   for (const campaign of campaigns) {
+    const restoreStatus = campaign.lead_previous_status || "info_sent";
+
     await supabase
       .from("whatsapp_campaigns")
       .update({ status: "cancelled" })
@@ -156,19 +167,19 @@ export async function cancelCadenciaForLead(leadId: string): Promise<void> {
       .update({ status: "cancelled" })
       .eq("campaign_id", campaign.id)
       .in("status", ["scheduled", "queued", "paused_by_system"]);
-  }
 
-  // Move lead back from Copiloto Ativo to Atendimento
-  const { data: lead } = await supabase
-    .from("leads")
-    .select("status")
-    .eq("id", leadId)
-    .single();
-
-  if (lead && (lead as any).status === "awaiting_docs") {
-    await supabase
+    // Restore lead to previous status
+    const { data: lead } = await supabase
       .from("leads")
-      .update({ status: "info_sent", updated_at: new Date().toISOString() })
-      .eq("id", leadId);
+      .select("status")
+      .eq("id", leadId)
+      .single();
+
+    if (lead && (lead as any).status === "awaiting_docs") {
+      await supabase
+        .from("leads")
+        .update({ status: restoreStatus, updated_at: new Date().toISOString() })
+        .eq("id", leadId);
+    }
   }
 }

@@ -623,6 +623,13 @@ app.post("/process", async (c) => {
             .single();
 
           if (currentLead && (currentLead as { status: string }).status === "new") {
+            // Save previous status in campaign
+            if (queueMsg.campaign_id) {
+              await supabase
+                .from("whatsapp_campaigns")
+                .update({ lead_previous_status: "new" })
+                .eq("id", queueMsg.campaign_id);
+            }
             await supabase
               .from("leads")
               .update({

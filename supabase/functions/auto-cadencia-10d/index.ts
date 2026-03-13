@@ -267,6 +267,7 @@ Deno.serve(async (req) => {
         total_leads: stepsToUse.length,
         lead_id: leadId,
         project_id: lead.project_id,
+        lead_previous_status: lead.status,
       })
       .select()
       .single();
