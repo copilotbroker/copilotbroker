@@ -177,19 +177,20 @@ const BrokerProjects = () => {
   const renderDraftCard = (bp: { id: string; project: any }) => (
     <div
       key={bp.id}
-      className="bg-[#1e1e22] border border-dashed border-yellow-500/40 rounded-lg p-3 hover:border-yellow-500/60 transition-colors"
+      className="bg-amber-950/20 border border-dashed border-amber-500/40 rounded-lg p-3 hover:border-amber-500/60 transition-colors cursor-pointer"
+      onClick={() => openEditWizard(bp.project)}
     >
       <div className="flex items-start gap-3">
         {bp.project.type === "imovel" ? (
-          <Home className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+          <Home className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
         ) : (
-          <Building2 className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+          <Building2 className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
         )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-semibold text-foreground truncate text-sm">{bp.project.name}</h3>
-            <span className="text-[10px] text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
+            <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
               Rascunho
             </span>
             {bp.project.city && (
@@ -199,14 +200,14 @@ const BrokerProjects = () => {
             )}
           </div>
           <p className="text-[11px] text-muted-foreground/70">
-            Landing page ainda não publicada. Continue a edição para publicar.
+            Landing page ainda não publicada. Clique para continuar a edição.
           </p>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => openEditWizard(bp.project)}
-            className="p-1.5 rounded-md bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors"
+            className="p-1.5 rounded-md bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
             title="Continuar edição"
           >
             <FileEdit className="w-3.5 h-3.5" />
