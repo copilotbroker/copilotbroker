@@ -626,7 +626,7 @@ app.post("/process", async (c) => {
             await supabase
               .from("leads")
               .update({
-                status: "info_sent",
+                status: "awaiting_docs",
                 status_distribuicao: "atendimento_iniciado",
                 atendimento_iniciado_em: new Date().toISOString(),
                 reserva_expira_em: null,
@@ -641,11 +641,11 @@ app.post("/process", async (c) => {
                 broker_id: instance.broker_id,
                 interaction_type: "status_change",
                 old_status: "new",
-                new_status: "info_sent",
-                notes: "Lead movido para Atendimento automaticamente apos envio da 1a mensagem da campanha",
+                new_status: "awaiting_docs",
+                notes: "Lead movido para Copiloto Ativo automaticamente após envio da 1ª mensagem da campanha",
               });
 
-            console.log(`Lead ${queueMsg.lead_id} moved to info_sent after campaign step 1`);
+            console.log(`Lead ${queueMsg.lead_id} moved to awaiting_docs (Copiloto Ativo) after campaign step 1`);
           }
         }
 
