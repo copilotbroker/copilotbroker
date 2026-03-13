@@ -7,7 +7,7 @@ export function useBrokerFeatures(brokerId: string | null) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!brokerId) { setIsLoading(false); return; }
+    if (!brokerId) return; // keep isLoading=true until brokerId arrives
 
     const fetch = async () => {
       const { data } = await supabase
