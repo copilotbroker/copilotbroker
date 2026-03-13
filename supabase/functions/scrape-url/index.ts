@@ -30,49 +30,118 @@ function extractDescription(html: string): string {
   return "";
 }
 
+function isValidImageUrl(src: string): boolean {
+  if (!src || src.length < 5) return false;
+  if (src.startsWith("data:")) return false;
+  if (/\.(svg|ico)(\?|$)/i.test(src)) return false;
+  if (/1x1|pixel|spacer|tracking|blank|logo.*small|favicon/i.test(src)) return false;
+  // Must look like an image URL or be a generic URL (could be an image served dynamically)
+  return true;
+}
+
+function addImage(src: string, baseUrl: string, seen: Set<string>, images: string[]) {
+  if (!isValidImageUrl(src)) return;
+  const url = resolveUrl(src.trim(), baseUrl);
+  if (url && !seen.has(url)) {
+    seen.add(url);
+    images.push(url);
+  }
+}
+
 function extractImages(html: string, baseUrl: string): string[] {
   const images: string[] = [];
   const seen = new Set<string>();
 
-  // OG image
-  const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-  if (ogMatch) {
-    const url = resolveUrl(ogMatch[1], baseUrl);
-    if (url && !seen.has(url)) { seen.add(url); images.push(url); }
-  }
-
-  // img tags
-  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*/gi;
+  // 1. OG images (can have multiple)
+  const ogRegex = /<meta[^>]+(?:property=["']og:image(?::url)?["'][^>]+content=["']([^"']+)["']|content=["']([^"']+)["'][^>]+property=["']og:image(?::url)?["'])/gi;
   let match;
-  while ((match = imgRegex.exec(html)) !== null) {
-    const src = match[1];
-    // Skip tiny icons, tracking pixels, svgs, data URIs
-    if (src.startsWith("data:")) continue;
-    if (/\.(svg|ico)(\?|$)/i.test(src)) continue;
-    if (/1x1|pixel|spacer|tracking|blank/i.test(src)) continue;
+  while ((match = ogRegex.exec(html)) !== null) {
+    addImage(match[1] || match[2], baseUrl, seen, images);
+  }
 
-    const url = resolveUrl(src, baseUrl);
-    if (url && !seen.has(url)) {
-      seen.add(url);
-      images.push(url);
+  // 2. Twitter/meta image
+  const twitterImg = html.match(/<meta[^>]+(?:name=["']twitter:image["'][^>]+content=["']([^"']+)["']|content=["']([^"']+)["'][^>]+name=["']twitter:image["'])/i);
+  if (twitterImg) addImage(twitterImg[1] || twitterImg[2], baseUrl, seen, images);
+
+  // 3. <img> tags — src attribute
+  const imgSrcRegex = /<img[^>]+>/gi;
+  while ((match = imgSrcRegex.exec(html)) !== null) {
+    const tag = match[0];
+
+    // Extract src
+    const srcMatch = tag.match(/\bsrc=["']([^"']+)["']/i);
+    if (srcMatch) addImage(srcMatch[1], baseUrl, seen, images);
+
+    // Extract data-src, data-lazy-src, data-original, data-full-src, data-zoom-image
+    const lazyAttrs = tag.matchAll(/\bdata-(?:src|lazy-src|original|full-src|zoom-image|srcset|hi-res|large-src|bg|image)=["']([^"']+)["']/gi);
+    for (const lazyMatch of lazyAttrs) {
+      // data-srcset may have multiple URLs separated by comma
+      const val = lazyMatch[1];
+      if (val.includes(",")) {
+        for (const part of val.split(",")) {
+          const u = part.trim().split(/\s+/)[0];
+          addImage(u, baseUrl, seen, images);
+        }
+      } else {
+        addImage(val, baseUrl, seen, images);
+      }
+    }
+
+    // Extract srcset
+    const srcsetMatch = tag.match(/\bsrcset=["']([^"']+)["']/i);
+    if (srcsetMatch) {
+      for (const part of srcsetMatch[1].split(",")) {
+        const u = part.trim().split(/\s+/)[0];
+        addImage(u, baseUrl, seen, images);
+      }
     }
   }
 
-  // Also check srcset and data-src
-  const dataSrcRegex = /data-src=["']([^"']+)["']/gi;
-  while ((match = dataSrcRegex.exec(html)) !== null) {
-    const src = match[1];
-    if (src.startsWith("data:")) continue;
-    if (/\.(svg|ico)(\?|$)/i.test(src)) continue;
-    const url = resolveUrl(src, baseUrl);
-    if (url && !seen.has(url)) {
-      seen.add(url);
-      images.push(url);
+  // 4. <source> tags inside <picture>
+  const sourceRegex = /<source[^>]+srcset=["']([^"']+)["']/gi;
+  while ((match = sourceRegex.exec(html)) !== null) {
+    for (const part of match[1].split(",")) {
+      const u = part.trim().split(/\s+/)[0];
+      addImage(u, baseUrl, seen, images);
     }
   }
 
-  return images.slice(0, 30); // Cap at 30 images
+  // 5. CSS background-image in inline styles
+  const bgRegex = /background(?:-image)?\s*:\s*url\(\s*['"]?([^'")]+)['"]?\s*\)/gi;
+  while ((match = bgRegex.exec(html)) !== null) {
+    addImage(match[1], baseUrl, seen, images);
+  }
+
+  // 6. JSON-LD structured data images
+  const jsonLdRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  while ((match = jsonLdRegex.exec(html)) !== null) {
+    try {
+      const data = JSON.parse(match[1]);
+      const extractFromObj = (obj: any) => {
+        if (!obj || typeof obj !== "object") return;
+        if (typeof obj.image === "string") addImage(obj.image, baseUrl, seen, images);
+        if (Array.isArray(obj.image)) obj.image.forEach((img: any) => {
+          if (typeof img === "string") addImage(img, baseUrl, seen, images);
+          else if (img?.url) addImage(img.url, baseUrl, seen, images);
+        });
+        if (obj.image?.url) addImage(obj.image.url, baseUrl, seen, images);
+        if (Array.isArray(obj.photo)) obj.photo.forEach((p: any) => {
+          if (typeof p === "string") addImage(p, baseUrl, seen, images);
+          else if (p?.contentUrl) addImage(p.contentUrl, baseUrl, seen, images);
+        });
+      };
+      if (Array.isArray(data)) data.forEach(extractFromObj);
+      else extractFromObj(data);
+    } catch { /* ignore malformed JSON-LD */ }
+  }
+
+  // 7. Links to image files (sometimes galleries use <a href="image.jpg">)
+  const aHrefImgRegex = /<a[^>]+href=["']([^"']+\.(?:jpg|jpeg|png|webp|avif)(?:\?[^"']*)?)["']/gi;
+  while ((match = aHrefImgRegex.exec(html)) !== null) {
+    addImage(match[1], baseUrl, seen, images);
+  }
+
+  return images.slice(0, 50); // Cap at 50 images
 }
 
 function extractVideos(html: string, baseUrl: string): string[] {
