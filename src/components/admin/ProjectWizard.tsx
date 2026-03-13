@@ -67,20 +67,16 @@ const BROKER_STEP_LABELS = ["Dados", "Conteúdo", "IA + Preview"];
 
 const DRAFT_KEY = "project-wizard-draft";
 
-interface DraftState {
-  data: WizardData;
-  step: number;
-  landingContent: LandingContent | null;
-  chatMessages: ChatMessage[];
-  mediaFiles: MediaFile[];
-  savedAt: string;
-}
-
 export default function ProjectWizard({ inline, onBack, editProject, onComplete, brokerMode, brokerId }: WizardProps) {
   const { createProject, updateProject } = useProjects();
   const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
-  const isDraftEdit = editProject && !editProject.landing_content;
-  const [step, setStep] = useState(editProject ? (isDraftEdit ? 0 : (brokerMode ? 2 : 3)) : 0);
+  const isDraftEdit = editProject && !editProject.landing_content && editProject.type;
+  const isDraftWithContent = editProject && editProject.landing_content && !editProject.webhook_url && brokerMode;
+  const [step, setStep] = useState(() => {
+    if (!editProject) return 0;
+    if (isDraftEdit) return 0;
+    return brokerMode ? 2 : 3;
+  });
   const [data, setData] = useState<WizardData>(() => {
     if (editProject) {
       return {
@@ -105,68 +101,40 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const [isSaving, setIsSaving] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [hasDraft, setHasDraft] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const skipAutoSaveRef = useRef(false);
+  const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Restore draft on mount (only for new projects, not edits)
-  useEffect(() => {
-    if (editProject) return;
+  // Check slug uniqueness (debounced)
+  const checkSlug = async (slug: string) => {
+    if (!slug.trim()) { setSlugError(null); return; }
+    setIsCheckingSlug(true);
     try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (!raw) return;
-      const draft: DraftState = JSON.parse(raw);
-      if (draft.data?.name) {
-        setHasDraft(true);
-      }
-    } catch { /* ignore corrupt data */ }
-  }, [editProject]);
-
-  const restoreDraft = () => {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (!raw) return;
-      const draft: DraftState = JSON.parse(raw);
-      setData(draft.data || initialData);
-      setStep(draft.step || 0);
-      setLandingContent(draft.landingContent || null);
-      setChatMessages(draft.chatMessages || []);
-      setMediaFiles(draft.mediaFiles || []);
-      setHasDraft(false);
-      toast.success("Rascunho restaurado!");
+      const { data: existing } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("slug", slug)
+        .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
+        .maybeSingle();
+      setSlugError(existing ? "Já existe um projeto com este slug." : null);
     } catch {
-      toast.error("Erro ao restaurar rascunho.");
-      localStorage.removeItem(DRAFT_KEY);
+      setSlugError(null);
+    } finally {
+      setIsCheckingSlug(false);
     }
   };
 
-  const discardDraft = () => {
-    localStorage.removeItem(DRAFT_KEY);
-    setHasDraft(false);
-  };
-
-  // Auto-save draft (debounced)
   useEffect(() => {
-    if (editProject || skipAutoSaveRef.current) return;
-    // Only save if there's meaningful data
-    if (!data.name && !data.city && !data.description && mediaFiles.length === 0) return;
-    const timer = setTimeout(() => {
-      const draft: DraftState = {
-        data,
-        step,
-        landingContent,
-        chatMessages: chatMessages.filter(m => m.role !== "system"),
-        mediaFiles,
-        savedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [data, step, landingContent, chatMessages, mediaFiles, editProject]);
+    if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current);
+    const slug = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    if (!slug) { setSlugError(null); return; }
+    slugCheckTimerRef.current = setTimeout(() => checkSlug(slug), 500);
+    return () => { if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current); };
+  }, [data.slug]);
 
   const clearDraft = () => {
-    skipAutoSaveRef.current = true;
     localStorage.removeItem(DRAFT_KEY);
   };
 
@@ -392,7 +360,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     if (!brokerMode || !brokerId || !data.name.trim()) return;
     setIsSaving(true);
     try {
-      const payload = {
+      const payload: any = {
         name: data.name.trim(),
         slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
         city: data.city.trim(),
@@ -403,6 +371,11 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
         created_by_broker_id: brokerId,
         is_active: false,
       };
+
+      // Preserve landing_content if already generated
+      if (landingContent) {
+        payload.landing_content = landingContent;
+      }
 
       if (editProject) {
         // Update existing draft
@@ -545,7 +518,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   };
 
   const canAdvance = () => {
-    if (step === 0) return data.name && data.city;
+    if (step === 0) return data.name && data.city && !slugError && !isCheckingSlug;
     return true;
   };
 
@@ -611,8 +584,22 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
           {data.type === "imovel" ? "Nome do Imóvel *" : "Nome do Empreendimento *"}
         </Label>
         <Input value={data.name} onChange={set("name")} placeholder={data.type === "imovel" ? "Casa Alto Padrão - Bairro Nobre" : "Residencial Alto da Serra"} className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
+        {slugError && (
+          <p className="text-xs text-red-400 flex items-center gap-1">
+            <X className="w-3 h-3" /> {slugError}
+          </p>
+        )}
+        {!slugError && data.slug && !isCheckingSlug && (
+          <p className="text-xs text-green-400 flex items-center gap-1">
+            <Check className="w-3 h-3" /> Slug disponível
+          </p>
+        )}
+        {isCheckingSlug && (
+          <p className="text-xs text-slate-500 flex items-center gap-1">
+            <Loader2 className="w-3 h-3 animate-spin" /> Verificando...
+          </p>
+        )}
       </div>
-
       <div className={cn("grid gap-4", brokerMode ? "grid-cols-1" : "grid-cols-2")}>
         <div className="space-y-2">
           <Label className="text-sm text-slate-300">Cidade *</Label>
@@ -981,23 +968,6 @@ Faixa de preço: A partir de R$ 320.000`}
         </div>
       </div>
 
-      {/* Draft restore banner */}
-      {hasDraft && !editProject && (
-        <div className="flex-shrink-0 mb-4 p-3 rounded-xl border border-[#FFFF00]/30 bg-[#FFFF00]/5 flex items-center justify-between gap-3">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">Rascunho encontrado</p>
-            <p className="text-xs text-slate-400">Você tem um rascunho salvo. Deseja continuar de onde parou?</p>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={discardDraft} className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] text-xs">
-              Descartar
-            </Button>
-            <Button size="sm" onClick={restoreDraft} className="bg-[#FFFF00] text-black hover:brightness-110 text-xs">
-              Restaurar
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Content */}
       <div className={cn(
@@ -1032,8 +1002,8 @@ Faixa de preço: A partir de R$ 320.000`}
             </Button>
           )}
 
-          {/* Save Draft button - only in broker mode, not on last step */}
-          {brokerMode && !isLastStep && canAdvance() && (
+          {/* Save Draft button - broker mode, any step */}
+          {brokerMode && canAdvance() && (
             <Button
               onClick={handleSaveDraft}
               disabled={isSaving || !data.name.trim()}
