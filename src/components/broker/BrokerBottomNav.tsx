@@ -66,8 +66,7 @@ export function BrokerBottomNav({
   const handleClick = (id: string) => {
     if (id === "kanban") {
       if (!isAdminPage) {
-        navigate("/corretor/admin");
-        setTimeout(() => onViewChange("kanban"), 50);
+        navigate("/corretor/admin?view=kanban");
       } else {
         onViewChange("kanban");
       }
