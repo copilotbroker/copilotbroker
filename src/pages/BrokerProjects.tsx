@@ -470,7 +470,7 @@ const BrokerProjects = () => {
             Este slug será usado em todos os seus links de empreendimentos.
           </p>
         </div>
-      </div>
+      </div>}
 
       {/* Remove Confirmation Dialog */}
       <AlertDialog open={!!projectToRemove} onOpenChange={() => setProjectToRemove(null)}>
