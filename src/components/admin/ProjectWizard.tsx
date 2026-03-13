@@ -278,7 +278,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   };
 
   const canAdvance = () => {
-    if (step === 0) return data.name && data.slug && data.city && data.city_slug;
+    if (step === 0) return data.name && data.city;
     return true;
   };
 
