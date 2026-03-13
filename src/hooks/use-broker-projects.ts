@@ -72,7 +72,7 @@ export function useBrokerProjects(brokerId?: string | null) {
         const item: BrokerProject = {
           id: bp.id,
           project: bp.project as Project,
-          url: buildUrl(bp.project as Project, broker.slug),
+          url: buildUrl(bp.project as Project, broker.slug, brokerId),
         };
         if (bp.project.created_by_broker_id === brokerId) {
           ownProjects.push(item);
