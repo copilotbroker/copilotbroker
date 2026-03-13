@@ -8,6 +8,9 @@ interface Project {
   slug: string;
   city: string;
   city_slug: string | null;
+  type?: string;
+  created_by_broker_id?: string | null;
+  landing_content?: any;
 }
 
 interface BrokerProject {
@@ -26,57 +29,56 @@ export function useBrokerProjects(brokerId?: string | null) {
   const [broker, setBroker] = useState<Broker | null>(null);
   const [brokerProjects, setBrokerProjects] = useState<BrokerProject[]>([]);
   const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
+  const [myCreatedProjects, setMyCreatedProjects] = useState<BrokerProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch broker info
+  const buildUrl = (project: Project, brokerSlug: string) => {
+    if (project.slug === "estanciavelha") return `/estanciavelha/${brokerSlug}`;
+    if (project.slug === "prontos") return `/prontos/${brokerSlug}`;
+    return `/${project.city_slug}/${project.slug}/${brokerSlug}`;
+  };
+
   const fetchBroker = useCallback(async () => {
     if (!brokerId) return;
-
     const { data, error } = await supabase
       .from("brokers")
       .select("id, slug, name")
       .eq("id", brokerId)
       .maybeSingle();
-
-    if (error) {
-      console.error("Error fetching broker:", error);
-      return;
-    }
-
+    if (error) { console.error("Error fetching broker:", error); return; }
     setBroker(data);
   }, [brokerId]);
 
-  // Fetch projects associated with the broker
   const fetchBrokerProjects = useCallback(async () => {
     if (!brokerId || !broker) return;
-
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from("broker_projects")
-        .select(`
-          id,
-          project:projects(id, name, slug, city, city_slug)
-        `)
+        .select(`id, project:projects(id, name, slug, city, city_slug, type, created_by_broker_id, landing_content)`)
         .eq("broker_id", brokerId)
         .eq("is_active", true);
-
       if (error) throw error;
 
-      const projects = (data || [])
-        .filter((bp: any) => bp.project)
-        .map((bp: any) => ({
+      const companyProjects: BrokerProject[] = [];
+      const ownProjects: BrokerProject[] = [];
+
+      (data || []).filter((bp: any) => bp.project).forEach((bp: any) => {
+        const item: BrokerProject = {
           id: bp.id,
           project: bp.project as Project,
-          url: bp.project.slug === "estanciavelha"
-            ? `/estanciavelha/${broker.slug}`
-            : bp.project.slug === "prontos"
-              ? `/prontos/${broker.slug}`
-              : `/${bp.project.city_slug}/${bp.project.slug}/${broker.slug}`,
-        }));
+          url: buildUrl(bp.project as Project, broker.slug),
+        };
+        if (bp.project.created_by_broker_id === brokerId) {
+          ownProjects.push(item);
+        } else {
+          companyProjects.push(item);
+        }
+      });
 
-      setBrokerProjects(projects);
+      setBrokerProjects(companyProjects);
+      setMyCreatedProjects(ownProjects);
     } catch (error) {
       console.error("Error fetching broker projects:", error);
     } finally {
@@ -84,29 +86,21 @@ export function useBrokerProjects(brokerId?: string | null) {
     }
   }, [brokerId, broker]);
 
-  // Fetch all available active projects
   const fetchAvailableProjects = useCallback(async () => {
     const { data, error } = await supabase
       .from("projects")
-      .select("id, name, slug, city, city_slug")
+      .select("id, name, slug, city, city_slug, type, created_by_broker_id")
       .eq("is_active", true)
+      .is("created_by_broker_id", null)
       .order("name");
-
-    if (error) {
-      console.error("Error fetching available projects:", error);
-      return;
-    }
-
+    if (error) { console.error("Error fetching available projects:", error); return; }
     setAvailableProjects(data || []);
   }, []);
 
-  // Add project to broker
   const addProject = async (projectId: string) => {
     if (!brokerId) return false;
-
     setIsSaving(true);
     try {
-      // Check if already exists (might be inactive)
       const { data: existing } = await supabase
         .from("broker_projects")
         .select("id, is_active")
@@ -115,31 +109,13 @@ export function useBrokerProjects(brokerId?: string | null) {
         .maybeSingle();
 
       if (existing) {
-        if (existing.is_active) {
-          toast.info("Este empreendimento já está associado.");
-          return false;
-        }
-
-        // Reactivate
-        const { error } = await supabase
-          .from("broker_projects")
-          .update({ is_active: true })
-          .eq("id", existing.id);
-
+        if (existing.is_active) { toast.info("Este empreendimento já está associado."); return false; }
+        const { error } = await supabase.from("broker_projects").update({ is_active: true }).eq("id", existing.id);
         if (error) throw error;
       } else {
-        // Create new
-        const { error } = await supabase
-          .from("broker_projects")
-          .insert({
-            broker_id: brokerId,
-            project_id: projectId,
-            is_active: true,
-          });
-
+        const { error } = await supabase.from("broker_projects").insert({ broker_id: brokerId, project_id: projectId, is_active: true });
         if (error) throw error;
       }
-
       toast.success("Empreendimento adicionado!");
       await fetchBrokerProjects();
       return true;
@@ -152,17 +128,11 @@ export function useBrokerProjects(brokerId?: string | null) {
     }
   };
 
-  // Remove project from broker
   const removeProject = async (brokerProjectId: string) => {
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from("broker_projects")
-        .update({ is_active: false })
-        .eq("id", brokerProjectId);
-
+      const { error } = await supabase.from("broker_projects").update({ is_active: false }).eq("id", brokerProjectId);
       if (error) throw error;
-
       toast.success("Empreendimento removido!");
       await fetchBrokerProjects();
       return true;
@@ -175,46 +145,20 @@ export function useBrokerProjects(brokerId?: string | null) {
     }
   };
 
-  // Update broker slug
   const updateSlug = async (newSlug: string) => {
     if (!brokerId || !newSlug.trim()) return false;
-
     setIsSaving(true);
     try {
-      // Check if slug is available
-      const { data: existing } = await supabase
-        .from("brokers")
-        .select("id")
-        .eq("slug", newSlug)
-        .neq("id", brokerId)
-        .maybeSingle();
+      const { data: existing } = await supabase.from("brokers").select("id").eq("slug", newSlug).neq("id", brokerId).maybeSingle();
+      if (existing) { toast.error("Este link já está em uso por outro corretor."); return false; }
 
-      if (existing) {
-        toast.error("Este link já está em uso por outro corretor.");
-        return false;
-      }
-
-      const { error } = await supabase
-        .from("brokers")
-        .update({ slug: newSlug })
-        .eq("id", brokerId);
-
+      const { error } = await supabase.from("brokers").update({ slug: newSlug }).eq("id", brokerId);
       if (error) throw error;
 
-      // Update local state
       setBroker((prev) => prev ? { ...prev, slug: newSlug } : null);
-      
-      // Refresh project URLs
-      setBrokerProjects((prev) =>
-        prev.map((bp) => ({
-          ...bp,
-          url: bp.project.slug === "estanciavelha"
-            ? `/estanciavelha/${newSlug}`
-            : bp.project.slug === "prontos"
-              ? `/prontos/${newSlug}`
-              : `/${bp.project.city_slug}/${bp.project.slug}/${newSlug}`,
-        }))
-      );
+      const rebuildUrls = (list: BrokerProject[]) => list.map((bp) => ({ ...bp, url: buildUrl(bp.project, newSlug) }));
+      setBrokerProjects(rebuildUrls);
+      setMyCreatedProjects(rebuildUrls);
 
       toast.success("Link atualizado com sucesso!");
       return true;
@@ -227,33 +171,17 @@ export function useBrokerProjects(brokerId?: string | null) {
     }
   };
 
-  // Check if a slug is available
   const checkSlugAvailability = async (slug: string) => {
     if (!slug.trim() || !brokerId) return false;
-
-    const { data } = await supabase
-      .from("brokers")
-      .select("id")
-      .eq("slug", slug)
-      .neq("id", brokerId)
-      .maybeSingle();
-
+    const { data } = await supabase.from("brokers").select("id").eq("slug", slug).neq("id", brokerId).maybeSingle();
     return !data;
   };
 
-  // Generate URL for a project
   const getProjectUrl = (project: Project) => {
     if (!broker) return "";
-    if (project.slug === "estanciavelha") {
-      return `/estanciavelha/${broker.slug}`;
-    }
-    if (project.slug === "prontos") {
-      return `/prontos/${broker.slug}`;
-    }
-    return `/${project.city_slug}/${project.slug}/${broker.slug}`;
+    return buildUrl(project, broker.slug);
   };
 
-  // Get projects not yet associated
   const unassociatedProjects = availableProjects.filter(
     (p) => !brokerProjects.some((bp) => bp.project.id === p.id)
   );
@@ -264,14 +192,13 @@ export function useBrokerProjects(brokerId?: string | null) {
   }, [fetchBroker, fetchAvailableProjects]);
 
   useEffect(() => {
-    if (broker) {
-      fetchBrokerProjects();
-    }
+    if (broker) fetchBrokerProjects();
   }, [broker, fetchBrokerProjects]);
 
   return {
     broker,
     brokerProjects,
+    myCreatedProjects,
     availableProjects,
     unassociatedProjects,
     isLoading,

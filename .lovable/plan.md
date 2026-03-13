@@ -1,43 +1,60 @@
 
 
-## Plano: Reformular aba "Empreendimentos" para Corretores
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-### Contexto Atual
-- **Admin/Líder**: Cria empreendimentos via ProjectWizard (4 etapas com IA) → salva na tabela `projects`
-- **Corretor**: Apenas adiciona projetos existentes (criados pelo admin) à sua carteira via `broker_projects`
-- O Wizard gera landing pages persuasivas com IA (Gemini) e permite refinamento via chat
+### Problema 1: Nomes dos leads não aparecem
 
-### O que será feito
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-**1. Banco de dados**
-- Adicionar coluna `type` na tabela `projects` (`'empreendimento' | 'imovel'`, default `'empreendimento'`) para distinguir empreendimentos de imóveis avulsos
-- Adicionar coluna `created_by_broker_id` (nullable, ref brokers) para identificar projetos criados por corretores
-- Adicionar RLS policy permitindo brokers fazerem INSERT em `projects` (apenas com seu próprio `created_by_broker_id`)
-- Adicionar RLS policy permitindo brokers fazerem UPDATE em projetos que eles criaram
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-**2. Adaptar ProjectWizard para uso do corretor**
-- Criar uma prop `brokerMode` no `ProjectWizard` que simplifica o wizard:
-  - Passo 0: Tipo (Empreendimento ou Imóvel) + Dados básicos (nome, cidade, slug)
-  - Passo 1: Conteúdo + Mídia (igual ao atual)
-  - Passo 2: IA + Preview (pula Config/webhook/ai_prompt que são para admin)
-- No `handlePublish`, quando em `brokerMode`, salvar com `created_by_broker_id` e auto-criar o registro em `broker_projects`
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-**3. Reformular página BrokerProjects**
-- Dividir em duas seções com tabs: **"Empreendimentos da Empresa"** (projetos do admin, fluxo atual de adicionar/remover) e **"Minha Carteira"** (projetos criados pelo próprio corretor)
-- Na seção "Minha Carteira", botão **"+ Criar Empreendimento"** e **"+ Criar Imóvel"** que abrem o Wizard em `brokerMode`
-- Cards de imóveis/empreendimentos criados pelo corretor terão botão de editar landing page (como o admin já tem)
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-**4. Ajustar hook `useBrokerProjects`**
-- Separar projetos em dois grupos: `companyProjects` (criados por admin, sem `created_by_broker_id`) e `myProjects` (criados pelo próprio corretor)
-- Adicionar função `createBrokerProject` que encapsula criação + auto-linkagem
+### Problema 2: Marcar como lida quando lida no celular
 
-**5. Rotas**
-- Projetos criados por corretores usam a mesma rota dinâmica `/:citySlug/:projectSlug/:brokerSlug` que já existe, sem necessidade de novas rotas
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-### Arquivos a modificar/criar
-- **Migration SQL**: adicionar `type` e `created_by_broker_id` + RLS policies
-- `src/components/admin/ProjectWizard.tsx`: adicionar `brokerMode` prop com fluxo simplificado
-- `src/pages/BrokerProjects.tsx`: reformular UI com tabs e botões de criação
-- `src/hooks/use-broker-projects.ts`: separar projetos próprios vs empresa, adicionar criação
-- `src/types/project.ts`: adicionar `type` e `created_by_broker_id` ao tipo `Project`
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
+
+### Arquivos a editar
+
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
 

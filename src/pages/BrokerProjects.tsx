@@ -5,41 +5,24 @@ import { useUserRole } from "@/hooks/use-user-role";
 import { useBrokerProjects } from "@/hooks/use-broker-projects";
 import { toast } from "sonner";
 import {
-  Building2,
-  Copy,
-  Check,
-  ExternalLink,
-  Trash2,
-  Plus,
-  Link as LinkIcon,
-  RefreshCw,
-  ArrowLeft,
-  Save,
-  ClipboardList,
-  Sparkles,
+  Building2, Copy, Check, ExternalLink, Trash2, Plus,
+  Link as LinkIcon, RefreshCw, ArrowLeft, Save, ClipboardList,
+  Sparkles, Home, Pencil,
 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProjectWizard from "@/components/admin/ProjectWizard";
 
 const BrokerProjects = () => {
   const navigate = useNavigate();
@@ -51,47 +34,28 @@ const BrokerProjects = () => {
   const [editingSlug, setEditingSlug] = useState("");
   const [isSlugEditing, setIsSlugEditing] = useState(false);
   const [projectToRemove, setProjectToRemove] = useState<string | null>(null);
+  const [showWizard, setShowWizard] = useState(false);
+  const [editingProject, setEditingProject] = useState<any>(null);
 
   const {
-    broker,
-    brokerProjects,
-    unassociatedProjects,
-    isLoading,
-    isSaving,
-    addProject,
-    removeProject,
-    updateSlug,
-    pendingCount,
+    broker, brokerProjects, myCreatedProjects, unassociatedProjects,
+    isLoading, isSaving, addProject, removeProject, updateSlug, pendingCount, refetch,
   } = useBrokerProjects(brokerId);
 
-  // Auth check
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!session) {
-          navigate("/auth");
-        }
-      }
+      (event, session) => { if (!session) navigate("/auth"); }
     );
-
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Redirect based on role
   useEffect(() => {
-    if (!isRoleLoading && role === "admin") {
-      navigate("/admin");
-    }
-    if (!isRoleLoading && role !== "broker") {
-      navigate("/auth");
-    }
+    if (!isRoleLoading && role === "admin") navigate("/admin");
+    if (!isRoleLoading && role !== "broker") navigate("/auth");
   }, [role, isRoleLoading, navigate]);
 
-  // Set editing slug when broker loads
   useEffect(() => {
-    if (broker?.slug) {
-      setEditingSlug(broker.slug);
-    }
+    if (broker?.slug) setEditingSlug(broker.slug);
   }, [broker?.slug]);
 
   const handleLogout = async () => {
@@ -109,30 +73,24 @@ const BrokerProjects = () => {
   };
 
   const copyAllUrls = async () => {
-    const allUrls = brokerProjects
+    const allUrls = [...brokerProjects, ...myCreatedProjects]
       .map((bp) => `${bp.project.name}: ${window.location.origin}${bp.url}`)
       .join("\n");
     await navigator.clipboard.writeText(allUrls);
     toast.success("Todos os links copiados!");
   };
 
-  const openLanding = (url: string) => {
-    window.open(url, "_blank");
-  };
+  const openLanding = (url: string) => { window.open(url, "_blank"); };
 
   const handleAddProjects = async () => {
-    for (const projectId of selectedProjectIds) {
-      await addProject(projectId);
-    }
+    for (const projectId of selectedProjectIds) { await addProject(projectId); }
     setSelectedProjectIds([]);
     setIsAddDialogOpen(false);
   };
 
   const toggleProjectSelection = (projectId: string) => {
     setSelectedProjectIds((prev) =>
-      prev.includes(projectId)
-        ? prev.filter((id) => id !== projectId)
-        : [...prev, projectId]
+      prev.includes(projectId) ? prev.filter((id) => id !== projectId) : [...prev, projectId]
     );
   };
 
@@ -143,40 +101,130 @@ const BrokerProjects = () => {
   };
 
   const handleSaveSlug = async () => {
-    if (editingSlug === broker?.slug) {
-      setIsSlugEditing(false);
-      return;
-    }
-
-    const slugFormatted = editingSlug
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .trim();
-
+    if (editingSlug === broker?.slug) { setIsSlugEditing(false); return; }
+    const slugFormatted = editingSlug.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
     const success = await updateSlug(slugFormatted);
-    if (success) {
-      setIsSlugEditing(false);
-      setEditingSlug(slugFormatted);
-    }
+    if (success) { setIsSlugEditing(false); setEditingSlug(slugFormatted); }
+  };
+
+  const handleWizardComplete = () => {
+    setShowWizard(false);
+    setEditingProject(null);
+    refetch();
   };
 
   const brokerInitial = broker?.name?.charAt(0).toUpperCase() || "C";
 
   if (isRoleLoading || isLoading) {
     return (
-    <div className="min-h-screen bg-[#0f0f12] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0f0f12] flex items-center justify-center">
         <RefreshCw className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (role !== "broker") {
-    return null;
+  if (role !== "broker") return null;
+
+  // Wizard view
+  if (showWizard) {
+    return (
+      <BrokerLayout
+        brokerName={broker?.name}
+        brokerInitial={brokerInitial}
+        viewMode={viewMode}
+        onViewChange={setViewMode}
+        onLogout={handleLogout}
+      >
+        <div className="h-[calc(100vh-120px)]">
+          <ProjectWizard
+            inline
+            brokerMode
+            brokerId={brokerId || undefined}
+            editProject={editingProject}
+            onBack={() => { setShowWizard(false); setEditingProject(null); }}
+            onComplete={handleWizardComplete}
+          />
+        </div>
+      </BrokerLayout>
+    );
   }
+
+  const renderProjectCard = (bp: { id: string; project: any; url: string }, isOwn?: boolean) => (
+    <div
+      key={bp.id}
+      className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-3 hover:border-primary/30 transition-colors"
+    >
+      <div className="flex items-start gap-3">
+        {bp.project.type === "imovel" ? (
+          <Home className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+        ) : (
+          <Building2 className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+        )}
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-foreground truncate text-sm">{bp.project.name}</h3>
+            <span className="text-[10px] text-muted-foreground bg-[#2a2a2e] px-1.5 py-0.5 rounded shrink-0">
+              {bp.project.city}
+            </span>
+            {bp.project.type === "imovel" && (
+              <span className="text-[10px] text-[#FFFF00] bg-[#FFFF00]/10 px-1.5 py-0.5 rounded shrink-0">
+                Imóvel
+              </span>
+            )}
+          </div>
+          <code className="text-[11px] text-muted-foreground/70 break-all block">
+            {window.location.origin}{bp.url}
+          </code>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          {isOwn && (
+            <button
+              onClick={() => {
+                setEditingProject({
+                  id: bp.project.id,
+                  name: bp.project.name,
+                  slug: bp.project.slug,
+                  city: bp.project.city,
+                  city_slug: bp.project.city_slug,
+                  landing_content: bp.project.landing_content,
+                  webhook_url: null,
+                });
+                setShowWizard(true);
+              }}
+              className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-[#FFFF00] hover:bg-[#2a2a2e] transition-colors"
+              title="Editar landing page"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            onClick={() => copyUrl(bp.url)}
+            className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-primary hover:bg-[#2a2a2e] transition-colors"
+            title="Copiar link"
+          >
+            {copiedUrl === bp.url ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+          <button
+            onClick={() => openLanding(bp.url)}
+            className="p-1.5 rounded-md bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+            title="Abrir landing page"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setProjectToRemove(bp.id)}
+            disabled={isSaving}
+            className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+            title="Remover"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <BrokerLayout
@@ -198,79 +246,17 @@ const BrokerProjects = () => {
           <div>
             <h1 className="text-xl font-bold text-foreground">Meus Empreendimentos</h1>
             <p className="text-sm text-muted-foreground">
-              {brokerProjects.length} {brokerProjects.length === 1 ? 'ativo' : 'ativos'}
+              {brokerProjects.length + myCreatedProjects.length} {(brokerProjects.length + myCreatedProjects.length) === 1 ? 'ativo' : 'ativos'}
             </p>
           </div>
         </div>
 
         <div className="flex gap-2">
-          {brokerProjects.length > 1 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={copyAllUrls}
-              className="text-xs bg-[#1e1e22] border border-[#2a2a2e] hover:bg-[#2a2a2e]"
-            >
+          {(brokerProjects.length + myCreatedProjects.length) > 1 && (
+            <Button variant="ghost" size="sm" onClick={copyAllUrls} className="text-xs bg-[#1e1e22] border border-[#2a2a2e] hover:bg-[#2a2a2e]">
               <ClipboardList className="w-4 h-4 mr-1" />
               Copiar todos
             </Button>
-          )}
-          
-          {unassociatedProjects.length > 0 && (
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="text-xs">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Adicionar
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                <DialogHeader>
-                  <DialogTitle className="text-foreground">
-                    Adicionar Empreendimentos
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Selecione os empreendimentos que deseja trabalhar:
-                  </p>
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                    {unassociatedProjects.map((project) => (
-                      <label
-                        key={project.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-[#141417] border border-[#2a2a2e] cursor-pointer hover:border-primary/30 transition-colors"
-                      >
-                        <Checkbox
-                          checked={selectedProjectIds.includes(project.id)}
-                          onCheckedChange={() => toggleProjectSelection(project.id)}
-                        />
-                        <div>
-                          <p className="font-medium text-foreground">{project.name}</p>
-                          <p className="text-xs text-muted-foreground">{project.city}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedProjectIds([]);
-                        setIsAddDialogOpen(false);
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      onClick={handleAddProjects}
-                      disabled={selectedProjectIds.length === 0 || isSaving}
-                    >
-                      {isSaving ? "Adicionando..." : "Adicionar"}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
           )}
         </div>
       </div>
@@ -283,22 +269,14 @@ const BrokerProjects = () => {
               <Sparkles className="w-4 h-4 text-yellow-500 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  {pendingCount === 1 
-                    ? "Novo empreendimento disponível!" 
-                    : `${pendingCount} novos empreendimentos disponíveis!`}
+                  {pendingCount === 1 ? "Novo empreendimento disponível!" : `${pendingCount} novos empreendimentos disponíveis!`}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {pendingCount === 1 
-                    ? "Adicione à sua carteira e comece a captar leads" 
-                    : "Adicione à sua carteira e amplie sua captação"}
+                  Adicione à sua carteira e comece a captar leads
                 </p>
               </div>
             </div>
-            <Button 
-              size="sm"
-              onClick={() => setIsAddDialogOpen(true)}
-              className="bg-yellow-500 hover:bg-yellow-600 text-black shrink-0 text-xs"
-            >
+            <Button size="sm" onClick={() => setIsAddDialogOpen(true)} className="bg-yellow-500 hover:bg-yellow-600 text-black shrink-0 text-xs">
               <Plus className="w-4 h-4 mr-1" />
               Adicionar agora
             </Button>
@@ -306,77 +284,107 @@ const BrokerProjects = () => {
         </div>
       )}
 
-      {/* Projects Grid */}
-      <div className="grid gap-3 mb-6">
-        {brokerProjects.length === 0 ? (
-          <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
-            <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">
-              Você ainda não está associado a nenhum empreendimento.
-            </p>
+      {/* Tabs */}
+      <Tabs defaultValue="empresa" className="mb-6">
+        <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
+          <TabsTrigger value="empresa" className="data-[state=active]:bg-[#2a2a2e]">
+            <Building2 className="w-4 h-4 mr-1.5" />
+            Empresa ({brokerProjects.length})
+          </TabsTrigger>
+          <TabsTrigger value="carteira" className="data-[state=active]:bg-[#2a2a2e]">
+            <Home className="w-4 h-4 mr-1.5" />
+            Minha Carteira ({myCreatedProjects.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="empresa">
+          <div className="flex justify-end mb-3">
             {unassociatedProjects.length > 0 && (
-              <Button onClick={() => setIsAddDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Empreendimento
-              </Button>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="text-xs">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#1e1e22] border-[#2a2a2e]">
+                  <DialogHeader>
+                    <DialogTitle className="text-foreground">Adicionar Empreendimentos</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-4">
+                    <p className="text-sm text-muted-foreground">Selecione os empreendimentos que deseja trabalhar:</p>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                      {unassociatedProjects.map((project) => (
+                        <label
+                          key={project.id}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-[#141417] border border-[#2a2a2e] cursor-pointer hover:border-primary/30 transition-colors"
+                        >
+                          <Checkbox
+                            checked={selectedProjectIds.includes(project.id)}
+                            onCheckedChange={() => toggleProjectSelection(project.id)}
+                          />
+                          <div>
+                            <p className="font-medium text-foreground">{project.name}</p>
+                            <p className="text-xs text-muted-foreground">{project.city}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button variant="ghost" onClick={() => { setSelectedProjectIds([]); setIsAddDialogOpen(false); }}>Cancelar</Button>
+                      <Button onClick={handleAddProjects} disabled={selectedProjectIds.length === 0 || isSaving}>
+                        {isSaving ? "Adicionando..." : "Adicionar"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
-        ) : (
-          brokerProjects.map((bp) => (
-            <div
-              key={bp.id}
-              className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-3 hover:border-primary/30 transition-colors"
-            >
-              <div className="flex items-start gap-3">
-                <Building2 className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-foreground truncate text-sm">
-                      {bp.project.name}
-                    </h3>
-                    <span className="text-[10px] text-muted-foreground bg-[#2a2a2e] px-1.5 py-0.5 rounded shrink-0">
-                      {bp.project.city}
-                    </span>
-                  </div>
-                  <code className="text-[11px] text-muted-foreground/70 break-all block">
-                    {window.location.origin}{bp.url}
-                  </code>
-                </div>
 
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => copyUrl(bp.url)}
-                    className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-primary hover:bg-[#2a2a2e] transition-colors"
-                    title="Copiar link"
-                  >
-                    {copiedUrl === bp.url ? (
-                      <Check className="w-3.5 h-3.5" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => openLanding(bp.url)}
-                    className="p-1.5 rounded-md bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-                    title="Abrir landing page"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setProjectToRemove(bp.id)}
-                    disabled={isSaving}
-                    className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
-                    title="Remover empreendimento"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+          <div className="grid gap-3">
+            {brokerProjects.length === 0 ? (
+              <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
+                <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">Nenhum empreendimento da empresa adicionado.</p>
+                {unassociatedProjects.length > 0 && (
+                  <Button onClick={() => setIsAddDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Empreendimento
+                  </Button>
+                )}
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            ) : (
+              brokerProjects.map((bp) => renderProjectCard(bp))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="carteira">
+          <div className="flex justify-end gap-2 mb-3">
+            <Button size="sm" className="text-xs" onClick={() => setShowWizard(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Criar Empreendimento / Imóvel
+            </Button>
+          </div>
+
+          <div className="grid gap-3">
+            {myCreatedProjects.length === 0 ? (
+              <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
+                <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-2">Crie seus próprios empreendimentos e imóveis.</p>
+                <p className="text-xs text-muted-foreground mb-4">A IA gera uma landing page profissional automaticamente.</p>
+                <Button onClick={() => setShowWizard(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar meu primeiro
+                </Button>
+              </div>
+            ) : (
+              myCreatedProjects.map((bp) => renderProjectCard(bp, true))
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Slug Editor */}
       <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-3">
@@ -384,39 +392,25 @@ const BrokerProjects = () => {
           <LinkIcon className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Seu Link Personalizado</h3>
         </div>
-
         <div className="space-y-3">
           <div>
-            <Label className="text-xs text-muted-foreground mb-2 block">
-              Slug (usado em todos os links)
-            </Label>
+            <Label className="text-xs text-muted-foreground mb-2 block">Slug (usado em todos os links)</Label>
             <div className="flex gap-2">
               <Input
                 value={editingSlug}
-                onChange={(e) => {
-                  setIsSlugEditing(true);
-                  setEditingSlug(e.target.value);
-                }}
+                onChange={(e) => { setIsSlugEditing(true); setEditingSlug(e.target.value); }}
                 placeholder="seu-nome"
                 className="bg-[#141417] border-[#2a2a2e]"
               />
               {isSlugEditing && (
-                <Button
-                  onClick={handleSaveSlug}
-                  disabled={isSaving || !editingSlug.trim()}
-                >
-                  {isSaving ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
+                <Button onClick={handleSaveSlug} disabled={isSaving || !editingSlug.trim()}>
+                  {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 </Button>
               )}
             </div>
           </div>
           <p className="text-xs text-muted-foreground/70">
             Este slug será usado em todos os seus links de empreendimentos.
-            Alterar aqui atualizará automaticamente todos os links.
           </p>
         </div>
       </div>
@@ -432,10 +426,7 @@ const BrokerProjects = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRemoveProject}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleRemoveProject} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Remover
             </AlertDialogAction>
           </AlertDialogFooter>

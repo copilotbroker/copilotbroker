@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useProjects } from "@/hooks/use-projects";
-import { LandingContent, ProjectStatus, PROJECT_STATUS_CONFIG } from "@/types/project";
+import { LandingContent, ProjectStatus, PROJECT_STATUS_CONFIG, ProjectType } from "@/types/project";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,12 +14,11 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft, ChevronRight, Sparkles, Send, RefreshCw, Check, Eye, MessageSquare, Loader2,
-  Building2, MapPin, Rocket, X, Upload, Image, Trash2, FileVideo,
+  Building2, MapPin, Rocket, X, Upload, Image, Trash2, FileVideo, Home,
 } from "lucide-react";
 import DynamicLandingPage from "@/components/landing/DynamicLandingPage";
 
 interface WizardProps {
-  /** When true, renders inline as page content (not overlay) */
   inline?: boolean;
   onBack?: () => void;
   editProject?: {
@@ -27,6 +26,9 @@ interface WizardProps {
     landing_content: LandingContent | null; webhook_url: string | null;
   };
   onComplete?: () => void;
+  /** Broker mode: simplified wizard for brokers creating their own projects */
+  brokerMode?: boolean;
+  brokerId?: string;
 }
 
 interface WizardData {
@@ -39,11 +41,12 @@ interface WizardData {
   location: string;
   webhook_url: string;
   ai_prompt: string;
+  type: ProjectType;
 }
 
 const initialData: WizardData = {
   name: "", slug: "", city: "", city_slug: "", description: "", status: "pre_launch",
-  location: "", webhook_url: "", ai_prompt: "",
+  location: "", webhook_url: "", ai_prompt: "", type: "empreendimento",
 };
 
 interface ChatMessage {
@@ -58,11 +61,13 @@ interface MediaFile {
   path: string;
 }
 
-const STEP_LABELS = ["Dados", "Conteúdo", "Config", "IA + Preview"];
+const ADMIN_STEP_LABELS = ["Dados", "Conteúdo", "Config", "IA + Preview"];
+const BROKER_STEP_LABELS = ["Dados", "Conteúdo", "IA + Preview"];
 
-export default function ProjectWizard({ inline, onBack, editProject, onComplete }: WizardProps) {
+export default function ProjectWizard({ inline, onBack, editProject, onComplete, brokerMode, brokerId }: WizardProps) {
   const { createProject, updateProject } = useProjects();
-  const [step, setStep] = useState(editProject ? 3 : 0);
+  const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
+  const [step, setStep] = useState(editProject ? (brokerMode ? 2 : 3) : 0);
   const [data, setData] = useState<WizardData>(initialData);
   const [landingContent, setLandingContent] = useState<LandingContent | null>(editProject?.landing_content || null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -77,13 +82,14 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete 
 
   const totalSteps = STEP_LABELS.length;
   const progress = ((step + 1) / totalSteps) * 100;
+  const isLastStep = step === totalSteps - 1;
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
   useEffect(() => {
-    if (step === 3 && !landingContent && !isGenerating) {
+    if (isLastStep && !landingContent && !isGenerating) {
       generateLanding();
     }
   }, [step]);
@@ -154,6 +160,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete 
             status: data.status,
             location: data.location,
             mediaUrls: mediaFiles.map(f => f.url),
+            type: data.type,
           },
           currentContent: userMessage ? landingContent : undefined,
           userMessage: userMessage || undefined,
@@ -203,6 +210,38 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete 
       if (editProject) {
         await updateProject(editProject.id, { landing_content: landingContent } as any);
         toast.success("Landing page atualizada!");
+      } else if (brokerMode && brokerId) {
+        // Broker mode: insert directly with created_by_broker_id
+        const projectPayload = {
+          name: data.name.trim(),
+          slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+          city: data.city.trim(),
+          city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+          description: data.description.trim() || null,
+          status: data.status,
+          type: data.type,
+          created_by_broker_id: brokerId,
+          landing_content: landingContent as any,
+          is_active: true,
+        };
+
+        const { data: newProject, error: projError } = await supabase
+          .from("projects")
+          .insert(projectPayload)
+          .select("id")
+          .single();
+
+        if (projError) throw projError;
+
+        // Auto-link to broker_projects
+        const { error: linkError } = await supabase
+          .from("broker_projects")
+          .insert({ broker_id: brokerId, project_id: newProject.id, is_active: true });
+
+        if (linkError) console.error("Error linking project:", linkError);
+
+        const typeLabel = data.type === "imovel" ? "Imóvel" : "Empreendimento";
+        toast.success(`${typeLabel} criado com landing page!`);
       } else {
         const projectPayload = {
           name: data.name.trim(),
@@ -221,6 +260,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete 
       onComplete?.();
       onBack?.();
     } catch (err) {
+      console.error("Publish error:", err);
       toast.error("Erro ao salvar.");
     } finally {
       setIsSaving(false);
@@ -236,17 +276,64 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete 
     ? { ...editProject, status: "pre_launch" as ProjectStatus, is_active: true, description: null, hero_title: null, hero_subtitle: null, features: null, ai_prompt: null, created_at: "", updated_at: "" }
     : { id: "preview", name: data.name, slug: data.slug, city: data.city, city_slug: data.city_slug, description: data.description || null, status: data.status, is_active: true, hero_title: null, hero_subtitle: null, features: null, webhook_url: data.webhook_url || null, ai_prompt: data.ai_prompt || null, landing_content: null, created_at: "", updated_at: "" };
 
-  const stepContent = [
-    // Step 0: Dados Básicos
+  // ---- Step content builders ----
+  const stepDados = (
     <div key="dados" className="space-y-5 max-w-2xl mx-auto">
       <div className="mb-6">
-        <h2 className="text-lg font-bold text-white">Dados Básicos</h2>
-        <p className="text-sm text-slate-400 mt-1">Informações essenciais do empreendimento.</p>
+        <h2 className="text-lg font-bold text-white">
+          {brokerMode ? "Dados do Imóvel / Empreendimento" : "Dados Básicos"}
+        </h2>
+        <p className="text-sm text-slate-400 mt-1">
+          {brokerMode ? "Escolha o tipo e preencha as informações." : "Informações essenciais do empreendimento."}
+        </p>
       </div>
 
+      {/* Type selector - broker mode */}
+      {brokerMode && (
+        <div className="space-y-2">
+          <Label className="text-sm text-slate-300">Tipo *</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setData(p => ({ ...p, type: "empreendimento" }))}
+              className={cn(
+                "flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
+                data.type === "empreendimento"
+                  ? "border-[#FFFF00] bg-[#FFFF00]/5"
+                  : "border-[#2a2a2e] bg-[#1e1e22] hover:border-[#3a3a3e]"
+              )}
+            >
+              <Building2 className={cn("w-5 h-5", data.type === "empreendimento" ? "text-[#FFFF00]" : "text-slate-500")} />
+              <div className="text-left">
+                <p className={cn("text-sm font-medium", data.type === "empreendimento" ? "text-white" : "text-slate-300")}>Empreendimento</p>
+                <p className="text-[10px] text-slate-500">Condomínio, loteamento</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setData(p => ({ ...p, type: "imovel" }))}
+              className={cn(
+                "flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
+                data.type === "imovel"
+                  ? "border-[#FFFF00] bg-[#FFFF00]/5"
+                  : "border-[#2a2a2e] bg-[#1e1e22] hover:border-[#3a3a3e]"
+              )}
+            >
+              <Home className={cn("w-5 h-5", data.type === "imovel" ? "text-[#FFFF00]" : "text-slate-500")} />
+              <div className="text-left">
+                <p className={cn("text-sm font-medium", data.type === "imovel" ? "text-white" : "text-slate-300")}>Imóvel</p>
+                <p className="text-[10px] text-slate-500">Casa, apartamento, terreno</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
-        <Label className="text-sm text-slate-300">Nome do Empreendimento *</Label>
-        <Input value={data.name} onChange={set("name")} placeholder="Residencial Alto da Serra" className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
+        <Label className="text-sm text-slate-300">
+          {data.type === "imovel" ? "Nome do Imóvel *" : "Nome do Empreendimento *"}
+        </Label>
+        <Input value={data.name} onChange={set("name")} placeholder={data.type === "imovel" ? "Casa Alto Padrão - Bairro Nobre" : "Residencial Alto da Serra"} className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -260,34 +347,42 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete 
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={cn("grid gap-4", brokerMode ? "grid-cols-1" : "grid-cols-2")}>
         <div className="space-y-2">
           <Label className="text-sm text-slate-300">Slug Projeto (URL) *</Label>
           <Input value={data.slug} onChange={(e) => setData(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))} placeholder="alto-da-serra" className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
         </div>
-        <div className="space-y-2">
-          <Label className="text-sm text-slate-300">Status</Label>
-          <Select value={data.status} onValueChange={(v: ProjectStatus) => setData(p => ({ ...p, status: v }))}>
-            <SelectTrigger className="bg-[#1e1e22] border-[#2a2a2e] text-white"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(PROJECT_STATUS_CONFIG).map(([k, c]) => (
-                <SelectItem key={k} value={k}>{c.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {!brokerMode && (
+          <div className="space-y-2">
+            <Label className="text-sm text-slate-300">Status</Label>
+            <Select value={data.status} onValueChange={(v: ProjectStatus) => setData(p => ({ ...p, status: v }))}>
+              <SelectTrigger className="bg-[#1e1e22] border-[#2a2a2e] text-white"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(PROJECT_STATUS_CONFIG).map(([k, c]) => (
+                  <SelectItem key={k} value={k}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <p className="text-xs text-slate-500 text-center">
         URL: <span className="font-mono text-[#FFFF00]">/{data.city_slug || "cidade"}/{data.slug || "projeto"}</span>
       </p>
-    </div>,
+    </div>
+  );
 
-    // Step 1: Conteúdo
+  const stepConteudo = (
     <div key="conteudo" className="space-y-6 max-w-2xl mx-auto">
       <div className="mb-6">
         <h2 className="text-lg font-bold text-white">Conteúdo da Landing Page</h2>
-        <p className="text-sm text-slate-400 mt-1">Cole aqui todas as informações do empreendimento. A IA usará este conteúdo para criar a página.</p>
+        <p className="text-sm text-slate-400 mt-1">
+          {data.type === "imovel"
+            ? "Cole aqui todas as informações do imóvel. A IA usará este conteúdo para criar a página."
+            : "Cole aqui todas as informações do empreendimento. A IA usará este conteúdo para criar a página."
+          }
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -296,13 +391,27 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete 
       </div>
 
       <div className="space-y-2">
-        <Label className="text-sm text-slate-300">Conteúdo Completo do Empreendimento *</Label>
+        <Label className="text-sm text-slate-300">
+          {data.type === "imovel" ? "Conteúdo Completo do Imóvel *" : "Conteúdo Completo do Empreendimento *"}
+        </Label>
         <p className="text-xs text-slate-500">Inclua: descrição, diferenciais, infraestrutura, tipologias, faixa de preço, público-alvo, argumentos de venda, links de mapas interativos, vídeos do YouTube, e qualquer informação relevante.</p>
         <Textarea
           value={data.description}
           onChange={set("description")}
           rows={14}
-          placeholder={`Exemplo:
+          placeholder={data.type === "imovel" ? `Exemplo:
+
+Casa com 3 dormitórios (1 suíte), 180m² de área construída em terreno de 400m².
+Acabamento de alto padrão, piso porcelanato, churrasqueira gourmet.
+
+Diferenciais:
+- Energia solar instalada
+- Piscina aquecida
+- Garagem para 3 carros
+
+Bairro: Nobre, próximo a escolas e comércio
+Valor: R$ 850.000
+Aceita financiamento bancário` : `Exemplo:
 
 Condomínio de lotes fechado com 120 lotes a partir de 300m².
 Infraestrutura completa: asfalto, fibra óptica, água, esgoto.
@@ -313,22 +422,14 @@ Diferenciais:
 - Área verde preservada de 5.000m²
 
 Público-alvo: Famílias de classe média-alta
-Faixa de preço: A partir de R$ 320.000
-
-Mapa interativo: https://mapa.exemplo.com/empreendimento
-Vídeo: https://youtube.com/watch?v=xxxxx
-
-Argumentos de venda:
-1. Único condomínio fechado da região com clube completo
-2. Valorização de 40% nos últimos 2 anos na região
-3. Financiamento direto com a construtora`}
+Faixa de preço: A partir de R$ 320.000`}
           className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600 font-mono text-sm leading-relaxed"
         />
       </div>
 
       {/* Media Upload */}
       <div className="space-y-3">
-        <Label className="text-sm text-slate-300">Fotos e Vídeos do Empreendimento</Label>
+        <Label className="text-sm text-slate-300">Fotos e Vídeos</Label>
         <p className="text-xs text-slate-500">Envie imagens e vídeos que a IA pode usar para compor a landing page.</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -351,7 +452,6 @@ Argumentos de venda:
             </div>
           ))}
 
-          {/* Upload button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -378,9 +478,10 @@ Argumentos de venda:
           className="hidden"
         />
       </div>
-    </div>,
+    </div>
+  );
 
-    // Step 2: Configurações
+  const stepConfig = (
     <div key="config" className="space-y-5 max-w-2xl mx-auto">
       <div className="mb-6">
         <h2 className="text-lg font-bold text-white">Configurações</h2>
@@ -401,9 +502,10 @@ Argumentos de venda:
         <Label className="text-sm text-slate-300">Webhook URL (opcional)</Label>
         <Input value={data.webhook_url} onChange={set("webhook_url")} placeholder="https://webhook.example.com/..." type="url" className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
       </div>
-    </div>,
+    </div>
+  );
 
-    // Step 3: IA + Preview
+  const stepIA = (
     <div key="ia" className="flex flex-col h-full">
       {/* Mobile tabs */}
       <div className="flex md:hidden border-b border-[#2a2a2e] mb-3">
@@ -499,8 +601,13 @@ Argumentos de venda:
           )}
         </div>
       </div>
-    </div>,
-  ];
+    </div>
+  );
+
+  // Build steps array based on mode
+  const stepContent = brokerMode
+    ? [stepDados, stepConteudo, stepIA]
+    : [stepDados, stepConteudo, stepConfig, stepIA];
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -508,11 +615,11 @@ Argumentos de venda:
       <div className="flex-shrink-0 mb-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FFFF00]/80 to-[#FFFF00] flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-black" />
+            {data.type === "imovel" ? <Home className="w-5 h-5 text-black" /> : <Building2 className="w-5 h-5 text-black" />}
           </div>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-white">
-              {editProject ? "Editar Landing Page" : "Novo Empreendimento"}
+              {editProject ? "Editar Landing Page" : brokerMode ? (data.type === "imovel" ? "Novo Imóvel" : "Novo Empreendimento") : "Novo Empreendimento"}
             </h1>
             <p className="text-xs text-slate-500">Passo {step + 1} de {totalSteps}</p>
           </div>
@@ -547,10 +654,10 @@ Argumentos de venda:
       {/* Content */}
       <div className={cn(
         "flex-1 overflow-y-auto min-h-0",
-        step === 3 ? "" : "pb-4",
+        isLastStep ? "" : "pb-4",
       )}>
-        <div className={cn(step === 3 ? "h-full" : "")}>
-          <div className={cn(step === 3 ? "h-full" : "min-h-[340px]")}>
+        <div className={cn(isLastStep ? "h-full" : "")}>
+          <div className={cn(isLastStep ? "h-full" : "min-h-[340px]")}>
             {stepContent[step]}
           </div>
         </div>
@@ -578,7 +685,7 @@ Argumentos de venda:
             </Button>
           )}
 
-          {step < totalSteps - 1 ? (
+          {!isLastStep ? (
             <Button
               onClick={() => setStep(step + 1)}
               disabled={!canAdvance()}
