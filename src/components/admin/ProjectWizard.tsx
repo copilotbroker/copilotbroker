@@ -442,6 +442,22 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     setIsSaving(true);
 
     try {
+      const finalSlug = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+
+      // Check for duplicate slug before saving
+      const { data: existingSlug } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("slug", finalSlug)
+        .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
+        .maybeSingle();
+
+      if (existingSlug) {
+        toast.error("Já existe um projeto com este slug. Altere o nome ou slug.");
+        setIsSaving(false);
+        return;
+      }
+
       if (editProject) {
         // If editing a draft, activate it + set landing content
         if (isDraftEdit) {
@@ -449,7 +465,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
             .from("projects")
             .update({
               name: data.name.trim(),
-              slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+              slug: finalSlug,
               city: data.city.trim(),
               city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
               description: data.description.trim() || null,
@@ -468,7 +484,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
       } else if (brokerMode && brokerId) {
         const projectPayload = {
           name: data.name.trim(),
-          slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+          slug: finalSlug,
           city: data.city.trim(),
           city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
           description: data.description.trim() || null,
@@ -498,7 +514,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
       } else {
         const projectPayload = {
           name: data.name.trim(),
-          slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+          slug: finalSlug,
           city: data.city.trim(),
           city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
           description: data.description.trim() || null,
@@ -513,9 +529,16 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
       clearDraft();
       onComplete?.();
       onBack?.();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Publish error:", err);
-      toast.error("Erro ao salvar.");
+      const msg = err?.message || err?.details || "Erro ao salvar.";
+      if (msg.includes("duplicate") || msg.includes("unique")) {
+        toast.error("Já existe um projeto com este slug. Altere o nome.");
+      } else if (msg.includes("row-level security")) {
+        toast.error("Sem permissão para salvar. Verifique se está logado.");
+      } else {
+        toast.error(`Erro ao salvar: ${msg}`);
+      }
     } finally {
       setIsSaving(false);
     }
