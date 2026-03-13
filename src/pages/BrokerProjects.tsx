@@ -324,14 +324,6 @@ const BrokerProjects = () => {
           </div>
         </div>
 
-        <div className="flex gap-2">
-          {(brokerProjects.length + myCreatedProjects.length) > 1 && (
-            <Button variant="ghost" size="sm" onClick={copyAllUrls} className="text-xs bg-[#1e1e22] border border-[#2a2a2e] hover:bg-[#2a2a2e]">
-              <ClipboardList className="w-4 h-4 mr-1" />
-              Copiar todos
-            </Button>
-          )}
-        </div>
       </div>
 
 
