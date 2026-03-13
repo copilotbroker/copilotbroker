@@ -85,7 +85,12 @@ export function BrokerBottomNav({
   const handleMoreAction = (action: string) => {
     setIsMoreOpen(false);
     if (action === "list") {
-      onViewChange("list");
+      if (!isAdminPage) {
+        navigate("/corretor/admin");
+        setTimeout(() => onViewChange("list"), 50);
+      } else {
+        onViewChange("list");
+      }
     } else if (action === "projects") {
       navigate("/corretor/empreendimentos");
     } else if (action === "roletas") {
