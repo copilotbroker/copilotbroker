@@ -329,6 +329,12 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     }
 
     try {
+      // Build media URLs: from uploaded files + scraped images
+      const allMediaUrls = [
+        ...mediaFiles.map(f => f.url),
+        ...(scrapedData?.images || []),
+      ];
+
       const { data: fnData, error } = await supabase.functions.invoke("generate-landing", {
         body: {
           projectData: {
@@ -337,8 +343,15 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
             description: data.description,
             status: data.status,
             location: data.location,
-            mediaUrls: mediaFiles.map(f => f.url),
+            mediaUrls: allMediaUrls,
             type: data.type,
+            scrapedContent: scrapedData ? {
+              rawText: scrapedData.rawText,
+              originalTitle: scrapedData.title,
+              originalDescription: scrapedData.description,
+              sourceUrl: scrapedData.url,
+              videoUrls: scrapedData.videos,
+            } : undefined,
           },
           currentContent: userMessage ? landingContent : undefined,
           userMessage: userMessage || undefined,
