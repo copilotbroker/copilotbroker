@@ -50,9 +50,10 @@ export default function AdminInbox() {
   }, []);
 
   const isArchived = statusFilter === "archived";
+  const effectiveBrokerId = selectedBrokerId === "_loading" ? "__skip__" : (selectedBrokerId !== "all" ? selectedBrokerId : undefined);
   const { conversations, isLoading, totalUnread, markAsRead, archiveConversation, unarchiveConversation, updateAiMode } =
     useConversations({
-      brokerId: selectedBrokerId !== "all" ? selectedBrokerId : undefined,
+      brokerId: effectiveBrokerId === "__skip__" ? "00000000-0000-0000-0000-000000000000" : effectiveBrokerId,
       search,
       statusFilter: isArchived ? "all" : statusFilter,
       isArchived,
