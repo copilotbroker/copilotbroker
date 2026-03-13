@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   Building2, Copy, Check, ExternalLink, Trash2, Plus,
   Link as LinkIcon, RefreshCw, ArrowLeft, Save, ClipboardList,
-  Sparkles, Home, Pencil,
+  Sparkles, Home, Pencil, FileEdit,
 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";
 import {
