@@ -1115,13 +1115,8 @@ Faixa de preço: A partir de R$ 320.000`}
         <div ref={bottomSentinelRef} className="h-1" />
       </div>
 
-      {/* Bottom nav - appears when user scrolls to bottom */}
-      <div className={cn(
-        "border-t border-[#2a2a2e] pt-4 mt-4 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] lg:pb-0 transition-all duration-300",
-        isBottomVisible || isLastStep
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-4 pointer-events-none"
-      )}>
+      {/* Bottom nav */}
+      <div className="border-t border-[#2a2a2e] pt-4 mt-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] lg:pb-0">
         <div className="flex gap-3">
           {step > 0 && (!editProject || isDraftEdit) ? (
             <Button
