@@ -599,6 +599,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
             <Loader2 className="w-3 h-3 animate-spin" /> Verificando...
           </p>
         )}
+      </div>
       <div className={cn("grid gap-4", brokerMode ? "grid-cols-1" : "grid-cols-2")}>
         <div className="space-y-2">
           <Label className="text-sm text-slate-300">Cidade *</Label>
