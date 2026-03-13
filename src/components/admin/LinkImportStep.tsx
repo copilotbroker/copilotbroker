@@ -92,7 +92,7 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
       setPropertyName(scraped.title || "");
       setPropertyCity(scraped.city || "");
       setFailedImages(new Set());
-      setHasScrolledToBottom(false);
+      
       setProgressStep(PROGRESS_STEPS.length);
     } catch (err: any) {
       console.error("Scrape error:", err);
