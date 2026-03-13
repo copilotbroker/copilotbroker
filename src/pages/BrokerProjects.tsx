@@ -307,7 +307,7 @@ const BrokerProjects = () => {
       onLogout={handleLogout}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 overflow-hidden">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/corretor/admin")}
