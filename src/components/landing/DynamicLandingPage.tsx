@@ -76,6 +76,7 @@ interface Props {
 
 export default function DynamicLandingPage({ project, previewContent }: Props) {
   const content = previewContent || project.landing_content;
+  const isPreview = !!previewContent;
   if (!content) return null;
 
   return (
@@ -90,15 +91,17 @@ export default function DynamicLandingPage({ project, previewContent }: Props) {
         <DynamicUrgency content={content.urgency} theme={content.theme} />
         <DynamicBenefits content={content.benefits} theme={content.theme} />
         <DynamicCTA content={content.cta} theme={content.theme} />
-        <FormSection
-          projectId={project.id}
-          projectSlug={project.slug}
-          allowBrokerSelection={true}
-          webhookUrl={project.webhook_url}
-        />
+        {!isPreview && (
+          <FormSection
+            projectId={project.id}
+            projectSlug={project.slug}
+            allowBrokerSelection={true}
+            webhookUrl={project.webhook_url}
+          />
+        )}
       </main>
       <DynamicFooter content={content.footer} theme={content.theme} />
-      <FloatingCTA />
+      {!isPreview && <FloatingCTA />}
     </div>
   );
 }
