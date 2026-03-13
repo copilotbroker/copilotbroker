@@ -1,60 +1,67 @@
 
 
-## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
+# Plano: Coluna "Copiloto Ativo" no Kanban
 
-### Problema 1: Nomes dos leads não aparecem
+## Resumo
 
-A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
+Repurpose o status existente `awaiting_docs` (já existe no enum do banco mas não é usado no Kanban) como "Copiloto Ativo". Quando uma cadência é ativada, o lead move para `awaiting_docs`; quando cancela/completa, volta para `info_sent`.
 
+## Mudanças
+
+### 1. Frontend — Configuração de status e Kanban
+
+**`src/types/crm.ts`**
+- Alterar label de `awaiting_docs` para "Copiloto Ativo" e ajustar cores (verde/lime para indicar automação ativa)
+
+**`src/components/crm/KanbanBoard.tsx`**
+- Adicionar `awaiting_docs` no array `STATUSES` entre `info_sent` e `scheduling`
+- Adicionar `awaiting_docs` no `STATUS_ORDER`
+
+**`src/components/crm/KanbanCard.tsx`**
+- Adicionar `awaiting_docs` nos mappings `STATUS_PROGRESS`, `PROGRESS_COLORS`, `ACTION_CONFIG`
+- ACTION_CONFIG para awaiting_docs: botão "Cancelar Cadência" ou "Agendar"
+
+**`src/components/crm/KanbanColumn.tsx`**
+- Já tem `awaiting_docs` no `STATUS_SQUARE_COLORS` — atualizar cor
+
+**`src/components/admin/intelligence/`**
+- Atualizar referências de funnel para incluir "Copiloto Ativo" como estágio separado
+
+**`src/components/admin/LeadsAdvancedFilters.tsx`**
+- Já inclui `awaiting_docs` — label será atualizado automaticamente via `STATUS_CONFIG`
+
+### 2. Edge Functions — Mover lead automaticamente
+
+**`supabase/functions/auto-cadencia-10d/index.ts`**
+- Linha ~338: alterar `status: "info_sent"` para `status: "awaiting_docs"` quando a cadência é ativada
+- Alterar `new_status` no log de interação para `"awaiting_docs"`
+
+**`supabase/functions/whatsapp-webhook/index.ts`**
+- Quando uma campanha é marcada como `completed` (linha ~222-227): buscar o lead_id da campanha e, se o lead estiver em `awaiting_docs`, mover de volta para `info_sent`
+
+### 3. Client-side — Cancelamento de cadência
+
+**`src/hooks/use-cadencia-ativa.ts`**
+- Na função `cancelCadenciaForLead`: após cancelar a campanha, verificar se o lead está em `awaiting_docs` e mover para `info_sent`
+- No hook `useCadenciaAtiva` cancelMutation: mesma lógica
+
+**`src/hooks/use-kanban-leads.ts`**
+- Na `inactivateLead` e `confirmarVenda`: já chamam `cancelCadenciaForLead` — o lead será movido automaticamente antes da ação final
+
+### 4. Fluxo completo
+
+```text
+Lead novo → Pré Atendimento (new)
+    ↓ cadência ativada automaticamente
+Copiloto Ativo (awaiting_docs)
+    ↓ cadência completa ou lead responde
+Atendimento (info_sent)
+    ↓ corretor agenda
+Agendamento (scheduling) → ...
 ```
-lead:leads!conversations_lead_id_fkey(id, name, status, ...)
-```
 
-E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
-
-**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
-
-### Problema 2: Marcar como lida quando lida no celular
-
-O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
-
-UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
-
-**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
-1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
-2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
-
-### Arquivos a editar
-
-| Ação | Arquivo |
-|------|---------|
-| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
-| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
-
-### Detalhes técnicos
-
-**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
-
-**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
-```typescript
-// Update conversation_messages status
-await supabase
-  .from("conversation_messages")
-  .update({ status: "read" })
-  .eq("uazapi_message_id", messageId);
-
-// Find conversation and reset unread
-const { data: msg } = await supabase
-  .from("conversation_messages")
-  .select("conversation_id")
-  .eq("uazapi_message_id", messageId)
-  .maybeSingle();
-
-if (msg) {
-  await supabase
-    .from("conversations")
-    .update({ unread_count: 0, status: "attending" })
-    .eq("id", msg.conversation_id);
-}
-```
+### Pontos de atenção
+- O `whatsapp-message-sender` já move leads de `new` para `info_sent` no primeiro envio — precisa atualizar para mover para `awaiting_docs` também
+- O `AnalyticsDashboard` tem cores por status — atualizar cor de `awaiting_docs`
+- Leads que já estão em `info_sent` com cadência ativa não serão retroativamente movidos (apenas novos)
 
