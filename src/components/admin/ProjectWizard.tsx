@@ -936,10 +936,12 @@ Faixa de preço: A partir de R$ 320.000`}
         </div>
 
         {/* Preview side */}
-        <div className={cn("flex-1 overflow-y-auto rounded-xl border border-[#2a2a2e] bg-white", mobileTab !== "preview" ? "hidden md:block" : "block")}>
+        <div className={cn("flex-1 overflow-hidden rounded-xl border border-[#2a2a2e] bg-white", mobileTab !== "preview" ? "hidden md:block" : "block")}>
           {landingContent ? (
-            <div className="transform scale-[0.5] origin-top-left w-[200%]">
-              <DynamicLandingPage project={previewProject as any} previewContent={landingContent} />
+            <div className="overflow-y-auto h-full">
+              <div className="transform scale-[0.5] origin-top-left w-[200%]" style={{ height: 'fit-content' }}>
+                <DynamicLandingPage project={previewProject as any} previewContent={landingContent} />
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-slate-400 text-sm">
