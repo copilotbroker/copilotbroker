@@ -201,7 +201,7 @@ export function CadenciaSheet({
       const whStart = instanceData?.working_hours_start || "09:00";
       const whEnd = instanceData?.working_hours_end || "21:00";
 
-      // Create campaign with lead_id
+      // Create campaign with lead_id and preserve current status
       const { data: campaign, error: campErr } = await (supabase
         .from("whatsapp_campaigns") as any)
         .insert({
@@ -210,6 +210,7 @@ export function CadenciaSheet({
           status: "running",
           total_leads: steps.length,
           lead_id: leadId,
+          lead_previous_status: leadStatus || "new",
         })
         .select()
         .single();
@@ -261,28 +262,28 @@ export function CadenciaSheet({
       const { error: qErr } = await supabase.from("whatsapp_message_queue").insert(queueItems);
       if (qErr) throw qErr;
 
-      // Move lead to Atendimento if in Pré Atendimento
-      if (leadStatus === "new") {
-        await supabase.from("leads").update({
-          status: "info_sent" as any,
-          atendimento_iniciado_em: new Date().toISOString(),
-          status_distribuicao: "atendimento_iniciado" as any,
-        }).eq("id", leadId);
+      // Move lead to Copiloto Ativo (awaiting_docs)
+      const now = new Date().toISOString();
+      await supabase.from("leads").update({
+        status: "awaiting_docs" as any,
+        atendimento_iniciado_em: now,
+        status_distribuicao: "atendimento_iniciado" as any,
+        reserva_expira_em: null,
+      }).eq("id", leadId);
 
-        const cadUser = (await supabase.auth.getUser()).data.user;
-        const { data: cadBroker } = await supabase
-          .from("brokers").select("id, name").eq("user_id", cadUser?.id ?? "").single();
+      const cadUser = (await supabase.auth.getUser()).data.user;
+      const { data: cadBroker } = await supabase
+        .from("brokers").select("id, name").eq("user_id", cadUser?.id ?? "").single();
 
-        await supabase.from("lead_interactions").insert({
-          lead_id: leadId,
-          interaction_type: "atendimento_iniciado" as any,
-          old_status: "new" as any,
-          new_status: "info_sent" as any,
-          broker_id: cadBroker?.id,
-          notes: `Lead movido para Atendimento ao ativar Cadência 10D por ${cadBroker?.name || "corretor"}`,
-          created_by: cadUser?.id,
-        });
-      }
+      await supabase.from("lead_interactions").insert({
+        lead_id: leadId,
+        interaction_type: "atendimento_iniciado" as any,
+        old_status: leadStatus as any,
+        new_status: "awaiting_docs" as any,
+        broker_id: cadBroker?.id,
+        notes: `Lead movido para Copiloto Ativo ao ativar Cadência 10D por ${cadBroker?.name || "corretor"}`,
+        created_by: cadUser?.id,
+      });
 
       // Log interaction
       const stepsPreview = steps.map((s, i) => `Etapa ${i + 1} (${formatDelay(i === 0 ? 0 : s.delayMinutes)}): ${s.messageContent}`).join("\n");
