@@ -112,63 +112,34 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const skipAutoSaveRef = useRef(false);
   const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Restore draft on mount (only for new projects, not edits)
-  useEffect(() => {
-    if (editProject) return;
+  // Check slug uniqueness (debounced)
+  const checkSlug = async (slug: string) => {
+    if (!slug.trim()) { setSlugError(null); return; }
+    setIsCheckingSlug(true);
     try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (!raw) return;
-      const draft: DraftState = JSON.parse(raw);
-      if (draft.data?.name) {
-        setHasDraft(true);
-      }
-    } catch { /* ignore corrupt data */ }
-  }, [editProject]);
-
-  const restoreDraft = () => {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (!raw) return;
-      const draft: DraftState = JSON.parse(raw);
-      setData(draft.data || initialData);
-      setStep(draft.step || 0);
-      setLandingContent(draft.landingContent || null);
-      setChatMessages(draft.chatMessages || []);
-      setMediaFiles(draft.mediaFiles || []);
-      setHasDraft(false);
-      toast.success("Rascunho restaurado!");
+      const { data: existing } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("slug", slug)
+        .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
+        .maybeSingle();
+      setSlugError(existing ? "Já existe um projeto com este slug." : null);
     } catch {
-      toast.error("Erro ao restaurar rascunho.");
-      localStorage.removeItem(DRAFT_KEY);
+      setSlugError(null);
+    } finally {
+      setIsCheckingSlug(false);
     }
   };
 
-  const discardDraft = () => {
-    localStorage.removeItem(DRAFT_KEY);
-    setHasDraft(false);
-  };
-
-  // Auto-save draft (debounced)
   useEffect(() => {
-    if (editProject || skipAutoSaveRef.current) return;
-    // Only save if there's meaningful data
-    if (!data.name && !data.city && !data.description && mediaFiles.length === 0) return;
-    const timer = setTimeout(() => {
-      const draft: DraftState = {
-        data,
-        step,
-        landingContent,
-        chatMessages: chatMessages.filter(m => m.role !== "system"),
-        mediaFiles,
-        savedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [data, step, landingContent, chatMessages, mediaFiles, editProject]);
+    if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current);
+    const slug = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    if (!slug) { setSlugError(null); return; }
+    slugCheckTimerRef.current = setTimeout(() => checkSlug(slug), 500);
+    return () => { if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current); };
+  }, [data.slug]);
 
   const clearDraft = () => {
-    skipAutoSaveRef.current = true;
     localStorage.removeItem(DRAFT_KEY);
   };
 
