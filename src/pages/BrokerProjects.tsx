@@ -187,9 +187,9 @@ const BrokerProjects = () => {
           <Building2 className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
         )}
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-foreground truncate text-sm">{bp.project.name}</h3>
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+            <h3 className="font-semibold text-foreground truncate text-sm max-w-[60%]">{bp.project.name}</h3>
             <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
               Rascunho
             </span>
