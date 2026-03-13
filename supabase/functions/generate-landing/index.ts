@@ -113,6 +113,18 @@ NOME: ${projectData.name}
 CIDADE: ${projectData.city}
 ${projectData.description ? `\nCONTEÚDO COMPLETO FORNECIDO PELO CLIENTE:\n${projectData.description}\n\nANALISE TODO O CONTEÚDO ACIMA E EXTRAIA: diferenciais, público-alvo, argumentos de venda, faixa de preço, infraestrutura, localização e QUALQUER link/URL mencionado (mapas, vídeos, iframes). Links devem ser incluídos como customSections com embedUrl.` : ""}
 ${projectData.location ? `LOCALIZAÇÃO: ${projectData.location}` : ""}
+${projectData.scrapedContent ? `\nCONTEÚDO IMPORTADO AUTOMATICAMENTE DE: ${projectData.scrapedContent.sourceUrl}
+TÍTULO ORIGINAL: ${projectData.scrapedContent.originalTitle || "N/A"}
+DESCRIÇÃO ORIGINAL: ${projectData.scrapedContent.originalDescription || "N/A"}
+TEXTO EXTRAÍDO DA PÁGINA:\n${projectData.scrapedContent.rawText?.slice(0, 6000) || ""}
+${projectData.scrapedContent.videoUrls?.length ? `\nVÍDEOS ENCONTRADOS:\n${projectData.scrapedContent.videoUrls.join("\n")}` : ""}
+
+INSTRUÇÃO CRÍTICA PARA CONTEÚDO IMPORTADO:
+- O texto acima foi extraído automaticamente de um anúncio/site. TRANSFORME este conteúdo em copywriting COMERCIAL altamente persuasivo e de alta conversão.
+- NÃO copie o texto original — reescreva completamente com foco em DESEJO, EXCLUSIVIDADE e URGÊNCIA.
+- Crie um título comercial FORTE e memorável (diferente do título original).
+- Os argumentos de venda devem ser emocionais e aspiracionais, não descritivos.
+- Se houver vídeos, inclua como customSections com embedUrl.` : ""}
 ${projectData.mediaUrls?.length ? `\nMÍDIA DISPONÍVEL (URLs de imagens/vídeos):\n${projectData.mediaUrls.join("\n")}\n\nIMPORTANTE SOBRE MÍDIAS: Use a melhor imagem como hero.backgroundImageUrl. Outras como features.imageUrl ou em customSections tipo gallery. REGRA CRÍTICA: Se houver 3 ou mais imagens, CRIE uma customSection tipo "gallery" incluindo TODAS as imagens — não omita nenhuma. Cada item deve ter imageUrl e text descritivo.` : ""}
 STATUS: ${projectData.status || "pre_launch"}
 
