@@ -972,16 +972,15 @@ Faixa de preço: A partir de R$ 320.000`}
       {/* Content */}
       <div className={cn(
         isLastStep ? "" : "pb-4",
+        "pb-[140px] lg:pb-4",
       )}>
-        <div className={cn(isLastStep ? "" : "")}>
-          <div className={cn(isLastStep ? "" : "min-h-[340px]")}>
-            {stepContent[step]}
-          </div>
+        <div className={cn(isLastStep ? "" : "min-h-[340px]")}>
+          {stepContent[step]}
         </div>
       </div>
 
-      {/* Bottom nav */}
-      <div className="border-t border-[#2a2a2e] pt-4 mt-4">
+      {/* Bottom nav - sticky on mobile */}
+      <div className="fixed bottom-[env(safe-area-inset-bottom,0px)] left-0 right-0 z-40 bg-[#141417]/95 backdrop-blur-lg border-t border-[#2a2a2e] p-4 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:z-auto lg:bg-transparent lg:backdrop-blur-none lg:border-t lg:border-[#2a2a2e] lg:p-0 lg:pt-4 lg:mt-4 lg:pb-0">
         <div className="flex gap-3">
           {step > 0 && (!editProject || isDraftEdit) ? (
             <Button
