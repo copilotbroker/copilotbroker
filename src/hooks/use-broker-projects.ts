@@ -183,7 +183,7 @@ export function useBrokerProjects(brokerId?: string | null) {
 
   const getProjectUrl = (project: Project) => {
     if (!broker) return "";
-    return buildUrl(project, broker.slug);
+    return buildUrl(project, broker.slug, brokerId);
   };
 
   const unassociatedProjects = availableProjects.filter(
