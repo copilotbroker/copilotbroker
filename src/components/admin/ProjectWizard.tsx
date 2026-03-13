@@ -1117,11 +1117,12 @@ Faixa de preço: A partir de R$ 320.000`}
 
       {/* Bottom nav */}
       <div className="border-t border-[#2a2a2e] pt-4 mt-4 pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] lg:pb-0">
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
           {step > 0 && (!editProject || isDraftEdit) ? (
             <Button
               onClick={() => setStep(step - 1)}
               variant="outline"
+              size="sm"
               className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
@@ -1131,6 +1132,7 @@ Faixa de preço: A partir de R$ 320.000`}
             <Button
               onClick={onBack}
               variant="outline"
+              size="sm"
               className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
             >
               Cancelar
@@ -1143,10 +1145,11 @@ Faixa de preço: A partir de R$ 320.000`}
               onClick={handleSaveDraft}
               disabled={isSaving || !data.name.trim()}
               variant="outline"
+              size="sm"
               className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
             >
               {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-              Salvar Rascunho
+              Rascunho
             </Button>
           )}
 
@@ -1154,7 +1157,8 @@ Faixa de preço: A partir de R$ 320.000`}
             <Button
               onClick={() => setStep(step + 1)}
               disabled={!canAdvance()}
-              className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium"
+              size="sm"
+              className="flex-1 min-w-[100px] bg-[#FFFF00] text-black hover:brightness-110 font-medium"
             >
               Próximo
               <ChevronRight className="w-4 h-4 ml-1" />
@@ -1163,12 +1167,13 @@ Faixa de preço: A partir de R$ 320.000`}
             <Button
               onClick={handlePublish}
               disabled={!landingContent || isGenerating || isSaving}
-              className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium"
+              size="sm"
+              className="flex-1 min-w-[100px] bg-[#FFFF00] text-black hover:brightness-110 font-medium"
             >
               {isSaving ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Publicando...</>
               ) : (
-                <><Rocket className="w-4 h-4 mr-2" />Publicar Landing Page</>
+                <><Rocket className="w-4 h-4 mr-2" />Publicar</>
               )}
             </Button>
           )}
