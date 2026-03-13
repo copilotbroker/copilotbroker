@@ -41,7 +41,7 @@ interface KanbanColumnProps {
 const STATUS_SQUARE_COLORS: Record<LeadStatus, string> = {
   new: "bg-blue-500",
   info_sent: "bg-enove-yellow",
-  awaiting_docs: "bg-enove-yellow",
+  awaiting_docs: "bg-lime-500",
   scheduling: "bg-orange-500",
   docs_received: "bg-emerald-500",
   registered: "bg-slate-400",

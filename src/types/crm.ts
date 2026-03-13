@@ -201,9 +201,9 @@ export const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; b
     bgColor: 'bg-yellow-500/10 border-yellow-500/30'
   },
   awaiting_docs: {
-    label: 'Aguardando Dados',
-    color: 'text-yellow-300',
-    bgColor: 'bg-yellow-500/10 border-yellow-400/30'
+    label: 'Copiloto Ativo',
+    color: 'text-lime-400',
+    bgColor: 'bg-lime-500/10 border-lime-400/30'
   },
   scheduling: {
     label: 'Agendamento',

@@ -155,6 +155,7 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
         onIniciarAtendimento?.(lead.id);
         break;
       case "info_sent":
+      case "awaiting_docs":
         onOpenAgendamento?.(lead.id);
         break;
       case "scheduling":
