@@ -23,6 +23,7 @@ export interface ScrapedData {
 interface LinkImportStepProps {
   onImportSuccess: (data: ScrapedData) => void;
   onBack: () => void;
+  onSaveDraft?: (data: ScrapedData) => void;
 }
 
 const PROGRESS_STEPS = [
