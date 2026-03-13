@@ -227,7 +227,8 @@ const BrokerProjects = () => {
   const renderProjectCard = (bp: { id: string; project: any; url: string }, isOwn?: boolean) => (
     <div
       key={bp.id}
-      className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-3 hover:border-primary/30 transition-colors"
+      className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-3 hover:border-primary/30 transition-colors cursor-pointer"
+      onClick={() => openLanding(bp.url)}
     >
       <div className="flex items-start gap-3">
         {bp.project.type === "imovel" ? (
@@ -253,7 +254,7 @@ const BrokerProjects = () => {
           </code>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
           {isOwn && (
             <button
               onClick={() => openEditWizard(bp.project)}
