@@ -34,9 +34,21 @@ export function BrokerSidebar({
 }: BrokerSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isAdminPage = location.pathname === "/corretor/admin";
   const isRoletasPage = location.pathname === "/corretor/roletas";
   const isInboxPage = location.pathname === "/corretor/inbox";
   const isCopilotPage = location.pathname === "/corretor/copiloto";
+  const isProjectsPage = location.pathname === "/corretor/empreendimentos";
+
+  const handleNavClick = (mode: "kanban" | "list") => {
+    if (!isAdminPage) {
+      navigate("/corretor/admin");
+      // Small delay to let navigation complete before changing view mode
+      setTimeout(() => onViewChange(mode), 50);
+    } else {
+      onViewChange(mode);
+    }
+  };
   
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-16 hidden lg:flex flex-col bg-[#141417] border-r border-[#2a2a2e]">
@@ -60,12 +72,12 @@ export function BrokerSidebar({
       <nav className="flex-1 flex flex-col items-center gap-1 px-2 py-4">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = viewMode === item.id;
+          const isActive = isAdminPage && viewMode === item.id;
 
           return (
             <button
               key={item.id}
-              onClick={() => onViewChange(item.id)}
+              onClick={() => handleNavClick(item.id)}
               className={cn(
                 "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
                 "hover:bg-[#2a2a2e] group relative",
@@ -141,7 +153,10 @@ export function BrokerSidebar({
         {/* Empreendimentos */}
         <button
           onClick={() => navigate("/corretor/empreendimentos")}
-          className="w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] text-slate-400 hover:text-white group relative mt-2"
+          className={cn(
+            "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative mt-2",
+            isProjectsPage ? "bg-[#2a2a2e] text-[#FFFF00]" : "text-slate-400 hover:text-white"
+          )}
           title="Empreendimentos"
         >
           <Building2 className="w-5 h-5" />

@@ -42,6 +42,7 @@ export function BrokerBottomNav({
 
   const isCopilotActive = location.pathname === "/corretor/copiloto";
   const isInboxActive = location.pathname === "/corretor/inbox";
+  const isAdminPage = location.pathname === "/corretor/admin";
 
   const navItems: Array<{
     id: string;
@@ -64,7 +65,12 @@ export function BrokerBottomNav({
 
   const handleClick = (id: string) => {
     if (id === "kanban") {
-      onViewChange("kanban");
+      if (!isAdminPage) {
+        navigate("/corretor/admin");
+        setTimeout(() => onViewChange("kanban"), 50);
+      } else {
+        onViewChange("kanban");
+      }
     } else if (id === "add") {
       onAddLead?.();
     } else if (id === "inbox") {
@@ -79,7 +85,12 @@ export function BrokerBottomNav({
   const handleMoreAction = (action: string) => {
     setIsMoreOpen(false);
     if (action === "list") {
-      onViewChange("list");
+      if (!isAdminPage) {
+        navigate("/corretor/admin");
+        setTimeout(() => onViewChange("list"), 50);
+      } else {
+        onViewChange("list");
+      }
     } else if (action === "projects") {
       navigate("/corretor/empreendimentos");
     } else if (action === "roletas") {
@@ -94,7 +105,7 @@ export function BrokerBottomNav({
   };
 
   const getItemColor = (id: string) => {
-    if (id === "kanban" && viewMode === "kanban" && !isCopilotActive && !isInboxActive) {
+    if (id === "kanban" && viewMode === "kanban" && isAdminPage) {
       return "text-[#FFFF00]";
     }
     if (id === "copilot" && isCopilotActive) {
