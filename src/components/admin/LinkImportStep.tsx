@@ -128,6 +128,16 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
     });
   };
 
+  const handleDraftSave = () => {
+    if (!result || !onSaveDraft || !propertyName.trim()) return;
+    onSaveDraft({
+      ...result,
+      images: editableImages.filter(img => !failedImages.has(img)),
+      title: propertyName.trim(),
+      city: propertyCity.trim() || undefined,
+    });
+  };
+
   const handleRetry = () => {
     setError(null);
     setResult(null);
