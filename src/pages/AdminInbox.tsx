@@ -27,30 +27,33 @@ export default function AdminInbox() {
   const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("all");
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("_loading");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
 
-  // Fetch brokers list for filter
+  // Fetch brokers list + set default to current user's broker
   useEffect(() => {
-    const fetchBrokers = async () => {
-      const { data } = await supabase
-        .from("brokers")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name");
-      if (data) setBrokers(data as any);
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const [brokersRes, myBrokerRes] = await Promise.all([
+        supabase.from("brokers").select("id, name").eq("is_active", true).order("name"),
+        session?.user ? supabase.from("brokers").select("id").eq("user_id", session.user.id).maybeSingle() : null,
+      ]);
+      if (brokersRes.data) setBrokers(brokersRes.data as any);
+      // Default to the logged-in user's own broker, or "all" if no broker record
+      setSelectedBrokerId(myBrokerRes?.data ? (myBrokerRes.data as any).id : "all");
     };
-    fetchBrokers();
+    init();
   }, []);
 
   const isArchived = statusFilter === "archived";
+  const effectiveBrokerId = selectedBrokerId === "_loading" ? "__skip__" : (selectedBrokerId !== "all" ? selectedBrokerId : undefined);
   const { conversations, isLoading, totalUnread, markAsRead, archiveConversation, unarchiveConversation, updateAiMode } =
     useConversations({
-      brokerId: selectedBrokerId !== "all" ? selectedBrokerId : undefined,
+      brokerId: effectiveBrokerId === "__skip__" ? "00000000-0000-0000-0000-000000000000" : effectiveBrokerId,
       search,
       statusFilter: isArchived ? "all" : statusFilter,
       isArchived,
