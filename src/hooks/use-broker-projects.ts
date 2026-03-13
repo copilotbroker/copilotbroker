@@ -244,6 +244,23 @@ export function useBrokerProjects(brokerId?: string | null) {
     if (broker) fetchBrokerProjects();
   }, [broker, fetchBrokerProjects]);
 
+  const inactivateProject = async (projectId: string) => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.from("projects").update({ is_active: false }).eq("id", projectId);
+      if (error) throw error;
+      toast.success("Imóvel inativado!");
+      await fetchBrokerProjects();
+      return true;
+    } catch (error) {
+      console.error("Error inactivating project:", error);
+      toast.error("Erro ao inativar imóvel.");
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return {
     broker,
     brokerProjects,
@@ -256,6 +273,7 @@ export function useBrokerProjects(brokerId?: string | null) {
     addProject,
     removeProject,
     deleteDraft,
+    inactivateProject,
     updateSlug,
     checkSlugAvailability,
     getProjectUrl,

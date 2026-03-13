@@ -5,7 +5,7 @@ import { useUserRole } from "@/hooks/use-user-role";
 import { useBrokerProjects } from "@/hooks/use-broker-projects";
 import { toast } from "sonner";
 import {
-  Building2, Copy, Check, ExternalLink, Trash2, Plus,
+  Building2, Copy, Check, Trash2, Plus, EyeOff,
   Link as LinkIcon, RefreshCw, ArrowLeft, Save, ClipboardList,
   Sparkles, Home, Pencil, FileEdit,
 } from "lucide-react";
