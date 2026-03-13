@@ -103,11 +103,11 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
   const handleContinue = () => {
     if (!result) return;
     if (!propertyName.trim()) return;
-    // Pass modified data with filtered images and name
     onImportSuccess({
       ...result,
       images: editableImages.filter(img => !failedImages.has(img)),
       title: propertyName.trim(),
+      city: propertyCity.trim() || undefined,
     });
   };
 
