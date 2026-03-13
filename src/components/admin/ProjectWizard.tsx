@@ -79,8 +79,13 @@ interface DraftState {
 export default function ProjectWizard({ inline, onBack, editProject, onComplete, brokerMode, brokerId }: WizardProps) {
   const { createProject, updateProject } = useProjects();
   const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
-  const isDraftEdit = editProject && !editProject.landing_content;
-  const [step, setStep] = useState(editProject ? (isDraftEdit ? 0 : (brokerMode ? 2 : 3)) : 0);
+  const isDraftEdit = editProject && !editProject.landing_content && editProject.type;
+  const isDraftWithContent = editProject && editProject.landing_content && !editProject.webhook_url && brokerMode;
+  const [step, setStep] = useState(() => {
+    if (!editProject) return 0;
+    if (isDraftEdit) return 0;
+    return brokerMode ? 2 : 3;
+  });
   const [data, setData] = useState<WizardData>(() => {
     if (editProject) {
       return {
