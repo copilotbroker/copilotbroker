@@ -80,7 +80,16 @@ const BrokerProjects = () => {
     toast.success("Todos os links copiados!");
   };
 
-  const openLanding = (url: string) => { window.open(url, "_blank"); };
+  const openLanding = (url: string) => {
+    const fullUrl = `${window.location.origin}${url}`;
+    const a = document.createElement("a");
+    a.href = fullUrl;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const handleAddProjects = async () => {
     for (const projectId of selectedProjectIds) { await addProject(projectId); }
