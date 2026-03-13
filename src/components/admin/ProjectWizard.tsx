@@ -986,7 +986,6 @@ Faixa de preço: A partir de R$ 320.000`}
       {/* Content */}
       <div className={cn(
         isLastStep ? "" : "pb-4",
-        "pb-[140px] lg:pb-4",
       )}>
         <div className={cn(isLastStep ? "" : "min-h-[340px]")}>
           {stepContent[step]}
