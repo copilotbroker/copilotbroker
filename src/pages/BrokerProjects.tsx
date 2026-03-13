@@ -149,6 +149,72 @@ const BrokerProjects = () => {
     );
   }
 
+  const openEditWizard = (project: any) => {
+    setEditingProject({
+      id: project.id,
+      name: project.name,
+      slug: project.slug,
+      city: project.city,
+      city_slug: project.city_slug,
+      landing_content: project.landing_content || null,
+      webhook_url: null,
+      description: project.description || null,
+      type: project.type || "empreendimento",
+      status: project.status || "pre_launch",
+    });
+    setShowWizard(true);
+  };
+
+  const renderDraftCard = (bp: { id: string; project: any }) => (
+    <div
+      key={bp.id}
+      className="bg-[#1e1e22] border border-dashed border-yellow-500/40 rounded-lg p-3 hover:border-yellow-500/60 transition-colors"
+    >
+      <div className="flex items-start gap-3">
+        {bp.project.type === "imovel" ? (
+          <Home className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+        ) : (
+          <Building2 className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+        )}
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-foreground truncate text-sm">{bp.project.name}</h3>
+            <span className="text-[10px] text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
+              Rascunho
+            </span>
+            {bp.project.city && (
+              <span className="text-[10px] text-muted-foreground bg-[#2a2a2e] px-1.5 py-0.5 rounded shrink-0">
+                {bp.project.city}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground/70">
+            Landing page ainda não publicada. Continue a edição para publicar.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => openEditWizard(bp.project)}
+            className="p-1.5 rounded-md bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors"
+            title="Continuar edição"
+          >
+            <FileEdit className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => deleteDraft(bp.project.id)}
+            disabled={isSaving}
+            className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+            title="Excluir rascunho"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderProjectCard = (bp: { id: string; project: any; url: string }, isOwn?: boolean) => (
     <div
       key={bp.id}
@@ -181,18 +247,7 @@ const BrokerProjects = () => {
         <div className="flex items-center gap-1 shrink-0">
           {isOwn && (
             <button
-              onClick={() => {
-                setEditingProject({
-                  id: bp.project.id,
-                  name: bp.project.name,
-                  slug: bp.project.slug,
-                  city: bp.project.city,
-                  city_slug: bp.project.city_slug,
-                  landing_content: bp.project.landing_content,
-                  webhook_url: null,
-                });
-                setShowWizard(true);
-              }}
+              onClick={() => openEditWizard(bp.project)}
               className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-[#FFFF00] hover:bg-[#2a2a2e] transition-colors"
               title="Editar landing page"
             >
