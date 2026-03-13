@@ -67,15 +67,6 @@ const BROKER_STEP_LABELS = ["Dados", "Conteúdo", "IA + Preview"];
 
 const DRAFT_KEY = "project-wizard-draft";
 
-interface DraftState {
-  data: WizardData;
-  step: number;
-  landingContent: LandingContent | null;
-  chatMessages: ChatMessage[];
-  mediaFiles: MediaFile[];
-  savedAt: string;
-}
-
 export default function ProjectWizard({ inline, onBack, editProject, onComplete, brokerMode, brokerId }: WizardProps) {
   const { createProject, updateProject } = useProjects();
   const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
