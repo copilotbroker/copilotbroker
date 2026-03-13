@@ -512,56 +512,120 @@ Faixa de preço: A partir de R$ 320.000`}
         />
       </div>
 
-      {/* Media Upload */}
+      {/* Media Upload - Tabbed */}
       <div className="space-y-3">
-        <Label className="text-sm text-slate-300">Fotos e Vídeos</Label>
-        <p className="text-xs text-slate-500">Envie imagens e vídeos que a IA pode usar para compor a landing page.</p>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {mediaFiles.map((file, i) => (
-            <div key={i} className="relative group rounded-xl overflow-hidden border border-[#2a2a2e] bg-[#1e1e22]">
-              {file.type === "image" ? (
-                <img src={file.url} alt={file.name} className="w-full h-28 object-cover" />
-              ) : (
-                <div className="w-full h-28 flex items-center justify-center bg-[#1a1a1e]">
-                  <FileVideo className="w-8 h-8 text-slate-500" />
-                </div>
-              )}
-              <button
-                onClick={() => removeMedia(i)}
-                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-              <p className="px-2 py-1.5 text-[10px] text-slate-400 truncate">{file.name}</p>
-            </div>
-          ))}
-
+        <Label className="text-sm text-slate-300">Mídias</Label>
+        <div className="flex gap-1 p-1 rounded-lg bg-[#1a1a1e] border border-[#2a2a2e]">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="h-28 rounded-xl border-2 border-dashed border-[#2a2a2e] hover:border-[#FFFF00]/40 bg-[#1a1a1e] flex flex-col items-center justify-center gap-2 transition-colors"
+            onClick={() => setMediaTab("photos")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all",
+              mediaTab === "photos" ? "bg-[#2a2a2e] text-white shadow-sm" : "text-slate-500 hover:text-slate-300"
+            )}
           >
-            {isUploading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
-            ) : (
-              <>
-                <Upload className="w-5 h-5 text-slate-500" />
-                <span className="text-xs text-slate-500">Enviar</span>
-              </>
+            <Image className="w-4 h-4" />
+            Fotos {mediaFiles.filter(f => f.type === "image").length > 0 && (
+              <span className="text-[10px] bg-[#FFFF00]/20 text-[#FFFF00] px-1.5 rounded-full">
+                {mediaFiles.filter(f => f.type === "image").length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMediaTab("videos")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all",
+              mediaTab === "videos" ? "bg-[#2a2a2e] text-white shadow-sm" : "text-slate-500 hover:text-slate-300"
+            )}
+          >
+            <FileVideo className="w-4 h-4" />
+            Vídeos {mediaFiles.filter(f => f.type === "video").length > 0 && (
+              <span className="text-[10px] bg-[#FFFF00]/20 text-[#FFFF00] px-1.5 rounded-full">
+                {mediaFiles.filter(f => f.type === "video").length}
+              </span>
             )}
           </button>
         </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,video/*"
-          multiple
-          onChange={handleFileUpload}
-          className="hidden"
-        />
+        {mediaTab === "photos" && (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-500">Imagens são convertidas automaticamente para WebP e redimensionadas (máx 500kb).</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {mediaFiles.filter(f => f.type === "image").map((file) => {
+                const origIdx = mediaFiles.indexOf(file);
+                return (
+                  <div key={origIdx} className="relative group rounded-xl overflow-hidden border border-[#2a2a2e] bg-[#1e1e22]">
+                    <img src={file.url} alt={file.name} className="w-full h-28 object-cover" />
+                    <button
+                      onClick={() => removeMedia(origIdx)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                    <p className="px-2 py-1.5 text-[10px] text-slate-400 truncate">{file.name}</p>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="h-28 rounded-xl border-2 border-dashed border-[#2a2a2e] hover:border-[#FFFF00]/40 bg-[#1a1a1e] flex flex-col items-center justify-center gap-2 transition-colors"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-slate-500" />
+                    <span className="text-xs text-slate-500">Enviar fotos</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mediaTab === "videos" && (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-500">Envie vídeos (máx 50MB) que serão exibidos na landing page.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {mediaFiles.filter(f => f.type === "video").map((file) => {
+                const origIdx = mediaFiles.indexOf(file);
+                return (
+                  <div key={origIdx} className="relative group rounded-xl overflow-hidden border border-[#2a2a2e] bg-[#1e1e22]">
+                    <video src={file.url} className="w-full h-28 object-cover" muted preload="metadata" />
+                    <button
+                      onClick={() => removeMedia(origIdx)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                    <p className="px-2 py-1.5 text-[10px] text-slate-400 truncate">{file.name}</p>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => videoInputRef.current?.click()}
+                disabled={isUploading}
+                className="h-28 rounded-xl border-2 border-dashed border-[#2a2a2e] hover:border-[#FFFF00]/40 bg-[#1a1a1e] flex flex-col items-center justify-center gap-2 transition-colors"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-slate-500" />
+                    <span className="text-xs text-slate-500">Enviar vídeos</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" />
+        <input ref={videoInputRef} type="file" accept="video/*" multiple onChange={handleVideoUpload} className="hidden" />
       </div>
     </div>
   );
