@@ -1584,6 +1584,7 @@ export type Database = {
           failed_count: number | null
           id: string
           lead_id: string | null
+          lead_previous_status: string | null
           name: string
           project_id: string | null
           reply_count: number | null
@@ -1604,6 +1605,7 @@ export type Database = {
           failed_count?: number | null
           id?: string
           lead_id?: string | null
+          lead_previous_status?: string | null
           name: string
           project_id?: string | null
           reply_count?: number | null
@@ -1624,6 +1626,7 @@ export type Database = {
           failed_count?: number | null
           id?: string
           lead_id?: string | null
+          lead_previous_status?: string | null
           name?: string
           project_id?: string | null
           reply_count?: number | null

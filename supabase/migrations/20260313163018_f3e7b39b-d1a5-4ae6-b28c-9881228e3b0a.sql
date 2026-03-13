@@ -1,0 +1,1 @@
+ALTER TABLE whatsapp_campaigns ADD COLUMN lead_previous_status text DEFAULT NULL;
