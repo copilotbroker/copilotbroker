@@ -195,6 +195,47 @@ function extractTextContent(html: string): string {
   return unique.join("\n\n").slice(0, 8000);
 }
 
+function extractCity(html: string, rawText: string): string {
+  // 1. JSON-LD addressLocality
+  const jsonLdRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let match;
+  while ((match = jsonLdRegex.exec(html)) !== null) {
+    try {
+      const data = JSON.parse(match[1]);
+      const findCity = (obj: any): string | null => {
+        if (!obj || typeof obj !== "object") return null;
+        if (obj.address?.addressLocality) return obj.address.addressLocality;
+        if (obj.addressLocality) return obj.addressLocality;
+        if (obj.location?.address?.addressLocality) return obj.location.address.addressLocality;
+        if (Array.isArray(obj)) {
+          for (const item of obj) { const r = findCity(item); if (r) return r; }
+        }
+        return null;
+      };
+      const city = findCity(data);
+      if (city) return city.trim();
+    } catch { /* ignore */ }
+  }
+
+  // 2. Meta geo.placename or geo.region
+  const geoPlace = html.match(/<meta[^>]+name=["']geo\.placename["'][^>]+content=["']([^"']+)["']/i)
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']geo\.placename["']/i);
+  if (geoPlace) return geoPlace[1].trim();
+
+  // 3. Common patterns in text: "Cidade: X", "em CityName - UF", "CityName/UF"
+  const cityPatterns = [
+    /(?:cidade|localiza[çc][ãa]o|endere[çc]o)\s*:\s*([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)/i,
+    /(?:localizado|situada?|fica)\s+(?:n[oa]|em)\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+(?:d[oae]s?\s+)?[A-ZÀ-Ú][a-zà-ú]+)*)\s*[-\/,]\s*[A-Z]{2}/,
+    /([A-ZÀ-Ú][a-zà-ú]+(?:\s+(?:d[oae]s?\s+)?[A-ZÀ-Ú][a-zà-ú]+)*)\s*[-\/]\s*(?:RS|SC|PR|SP|RJ|MG|BA|CE|PE|GO|DF|ES|MT|MS|PA|AM|MA|PI|RN|PB|SE|AL|TO|RO|AC|AP|RR)\b/,
+  ];
+  for (const pattern of cityPatterns) {
+    const m = rawText.match(pattern);
+    if (m && m[1] && m[1].length > 2 && m[1].length < 50) return m[1].trim();
+  }
+
+  return "";
+}
+
 function resolveUrl(src: string, baseUrl: string): string | null {
   try {
     if (src.startsWith("//")) return `https:${src}`;
