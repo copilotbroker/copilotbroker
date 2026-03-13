@@ -106,6 +106,20 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const [isBottomVisible, setIsBottomVisible] = useState(false);
+
+  // Observe bottom sentinel to show/hide navigation buttons
+  useEffect(() => {
+    const sentinel = bottomSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsBottomVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [step]);
 
   // Check slug uniqueness (debounced)
   const checkSlug = async (slug: string) => {
