@@ -105,7 +105,6 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const skipAutoSaveRef = useRef(false);
   const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check slug uniqueness (debounced)
