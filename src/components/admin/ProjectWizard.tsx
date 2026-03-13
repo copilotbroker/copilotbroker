@@ -595,22 +595,6 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => setData(p => ({ ...p, type: "empreendimento" }))}
-              className={cn(
-                "flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
-                data.type === "empreendimento"
-                  ? "border-[#FFFF00] bg-[#FFFF00]/5"
-                  : "border-[#2a2a2e] bg-[#1e1e22] hover:border-[#3a3a3e]"
-              )}
-            >
-              <Building2 className={cn("w-5 h-5", data.type === "empreendimento" ? "text-[#FFFF00]" : "text-slate-500")} />
-              <div className="text-left">
-                <p className={cn("text-sm font-medium", data.type === "empreendimento" ? "text-white" : "text-slate-300")}>Empreendimento</p>
-                <p className="text-[10px] text-slate-500">Condomínio, loteamento</p>
-              </div>
-            </button>
-            <button
-              type="button"
               onClick={() => setData(p => ({ ...p, type: "imovel" }))}
               className={cn(
                 "flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
@@ -623,6 +607,22 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
               <div className="text-left">
                 <p className={cn("text-sm font-medium", data.type === "imovel" ? "text-white" : "text-slate-300")}>Imóvel</p>
                 <p className="text-[10px] text-slate-500">Casa, apartamento, terreno</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setData(p => ({ ...p, type: "empreendimento" }))}
+              className={cn(
+                "flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
+                data.type === "empreendimento"
+                  ? "border-[#FFFF00] bg-[#FFFF00]/5"
+                  : "border-[#2a2a2e] bg-[#1e1e22] hover:border-[#3a3a3e]"
+              )}
+            >
+              <Building2 className={cn("w-5 h-5", data.type === "empreendimento" ? "text-[#FFFF00]" : "text-slate-500")} />
+              <div className="text-left">
+                <p className={cn("text-sm font-medium", data.type === "empreendimento" ? "text-white" : "text-slate-300")}>Empreendimento</p>
+                <p className="text-[10px] text-slate-500">Condomínio, loteamento</p>
               </div>
             </button>
           </div>
