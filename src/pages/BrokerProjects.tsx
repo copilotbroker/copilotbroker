@@ -238,9 +238,9 @@ const BrokerProjects = () => {
           <Building2 className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
         )}
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-foreground truncate text-sm">{bp.project.name}</h3>
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+            <h3 className="font-semibold text-foreground truncate text-sm max-w-[55%]">{bp.project.name}</h3>
             <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
               Publicado
             </span>
@@ -253,9 +253,9 @@ const BrokerProjects = () => {
               </span>
             )}
           </div>
-          <code className="text-[11px] text-muted-foreground/70 break-all block">
+          <p className="text-[11px] text-muted-foreground/70 truncate">
             {window.location.origin}{bp.url}
-          </code>
+          </p>
         </div>
 
         <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
