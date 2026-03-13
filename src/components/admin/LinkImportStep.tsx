@@ -293,7 +293,7 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
           </div>
         )}
         {/* Action buttons */}
-        <div className="border-t border-[#2a2a2e] pt-3 pb-safe">
+        <div className="border-t border-[#2a2a2e] pt-3 pb-20 md:pb-4">
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleRetry} size="sm" className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
               <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
