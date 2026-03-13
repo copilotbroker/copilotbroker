@@ -332,10 +332,10 @@ Deno.serve(async (req) => {
     const { error: qErr } = await supabase.from("whatsapp_message_queue").insert(queueItems);
     if (qErr) throw qErr;
 
-    // 12. Update lead status: move to Atendimento + prevent timeout
+    // 12. Update lead status: move to Copiloto Ativo + prevent timeout
     const now = new Date().toISOString();
     await supabase.from("leads").update({
-      status: "info_sent",
+      status: "awaiting_docs",
       atendimento_iniciado_em: now,
       status_distribuicao: "atendimento_iniciado",
       reserva_expira_em: null,
