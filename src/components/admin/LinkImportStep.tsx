@@ -292,36 +292,32 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
             </div>
           </div>
         )}
-        {/* Bottom sentinel for scroll detection */}
-        <div ref={bottomSentinelRef} className="h-1" />
-
-        {hasScrolledToBottom && (
-          <div className="border-t border-[#2a2a2e] pt-3 pb-safe">
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleRetry} size="sm" className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
-                <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
-              </Button>
-              {onSaveDraft && canContinue && (
-                <Button
-                  onClick={handleDraftSave}
-                  variant="outline"
-                  size="sm"
-                  className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
-                >
-                  <Save className="w-4 h-4 mr-1" /> Rascunho
-                </Button>
-              )}
+        {/* Action buttons */}
+        <div className="border-t border-[#2a2a2e] pt-3 pb-safe">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleRetry} size="sm" className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
+              <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
+            </Button>
+            {onSaveDraft && canContinue && (
               <Button
-                onClick={handleContinue}
-                disabled={!canContinue}
+                onClick={handleDraftSave}
+                variant="outline"
                 size="sm"
-                className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium disabled:opacity-50"
+                className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
               >
-                Próximo <ArrowRight className="w-4 h-4 ml-1" />
+                <Save className="w-4 h-4 mr-1" /> Rascunho
               </Button>
-            </div>
+            )}
+            <Button
+              onClick={handleContinue}
+              disabled={!canContinue}
+              size="sm"
+              className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium disabled:opacity-50"
+            >
+              Próximo <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
-        )}
+        </div>
       </div>
     );
   }
