@@ -24,6 +24,7 @@ interface WizardProps {
   editProject?: {
     id: string; name: string; slug: string; city: string; city_slug: string;
     landing_content: LandingContent | null; webhook_url: string | null;
+    description?: string | null; type?: string; status?: string; location?: string;
   };
   onComplete?: () => void;
   /** Broker mode: simplified wizard for brokers creating their own projects */
