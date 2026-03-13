@@ -311,7 +311,7 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
         <div ref={bottomSentinelRef} className="h-1" />
 
         {hasScrolledToBottom && (
-          <div className="border-t border-[#2a2a2e] pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] md:pb-0">
+          <div className="border-t border-[#2a2a2e] pt-3 pb-safe">
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleRetry} size="sm" className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
                 <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
