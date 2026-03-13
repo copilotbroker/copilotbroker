@@ -64,6 +64,17 @@ interface MediaFile {
 const ADMIN_STEP_LABELS = ["Dados", "Conteúdo", "Config", "IA + Preview"];
 const BROKER_STEP_LABELS = ["Dados", "Conteúdo", "IA + Preview"];
 
+const DRAFT_KEY = "project-wizard-draft";
+
+interface DraftState {
+  data: WizardData;
+  step: number;
+  landingContent: LandingContent | null;
+  chatMessages: ChatMessage[];
+  mediaFiles: MediaFile[];
+  savedAt: string;
+}
+
 export default function ProjectWizard({ inline, onBack, editProject, onComplete, brokerMode, brokerId }: WizardProps) {
   const { createProject, updateProject } = useProjects();
   const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
@@ -77,8 +88,70 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const [isSaving, setIsSaving] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const skipAutoSaveRef = useRef(false);
+
+  // Restore draft on mount (only for new projects, not edits)
+  useEffect(() => {
+    if (editProject) return;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft: DraftState = JSON.parse(raw);
+      if (draft.data?.name) {
+        setHasDraft(true);
+      }
+    } catch { /* ignore corrupt data */ }
+  }, [editProject]);
+
+  const restoreDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft: DraftState = JSON.parse(raw);
+      setData(draft.data || initialData);
+      setStep(draft.step || 0);
+      setLandingContent(draft.landingContent || null);
+      setChatMessages(draft.chatMessages || []);
+      setMediaFiles(draft.mediaFiles || []);
+      setHasDraft(false);
+      toast.success("Rascunho restaurado!");
+    } catch {
+      toast.error("Erro ao restaurar rascunho.");
+      localStorage.removeItem(DRAFT_KEY);
+    }
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setHasDraft(false);
+  };
+
+  // Auto-save draft (debounced)
+  useEffect(() => {
+    if (editProject || skipAutoSaveRef.current) return;
+    // Only save if there's meaningful data
+    if (!data.name && !data.city && !data.description && mediaFiles.length === 0) return;
+    const timer = setTimeout(() => {
+      const draft: DraftState = {
+        data,
+        step,
+        landingContent,
+        chatMessages: chatMessages.filter(m => m.role !== "system"),
+        mediaFiles,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [data, step, landingContent, chatMessages, mediaFiles, editProject]);
+
+  const clearDraft = () => {
+    skipAutoSaveRef.current = true;
+    localStorage.removeItem(DRAFT_KEY);
+  };
 
   const totalSteps = STEP_LABELS.length;
   const progress = ((step + 1) / totalSteps) * 100;
@@ -353,6 +426,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
         await createProject(projectPayload as any);
         toast.success("Empreendimento criado com landing page!");
       }
+      clearDraft();
       onComplete?.();
       onBack?.();
     } catch (err) {
@@ -799,6 +873,24 @@ Faixa de preço: A partir de R$ 320.000`}
           <Progress value={progress} className="h-1.5" />
         </div>
       </div>
+
+      {/* Draft restore banner */}
+      {hasDraft && !editProject && (
+        <div className="flex-shrink-0 mb-4 p-3 rounded-xl border border-[#FFFF00]/30 bg-[#FFFF00]/5 flex items-center justify-between gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-white">Rascunho encontrado</p>
+            <p className="text-xs text-slate-400">Você tem um rascunho salvo. Deseja continuar de onde parou?</p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={discardDraft} className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] text-xs">
+              Descartar
+            </Button>
+            <Button size="sm" onClick={restoreDraft} className="bg-[#FFFF00] text-black hover:brightness-110 text-xs">
+              Restaurar
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className={cn(
