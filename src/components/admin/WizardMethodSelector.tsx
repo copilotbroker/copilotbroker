@@ -9,7 +9,7 @@ interface WizardMethodSelectorProps {
 
 export default function WizardMethodSelector({ onSelectLink, onSelectManual, typeLabel }: WizardMethodSelectorProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[420px] px-4">
+    <div className="flex flex-col items-center justify-center min-h-[420px] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] lg:pb-0">
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FFFF00]/10 border border-[#FFFF00]/20 mb-4">
           <Sparkles className="w-3.5 h-3.5 text-[#FFFF00]" />
