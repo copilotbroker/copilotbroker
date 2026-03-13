@@ -27,7 +27,7 @@ export default function DynamicCTA({ content, theme }: Props) {
   return (
     <section
       ref={ref}
-      className="py-20 md:py-28 px-4"
+      className="py-14 md:py-28 px-4"
       style={{
         background: `linear-gradient(135deg, ${theme.accentColor} 0%, ${theme.accentColor}dd 100%)`,
       }}
