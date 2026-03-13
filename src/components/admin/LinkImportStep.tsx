@@ -48,6 +48,18 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
   const [propertyCity, setPropertyCity] = useState("");
 
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const successContainerRef = useRef<HTMLDivElement>(null);
+
+  const getScrollParent = (element: HTMLElement | null): HTMLElement | null => {
+    let parent = element?.parentElement ?? null;
+    while (parent) {
+      const { overflowY } = window.getComputedStyle(parent);
+      const isScrollable = (overflowY === "auto" || overflowY === "scroll") && parent.scrollHeight > parent.clientHeight;
+      if (isScrollable) return parent;
+      parent = parent.parentElement;
+    }
+    return null;
+  };
 
   // Observe bottom sentinel to show actions when user reaches end
   useEffect(() => {
@@ -56,28 +68,37 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
     const sentinel = bottomSentinelRef.current;
     if (!sentinel) return;
 
+    const scrollParent = getScrollParent(successContainerRef.current);
+
     const checkBottomReached = () => {
-      const rect = sentinel.getBoundingClientRect();
-      if (rect.top <= window.innerHeight - 120) {
-        setHasScrolledToBottom(true);
-      }
+      const sentinelRect = sentinel.getBoundingClientRect();
+      const reached = scrollParent
+        ? sentinelRect.top <= scrollParent.getBoundingClientRect().bottom - 16
+        : sentinelRect.top <= window.innerHeight - 16;
+
+      if (reached) setHasScrolledToBottom(true);
     };
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) setHasScrolledToBottom(true);
       },
-      { threshold: 0, rootMargin: "0px 0px 180px 0px" }
+      {
+        threshold: 0,
+        root: scrollParent,
+        rootMargin: "0px 0px 120px 0px",
+      }
     );
 
     observer.observe(sentinel);
-    window.addEventListener("scroll", checkBottomReached, true);
-    window.addEventListener("resize", checkBottomReached);
+    const scrollTarget: EventTarget = scrollParent ?? window;
+    scrollTarget.addEventListener("scroll", checkBottomReached, { passive: true });
+    window.addEventListener("resize", checkBottomReached, { passive: true });
     requestAnimationFrame(checkBottomReached);
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("scroll", checkBottomReached, true);
+      scrollTarget.removeEventListener("scroll", checkBottomReached);
       window.removeEventListener("resize", checkBottomReached);
     };
   }, [result]);
@@ -195,7 +216,7 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
     const canContinue = propertyName.trim().length > 0;
 
     return (
-      <div className="max-w-2xl mx-auto space-y-5">
+      <div ref={successContainerRef} className="max-w-2xl mx-auto space-y-5">
         <div className="text-center mb-2">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-3">
             <CheckCircle className="w-7 h-7 text-green-400" />
