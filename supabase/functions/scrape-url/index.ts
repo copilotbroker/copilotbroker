@@ -308,6 +308,7 @@ serve(async (req) => {
     const images = extractImages(html, formattedUrl);
     const videos = extractVideos(html, formattedUrl);
     const rawText = extractTextContent(html);
+    const city = extractCity(html, rawText);
 
     const result = {
       title,
@@ -315,6 +316,7 @@ serve(async (req) => {
       images,
       videos,
       rawText,
+      city: city || undefined,
       url: formattedUrl,
       extractedAt: new Date().toISOString(),
     };
