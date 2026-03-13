@@ -1155,6 +1155,7 @@ export type Database = {
           city: string
           city_slug: string | null
           created_at: string
+          created_by_broker_id: string | null
           description: string | null
           features: Json | null
           hero_subtitle: string | null
@@ -1165,6 +1166,7 @@ export type Database = {
           name: string
           slug: string
           status: string
+          type: string
           updated_at: string
           webhook_url: string | null
         }
@@ -1173,6 +1175,7 @@ export type Database = {
           city: string
           city_slug?: string | null
           created_at?: string
+          created_by_broker_id?: string | null
           description?: string | null
           features?: Json | null
           hero_subtitle?: string | null
@@ -1183,6 +1186,7 @@ export type Database = {
           name: string
           slug: string
           status?: string
+          type?: string
           updated_at?: string
           webhook_url?: string | null
         }
@@ -1191,6 +1195,7 @@ export type Database = {
           city?: string
           city_slug?: string | null
           created_at?: string
+          created_by_broker_id?: string | null
           description?: string | null
           features?: Json | null
           hero_subtitle?: string | null
@@ -1201,10 +1206,19 @@ export type Database = {
           name?: string
           slug?: string
           status?: string
+          type?: string
           updated_at?: string
           webhook_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_created_by_broker_id_fkey"
+            columns: ["created_by_broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       proposta_parcelas: {
         Row: {
