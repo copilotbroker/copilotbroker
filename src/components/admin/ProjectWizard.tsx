@@ -987,6 +987,48 @@ Faixa de preço: A partir de R$ 320.000`}
     setStep(1);
   };
 
+  const handleLinkDraftSave = async (scraped: ScrapedData) => {
+    if (!brokerMode || !brokerId || !scraped.title?.trim()) return;
+    setIsSaving(true);
+    try {
+      const name = scraped.title.trim();
+      const slug = toSlug(name);
+      const city = scraped.city?.trim() || "";
+      const citySlug = city ? toSlug(city) : "";
+      const description = [scraped.description, scraped.rawText].filter(Boolean).join("\n\n");
+
+      const payload: any = {
+        name, slug, city, city_slug: citySlug,
+        description: description || null,
+        status: "pre_launch",
+        type: data.type,
+        created_by_broker_id: brokerId,
+        is_active: false,
+      };
+
+      const { data: newProject, error } = await supabase
+        .from("projects")
+        .insert(payload)
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      await supabase
+        .from("broker_projects")
+        .insert({ broker_id: brokerId, project_id: newProject.id, is_active: true });
+
+      clearDraft();
+      toast.success("Rascunho salvo!");
+      onComplete?.();
+      onBack?.();
+    } catch (err) {
+      console.error("Save draft from link error:", err);
+      toast.error("Erro ao salvar rascunho.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Build steps array based on mode
   const stepContent = brokerMode
     ? [stepDados, stepConteudo, stepIA]
@@ -1047,6 +1089,7 @@ Faixa de preço: A partir de R$ 320.000`}
         <LinkImportStep
           onImportSuccess={handleLinkImportSuccess}
           onBack={() => setImportMode(null)}
+          onSaveDraft={brokerMode ? handleLinkDraftSave : undefined}
         />
       </div>
     );

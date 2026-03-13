@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   Link2, Sparkles, Loader2, Globe, ImageIcon, FileText, LayoutTemplate,
-  CheckCircle, AlertTriangle, ArrowRight, ChevronLeft, X, GripVertical, Trash2, MapPin, Home,
+  CheckCircle, AlertTriangle, ArrowRight, ChevronLeft, X, GripVertical, Trash2, MapPin, Home, Save,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
@@ -23,6 +23,7 @@ export interface ScrapedData {
 interface LinkImportStepProps {
   onImportSuccess: (data: ScrapedData) => void;
   onBack: () => void;
+  onSaveDraft?: (data: ScrapedData) => void;
 }
 
 const PROGRESS_STEPS = [
@@ -32,18 +33,33 @@ const PROGRESS_STEPS = [
   { label: "Montando apresentação...", icon: LayoutTemplate, duration: 2500 },
 ];
 
-export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportStepProps) {
+export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }: LinkImportStepProps) {
   const [url, setUrl] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progressStep, setProgressStep] = useState(-1);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScrapedData | null>(null);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
   // Editable state for review screen
   const [editableImages, setEditableImages] = useState<string[]>([]);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [propertyName, setPropertyName] = useState("");
   const [propertyCity, setPropertyCity] = useState("");
+
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+
+  // Observe bottom sentinel to show draft button
+  useEffect(() => {
+    const sentinel = bottomSentinelRef.current;
+    if (!sentinel || !result) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setHasScrolledToBottom(true); },
+      { threshold: 0.1 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [result]);
 
   const isValidUrl = (v: string) => {
     if (!v.trim()) return false;
@@ -91,6 +107,7 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
       setPropertyName(scraped.title || "");
       setPropertyCity(scraped.city || "");
       setFailedImages(new Set());
+      setHasScrolledToBottom(false);
       setProgressStep(PROGRESS_STEPS.length);
     } catch (err: any) {
       console.error("Scrape error:", err);
@@ -104,6 +121,16 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
     if (!result) return;
     if (!propertyName.trim()) return;
     onImportSuccess({
+      ...result,
+      images: editableImages.filter(img => !failedImages.has(img)),
+      title: propertyName.trim(),
+      city: propertyCity.trim() || undefined,
+    });
+  };
+
+  const handleDraftSave = () => {
+    if (!result || !onSaveDraft || !propertyName.trim()) return;
+    onSaveDraft({
       ...result,
       images: editableImages.filter(img => !failedImages.has(img)),
       title: propertyName.trim(),
@@ -280,8 +307,10 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
             </div>
           </div>
         )}
+        {/* Bottom sentinel for scroll detection */}
+        <div ref={bottomSentinelRef} className="h-1" />
 
-        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] md:bottom-0 z-20 bg-[#0f0f12]/95 backdrop-blur-sm border-t border-[#2a2a2e] pt-3">
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] md:bottom-0 z-20 bg-[#0f0f12]/95 backdrop-blur-sm border-t border-[#2a2a2e] pt-3 space-y-2">
           <div className="flex gap-3">
             <Button variant="outline" onClick={handleRetry} className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
               <ChevronLeft className="w-4 h-4 mr-1" /> Tentar outro link
@@ -294,6 +323,15 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
               Continuar com IA <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
+          {onSaveDraft && hasScrolledToBottom && canContinue && (
+            <Button
+              onClick={handleDraftSave}
+              variant="outline"
+              className="w-full border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
+            >
+              <Save className="w-4 h-4 mr-2" /> Salvar como rascunho
+            </Button>
+          )}
         </div>
       </div>
     );
