@@ -157,4 +157,18 @@ export async function cancelCadenciaForLead(leadId: string): Promise<void> {
       .eq("campaign_id", campaign.id)
       .in("status", ["scheduled", "queued", "paused_by_system"]);
   }
+
+  // Move lead back from Copiloto Ativo to Atendimento
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("status")
+    .eq("id", leadId)
+    .single();
+
+  if (lead && (lead as any).status === "awaiting_docs") {
+    await supabase
+      .from("leads")
+      .update({ status: "info_sent", updated_at: new Date().toISOString() })
+      .eq("id", leadId);
+  }
 }
