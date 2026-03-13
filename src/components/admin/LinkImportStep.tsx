@@ -17,6 +17,7 @@ export interface ScrapedData {
   videos: string[];
   rawText: string;
   url: string;
+  city?: string;
 }
 
 interface LinkImportStepProps {
