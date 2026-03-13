@@ -100,6 +100,22 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
         .update({ status: "cancelled" })
         .eq("campaign_id", data.campaignId)
         .in("status", ["scheduled", "queued", "paused_by_system"]);
+
+      // Move lead back from Copiloto Ativo to Atendimento
+      if (leadId) {
+        const { data: lead } = await supabase
+          .from("leads")
+          .select("status")
+          .eq("id", leadId)
+          .single();
+
+        if (lead && (lead as any).status === "awaiting_docs") {
+          await supabase
+            .from("leads")
+            .update({ status: "info_sent", updated_at: new Date().toISOString() })
+            .eq("id", leadId);
+        }
+      }
     },
     onSuccess: () => {
       toast.success("Cadência cancelada");
