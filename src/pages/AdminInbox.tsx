@@ -214,19 +214,21 @@ export default function AdminInbox() {
           {showList && (
             <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0 flex flex-col`}>
               {/* Broker filter (admin only) */}
-              <div className="px-3 pt-3 pb-1">
-                <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-                  <SelectTrigger className="h-8 bg-[#1e1e22] border-[#2a2a2e] text-sm text-white">
-                    <SelectValue placeholder="Todos os corretores" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                    <SelectItem value="all" className="text-slate-300 text-sm">Todos os corretores</SelectItem>
-                    {brokers.map(b => (
-                      <SelectItem key={b.id} value={b.id} className="text-slate-300 text-sm">{b.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {isAdmin && (
+                <div className="px-3 pt-3 pb-1">
+                  <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
+                    <SelectTrigger className="h-8 bg-[#1e1e22] border-[#2a2a2e] text-sm text-white">
+                      <SelectValue placeholder="Todos os corretores" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
+                      <SelectItem value="all" className="text-slate-300 text-sm">Todos os corretores</SelectItem>
+                      {brokers.map(b => (
+                        <SelectItem key={b.id} value={b.id} className="text-slate-300 text-sm">{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="flex-1 min-h-0">
                 <ConversationList
