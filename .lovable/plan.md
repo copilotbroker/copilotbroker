@@ -1,48 +1,60 @@
 
-Objetivo
-- Atender seu pedido de forma direta: os botões “Voltar”, “Rascunho” e “Próximo” devem aparecer logo após a galeria de fotos, sem ficarem fixos na tela e sem depender de rolar até o fim.
 
-Diagnóstico rápido
-- Hoje os botões no `LinkImportStep` dependem de `hasScrolledToBottom` (IntersectionObserver + fallback de scroll).
-- Como esse gatilho está falhando no fluxo mobile, os botões somem.
-- A solução mais estável é remover essa dependência e renderizar os botões diretamente no ponto desejado do layout.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-Plano de implementação
-1) Simplificar a lógica de exibição dos botões em `src/components/admin/LinkImportStep.tsx`
-- Remover estado e refs de detecção de fim de rolagem:
-  - `hasScrolledToBottom`
-  - `bottomSentinelRef`
-  - `successContainerRef`
-  - `getScrollParent(...)`
-  - `useEffect` do observer/scroll
-- Remover também o sentinel no JSX (`<div ref={bottomSentinelRef} ... />`).
+### Problema 1: Nomes dos leads não aparecem
 
-2) Reposicionar os botões imediatamente após a galeria
-- Mover o bloco de ações (Voltar / Rascunho / Próximo) para ficar logo abaixo do bloco da galeria (`editableImages.length > 0`).
-- Manter os mesmos handlers atuais:
-  - `handleRetry`
-  - `handleDraftSave` (quando `onSaveDraft && canContinue`)
-  - `handleContinue`
-- Manter os nomes exatamente como você pediu.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-3) Garantir layout em linha única
-- Manter container com `flex gap-2`.
-- Ajustar para não quebrar linha no mobile (ex.: `flex-nowrap`).
-- Manter “Próximo” com `flex-1` para ocupar o espaço restante.
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-4) Tratar cenário sem fotos
-- Como a galeria pode não existir (`editableImages.length === 0`), criar fallback:
-  - renderizar o mesmo bloco de botões logo após os cards de resumo.
-- Assim os botões nunca desaparecem.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-Detalhes técnicos
-- Arquivo principal: `src/components/admin/LinkImportStep.tsx`.
-- Não há mudanças de backend, banco ou autenticação.
-- O restante do wizard (`ProjectWizard`) continua igual; apenas removemos a dependência de scroll na etapa de importação por link.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-Critérios de aceite
-- Em `/corretor/empreendimentos` (viewport 390x724), após extrair conteúdo:
-  1) Botões aparecem sem precisar rolar até o fim.
-  2) Botões ficam imediatamente após a galeria de fotos (ou após resumo se não houver fotos).
-  3) “Voltar”, “Rascunho” e “Próximo” ficam na mesma linha.
-  4) Sem espaço em branco excessivo ao redor dos botões.
+### Problema 2: Marcar como lida quando lida no celular
+
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
+
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
+
+### Arquivos a editar
+
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

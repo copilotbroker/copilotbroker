@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,69 +39,12 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
   const [progressStep, setProgressStep] = useState(-1);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScrapedData | null>(null);
-  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
-
   // Editable state for review screen
   const [editableImages, setEditableImages] = useState<string[]>([]);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [propertyName, setPropertyName] = useState("");
   const [propertyCity, setPropertyCity] = useState("");
 
-  const bottomSentinelRef = useRef<HTMLDivElement>(null);
-  const successContainerRef = useRef<HTMLDivElement>(null);
-
-  const getScrollParent = (element: HTMLElement | null): HTMLElement | null => {
-    let parent = element?.parentElement ?? null;
-    while (parent) {
-      const { overflowY } = window.getComputedStyle(parent);
-      const isScrollable = (overflowY === "auto" || overflowY === "scroll") && parent.scrollHeight > parent.clientHeight;
-      if (isScrollable) return parent;
-      parent = parent.parentElement;
-    }
-    return null;
-  };
-
-  // Observe bottom sentinel to show actions when user reaches end
-  useEffect(() => {
-    if (!result) return;
-
-    const sentinel = bottomSentinelRef.current;
-    if (!sentinel) return;
-
-    const scrollParent = getScrollParent(successContainerRef.current);
-
-    const checkBottomReached = () => {
-      const sentinelRect = sentinel.getBoundingClientRect();
-      const reached = scrollParent
-        ? sentinelRect.top <= scrollParent.getBoundingClientRect().bottom - 16
-        : sentinelRect.top <= window.innerHeight - 16;
-
-      if (reached) setHasScrolledToBottom(true);
-    };
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setHasScrolledToBottom(true);
-      },
-      {
-        threshold: 0,
-        root: scrollParent,
-        rootMargin: "0px 0px 120px 0px",
-      }
-    );
-
-    observer.observe(sentinel);
-    const scrollTarget: EventTarget = scrollParent ?? window;
-    scrollTarget.addEventListener("scroll", checkBottomReached, { passive: true });
-    window.addEventListener("resize", checkBottomReached, { passive: true });
-    requestAnimationFrame(checkBottomReached);
-
-    return () => {
-      observer.disconnect();
-      scrollTarget.removeEventListener("scroll", checkBottomReached);
-      window.removeEventListener("resize", checkBottomReached);
-    };
-  }, [result]);
 
   const isValidUrl = (v: string) => {
     if (!v.trim()) return false;
@@ -149,7 +92,7 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
       setPropertyName(scraped.title || "");
       setPropertyCity(scraped.city || "");
       setFailedImages(new Set());
-      setHasScrolledToBottom(false);
+      
       setProgressStep(PROGRESS_STEPS.length);
     } catch (err: any) {
       console.error("Scrape error:", err);
@@ -216,7 +159,7 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
     const canContinue = propertyName.trim().length > 0;
 
     return (
-      <div ref={successContainerRef} className="max-w-2xl mx-auto space-y-5">
+      <div className="max-w-2xl mx-auto space-y-5">
         <div className="text-center mb-2">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-3">
             <CheckCircle className="w-7 h-7 text-green-400" />
@@ -349,36 +292,32 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
             </div>
           </div>
         )}
-        {/* Bottom sentinel for scroll detection */}
-        <div ref={bottomSentinelRef} className="h-1" />
-
-        {hasScrolledToBottom && (
-          <div className="border-t border-[#2a2a2e] pt-3 pb-safe">
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleRetry} size="sm" className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
-                <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
-              </Button>
-              {onSaveDraft && canContinue && (
-                <Button
-                  onClick={handleDraftSave}
-                  variant="outline"
-                  size="sm"
-                  className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
-                >
-                  <Save className="w-4 h-4 mr-1" /> Rascunho
-                </Button>
-              )}
+        {/* Action buttons */}
+        <div className="border-t border-[#2a2a2e] pt-3 pb-safe">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleRetry} size="sm" className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
+              <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
+            </Button>
+            {onSaveDraft && canContinue && (
               <Button
-                onClick={handleContinue}
-                disabled={!canContinue}
+                onClick={handleDraftSave}
+                variant="outline"
                 size="sm"
-                className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium disabled:opacity-50"
+                className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
               >
-                Próximo <ArrowRight className="w-4 h-4 ml-1" />
+                <Save className="w-4 h-4 mr-1" /> Rascunho
               </Button>
-            </div>
+            )}
+            <Button
+              onClick={handleContinue}
+              disabled={!canContinue}
+              size="sm"
+              className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium disabled:opacity-50"
+            >
+              Próximo <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
-        )}
+        </div>
       </div>
     );
   }
