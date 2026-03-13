@@ -79,8 +79,24 @@ interface DraftState {
 export default function ProjectWizard({ inline, onBack, editProject, onComplete, brokerMode, brokerId }: WizardProps) {
   const { createProject, updateProject } = useProjects();
   const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
-  const [step, setStep] = useState(editProject ? (brokerMode ? 2 : 3) : 0);
-  const [data, setData] = useState<WizardData>(initialData);
+  const isDraftEdit = editProject && !editProject.landing_content;
+  const [step, setStep] = useState(editProject ? (isDraftEdit ? 0 : (brokerMode ? 2 : 3)) : 0);
+  const [data, setData] = useState<WizardData>(() => {
+    if (editProject) {
+      return {
+        ...initialData,
+        name: editProject.name || "",
+        slug: editProject.slug || "",
+        city: editProject.city || "",
+        city_slug: editProject.city_slug || "",
+        description: editProject.description || "",
+        type: (editProject.type as ProjectType) || "empreendimento",
+        status: (editProject.status as ProjectStatus) || "pre_launch",
+        location: editProject.location || "",
+      };
+    }
+    return initialData;
+  });
   const [landingContent, setLandingContent] = useState<LandingContent | null>(editProject?.landing_content || null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
