@@ -1116,7 +1116,7 @@ Faixa de preço: A partir de R$ 320.000`}
       </div>
 
       {/* Bottom nav */}
-      <div className="border-t border-[#2a2a2e] pt-4 mt-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] lg:pb-0">
+      <div className="border-t border-[#2a2a2e] pt-4 mt-4 pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] lg:pb-0">
         <div className="flex gap-3">
           {step > 0 && (!editProject || isDraftEdit) ? (
             <Button
