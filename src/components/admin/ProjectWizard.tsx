@@ -688,10 +688,6 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
         </p>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-sm text-slate-300">Localização / Endereço</Label>
-        <Input value={data.location} onChange={set("location")} placeholder="Rua das Palmeiras, 500 — Bairro Nobre, Portão/RS" className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
-      </div>
 
       <div className="space-y-2">
         <Label className="text-sm text-slate-300">
