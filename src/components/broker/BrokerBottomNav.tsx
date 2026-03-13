@@ -105,7 +105,7 @@ export function BrokerBottomNav({
   };
 
   const getItemColor = (id: string) => {
-    if (id === "kanban" && viewMode === "kanban" && !isCopilotActive && !isInboxActive) {
+    if (id === "kanban" && viewMode === "kanban" && isAdminPage) {
       return "text-[#FFFF00]";
     }
     if (id === "copilot" && isCopilotActive) {
