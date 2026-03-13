@@ -332,87 +332,56 @@ const BrokerProjects = () => {
         </TabsList>
 
         <TabsContent value="empresa">
-          {/* Pending Projects Banner */}
-          {pendingCount > 0 && (
-            <div className="bg-[#1e1e22] border border-yellow-500/30 rounded-lg p-3 mb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Sparkles className="w-4 h-4 text-yellow-500 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {pendingCount === 1 ? "Novo empreendimento disponível!" : `${pendingCount} novos empreendimentos disponíveis!`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Adicione à sua carteira e comece a captar leads
-                    </p>
-                  </div>
-                </div>
-                <Button size="sm" onClick={() => setIsAddDialogOpen(true)} className="bg-yellow-500 hover:bg-yellow-600 text-black shrink-0 text-xs">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Adicionar agora
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end mb-3">
+          <div className="grid gap-3">
+            {/* Unassociated projects first */}
             {unassociatedProjects.length > 0 && (
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="text-xs">
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                  <DialogHeader>
-                    <DialogTitle className="text-foreground">Adicionar Empreendimentos</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 mt-4">
-                    <p className="text-sm text-muted-foreground">Selecione os empreendimentos que deseja trabalhar:</p>
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                      {unassociatedProjects.map((project) => (
-                        <label
-                          key={project.id}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-[#141417] border border-[#2a2a2e] cursor-pointer hover:border-primary/30 transition-colors"
-                        >
-                          <Checkbox
-                            checked={selectedProjectIds.includes(project.id)}
-                            onCheckedChange={() => toggleProjectSelection(project.id)}
-                          />
-                          <div>
-                            <p className="font-medium text-foreground">{project.name}</p>
-                            <p className="text-xs text-muted-foreground">{project.city}</p>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button variant="ghost" onClick={() => { setSelectedProjectIds([]); setIsAddDialogOpen(false); }}>Cancelar</Button>
-                      <Button onClick={handleAddProjects} disabled={selectedProjectIds.length === 0 || isSaving}>
-                        {isSaving ? "Adicionando..." : "Adicionar"}
+              <>
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Disponíveis para adicionar</p>
+                {unassociatedProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="bg-[#1e1e22] border border-dashed border-[#2a2a2e] rounded-lg p-3 hover:border-primary/30 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Building2 className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground truncate text-sm">{project.name}</h3>
+                          <span className="text-[10px] text-muted-foreground bg-[#2a2a2e] px-1.5 py-0.5 rounded shrink-0">
+                            {project.city}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="text-xs shrink-0"
+                        disabled={isSaving}
+                        onClick={() => addProject(project.id)}
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Adicionar
                       </Button>
                     </div>
                   </div>
-                </DialogContent>
-              </Dialog>
+                ))}
+              </>
             )}
-          </div>
 
-          <div className="grid gap-3">
-            {brokerProjects.length === 0 ? (
+            {/* Already linked projects */}
+            {brokerProjects.length > 0 && (
+              <>
+                {unassociatedProjects.length > 0 && (
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-2">Meus empreendimentos</p>
+                )}
+                {brokerProjects.map((bp) => renderProjectCard(bp))}
+              </>
+            )}
+
+            {brokerProjects.length === 0 && unassociatedProjects.length === 0 && (
               <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
                 <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4">Nenhum empreendimento da empresa adicionado.</p>
-                {unassociatedProjects.length > 0 && (
-                  <Button onClick={() => setIsAddDialogOpen(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Empreendimento
-                  </Button>
-                )}
+                <p className="text-muted-foreground">Nenhum empreendimento disponível.</p>
               </div>
-            ) : (
-              brokerProjects.map((bp) => renderProjectCard(bp))
             )}
           </div>
         </TabsContent>
