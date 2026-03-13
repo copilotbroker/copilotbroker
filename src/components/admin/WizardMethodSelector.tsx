@@ -28,24 +28,19 @@ export default function WizardMethodSelector({ onSelectLink, onSelectManual, typ
         <button
           onClick={onSelectLink}
           className={cn(
-            "group relative flex flex-col items-start p-6 rounded-2xl border-2 transition-all duration-300",
-            "border-[#FFFF00]/30 bg-gradient-to-br from-[#FFFF00]/5 to-transparent",
-            "hover:border-[#FFFF00] hover:shadow-[0_0_30px_rgba(255,255,0,0.1)]"
+            "group flex flex-col items-start p-6 rounded-2xl border-2 transition-all duration-300",
+            "border-[#2a2a2e] bg-[#1a1a1e]",
+            "hover:border-[#3a3a3e] hover:bg-[#1e1e22]"
           )}
         >
-          <div className="absolute top-3 right-3">
-            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FFFF00]/20 text-[#FFFF00]">
-              Recomendado
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-[#FFFF00]/10 flex items-center justify-center mb-4 group-hover:bg-[#FFFF00]/20 transition-colors">
-            <Link2 className="w-6 h-6 text-[#FFFF00]" />
+          <div className="w-12 h-12 rounded-xl bg-[#2a2a2e] flex items-center justify-center mb-4 group-hover:bg-[#333] transition-colors">
+            <Link2 className="w-6 h-6 text-slate-400 group-hover:text-white transition-colors" />
           </div>
           <h3 className="text-base font-semibold text-white mb-1.5">Importar de um Link</h3>
           <p className="text-xs text-slate-400 leading-relaxed mb-4">
             Cole o link de um anúncio e a IA captura automaticamente fotos, dados e informações para criar uma landing page de alta conversão.
           </p>
-          <div className="flex items-center gap-1.5 text-[#FFFF00] text-xs font-medium mt-auto group-hover:gap-2.5 transition-all">
+          <div className="flex items-center gap-1.5 text-slate-500 text-xs font-medium mt-auto group-hover:text-white group-hover:gap-2.5 transition-all">
             Começar <ArrowRight className="w-3.5 h-3.5" />
           </div>
         </button>
