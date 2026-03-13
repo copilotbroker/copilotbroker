@@ -388,16 +388,84 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     generateLanding(msg);
   };
 
+  const handleSaveDraft = async () => {
+    if (!brokerMode || !brokerId || !data.name.trim()) return;
+    setIsSaving(true);
+    try {
+      const payload = {
+        name: data.name.trim(),
+        slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+        city: data.city.trim(),
+        city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+        description: data.description.trim() || null,
+        status: data.status,
+        type: data.type,
+        created_by_broker_id: brokerId,
+        is_active: false,
+      };
+
+      if (editProject) {
+        // Update existing draft
+        const { error } = await supabase
+          .from("projects")
+          .update(payload)
+          .eq("id", editProject.id);
+        if (error) throw error;
+      } else {
+        // Create new draft
+        const { data: newProject, error } = await supabase
+          .from("projects")
+          .insert(payload)
+          .select("id")
+          .single();
+        if (error) throw error;
+        // Auto-link to broker_projects
+        await supabase
+          .from("broker_projects")
+          .insert({ broker_id: brokerId, project_id: newProject.id, is_active: true });
+      }
+
+      clearDraft();
+      toast.success("Rascunho salvo!");
+      onComplete?.();
+      onBack?.();
+    } catch (err) {
+      console.error("Save draft error:", err);
+      toast.error("Erro ao salvar rascunho.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handlePublish = async () => {
     if (!landingContent) return;
     setIsSaving(true);
 
     try {
       if (editProject) {
-        await updateProject(editProject.id, { landing_content: landingContent } as any);
-        toast.success("Landing page atualizada!");
+        // If editing a draft, activate it + set landing content
+        if (isDraftEdit) {
+          const { error } = await supabase
+            .from("projects")
+            .update({
+              name: data.name.trim(),
+              slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+              city: data.city.trim(),
+              city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+              description: data.description.trim() || null,
+              status: data.status,
+              type: data.type,
+              landing_content: landingContent as any,
+              is_active: true,
+            })
+            .eq("id", editProject.id);
+          if (error) throw error;
+          toast.success("Landing page publicada!");
+        } else {
+          await updateProject(editProject.id, { landing_content: landingContent } as any);
+          toast.success("Landing page atualizada!");
+        }
       } else if (brokerMode && brokerId) {
-        // Broker mode: insert directly with created_by_broker_id
         const projectPayload = {
           name: data.name.trim(),
           slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
@@ -419,7 +487,6 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
 
         if (projError) throw projError;
 
-        // Auto-link to broker_projects
         const { error: linkError } = await supabase
           .from("broker_projects")
           .insert({ broker_id: brokerId, project_id: newProject.id, is_active: true });
