@@ -86,6 +86,15 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
     mutationFn: async () => {
       if (!data?.campaignId) return;
 
+      // Fetch previous status before cancelling
+      const { data: campaignInfo } = await (supabase
+        .from("whatsapp_campaigns")
+        .select("lead_previous_status") as any)
+        .eq("id", data.campaignId)
+        .maybeSingle();
+
+      const restoreStatus = campaignInfo?.lead_previous_status || "info_sent";
+
       // Cancel campaign
       const { error: campError } = await supabase
         .from("whatsapp_campaigns")
@@ -101,7 +110,7 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
         .eq("campaign_id", data.campaignId)
         .in("status", ["scheduled", "queued", "paused_by_system"]);
 
-      // Move lead back from Copiloto Ativo to Atendimento
+      // Restore lead to previous status
       if (leadId) {
         const { data: lead } = await supabase
           .from("leads")
@@ -112,7 +121,7 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
         if (lead && (lead as any).status === "awaiting_docs") {
           await supabase
             .from("leads")
-            .update({ status: "info_sent", updated_at: new Date().toISOString() })
+            .update({ status: restoreStatus, updated_at: new Date().toISOString() })
             .eq("id", leadId);
         }
       }
