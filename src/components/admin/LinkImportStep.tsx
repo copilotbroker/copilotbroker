@@ -33,18 +33,33 @@ const PROGRESS_STEPS = [
   { label: "Montando apresentação...", icon: LayoutTemplate, duration: 2500 },
 ];
 
-export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportStepProps) {
+export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }: LinkImportStepProps) {
   const [url, setUrl] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progressStep, setProgressStep] = useState(-1);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScrapedData | null>(null);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
   // Editable state for review screen
   const [editableImages, setEditableImages] = useState<string[]>([]);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [propertyName, setPropertyName] = useState("");
   const [propertyCity, setPropertyCity] = useState("");
+
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+
+  // Observe bottom sentinel to show draft button
+  useEffect(() => {
+    const sentinel = bottomSentinelRef.current;
+    if (!sentinel || !result) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setHasScrolledToBottom(true); },
+      { threshold: 0.1 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [result]);
 
   const isValidUrl = (v: string) => {
     if (!v.trim()) return false;
