@@ -94,8 +94,18 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     }
   }, [step]);
 
-  const set = (field: keyof WizardData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setData(prev => ({ ...prev, [field]: e.target.value }));
+  const toSlug = (text: string) =>
+    text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  const set = (field: keyof WizardData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setData(prev => {
+      const next = { ...prev, [field]: val };
+      if (field === "name") next.slug = toSlug(val);
+      if (field === "city") next.city_slug = toSlug(val);
+      return next;
+    });
+  };
 
   // Media upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
