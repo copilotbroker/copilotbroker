@@ -1,0 +1,1 @@
+UPDATE projects SET city_slug = 'estancia-velha' WHERE id = '1b28e1cc-f937-45fd-bf0d-b8ff2e20f12e'
