@@ -449,6 +449,19 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
 
   const handlePublish = async () => {
     if (!landingContent) return;
+
+    // Validate required fields before publishing
+    if (!data.city.trim() || !data.city_slug.trim()) {
+      toast.error("Preencha o campo Cidade antes de publicar.");
+      setStep(0);
+      return;
+    }
+    if (!data.name.trim() || !data.slug.trim()) {
+      toast.error("Preencha o nome do imóvel antes de publicar.");
+      setStep(0);
+      return;
+    }
+
     setIsSaving(true);
 
     try {
