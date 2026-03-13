@@ -88,7 +88,7 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
       const scraped = data as ScrapedData;
       setResult(scraped);
       setEditableImages(scraped.images || []);
-      setPropertyName("");
+      setPropertyName(scraped.title || "");
       setPropertyCity("");
       setFailedImages(new Set());
       setProgressStep(PROGRESS_STEPS.length);
