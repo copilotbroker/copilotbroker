@@ -107,43 +107,129 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     });
   };
 
-  // Media upload
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [mediaTab, setMediaTab] = useState<"photos" | "videos">("photos");
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Convert image to WebP and resize to stay under 500kb
+  const convertToWebp = (file: File, maxSizeKb = 500): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let { width, height } = img;
+
+          // Scale down if image is very large
+          const MAX_DIM = 1920;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return reject(new Error("Canvas not supported"));
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Try decreasing quality until under maxSizeKb
+          let quality = 0.85;
+          const tryExport = () => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) return reject(new Error("Conversion failed"));
+                if (blob.size > maxSizeKb * 1024 && quality > 0.3) {
+                  quality -= 0.1;
+                  // Also scale down dimensions further
+                  if (quality <= 0.5 && width > 800) {
+                    width = Math.round(width * 0.75);
+                    height = Math.round(height * 0.75);
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                  }
+                  tryExport();
+                } else {
+                  resolve(blob);
+                }
+              },
+              "image/webp",
+              quality
+            );
+          };
+          tryExport();
+        };
+        img.onerror = () => reject(new Error("Failed to load image"));
+        img.src = reader.result as string;
+      };
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Photo upload with WebP conversion
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     setIsUploading(true);
     const newFiles: MediaFile[] = [];
 
     for (const file of Array.from(files)) {
-      const isVideo = file.type.startsWith("video/");
-      const isImage = file.type.startsWith("image/");
-      if (!isVideo && !isImage) {
+      if (!file.type.startsWith("image/")) {
         toast.error(`Formato não suportado: ${file.name}`);
         continue;
       }
-
-      const ext = file.name.split(".").pop();
-      const path = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-
-      const { error } = await supabase.storage.from("project-media").upload(path, file);
-      if (error) {
-        toast.error(`Erro ao enviar ${file.name}`);
-        continue;
+      try {
+        const webpBlob = await convertToWebp(file);
+        const path = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
+        const { error } = await supabase.storage.from("project-media").upload(path, webpBlob, {
+          contentType: "image/webp",
+          cacheControl: "3600",
+        });
+        if (error) { toast.error(`Erro ao enviar ${file.name}`); continue; }
+        const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
+        newFiles.push({ name: file.name.replace(/\.[^.]+$/, ".webp"), url: urlData.publicUrl, type: "image", path });
+      } catch (err) {
+        console.error("WebP conversion error:", err);
+        toast.error(`Erro ao converter ${file.name}`);
       }
-
-      const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
-      newFiles.push({
-        name: file.name,
-        url: urlData.publicUrl,
-        type: isVideo ? "video" : "image",
-        path,
-      });
     }
-
     setMediaFiles(prev => [...prev, ...newFiles]);
     setIsUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Video upload
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploading(true);
+    const newFiles: MediaFile[] = [];
+
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("video/")) {
+        toast.error(`Formato não suportado: ${file.name}`);
+        continue;
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error(`Vídeo muito grande (máx 50MB): ${file.name}`);
+        continue;
+      }
+      const ext = file.name.split(".").pop() || "mp4";
+      const path = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+      const { error } = await supabase.storage.from("project-media").upload(path, file, {
+        contentType: file.type,
+        cacheControl: "3600",
+      });
+      if (error) { toast.error(`Erro ao enviar ${file.name}`); continue; }
+      const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
+      newFiles.push({ name: file.name, url: urlData.publicUrl, type: "video", path });
+    }
+    setMediaFiles(prev => [...prev, ...newFiles]);
+    setIsUploading(false);
+    if (videoInputRef.current) videoInputRef.current.value = "";
   };
 
   const removeMedia = async (index: number) => {
