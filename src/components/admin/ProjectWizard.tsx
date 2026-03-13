@@ -64,6 +64,17 @@ interface MediaFile {
 const ADMIN_STEP_LABELS = ["Dados", "Conteúdo", "Config", "IA + Preview"];
 const BROKER_STEP_LABELS = ["Dados", "Conteúdo", "IA + Preview"];
 
+const DRAFT_KEY = "project-wizard-draft";
+
+interface DraftState {
+  data: WizardData;
+  step: number;
+  landingContent: LandingContent | null;
+  chatMessages: ChatMessage[];
+  mediaFiles: MediaFile[];
+  savedAt: string;
+}
+
 export default function ProjectWizard({ inline, onBack, editProject, onComplete, brokerMode, brokerId }: WizardProps) {
   const { createProject, updateProject } = useProjects();
   const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
@@ -77,8 +88,70 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const [isSaving, setIsSaving] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const skipAutoSaveRef = useRef(false);
+
+  // Restore draft on mount (only for new projects, not edits)
+  useEffect(() => {
+    if (editProject) return;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft: DraftState = JSON.parse(raw);
+      if (draft.data?.name) {
+        setHasDraft(true);
+      }
+    } catch { /* ignore corrupt data */ }
+  }, [editProject]);
+
+  const restoreDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft: DraftState = JSON.parse(raw);
+      setData(draft.data || initialData);
+      setStep(draft.step || 0);
+      setLandingContent(draft.landingContent || null);
+      setChatMessages(draft.chatMessages || []);
+      setMediaFiles(draft.mediaFiles || []);
+      setHasDraft(false);
+      toast.success("Rascunho restaurado!");
+    } catch {
+      toast.error("Erro ao restaurar rascunho.");
+      localStorage.removeItem(DRAFT_KEY);
+    }
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setHasDraft(false);
+  };
+
+  // Auto-save draft (debounced)
+  useEffect(() => {
+    if (editProject || skipAutoSaveRef.current) return;
+    // Only save if there's meaningful data
+    if (!data.name && !data.city && !data.description && mediaFiles.length === 0) return;
+    const timer = setTimeout(() => {
+      const draft: DraftState = {
+        data,
+        step,
+        landingContent,
+        chatMessages: chatMessages.filter(m => m.role !== "system"),
+        mediaFiles,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [data, step, landingContent, chatMessages, mediaFiles, editProject]);
+
+  const clearDraft = () => {
+    skipAutoSaveRef.current = true;
+    localStorage.removeItem(DRAFT_KEY);
+  };
 
   const totalSteps = STEP_LABELS.length;
   const progress = ((step + 1) / totalSteps) * 100;
