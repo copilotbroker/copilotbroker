@@ -106,6 +106,20 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const [isBottomVisible, setIsBottomVisible] = useState(false);
+
+  // Observe bottom sentinel to show/hide navigation buttons
+  useEffect(() => {
+    const sentinel = bottomSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsBottomVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [step]);
 
   // Check slug uniqueness (debounced)
   const checkSlug = async (slug: string) => {
@@ -972,15 +986,21 @@ Faixa de preço: A partir de R$ 320.000`}
       {/* Content */}
       <div className={cn(
         isLastStep ? "" : "pb-4",
-        "pb-[140px] lg:pb-4",
       )}>
         <div className={cn(isLastStep ? "" : "min-h-[340px]")}>
           {stepContent[step]}
         </div>
+        {/* Sentinel: when this is visible, show the bottom buttons */}
+        <div ref={bottomSentinelRef} className="h-1" />
       </div>
 
-      {/* Bottom nav - sticky on mobile */}
-      <div className="fixed bottom-[env(safe-area-inset-bottom,0px)] left-0 right-0 z-40 bg-[#141417]/95 backdrop-blur-lg border-t border-[#2a2a2e] p-4 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:z-auto lg:bg-transparent lg:backdrop-blur-none lg:border-t lg:border-[#2a2a2e] lg:p-0 lg:pt-4 lg:mt-4 lg:pb-0">
+      {/* Bottom nav - appears when user scrolls to bottom */}
+      <div className={cn(
+        "border-t border-[#2a2a2e] pt-4 mt-4 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] lg:pb-0 transition-all duration-300",
+        isBottomVisible || isLastStep
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 translate-y-4 pointer-events-none"
+      )}>
         <div className="flex gap-3">
           {step > 0 && (!editProject || isDraftEdit) ? (
             <Button
