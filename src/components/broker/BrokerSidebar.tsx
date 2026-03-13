@@ -153,7 +153,10 @@ export function BrokerSidebar({
         {/* Empreendimentos */}
         <button
           onClick={() => navigate("/corretor/empreendimentos")}
-          className="w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] text-slate-400 hover:text-white group relative mt-2"
+          className={cn(
+            "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative mt-2",
+            isProjectsPage ? "bg-[#2a2a2e] text-[#FFFF00]" : "text-slate-400 hover:text-white"
+          )}
           title="Empreendimentos"
         >
           <Building2 className="w-5 h-5" />
