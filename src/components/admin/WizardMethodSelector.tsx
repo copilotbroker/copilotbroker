@@ -54,7 +54,7 @@ export default function WizardMethodSelector({ onSelectLink, onSelectManual, typ
             "hover:border-[#3a3a3e] hover:bg-[#1e1e22]"
           )}
         >
-          <div className="w-12 h-12 rounded-xl bg-[#2a2a2e] flex items-center justify-center mb-4 group-hover:bg-[#333] transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-[#2a2a2e] flex items-center justify-center mb-4 group-hover:bg-[#333] transition-colors mx-auto">
             <PenLine className="w-6 h-6 text-slate-400 group-hover:text-white transition-colors" />
           </div>
           <h3 className="text-base font-semibold text-white mb-1.5">Adicionar Imóvel ou Empreendimento</h3>
