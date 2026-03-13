@@ -584,8 +584,21 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
           {data.type === "imovel" ? "Nome do Imóvel *" : "Nome do Empreendimento *"}
         </Label>
         <Input value={data.name} onChange={set("name")} placeholder={data.type === "imovel" ? "Casa Alto Padrão - Bairro Nobre" : "Residencial Alto da Serra"} className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
-      </div>
-
+        {slugError && (
+          <p className="text-xs text-red-400 flex items-center gap-1">
+            <X className="w-3 h-3" /> {slugError}
+          </p>
+        )}
+        {!slugError && data.slug && !isCheckingSlug && (
+          <p className="text-xs text-green-400 flex items-center gap-1">
+            <Check className="w-3 h-3" /> Slug disponível
+          </p>
+        )}
+        {isCheckingSlug && (
+          <p className="text-xs text-slate-500 flex items-center gap-1">
+            <Loader2 className="w-3 h-3 animate-spin" /> Verificando...
+          </p>
+        )}
       <div className={cn("grid gap-4", brokerMode ? "grid-cols-1" : "grid-cols-2")}>
         <div className="space-y-2">
           <Label className="text-sm text-slate-300">Cidade *</Label>
