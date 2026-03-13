@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft, ChevronRight, Sparkles, Send, RefreshCw, Check, Eye, MessageSquare, Loader2,
-  Building2, MapPin, Rocket, X, Upload, Image, Trash2, FileVideo, Home,
+  Building2, MapPin, Rocket, X, Upload, Image, Trash2, FileVideo, Home, Save,
 } from "lucide-react";
 import DynamicLandingPage from "@/components/landing/DynamicLandingPage";
 
