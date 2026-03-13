@@ -874,6 +874,24 @@ Faixa de preço: A partir de R$ 320.000`}
         </div>
       </div>
 
+      {/* Draft restore banner */}
+      {hasDraft && !editProject && (
+        <div className="flex-shrink-0 mb-4 p-3 rounded-xl border border-[#FFFF00]/30 bg-[#FFFF00]/5 flex items-center justify-between gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-white">Rascunho encontrado</p>
+            <p className="text-xs text-slate-400">Você tem um rascunho salvo. Deseja continuar de onde parou?</p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={discardDraft} className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] text-xs">
+              Descartar
+            </Button>
+            <Button size="sm" onClick={restoreDraft} className="bg-[#FFFF00] text-black hover:brightness-110 text-xs">
+              Restaurar
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className={cn(
         "flex-1 overflow-y-auto min-h-0",
