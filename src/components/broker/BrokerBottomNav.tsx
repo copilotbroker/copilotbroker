@@ -125,7 +125,7 @@ export function BrokerBottomNav({
     { id: "list", label: "Modo Lista", icon: List, description: "Alternar para visualização em lista" },
     { id: "notifications", label: "Notificações", icon: Bell, description: "Ver notificações", badge: unreadCount },
     ...(isLeader ? [{ id: "roletas", label: "Roletas", icon: RotateCw, description: "Gerenciar roletas da equipe" }] : []),
-    { id: "projects", label: "Empreendimentos", icon: Building2, description: "Ver seus empreendimentos" },
+    { id: "projects", label: "Landing Pages", icon: Building2, description: "Ver suas landing pages" },
     { id: "logout", label: "Sair", icon: LogOut, description: "Encerrar sessão", destructive: true },
   ];
 
