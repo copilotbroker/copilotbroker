@@ -222,7 +222,7 @@ async function processReply(
         // Get campaign lead_id before completing
         const { data: campaignData } = await supabase
           .from("whatsapp_campaigns")
-          .select("lead_id")
+          .select("lead_id, lead_previous_status")
           .eq("id", campaignId)
           .eq("status", "running")
           .maybeSingle();
