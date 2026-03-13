@@ -60,6 +60,7 @@ const STATUS_PROGRESS: Record<string, number> = {
 const PROGRESS_COLORS: Record<string, string> = {
   new: "bg-blue-500",
   info_sent: "bg-enove-yellow",
+  awaiting_docs: "bg-lime-500",
   scheduling: "bg-orange-500",
   docs_received: "bg-emerald-500",
   registered: "bg-slate-400",
