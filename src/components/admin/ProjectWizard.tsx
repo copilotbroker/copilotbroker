@@ -977,7 +977,6 @@ Faixa de preço: A partir de R$ 320.000`}
     setData(prev => ({
       ...prev,
       city: scraped.city || prev.city,
-      city: scraped.city || prev.city,
       city_slug: scraped.city ? toSlug(scraped.city) : prev.city_slug,
       description: [scraped.description, scraped.rawText].filter(Boolean).join("\n\n"),
     }));
