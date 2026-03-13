@@ -990,7 +990,7 @@ Faixa de preço: A partir de R$ 320.000`}
       {/* Bottom nav */}
       <div className="border-t border-[#2a2a2e] pt-4 mt-4">
         <div className="flex gap-3">
-          {step > 0 && !editProject ? (
+          {step > 0 && (!editProject || isDraftEdit) ? (
             <Button
               onClick={() => setStep(step - 1)}
               variant="outline"
@@ -1006,6 +1006,19 @@ Faixa de preço: A partir de R$ 320.000`}
               className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
             >
               Cancelar
+            </Button>
+          )}
+
+          {/* Save Draft button - only in broker mode, not on last step */}
+          {brokerMode && !isLastStep && canAdvance() && (
+            <Button
+              onClick={handleSaveDraft}
+              disabled={isSaving || !data.name.trim()}
+              variant="outline"
+              className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+              Salvar Rascunho
             </Button>
           )}
 
