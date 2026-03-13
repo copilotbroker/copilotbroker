@@ -17,6 +17,8 @@ import {
   Building2, MapPin, Rocket, X, Upload, Image, Trash2, FileVideo, Home, Save,
 } from "lucide-react";
 import DynamicLandingPage from "@/components/landing/DynamicLandingPage";
+import WizardMethodSelector from "@/components/admin/WizardMethodSelector";
+import LinkImportStep, { ScrapedData } from "@/components/admin/LinkImportStep";
 
 interface WizardProps {
   inline?: boolean;
@@ -72,6 +74,14 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
   const isDraftEdit = editProject && !editProject.landing_content && editProject.type;
   const isDraftWithContent = editProject && editProject.landing_content && !editProject.webhook_url && brokerMode;
+  
+  // Import mode: null = method selector (for new projects), "link" = link import, "manual" = standard wizard
+  const [importMode, setImportMode] = useState<"link" | "manual" | null>(() => {
+    if (editProject) return "manual"; // Editing always goes manual
+    return null; // New project starts at method selector
+  });
+  const [scrapedData, setScrapedData] = useState<ScrapedData | null>(null);
+  
   const [step, setStep] = useState(() => {
     if (!editProject) return 0;
     if (isDraftEdit) return 0;
@@ -319,6 +329,12 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     }
 
     try {
+      // Build media URLs: from uploaded files + scraped images
+      const allMediaUrls = [
+        ...mediaFiles.map(f => f.url),
+        ...(scrapedData?.images || []),
+      ];
+
       const { data: fnData, error } = await supabase.functions.invoke("generate-landing", {
         body: {
           projectData: {
@@ -327,8 +343,15 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
             description: data.description,
             status: data.status,
             location: data.location,
-            mediaUrls: mediaFiles.map(f => f.url),
+            mediaUrls: allMediaUrls,
             type: data.type,
+            scrapedContent: scrapedData ? {
+              rawText: scrapedData.rawText,
+              originalTitle: scrapedData.title,
+              originalDescription: scrapedData.description,
+              sourceUrl: scrapedData.url,
+              videoUrls: scrapedData.videos,
+            } : undefined,
           },
           currentContent: userMessage ? landingContent : undefined,
           userMessage: userMessage || undefined,
@@ -935,10 +958,86 @@ Faixa de preço: A partir de R$ 320.000`}
     </div>
   );
 
+  // Handle link import success
+  const handleLinkImportSuccess = (scraped: ScrapedData) => {
+    setScrapedData(scraped);
+    // Auto-populate wizard fields from scraped data
+    setData(prev => ({
+      ...prev,
+      name: prev.name || scraped.title || "",
+      slug: prev.slug || toSlug(scraped.title || ""),
+      description: [scraped.description, scraped.rawText].filter(Boolean).join("\n\n"),
+    }));
+    // Set import mode to manual and jump to content step for review
+    setImportMode("manual");
+    // Jump to content step (step 1) for review, then user advances to IA
+    setStep(1);
+  };
+
   // Build steps array based on mode
   const stepContent = brokerMode
     ? [stepDados, stepConteudo, stepIA]
     : [stepDados, stepConteudo, stepConfig, stepIA];
+
+  // --- Method selector screen (before the wizard) ---
+  if (importMode === null && !editProject) {
+    const typeLabel = data.type === "imovel" ? "imóvel" : "empreendimento";
+    return (
+      <div className="flex flex-col">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FFFF00]/80 to-[#FFFF00] flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-black" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-lg font-bold text-white">
+                {brokerMode ? "Nova Landing Page" : "Novo Empreendimento"}
+              </h1>
+              <p className="text-xs text-slate-500">Escolha como começar</p>
+            </div>
+            {onBack && (
+              <Button variant="ghost" size="icon" onClick={onBack} className="text-slate-400 hover:text-white hover:bg-[#2a2a2e]">
+                <X className="w-5 h-5" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <WizardMethodSelector
+          onSelectLink={() => setImportMode("link")}
+          onSelectManual={() => setImportMode("manual")}
+          typeLabel={typeLabel}
+        />
+      </div>
+    );
+  }
+
+  // --- Link import screen ---
+  if (importMode === "link") {
+    return (
+      <div className="flex flex-col">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FFFF00]/80 to-[#FFFF00] flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-black" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-lg font-bold text-white">Importar de Link</h1>
+              <p className="text-xs text-slate-500">Criação assistida por IA</p>
+            </div>
+            {onBack && (
+              <Button variant="ghost" size="icon" onClick={onBack} className="text-slate-400 hover:text-white hover:bg-[#2a2a2e]">
+                <X className="w-5 h-5" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <LinkImportStep
+          onImportSuccess={handleLinkImportSuccess}
+          onBack={() => setImportMode(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col">
@@ -982,6 +1081,15 @@ Faixa de preço: A partir de R$ 320.000`}
         </div>
       </div>
 
+      {/* Scraped data banner */}
+      {scrapedData && step < (brokerMode ? 2 : 3) && (
+        <div className="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-[#FFFF00]/5 border border-[#FFFF00]/20">
+          <Sparkles className="w-4 h-4 text-[#FFFF00] flex-shrink-0" />
+          <p className="text-xs text-[#FFFF00]/80">
+            Dados importados automaticamente — revise e ajuste antes de continuar.
+          </p>
+        </div>
+      )}
 
       {/* Content */}
       <div className={cn(
