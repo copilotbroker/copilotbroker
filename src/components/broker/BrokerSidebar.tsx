@@ -34,9 +34,21 @@ export function BrokerSidebar({
 }: BrokerSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isAdminPage = location.pathname === "/corretor/admin";
   const isRoletasPage = location.pathname === "/corretor/roletas";
   const isInboxPage = location.pathname === "/corretor/inbox";
   const isCopilotPage = location.pathname === "/corretor/copiloto";
+  const isProjectsPage = location.pathname === "/corretor/empreendimentos";
+
+  const handleNavClick = (mode: "kanban" | "list") => {
+    if (!isAdminPage) {
+      navigate("/corretor/admin");
+      // Small delay to let navigation complete before changing view mode
+      setTimeout(() => onViewChange(mode), 50);
+    } else {
+      onViewChange(mode);
+    }
+  };
   
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-16 hidden lg:flex flex-col bg-[#141417] border-r border-[#2a2a2e]">
