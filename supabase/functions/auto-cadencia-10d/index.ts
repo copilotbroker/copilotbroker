@@ -332,10 +332,10 @@ Deno.serve(async (req) => {
     const { error: qErr } = await supabase.from("whatsapp_message_queue").insert(queueItems);
     if (qErr) throw qErr;
 
-    // 12. Update lead status: move to Atendimento + prevent timeout
+    // 12. Update lead status: move to Copiloto Ativo + prevent timeout
     const now = new Date().toISOString();
     await supabase.from("leads").update({
-      status: "info_sent",
+      status: "awaiting_docs",
       atendimento_iniciado_em: now,
       status_distribuicao: "atendimento_iniciado",
       reserva_expira_em: null,
@@ -351,7 +351,7 @@ Deno.serve(async (req) => {
       lead_id: leadId,
       interaction_type: "atendimento_iniciado",
       old_status: lead.status,
-      new_status: "info_sent",
+      new_status: "awaiting_docs",
       notes: `⚡ Cadência 10D ativada automaticamente (${stepsToUse.length} etapas):\n\n${stepsPreview}`,
     });
 

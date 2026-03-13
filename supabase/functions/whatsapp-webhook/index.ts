@@ -219,12 +219,45 @@ async function processReply(
         .in("status", ["scheduled", "queued"]);
 
       if (count === 0) {
+        // Get campaign lead_id before completing
+        const { data: campaignData } = await supabase
+          .from("whatsapp_campaigns")
+          .select("lead_id")
+          .eq("id", campaignId)
+          .eq("status", "running")
+          .maybeSingle();
+
         await supabase
           .from("whatsapp_campaigns")
           .update({ status: "completed", completed_at: new Date().toISOString() })
           .eq("id", campaignId)
           .eq("status", "running");
         console.log(`✅ Campaign ${campaignId} completed (no remaining messages after reply)`);
+
+        // Move lead back from Copiloto Ativo to Atendimento
+        if (campaignData?.lead_id) {
+          const { data: lead } = await supabase
+            .from("leads")
+            .select("status")
+            .eq("id", campaignData.lead_id)
+            .single();
+
+          if (lead && (lead as { status: string }).status === "awaiting_docs") {
+            await supabase
+              .from("leads")
+              .update({ status: "info_sent", updated_at: new Date().toISOString() })
+              .eq("id", campaignData.lead_id);
+
+            await supabase.from("lead_interactions").insert({
+              lead_id: campaignData.lead_id,
+              interaction_type: "status_change",
+              old_status: "awaiting_docs",
+              new_status: "info_sent",
+              notes: "Cadência concluída — lead movido para Atendimento",
+            });
+            console.log(`Lead ${campaignData.lead_id} moved back to info_sent after cadence completion`);
+          }
+        }
       }
     } catch (err) {
       await logError(supabase, "completeCampaign", err, { campaignId });

@@ -49,7 +49,8 @@ const ORIGIN_COLORS: Record<string, string> = {
 // Progress percentage by status
 const STATUS_PROGRESS: Record<string, number> = {
   new: 10,
-  info_sent: 30,
+  info_sent: 25,
+  awaiting_docs: 35,
   scheduling: 50,
   docs_received: 75,
   registered: 100,
@@ -59,6 +60,7 @@ const STATUS_PROGRESS: Record<string, number> = {
 const PROGRESS_COLORS: Record<string, string> = {
   new: "bg-blue-500",
   info_sent: "bg-enove-yellow",
+  awaiting_docs: "bg-lime-500",
   scheduling: "bg-orange-500",
   docs_received: "bg-emerald-500",
   registered: "bg-slate-400",
@@ -69,6 +71,7 @@ const PROGRESS_COLORS: Record<string, string> = {
 const ACTION_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string } | null> = {
   new: { label: "Iniciar Atendimento", icon: Play, color: "bg-emerald-500/90 hover:bg-emerald-500 text-white" },
   info_sent: { label: "Agendar", icon: Calendar, color: "bg-orange-500/90 hover:bg-orange-500 text-white" },
+  awaiting_docs: { label: "Agendar", icon: Calendar, color: "bg-orange-500/90 hover:bg-orange-500 text-white" },
   scheduling: { label: "Comparecimento", icon: FileText, color: "bg-blue-500/90 hover:bg-blue-500 text-white" },
   docs_received: { label: "Confirmar Venda", icon: Trophy, color: "bg-emerald-600/90 hover:bg-emerald-600 text-white" },
   registered: null,
@@ -152,6 +155,7 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
         onIniciarAtendimento?.(lead.id);
         break;
       case "info_sent":
+      case "awaiting_docs":
         onOpenAgendamento?.(lead.id);
         break;
       case "scheduling":
