@@ -33,18 +33,37 @@ export default function AdminInbox() {
   const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [myBrokerId, setMyBrokerId] = useState<string | null>(null);
 
-  // Fetch brokers list + set default to current user's broker
+  // Fetch brokers list + set default to current user's broker + check role
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      const [brokersRes, myBrokerRes] = await Promise.all([
+      if (!session?.user) return;
+
+      const [brokersRes, myBrokerRes, rolesRes] = await Promise.all([
         supabase.from("brokers").select("id, name").eq("is_active", true).order("name"),
-        session?.user ? supabase.from("brokers").select("id").eq("user_id", session.user.id).maybeSingle() : null,
+        supabase.from("brokers").select("id").eq("user_id", session.user.id).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", session.user.id),
       ]);
+
+      const roles = (rolesRes.data || []).map((r: any) => r.role);
+      const userIsAdmin = roles.includes("admin");
+      setIsAdmin(userIsAdmin);
+
+      const brokerIdFound = (myBrokerRes?.data as any)?.id || null;
+      setMyBrokerId(brokerIdFound);
+
       if (brokersRes.data) setBrokers(brokersRes.data as any);
-      // Default to the logged-in user's own broker, or "all" if no broker record
-      setSelectedBrokerId(myBrokerRes?.data ? (myBrokerRes.data as any).id : "all");
+
+      if (userIsAdmin) {
+        // Admins default to their own broker but can switch
+        setSelectedBrokerId(brokerIdFound || "all");
+      } else {
+        // Leaders are locked to their own broker only
+        setSelectedBrokerId(brokerIdFound || "all");
+      }
     };
     init();
   }, []);
@@ -195,19 +214,21 @@ export default function AdminInbox() {
           {showList && (
             <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0 flex flex-col`}>
               {/* Broker filter (admin only) */}
-              <div className="px-3 pt-3 pb-1">
-                <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-                  <SelectTrigger className="h-8 bg-[#1e1e22] border-[#2a2a2e] text-sm text-white">
-                    <SelectValue placeholder="Todos os corretores" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                    <SelectItem value="all" className="text-slate-300 text-sm">Todos os corretores</SelectItem>
-                    {brokers.map(b => (
-                      <SelectItem key={b.id} value={b.id} className="text-slate-300 text-sm">{b.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {isAdmin && (
+                <div className="px-3 pt-3 pb-1">
+                  <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
+                    <SelectTrigger className="h-8 bg-[#1e1e22] border-[#2a2a2e] text-sm text-white">
+                      <SelectValue placeholder="Todos os corretores" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
+                      <SelectItem value="all" className="text-slate-300 text-sm">Todos os corretores</SelectItem>
+                      {brokers.map(b => (
+                        <SelectItem key={b.id} value={b.id} className="text-slate-300 text-sm">{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="flex-1 min-h-0">
                 <ConversationList
