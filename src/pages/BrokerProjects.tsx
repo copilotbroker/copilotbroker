@@ -5,7 +5,7 @@ import { useUserRole } from "@/hooks/use-user-role";
 import { useBrokerProjects } from "@/hooks/use-broker-projects";
 import { toast } from "sonner";
 import {
-  Building2, Copy, Check, ExternalLink, Trash2, Plus,
+  Building2, Copy, Check, Trash2, Plus, EyeOff,
   Link as LinkIcon, RefreshCw, ArrowLeft, Save, ClipboardList,
   Sparkles, Home, Pencil, FileEdit,
 } from "lucide-react";
@@ -39,7 +39,7 @@ const BrokerProjects = () => {
 
   const {
     broker, brokerProjects, myCreatedProjects, myDraftProjects, unassociatedProjects,
-    isLoading, isSaving, addProject, removeProject, deleteDraft, updateSlug, pendingCount, refetch,
+    isLoading, isSaving, addProject, removeProject, deleteDraft, inactivateProject, updateSlug, pendingCount, refetch,
   } = useBrokerProjects(brokerId);
 
   useEffect(() => {
@@ -177,19 +177,20 @@ const BrokerProjects = () => {
   const renderDraftCard = (bp: { id: string; project: any }) => (
     <div
       key={bp.id}
-      className="bg-[#1e1e22] border border-dashed border-yellow-500/40 rounded-lg p-3 hover:border-yellow-500/60 transition-colors"
+      className="bg-amber-950/20 border border-dashed border-amber-500/40 rounded-lg p-3 hover:border-amber-500/60 transition-colors cursor-pointer"
+      onClick={() => openEditWizard(bp.project)}
     >
       <div className="flex items-start gap-3">
         {bp.project.type === "imovel" ? (
-          <Home className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+          <Home className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
         ) : (
-          <Building2 className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+          <Building2 className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
         )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-semibold text-foreground truncate text-sm">{bp.project.name}</h3>
-            <span className="text-[10px] text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
+            <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
               Rascunho
             </span>
             {bp.project.city && (
@@ -199,14 +200,14 @@ const BrokerProjects = () => {
             )}
           </div>
           <p className="text-[11px] text-muted-foreground/70">
-            Landing page ainda não publicada. Continue a edição para publicar.
+            Landing page ainda não publicada. Clique para continuar a edição.
           </p>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => openEditWizard(bp.project)}
-            className="p-1.5 rounded-md bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors"
+            className="p-1.5 rounded-md bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
             title="Continuar edição"
           >
             <FileEdit className="w-3.5 h-3.5" />
@@ -227,24 +228,27 @@ const BrokerProjects = () => {
   const renderProjectCard = (bp: { id: string; project: any; url: string }, isOwn?: boolean) => (
     <div
       key={bp.id}
-      className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-3 hover:border-primary/30 transition-colors cursor-pointer"
+      className="bg-emerald-950/20 border border-emerald-500/30 rounded-lg p-3 hover:border-emerald-500/50 transition-colors cursor-pointer"
       onClick={() => openLanding(bp.url)}
     >
       <div className="flex items-start gap-3">
         {bp.project.type === "imovel" ? (
-          <Home className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+          <Home className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
         ) : (
-          <Building2 className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+          <Building2 className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
         )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-semibold text-foreground truncate text-sm">{bp.project.name}</h3>
+            <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
+              Publicado
+            </span>
             <span className="text-[10px] text-muted-foreground bg-[#2a2a2e] px-1.5 py-0.5 rounded shrink-0">
               {bp.project.city}
             </span>
             {bp.project.type === "imovel" && (
-              <span className="text-[10px] text-[#FFFF00] bg-[#FFFF00]/10 px-1.5 py-0.5 rounded shrink-0">
+              <span className="text-[10px] text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0">
                 Imóvel
               </span>
             )}
@@ -258,7 +262,7 @@ const BrokerProjects = () => {
           {isOwn && (
             <button
               onClick={() => openEditWizard(bp.project)}
-              className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-[#FFFF00] hover:bg-[#2a2a2e] transition-colors"
+              className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-amber-300 hover:bg-[#2a2a2e] transition-colors"
               title="Editar landing page"
             >
               <Pencil className="w-3.5 h-3.5" />
@@ -271,13 +275,16 @@ const BrokerProjects = () => {
           >
             {copiedUrl === bp.url ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
-          <button
-            onClick={() => openLanding(bp.url)}
-            className="p-1.5 rounded-md bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-            title="Abrir landing page"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
+          {isOwn && (
+            <button
+              onClick={() => inactivateProject(bp.project.id)}
+              disabled={isSaving}
+              className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-orange-400 hover:bg-orange-500/10 transition-colors disabled:opacity-50"
+              title="Inativar imóvel"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button
             onClick={() => setProjectToRemove(bp.id)}
             disabled={isSaving}
