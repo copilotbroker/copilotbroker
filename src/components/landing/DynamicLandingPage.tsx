@@ -12,20 +12,20 @@ import iconMap from "./iconMap";
 
 function DynamicCustomSection({ section, theme }: { section: CustomSection; theme: LandingContent["theme"] }) {
   return (
-    <section className="py-16 px-4 md:px-8" style={{ backgroundColor: `${theme.accentColor}08` }}>
+    <section className="py-12 px-4 md:py-16 md:px-8" style={{ backgroundColor: `${theme.accentColor}08` }}>
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8" style={{ color: theme.primaryColor }}>
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8" style={{ color: theme.primaryColor }}>
           {section.title}
         </h2>
         {section.description && (
-          <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">{section.description}</p>
+          <p className="text-center text-gray-600 mb-6 md:mb-8 max-w-2xl mx-auto text-sm md:text-base">{section.description}</p>
         )}
         {section.type === "embed" && section.embedUrl && (
           <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200">
             <iframe
               src={section.embedUrl}
               className="w-full"
-              style={{ height: "500px" }}
+              style={{ height: "min(500px, 70vw)" }}
               frameBorder="0"
               allowFullScreen
               loading="lazy"
@@ -34,11 +34,11 @@ function DynamicCustomSection({ section, theme }: { section: CustomSection; them
           </div>
         )}
         {section.type === "gallery" && section.items && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             {section.items.map((item, i) => (
               <div key={i} className="rounded-xl overflow-hidden shadow-lg">
-                {item.imageUrl && <img src={item.imageUrl} alt={item.text} className="w-full h-48 object-cover" />}
-                <p className="p-3 text-sm text-gray-700 text-center">{item.text}</p>
+                {item.imageUrl && <img src={item.imageUrl} alt={item.text} className="w-full h-48 sm:h-52 object-cover" />}
+                {item.text && <p className="p-3 text-sm text-gray-700 text-center">{item.text}</p>}
               </div>
             ))}
           </div>

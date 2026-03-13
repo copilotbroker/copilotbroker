@@ -75,9 +75,9 @@ export default function DynamicCTA({ content, theme }: Props) {
           "{content.quote}"
         </blockquote>
 
-        <button
+          <button
           onClick={scrollToForm}
-          className={`px-12 py-5 rounded-full text-lg font-bold transition-all duration-500 delay-700 hover:scale-105 hover:shadow-2xl ${
+          className={`px-8 py-4 md:px-12 md:py-5 rounded-full text-base md:text-lg font-bold transition-all duration-500 delay-700 hover:scale-105 hover:shadow-2xl ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
           style={{

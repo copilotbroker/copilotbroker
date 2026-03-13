@@ -31,10 +31,10 @@ export default function DynamicUrgency({ content, theme }: Props) {
     : "#fff8f0";
 
   return (
-    <section ref={ref} className="py-20 md:py-28 px-4" style={{ backgroundColor: bgColor }}>
+    <section ref={ref} className="py-14 md:py-28 px-4" style={{ backgroundColor: bgColor }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2
-          className={`text-3xl md:text-4xl font-bold mb-12 transition-all duration-700 ${
+          className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-8 md:mb-12 transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           } ${theme.fontFamily === "serif" ? "font-serif italic" : ""}`}
           style={{ color: theme.accentColor }}
