@@ -38,8 +38,8 @@ const BrokerProjects = () => {
   const [editingProject, setEditingProject] = useState<any>(null);
 
   const {
-    broker, brokerProjects, myCreatedProjects, unassociatedProjects,
-    isLoading, isSaving, addProject, removeProject, updateSlug, pendingCount, refetch,
+    broker, brokerProjects, myCreatedProjects, myDraftProjects, unassociatedProjects,
+    isLoading, isSaving, addProject, removeProject, deleteDraft, updateSlug, pendingCount, refetch,
   } = useBrokerProjects(brokerId);
 
   useEffect(() => {
