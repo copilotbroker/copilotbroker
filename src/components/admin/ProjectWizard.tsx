@@ -976,8 +976,7 @@ Faixa de preço: A partir de R$ 320.000`}
     // Auto-populate wizard fields from scraped data (name/city already set by user in review)
     setData(prev => ({
       ...prev,
-      name: scraped.title || prev.name,
-      slug: toSlug(scraped.title || prev.name),
+      city: scraped.city || prev.city,
       city: scraped.city || prev.city,
       city_slug: scraped.city ? toSlug(scraped.city) : prev.city_slug,
       description: [scraped.description, scraped.rawText].filter(Boolean).join("\n\n"),
