@@ -42,6 +42,7 @@ export function BrokerBottomNav({
 
   const isCopilotActive = location.pathname === "/corretor/copiloto";
   const isInboxActive = location.pathname === "/corretor/inbox";
+  const isAdminPage = location.pathname === "/corretor/admin";
 
   const navItems: Array<{
     id: string;
