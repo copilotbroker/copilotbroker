@@ -317,28 +317,6 @@ const BrokerProjects = () => {
         </div>
       </div>
 
-      {/* Pending Projects Banner */}
-      {pendingCount > 0 && (
-        <div className="bg-[#1e1e22] border border-yellow-500/30 rounded-lg p-3 mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-4 h-4 text-yellow-500 shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {pendingCount === 1 ? "Novo empreendimento disponível!" : `${pendingCount} novos empreendimentos disponíveis!`}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Adicione à sua carteira e comece a captar leads
-                </p>
-              </div>
-            </div>
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)} className="bg-yellow-500 hover:bg-yellow-600 text-black shrink-0 text-xs">
-              <Plus className="w-4 h-4 mr-1" />
-              Adicionar agora
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Tabs */}
       <Tabs defaultValue="carteira" className="mb-6">
