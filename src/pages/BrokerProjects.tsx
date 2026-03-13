@@ -302,6 +302,7 @@ const BrokerProjects = () => {
             <h1 className="text-xl font-bold text-foreground">Landing Pages</h1>
             <p className="text-sm text-muted-foreground">
               {brokerProjects.length + myCreatedProjects.length} {(brokerProjects.length + myCreatedProjects.length) === 1 ? 'ativo' : 'ativos'}
+              {myDraftProjects.length > 0 && ` · ${myDraftProjects.length} rascunho${myDraftProjects.length > 1 ? 's' : ''}`}
             </p>
           </div>
         </div>
