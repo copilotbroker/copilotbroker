@@ -1019,8 +1019,8 @@ Faixa de preço: A partir de R$ 320.000`}
             </Button>
           )}
 
-          {/* Save Draft button - only in broker mode, not on last step */}
-          {brokerMode && !isLastStep && canAdvance() && (
+          {/* Save Draft button - broker mode, any step */}
+          {brokerMode && canAdvance() && (
             <Button
               onClick={handleSaveDraft}
               disabled={isSaving || !data.name.trim()}
