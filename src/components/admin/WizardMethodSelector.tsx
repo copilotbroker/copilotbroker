@@ -33,15 +33,10 @@ export default function WizardMethodSelector({ onSelectLink, onSelectManual, typ
             "hover:border-[#FFFF00] hover:shadow-[0_0_30px_rgba(255,255,0,0.1)]"
           )}
         >
-          <div className="absolute top-3 right-3">
-            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FFFF00]/20 text-[#FFFF00]">
-              Recomendado
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-[#FFFF00]/10 flex items-center justify-center mb-4 group-hover:bg-[#FFFF00]/20 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-[#FFFF00]/10 flex items-center justify-center mb-4 group-hover:bg-[#FFFF00]/20 transition-colors mx-auto">
             <Link2 className="w-6 h-6 text-[#FFFF00]" />
           </div>
-          <h3 className="text-base font-semibold text-white mb-1.5">Importar de um Link</h3>
+          <h3 className="text-base font-semibold text-white mb-1.5 text-center w-full">Importar de um Link</h3>
           <p className="text-xs text-slate-400 leading-relaxed mb-4">
             Cole o link de um anúncio e a IA captura automaticamente fotos, dados e informações para criar uma landing page de alta conversão.
           </p>
