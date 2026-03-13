@@ -160,7 +160,7 @@ export function useBrokerProjects(brokerId?: string | null) {
       if (error) throw error;
 
       setBroker((prev) => prev ? { ...prev, slug: newSlug } : null);
-      const rebuildUrls = (list: BrokerProject[]) => list.map((bp) => ({ ...bp, url: buildUrl(bp.project, newSlug) }));
+      const rebuildUrls = (list: BrokerProject[]) => list.map((bp) => ({ ...bp, url: buildUrl(bp.project, newSlug, brokerId) }));
       setBrokerProjects(rebuildUrls);
       setMyCreatedProjects(rebuildUrls);
 
