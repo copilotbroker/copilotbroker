@@ -107,43 +107,129 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     });
   };
 
-  // Media upload
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [mediaTab, setMediaTab] = useState<"photos" | "videos">("photos");
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Convert image to WebP and resize to stay under 500kb
+  const convertToWebp = (file: File, maxSizeKb = 500): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let { width, height } = img;
+
+          // Scale down if image is very large
+          const MAX_DIM = 1920;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return reject(new Error("Canvas not supported"));
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Try decreasing quality until under maxSizeKb
+          let quality = 0.85;
+          const tryExport = () => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) return reject(new Error("Conversion failed"));
+                if (blob.size > maxSizeKb * 1024 && quality > 0.3) {
+                  quality -= 0.1;
+                  // Also scale down dimensions further
+                  if (quality <= 0.5 && width > 800) {
+                    width = Math.round(width * 0.75);
+                    height = Math.round(height * 0.75);
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                  }
+                  tryExport();
+                } else {
+                  resolve(blob);
+                }
+              },
+              "image/webp",
+              quality
+            );
+          };
+          tryExport();
+        };
+        img.onerror = () => reject(new Error("Failed to load image"));
+        img.src = reader.result as string;
+      };
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Photo upload with WebP conversion
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     setIsUploading(true);
     const newFiles: MediaFile[] = [];
 
     for (const file of Array.from(files)) {
-      const isVideo = file.type.startsWith("video/");
-      const isImage = file.type.startsWith("image/");
-      if (!isVideo && !isImage) {
+      if (!file.type.startsWith("image/")) {
         toast.error(`Formato não suportado: ${file.name}`);
         continue;
       }
-
-      const ext = file.name.split(".").pop();
-      const path = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-
-      const { error } = await supabase.storage.from("project-media").upload(path, file);
-      if (error) {
-        toast.error(`Erro ao enviar ${file.name}`);
-        continue;
+      try {
+        const webpBlob = await convertToWebp(file);
+        const path = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
+        const { error } = await supabase.storage.from("project-media").upload(path, webpBlob, {
+          contentType: "image/webp",
+          cacheControl: "3600",
+        });
+        if (error) { toast.error(`Erro ao enviar ${file.name}`); continue; }
+        const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
+        newFiles.push({ name: file.name.replace(/\.[^.]+$/, ".webp"), url: urlData.publicUrl, type: "image", path });
+      } catch (err) {
+        console.error("WebP conversion error:", err);
+        toast.error(`Erro ao converter ${file.name}`);
       }
-
-      const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
-      newFiles.push({
-        name: file.name,
-        url: urlData.publicUrl,
-        type: isVideo ? "video" : "image",
-        path,
-      });
     }
-
     setMediaFiles(prev => [...prev, ...newFiles]);
     setIsUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Video upload
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploading(true);
+    const newFiles: MediaFile[] = [];
+
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("video/")) {
+        toast.error(`Formato não suportado: ${file.name}`);
+        continue;
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error(`Vídeo muito grande (máx 50MB): ${file.name}`);
+        continue;
+      }
+      const ext = file.name.split(".").pop() || "mp4";
+      const path = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+      const { error } = await supabase.storage.from("project-media").upload(path, file, {
+        contentType: file.type,
+        cacheControl: "3600",
+      });
+      if (error) { toast.error(`Erro ao enviar ${file.name}`); continue; }
+      const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
+      newFiles.push({ name: file.name, url: urlData.publicUrl, type: "video", path });
+    }
+    setMediaFiles(prev => [...prev, ...newFiles]);
+    setIsUploading(false);
+    if (videoInputRef.current) videoInputRef.current.value = "";
   };
 
   const removeMedia = async (index: number) => {
@@ -426,56 +512,120 @@ Faixa de preço: A partir de R$ 320.000`}
         />
       </div>
 
-      {/* Media Upload */}
+      {/* Media Upload - Tabbed */}
       <div className="space-y-3">
-        <Label className="text-sm text-slate-300">Fotos e Vídeos</Label>
-        <p className="text-xs text-slate-500">Envie imagens e vídeos que a IA pode usar para compor a landing page.</p>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {mediaFiles.map((file, i) => (
-            <div key={i} className="relative group rounded-xl overflow-hidden border border-[#2a2a2e] bg-[#1e1e22]">
-              {file.type === "image" ? (
-                <img src={file.url} alt={file.name} className="w-full h-28 object-cover" />
-              ) : (
-                <div className="w-full h-28 flex items-center justify-center bg-[#1a1a1e]">
-                  <FileVideo className="w-8 h-8 text-slate-500" />
-                </div>
-              )}
-              <button
-                onClick={() => removeMedia(i)}
-                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-              <p className="px-2 py-1.5 text-[10px] text-slate-400 truncate">{file.name}</p>
-            </div>
-          ))}
-
+        <Label className="text-sm text-slate-300">Mídias</Label>
+        <div className="flex gap-1 p-1 rounded-lg bg-[#1a1a1e] border border-[#2a2a2e]">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="h-28 rounded-xl border-2 border-dashed border-[#2a2a2e] hover:border-[#FFFF00]/40 bg-[#1a1a1e] flex flex-col items-center justify-center gap-2 transition-colors"
+            onClick={() => setMediaTab("photos")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all",
+              mediaTab === "photos" ? "bg-[#2a2a2e] text-white shadow-sm" : "text-slate-500 hover:text-slate-300"
+            )}
           >
-            {isUploading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
-            ) : (
-              <>
-                <Upload className="w-5 h-5 text-slate-500" />
-                <span className="text-xs text-slate-500">Enviar</span>
-              </>
+            <Image className="w-4 h-4" />
+            Fotos {mediaFiles.filter(f => f.type === "image").length > 0 && (
+              <span className="text-[10px] bg-[#FFFF00]/20 text-[#FFFF00] px-1.5 rounded-full">
+                {mediaFiles.filter(f => f.type === "image").length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMediaTab("videos")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all",
+              mediaTab === "videos" ? "bg-[#2a2a2e] text-white shadow-sm" : "text-slate-500 hover:text-slate-300"
+            )}
+          >
+            <FileVideo className="w-4 h-4" />
+            Vídeos {mediaFiles.filter(f => f.type === "video").length > 0 && (
+              <span className="text-[10px] bg-[#FFFF00]/20 text-[#FFFF00] px-1.5 rounded-full">
+                {mediaFiles.filter(f => f.type === "video").length}
+              </span>
             )}
           </button>
         </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,video/*"
-          multiple
-          onChange={handleFileUpload}
-          className="hidden"
-        />
+        {mediaTab === "photos" && (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-500">Imagens são convertidas automaticamente para WebP e redimensionadas (máx 500kb).</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {mediaFiles.filter(f => f.type === "image").map((file) => {
+                const origIdx = mediaFiles.indexOf(file);
+                return (
+                  <div key={origIdx} className="relative group rounded-xl overflow-hidden border border-[#2a2a2e] bg-[#1e1e22]">
+                    <img src={file.url} alt={file.name} className="w-full h-28 object-cover" />
+                    <button
+                      onClick={() => removeMedia(origIdx)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                    <p className="px-2 py-1.5 text-[10px] text-slate-400 truncate">{file.name}</p>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="h-28 rounded-xl border-2 border-dashed border-[#2a2a2e] hover:border-[#FFFF00]/40 bg-[#1a1a1e] flex flex-col items-center justify-center gap-2 transition-colors"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-slate-500" />
+                    <span className="text-xs text-slate-500">Enviar fotos</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mediaTab === "videos" && (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-500">Envie vídeos (máx 50MB) que serão exibidos na landing page.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {mediaFiles.filter(f => f.type === "video").map((file) => {
+                const origIdx = mediaFiles.indexOf(file);
+                return (
+                  <div key={origIdx} className="relative group rounded-xl overflow-hidden border border-[#2a2a2e] bg-[#1e1e22]">
+                    <video src={file.url} className="w-full h-28 object-cover" muted preload="metadata" />
+                    <button
+                      onClick={() => removeMedia(origIdx)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                    <p className="px-2 py-1.5 text-[10px] text-slate-400 truncate">{file.name}</p>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => videoInputRef.current?.click()}
+                disabled={isUploading}
+                className="h-28 rounded-xl border-2 border-dashed border-[#2a2a2e] hover:border-[#FFFF00]/40 bg-[#1a1a1e] flex flex-col items-center justify-center gap-2 transition-colors"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-slate-500" />
+                    <span className="text-xs text-slate-500">Enviar vídeos</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" />
+        <input ref={videoInputRef} type="file" accept="video/*" multiple onChange={handleVideoUpload} className="hidden" />
       </div>
     </div>
   );
