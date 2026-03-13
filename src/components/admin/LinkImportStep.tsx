@@ -310,28 +310,30 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
         {/* Bottom sentinel for scroll detection */}
         <div ref={bottomSentinelRef} className="h-1" />
 
-        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] md:bottom-0 z-20 bg-[#0f0f12]/95 backdrop-blur-sm border-t border-[#2a2a2e] pt-3 space-y-2">
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleRetry} className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
-              <ChevronLeft className="w-4 h-4 mr-1" /> Tentar outro link
+        <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] md:bottom-0 left-0 right-0 z-20 bg-[#0f0f12]/95 backdrop-blur-sm border-t border-[#2a2a2e] px-4 py-3 md:relative md:left-auto md:right-auto md:px-0">
+          <div className="flex gap-2 max-w-2xl mx-auto">
+            <Button variant="outline" onClick={handleRetry} size="sm" className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
+              <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
             </Button>
+            {onSaveDraft && hasScrolledToBottom && canContinue && (
+              <Button
+                onClick={handleDraftSave}
+                variant="outline"
+                size="sm"
+                className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
+              >
+                <Save className="w-4 h-4 mr-1" /> Rascunho
+              </Button>
+            )}
             <Button
               onClick={handleContinue}
               disabled={!canContinue}
+              size="sm"
               className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium disabled:opacity-50"
             >
-              Continuar com IA <ArrowRight className="w-4 h-4 ml-1" />
+              Próximo <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
-          {onSaveDraft && hasScrolledToBottom && canContinue && (
-            <Button
-              onClick={handleDraftSave}
-              variant="outline"
-              className="w-full border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
-            >
-              <Save className="w-4 h-4 mr-2" /> Salvar como rascunho
-            </Button>
-          )}
         </div>
       </div>
     );
