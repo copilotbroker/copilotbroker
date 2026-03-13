@@ -147,7 +147,7 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
     const canContinue = propertyName.trim().length > 0;
 
     return (
-      <div className="max-w-2xl mx-auto space-y-5">
+      <div className="max-w-2xl mx-auto space-y-5 pb-[calc(env(safe-area-inset-bottom,0px)+6rem)] md:pb-0">
         <div className="text-center mb-2">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-3">
             <CheckCircle className="w-7 h-7 text-green-400" />
@@ -281,17 +281,19 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
           </div>
         )}
 
-        <div className="flex gap-3 pt-2">
-          <Button variant="outline" onClick={handleRetry} className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
-            <ChevronLeft className="w-4 h-4 mr-1" /> Tentar outro link
-          </Button>
-          <Button
-            onClick={handleContinue}
-            disabled={!canContinue}
-            className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium disabled:opacity-50"
-          >
-            Continuar com IA <ArrowRight className="w-4 h-4 ml-1" />
-          </Button>
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] md:bottom-0 z-20 bg-[#0f0f12]/95 backdrop-blur-sm border-t border-[#2a2a2e] pt-3">
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleRetry} className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
+              <ChevronLeft className="w-4 h-4 mr-1" /> Tentar outro link
+            </Button>
+            <Button
+              onClick={handleContinue}
+              disabled={!canContinue}
+              className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium disabled:opacity-50"
+            >
+              Continuar com IA <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
         </div>
       </div>
     );
