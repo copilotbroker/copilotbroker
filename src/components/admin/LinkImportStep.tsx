@@ -39,16 +39,11 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
   const [progressStep, setProgressStep] = useState(-1);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScrapedData | null>(null);
-  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
-
   // Editable state for review screen
   const [editableImages, setEditableImages] = useState<string[]>([]);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [propertyName, setPropertyName] = useState("");
   const [propertyCity, setPropertyCity] = useState("");
-
-  const bottomSentinelRef = useRef<HTMLDivElement>(null);
-  const successContainerRef = useRef<HTMLDivElement>(null);
 
   const getScrollParent = (element: HTMLElement | null): HTMLElement | null => {
     let parent = element?.parentElement ?? null;
