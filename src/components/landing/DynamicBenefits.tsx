@@ -22,10 +22,10 @@ export default function DynamicBenefits({ content, theme }: Props) {
   }, []);
 
   return (
-    <section ref={ref} className="py-20 md:py-28 px-4" style={{ backgroundColor: "#ffffff" }}>
+    <section ref={ref} className="py-14 md:py-28 px-4" style={{ backgroundColor: "#ffffff" }}>
       <div className="max-w-5xl mx-auto">
         <h2
-          className={`text-3xl md:text-4xl font-bold mb-14 text-center transition-all duration-700 ${
+          className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-8 md:mb-14 text-center transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           } ${isSerif ? "font-serif italic" : ""}`}
           style={{ color: theme.accentColor }}

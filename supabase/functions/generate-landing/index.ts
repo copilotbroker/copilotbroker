@@ -113,7 +113,7 @@ NOME: ${projectData.name}
 CIDADE: ${projectData.city}
 ${projectData.description ? `\nCONTEÚDO COMPLETO FORNECIDO PELO CLIENTE:\n${projectData.description}\n\nANALISE TODO O CONTEÚDO ACIMA E EXTRAIA: diferenciais, público-alvo, argumentos de venda, faixa de preço, infraestrutura, localização e QUALQUER link/URL mencionado (mapas, vídeos, iframes). Links devem ser incluídos como customSections com embedUrl.` : ""}
 ${projectData.location ? `LOCALIZAÇÃO: ${projectData.location}` : ""}
-${projectData.mediaUrls?.length ? `\nMÍDIA DISPONÍVEL (URLs de imagens/vídeos):\n${projectData.mediaUrls.join("\n")}\n\nUse essas imagens: a melhor como hero.backgroundImageUrl, outras como features.imageUrl ou em customSections tipo gallery.` : ""}
+${projectData.mediaUrls?.length ? `\nMÍDIA DISPONÍVEL (URLs de imagens/vídeos):\n${projectData.mediaUrls.join("\n")}\n\nIMPORTANTE SOBRE MÍDIAS: Use a melhor imagem como hero.backgroundImageUrl. Outras como features.imageUrl ou em customSections tipo gallery. REGRA CRÍTICA: Se houver 3 ou mais imagens, CRIE uma customSection tipo "gallery" incluindo TODAS as imagens — não omita nenhuma. Cada item deve ter imageUrl e text descritivo.` : ""}
 STATUS: ${projectData.status || "pre_launch"}
 
 IMPORTANTE:

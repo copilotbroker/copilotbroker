@@ -27,14 +27,14 @@ export default function DynamicCTA({ content, theme }: Props) {
   return (
     <section
       ref={ref}
-      className="py-20 md:py-28 px-4"
+      className="py-14 md:py-28 px-4"
       style={{
         background: `linear-gradient(135deg, ${theme.accentColor} 0%, ${theme.accentColor}dd 100%)`,
       }}
     >
       <div className="max-w-4xl mx-auto text-center">
         <h2
-          className={`text-3xl md:text-5xl font-bold mb-10 transition-all duration-700 ${
+          className={`text-2xl sm:text-3xl md:text-5xl font-bold mb-6 md:mb-10 transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
           style={{ color: "#ffffff" }}
@@ -75,9 +75,9 @@ export default function DynamicCTA({ content, theme }: Props) {
           "{content.quote}"
         </blockquote>
 
-        <button
+          <button
           onClick={scrollToForm}
-          className={`px-12 py-5 rounded-full text-lg font-bold transition-all duration-500 delay-700 hover:scale-105 hover:shadow-2xl ${
+          className={`px-8 py-4 md:px-12 md:py-5 rounded-full text-base md:text-lg font-bold transition-all duration-500 delay-700 hover:scale-105 hover:shadow-2xl ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
           style={{

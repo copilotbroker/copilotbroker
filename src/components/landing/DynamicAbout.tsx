@@ -22,13 +22,13 @@ export default function DynamicAbout({ content, theme }: Props) {
   }, []);
 
   return (
-    <section ref={ref} id="sobre" className="py-20 md:py-28 px-4" style={{ backgroundColor: "#fafafa" }}>
+    <section ref={ref} id="sobre" className="py-14 md:py-28 px-4" style={{ backgroundColor: "#fafafa" }}>
       <div className="max-w-5xl mx-auto">
         <div
           className={`transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
         >
           <h2
-            className={`text-3xl md:text-4xl font-bold mb-8 text-center ${isSerif ? "font-serif italic" : ""}`}
+            className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center ${isSerif ? "font-serif italic" : ""}`}
             style={{ color: theme.accentColor }}
           >
             {content.title}

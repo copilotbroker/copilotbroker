@@ -60,16 +60,16 @@ export default function DynamicHero({ content, theme }: Props) {
         />
       </div>
 
-      <div className={`relative z-10 w-full max-w-6xl mx-auto px-4 ${isSplit ? "flex flex-col lg:flex-row items-center gap-12" : "text-center"}`}>
+      <div className={`relative z-10 w-full max-w-6xl mx-auto px-4 ${isSplit ? "flex flex-col lg:flex-row items-center gap-8 lg:gap-12" : "text-center"}`}>
         <div className={isSplit ? "flex-1" : ""}>
           {/* Badge */}
           <div
-            className={`inline-block mb-8 transition-all duration-700 ${
+            className={`inline-block mb-4 md:mb-8 transition-all duration-700 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
           >
             <span
-              className="px-5 py-2 rounded-full text-sm font-semibold tracking-wider uppercase border"
+              className="px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-semibold tracking-wider uppercase border"
               style={{
                 color: theme.primaryColor,
                 borderColor: `${theme.primaryColor}66`,
@@ -82,7 +82,7 @@ export default function DynamicHero({ content, theme }: Props) {
 
           {/* Title */}
           <h1
-            className={`text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight transition-all duration-700 delay-200 ${
+            className={`text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 leading-tight transition-all duration-700 delay-200 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             } ${isSerif ? "font-serif italic" : ""}`}
             style={{ color: "#ffffff" }}
@@ -92,7 +92,7 @@ export default function DynamicHero({ content, theme }: Props) {
 
           {/* Subtitle */}
           <p
-            className={`text-xl md:text-2xl mb-4 font-light transition-all duration-700 delay-300 ${
+            className={`text-lg sm:text-xl md:text-2xl mb-3 md:mb-4 font-light transition-all duration-700 delay-300 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             } ${isSerif ? "font-serif" : ""}`}
             style={{ color: theme.primaryColor }}
@@ -102,7 +102,7 @@ export default function DynamicHero({ content, theme }: Props) {
 
           {/* Description */}
           <p
-            className={`text-base md:text-lg max-w-2xl ${isSplit ? "" : "mx-auto"} mb-10 transition-all duration-700 delay-[400ms] ${
+            className={`text-sm sm:text-base md:text-lg max-w-2xl ${isSplit ? "" : "mx-auto"} mb-6 md:mb-10 transition-all duration-700 delay-[400ms] ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
             style={{ color: "rgba(255,255,255,0.7)" }}
@@ -113,7 +113,7 @@ export default function DynamicHero({ content, theme }: Props) {
           {/* CTA Button */}
           <button
             onClick={scrollToForm}
-            className={`px-10 py-4 rounded-full text-lg font-semibold transition-all duration-700 delay-500 hover:scale-105 hover:shadow-2xl ${
+            className={`px-8 py-3 md:px-10 md:py-4 rounded-full text-base md:text-lg font-semibold transition-all duration-700 delay-500 hover:scale-105 hover:shadow-2xl ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
             style={{

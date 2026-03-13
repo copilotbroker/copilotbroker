@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -343,23 +342,23 @@ const FormSection = ({
                 className="text-xs sm:text-sm text-foreground/80 leading-relaxed cursor-pointer"
               >
                 Li e aceito os{" "}
-                <Link 
-                  to="/termos#termos-de-uso" 
+                <a 
+                  href="/termos#termos-de-uso" 
                   target="_blank"
                   className="text-primary hover:text-primary/80 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
                   rel="noopener"
                 >
                   Termos de Uso
-                </Link>{" "}
+                </a>{" "}
                 e a{" "}
-                <Link 
-                  to="/termos#politica-de-privacidade" 
+                <a 
+                  href="/termos#politica-de-privacidade" 
                   target="_blank"
                   className="text-primary hover:text-primary/80 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
                   rel="noopener"
                 >
                   Política de Privacidade
-                </Link>
+                </a>
               </label>
             </div>
 
