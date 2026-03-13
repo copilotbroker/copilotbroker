@@ -71,6 +71,7 @@ const PROGRESS_COLORS: Record<string, string> = {
 const ACTION_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string } | null> = {
   new: { label: "Iniciar Atendimento", icon: Play, color: "bg-emerald-500/90 hover:bg-emerald-500 text-white" },
   info_sent: { label: "Agendar", icon: Calendar, color: "bg-orange-500/90 hover:bg-orange-500 text-white" },
+  awaiting_docs: { label: "Agendar", icon: Calendar, color: "bg-orange-500/90 hover:bg-orange-500 text-white" },
   scheduling: { label: "Comparecimento", icon: FileText, color: "bg-blue-500/90 hover:bg-blue-500 text-white" },
   docs_received: { label: "Confirmar Venda", icon: Trophy, color: "bg-emerald-600/90 hover:bg-emerald-600 text-white" },
   registered: null,
