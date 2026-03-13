@@ -74,6 +74,14 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
   const isDraftEdit = editProject && !editProject.landing_content && editProject.type;
   const isDraftWithContent = editProject && editProject.landing_content && !editProject.webhook_url && brokerMode;
+  
+  // Import mode: null = method selector (for new projects), "link" = link import, "manual" = standard wizard
+  const [importMode, setImportMode] = useState<"link" | "manual" | null>(() => {
+    if (editProject) return "manual"; // Editing always goes manual
+    return null; // New project starts at method selector
+  });
+  const [scrapedData, setScrapedData] = useState<ScrapedData | null>(null);
+  
   const [step, setStep] = useState(() => {
     if (!editProject) return 0;
     if (isDraftEdit) return 0;
