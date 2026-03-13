@@ -49,16 +49,37 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
 
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
-  // Observe bottom sentinel to show draft button
+  // Observe bottom sentinel to show actions when user reaches end
   useEffect(() => {
+    if (!result) return;
+
     const sentinel = bottomSentinelRef.current;
-    if (!sentinel || !result) return;
+    if (!sentinel) return;
+
+    const checkBottomReached = () => {
+      const rect = sentinel.getBoundingClientRect();
+      if (rect.top <= window.innerHeight - 120) {
+        setHasScrolledToBottom(true);
+      }
+    };
+
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setHasScrolledToBottom(true); },
-      { threshold: 0.1 }
+      ([entry]) => {
+        if (entry.isIntersecting) setHasScrolledToBottom(true);
+      },
+      { threshold: 0, rootMargin: "0px 0px 180px 0px" }
     );
+
     observer.observe(sentinel);
-    return () => observer.disconnect();
+    window.addEventListener("scroll", checkBottomReached, true);
+    window.addEventListener("resize", checkBottomReached);
+    requestAnimationFrame(checkBottomReached);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", checkBottomReached, true);
+      window.removeEventListener("resize", checkBottomReached);
+    };
   }, [result]);
 
   const isValidUrl = (v: string) => {
