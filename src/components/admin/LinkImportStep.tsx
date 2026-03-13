@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   Link2, Sparkles, Loader2, Globe, ImageIcon, FileText, LayoutTemplate,
-  CheckCircle, AlertTriangle, ArrowRight, ChevronLeft, X,
+  CheckCircle, AlertTriangle, ArrowRight, ChevronLeft, X, GripVertical, Trash2, MapPin, Home,
 } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 export interface ScrapedData {
   title: string;
@@ -35,6 +37,12 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
   const [progressStep, setProgressStep] = useState(-1);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScrapedData | null>(null);
+
+  // Editable state for review screen
+  const [editableImages, setEditableImages] = useState<string[]>([]);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [propertyName, setPropertyName] = useState("");
+  const [propertyCity, setPropertyCity] = useState("");
 
   const isValidUrl = (v: string) => {
     if (!v.trim()) return false;
@@ -76,8 +84,13 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
       if (fnError) throw new Error(fnError.message);
       if (data?.error) throw new Error(data.error);
 
-      setResult(data as ScrapedData);
-      setProgressStep(PROGRESS_STEPS.length); // Complete
+      const scraped = data as ScrapedData;
+      setResult(scraped);
+      setEditableImages(scraped.images || []);
+      setPropertyName(scraped.title || "");
+      setPropertyCity("");
+      setFailedImages(new Set());
+      setProgressStep(PROGRESS_STEPS.length);
     } catch (err: any) {
       console.error("Scrape error:", err);
       setError(err.message || "Não foi possível acessar este link. Tente outro ou crie manualmente.");
@@ -87,36 +100,91 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
   };
 
   const handleContinue = () => {
-    if (result) onImportSuccess(result);
+    if (!result) return;
+    if (!propertyName.trim()) return;
+    // Pass modified data with filtered images and name
+    onImportSuccess({
+      ...result,
+      images: editableImages.filter(img => !failedImages.has(img)),
+      title: propertyName.trim(),
+    });
   };
 
   const handleRetry = () => {
     setError(null);
     setResult(null);
     setProgressStep(-1);
+    setEditableImages([]);
+    setFailedImages(new Set());
   };
 
-  // --- Success state ---
+  const removeImage = (index: number) => {
+    setEditableImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const items = Array.from(editableImages);
+    const [reordered] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reordered);
+    setEditableImages(items);
+  };
+
+  const handleImageError = (imgUrl: string) => {
+    setFailedImages(prev => new Set(prev).add(imgUrl));
+  };
+
+  const validImages = editableImages.filter(img => !failedImages.has(img));
+
+  // --- Success state with review ---
   if (result) {
     const warnings: string[] = [];
-    if (!result.title) warnings.push("Título não encontrado");
-    if (result.images.length === 0) warnings.push("Nenhuma foto encontrada");
+    if (!propertyName.trim()) warnings.push("Nome do imóvel é obrigatório");
+    if (validImages.length === 0) warnings.push("Nenhuma foto válida encontrada");
     if (!result.rawText || result.rawText.length < 50) warnings.push("Pouco conteúdo de texto extraído");
 
+    const canContinue = propertyName.trim().length > 0;
+
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-5">
         <div className="text-center mb-2">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-3">
             <CheckCircle className="w-7 h-7 text-green-400" />
           </div>
-          <h2 className="text-lg font-bold text-white">Conteúdo extraído com sucesso!</h2>
-          <p className="text-sm text-slate-400 mt-1">Confira o que encontramos e continue para a geração da landing page.</p>
+          <h2 className="text-lg font-bold text-white">Conteúdo extraído!</h2>
+          <p className="text-sm text-slate-400 mt-1">Revise as informações, organize as fotos e continue.</p>
+        </div>
+
+        {/* Name and City fields */}
+        <div className="bg-[#1a1a1e] border border-[#2a2a2e] rounded-xl p-4 space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm text-slate-300 flex items-center gap-2">
+              <Home className="w-4 h-4" /> Nome do Imóvel *
+            </Label>
+            <Input
+              value={propertyName}
+              onChange={(e) => setPropertyName(e.target.value)}
+              placeholder="Ex: Residencial Bela Vista"
+              className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm text-slate-300 flex items-center gap-2">
+              <MapPin className="w-4 h-4" /> Cidade *
+            </Label>
+            <Input
+              value={propertyCity}
+              onChange={(e) => setPropertyCity(e.target.value)}
+              placeholder="Ex: Porto Alegre"
+              className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600"
+            />
+          </div>
         </div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-xl p-4 text-center">
-            <p className="text-2xl font-bold text-[#FFFF00]">{result.images.length}</p>
+            <p className="text-2xl font-bold text-[#FFFF00]">{validImages.length}</p>
             <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Fotos</p>
           </div>
           <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-xl p-4 text-center">
@@ -129,30 +197,73 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
           </div>
         </div>
 
-        {/* Title preview */}
-        {result.title && (
+        {/* Photo gallery with drag-and-drop reorder + delete */}
+        {editableImages.length > 0 && (
           <div className="bg-[#1a1a1e] border border-[#2a2a2e] rounded-xl p-4">
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Título encontrado</p>
-            <p className="text-sm text-white font-medium">{result.title}</p>
-          </div>
-        )}
-
-        {/* Image preview */}
-        {result.images.length > 0 && (
-          <div className="bg-[#1a1a1e] border border-[#2a2a2e] rounded-xl p-4">
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Fotos encontradas</p>
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-              {result.images.slice(0, 10).map((img, i) => (
-                <div key={i} className="aspect-square rounded-lg overflow-hidden bg-[#2a2a2e]">
-                  <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                </div>
-              ))}
-              {result.images.length > 10 && (
-                <div className="aspect-square rounded-lg bg-[#2a2a2e] flex items-center justify-center">
-                  <span className="text-xs text-slate-400">+{result.images.length - 10}</span>
-                </div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                Fotos ({validImages.length}) — arraste para reordenar
+              </p>
+              {failedImages.size > 0 && (
+                <p className="text-[10px] text-amber-400">{failedImages.size} não carregaram</p>
               )}
             </div>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="images" direction="horizontal">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="flex flex-wrap gap-2"
+                  >
+                    {editableImages.map((img, i) => {
+                      const isFailed = failedImages.has(img);
+                      if (isFailed) return null;
+                      return (
+                        <Draggable key={`${img}-${i}`} draggableId={`${img}-${i}`} index={i}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={cn(
+                                "relative group w-[calc(25%-6px)] sm:w-[calc(20%-6.4px)] aspect-square rounded-lg overflow-hidden bg-[#2a2a2e] transition-shadow",
+                                snapshot.isDragging && "shadow-lg shadow-[#FFFF00]/20 z-50 ring-2 ring-[#FFFF00]/40"
+                              )}
+                            >
+                              <div
+                                {...provided.dragHandleProps}
+                                className="absolute top-1 left-1 z-10 p-1 rounded bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab"
+                              >
+                                <GripVertical className="w-3 h-3 text-white" />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeImage(i)}
+                                className="absolute top-1 right-1 z-10 p-1 rounded bg-red-600/80 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                              >
+                                <X className="w-3 h-3 text-white" />
+                              </button>
+                              {i === 0 && (
+                                <span className="absolute bottom-1 left-1 z-10 text-[9px] font-bold bg-[#FFFF00] text-black px-1.5 py-0.5 rounded">
+                                  CAPA
+                                </span>
+                              )}
+                              <img
+                                src={img}
+                                alt={`Foto ${i + 1}`}
+                                className="w-full h-full object-cover"
+                                onError={() => handleImageError(img)}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </div>
         )}
 
@@ -161,9 +272,9 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
           <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-amber-300 mb-1">Alguns itens precisam de atenção</p>
+              <p className="text-sm font-medium text-amber-300 mb-1">Atenção</p>
               <ul className="text-xs text-amber-200/70 space-y-0.5">
-                {warnings.map((w, i) => <li key={i}>• {w} — você poderá complementar manualmente</li>)}
+                {warnings.map((w, i) => <li key={i}>• {w}</li>)}
               </ul>
             </div>
           </div>
@@ -173,7 +284,11 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
           <Button variant="outline" onClick={handleRetry} className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white">
             <ChevronLeft className="w-4 h-4 mr-1" /> Tentar outro link
           </Button>
-          <Button onClick={handleContinue} className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium">
+          <Button
+            onClick={handleContinue}
+            disabled={!canContinue}
+            className="flex-1 bg-[#FFFF00] text-black hover:brightness-110 font-medium disabled:opacity-50"
+          >
             Continuar com IA <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
