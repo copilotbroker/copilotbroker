@@ -33,7 +33,11 @@ export function useBrokerProjects(brokerId?: string | null) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const buildUrl = (project: Project, brokerSlug: string) => {
+  const buildUrl = (project: Project, brokerSlug: string, forBrokerId?: string) => {
+    // Broker-owned projects use /corretor/cidade/projeto (no broker slug in URL)
+    if (project.created_by_broker_id && project.created_by_broker_id === forBrokerId) {
+      return `/corretor/${project.city_slug}/${project.slug}`;
+    }
     if (project.slug === "estanciavelha") return `/estanciavelha/${brokerSlug}`;
     if (project.slug === "prontos") return `/prontos/${brokerSlug}`;
     return `/${project.city_slug}/${project.slug}/${brokerSlug}`;
@@ -68,7 +72,7 @@ export function useBrokerProjects(brokerId?: string | null) {
         const item: BrokerProject = {
           id: bp.id,
           project: bp.project as Project,
-          url: buildUrl(bp.project as Project, broker.slug),
+          url: buildUrl(bp.project as Project, broker.slug, brokerId),
         };
         if (bp.project.created_by_broker_id === brokerId) {
           ownProjects.push(item);
@@ -156,7 +160,7 @@ export function useBrokerProjects(brokerId?: string | null) {
       if (error) throw error;
 
       setBroker((prev) => prev ? { ...prev, slug: newSlug } : null);
-      const rebuildUrls = (list: BrokerProject[]) => list.map((bp) => ({ ...bp, url: buildUrl(bp.project, newSlug) }));
+      const rebuildUrls = (list: BrokerProject[]) => list.map((bp) => ({ ...bp, url: buildUrl(bp.project, newSlug, brokerId) }));
       setBrokerProjects(rebuildUrls);
       setMyCreatedProjects(rebuildUrls);
 
@@ -179,7 +183,7 @@ export function useBrokerProjects(brokerId?: string | null) {
 
   const getProjectUrl = (project: Project) => {
     if (!broker) return "";
-    return buildUrl(project, broker.slug);
+    return buildUrl(project, broker.slug, brokerId);
   };
 
   const unassociatedProjects = availableProjects.filter(

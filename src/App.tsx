@@ -30,6 +30,7 @@ import BrokerProjects from "./pages/BrokerProjects";
 import BrokerSignup from "./pages/BrokerSignup";
 
 import BrokerRoletasPage from "./pages/BrokerRoletasPage";
+import BrokerProjectLanding from "./pages/BrokerProjectLanding";
 import BrokerInbox from "./pages/BrokerInbox";
 import BrokerCopilotConfig from "./pages/BrokerCopilotConfig";
 import AdminInbox from "./pages/AdminInbox";
@@ -95,6 +96,7 @@ const App = () => (
             <Route path="/corretor/inbox" element={<BrokerInbox />} />
             <Route path="/corretor/copiloto" element={<BrokerCopilotConfig />} />
             <Route path="/corretor/lead/:leadId" element={<LeadPage />} />
+            <Route path="/corretor/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />
             <Route path="/caminhadaonovocondominioev" element={<CaminhadaEV />} />
             <Route path="/termos" element={<Termos />} />
             <Route path="/designsystem" element={<DesignSystem />} />
