@@ -159,7 +159,7 @@ export default function LinkImportStep({ onImportSuccess, onBack, onSaveDraft }:
     const canContinue = propertyName.trim().length > 0;
 
     return (
-      <div ref={successContainerRef} className="max-w-2xl mx-auto space-y-5">
+      <div className="max-w-2xl mx-auto space-y-5">
         <div className="text-center mb-2">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-green-500/10 flex items-center justify-center mb-3">
             <CheckCircle className="w-7 h-7 text-green-400" />
