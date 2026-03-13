@@ -285,15 +285,15 @@ const BrokerProjects = () => {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="empresa" className="mb-6">
+      <Tabs defaultValue="carteira" className="mb-6">
         <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
-          <TabsTrigger value="empresa" className="data-[state=active]:bg-[#2a2a2e]">
-            <Building2 className="w-4 h-4 mr-1.5" />
-            Empresa ({brokerProjects.length})
-          </TabsTrigger>
           <TabsTrigger value="carteira" className="data-[state=active]:bg-[#2a2a2e]">
             <Home className="w-4 h-4 mr-1.5" />
             Minha Carteira ({myCreatedProjects.length})
+          </TabsTrigger>
+          <TabsTrigger value="empresa" className="data-[state=active]:bg-[#2a2a2e]">
+            <Building2 className="w-4 h-4 mr-1.5" />
+            Empreendimentos ({brokerProjects.length})
           </TabsTrigger>
         </TabsList>
 

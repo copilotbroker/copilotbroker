@@ -148,18 +148,18 @@ export function BrokerSidebar({
           </button>
         )}
 
-        {/* Empreendimentos */}
+        {/* Landing Pages */}
         <button
           onClick={() => navigate("/corretor/empreendimentos")}
           className={cn(
             "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative mt-2",
             isProjectsPage ? "bg-[#2a2a2e] text-[#FFFF00]" : "text-slate-400 hover:text-white"
           )}
-          title="Empreendimentos"
+          title="Landing Pages"
         >
           <Building2 className="w-5 h-5" />
           <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Empreendimentos
+            Landing Pages
           </span>
         </button>
 
