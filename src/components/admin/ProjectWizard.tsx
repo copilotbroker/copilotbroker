@@ -469,8 +469,8 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
       }
 
       if (editProject) {
-        // If editing a draft, activate it + set landing content
-        if (isDraftEdit) {
+        // If editing a draft (with or without content), activate it + set landing content
+        if (isDraftEdit || isDraftWithContent) {
           const { error } = await supabase
             .from("projects")
             .update({
