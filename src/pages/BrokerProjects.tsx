@@ -39,7 +39,7 @@ const BrokerProjects = () => {
 
   const {
     broker, brokerProjects, myCreatedProjects, myDraftProjects, unassociatedProjects,
-    isLoading, isSaving, addProject, removeProject, deleteDraft, updateSlug, pendingCount, refetch,
+    isLoading, isSaving, addProject, removeProject, deleteDraft, inactivateProject, updateSlug, pendingCount, refetch,
   } = useBrokerProjects(brokerId);
 
   useEffect(() => {
