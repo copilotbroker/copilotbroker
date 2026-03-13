@@ -443,8 +443,8 @@ const BrokerProjects = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Slug Editor */}
-      <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-3">
+      {/* Slug Editor - only show if no slug set yet */}
+      {!broker?.slug && <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-3">
         <div className="flex items-center gap-2 mb-3">
           <LinkIcon className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Seu Link Personalizado</h3>
@@ -470,7 +470,7 @@ const BrokerProjects = () => {
             Este slug será usado em todos os seus links de empreendimentos.
           </p>
         </div>
-      </div>
+      </div>}
 
       {/* Remove Confirmation Dialog */}
       <AlertDialog open={!!projectToRemove} onOpenChange={() => setProjectToRemove(null)}>
