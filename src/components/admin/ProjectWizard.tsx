@@ -49,7 +49,7 @@ interface WizardData {
 
 const initialData: WizardData = {
   name: "", slug: "", city: "", city_slug: "", description: "", status: "pre_launch",
-  location: "", webhook_url: "", ai_prompt: "", type: "empreendimento",
+  location: "", webhook_url: "", ai_prompt: "", type: "imovel",
 };
 
 interface ChatMessage {
