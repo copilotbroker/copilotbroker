@@ -105,10 +105,12 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   const [isSaving, setIsSaving] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [hasDraft, setHasDraft] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const skipAutoSaveRef = useRef(false);
+  const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Restore draft on mount (only for new projects, not edits)
   useEffect(() => {
