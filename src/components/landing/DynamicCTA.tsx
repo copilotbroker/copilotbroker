@@ -34,7 +34,7 @@ export default function DynamicCTA({ content, theme }: Props) {
     >
       <div className="max-w-4xl mx-auto text-center">
         <h2
-          className={`text-3xl md:text-5xl font-bold mb-10 transition-all duration-700 ${
+          className={`text-2xl sm:text-3xl md:text-5xl font-bold mb-6 md:mb-10 transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
           style={{ color: "#ffffff" }}
