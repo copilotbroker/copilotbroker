@@ -9,14 +9,18 @@ interface Project {
   city: string;
   city_slug: string | null;
   type?: string;
+  is_active?: boolean;
   created_by_broker_id?: string | null;
   landing_content?: any;
+  description?: string | null;
+  status?: string;
 }
 
 interface BrokerProject {
   id: string;
   project: Project;
   url: string;
+  isDraft?: boolean;
 }
 
 interface Broker {
@@ -30,11 +34,11 @@ export function useBrokerProjects(brokerId?: string | null) {
   const [brokerProjects, setBrokerProjects] = useState<BrokerProject[]>([]);
   const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
   const [myCreatedProjects, setMyCreatedProjects] = useState<BrokerProject[]>([]);
+  const [myDraftProjects, setMyDraftProjects] = useState<BrokerProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   const buildUrl = (project: Project, brokerSlug: string, forBrokerId?: string) => {
-    // Broker-owned projects use /corretor/cidade/projeto (no broker slug in URL)
     if (project.created_by_broker_id && project.created_by_broker_id === forBrokerId) {
       return `/corretor/${project.city_slug}/${project.slug}`;
     }
@@ -58,9 +62,10 @@ export function useBrokerProjects(brokerId?: string | null) {
     if (!brokerId || !broker) return;
     setIsLoading(true);
     try {
+      // Fetch active broker_projects
       const { data, error } = await supabase
         .from("broker_projects")
-        .select(`id, project:projects(id, name, slug, city, city_slug, type, created_by_broker_id, landing_content)`)
+        .select(`id, project:projects(id, name, slug, city, city_slug, type, created_by_broker_id, landing_content, is_active, description, status)`)
         .eq("broker_id", brokerId)
         .eq("is_active", true);
       if (error) throw error;
@@ -69,12 +74,15 @@ export function useBrokerProjects(brokerId?: string | null) {
       const ownProjects: BrokerProject[] = [];
 
       (data || []).filter((bp: any) => bp.project).forEach((bp: any) => {
+        const project = bp.project as Project;
+        // Skip drafts from the active list — they'll be shown separately
+        if (project.created_by_broker_id === brokerId && !project.is_active) return;
         const item: BrokerProject = {
           id: bp.id,
-          project: bp.project as Project,
-          url: buildUrl(bp.project as Project, broker.slug, brokerId),
+          project,
+          url: buildUrl(project, broker.slug, brokerId),
         };
-        if (bp.project.created_by_broker_id === brokerId) {
+        if (project.created_by_broker_id === brokerId) {
           ownProjects.push(item);
         } else {
           companyProjects.push(item);
@@ -83,6 +91,23 @@ export function useBrokerProjects(brokerId?: string | null) {
 
       setBrokerProjects(companyProjects);
       setMyCreatedProjects(ownProjects);
+
+      // Fetch draft projects (is_active = false, created by this broker)
+      const { data: drafts, error: draftError } = await supabase
+        .from("projects")
+        .select("id, name, slug, city, city_slug, type, created_by_broker_id, landing_content, is_active, description, status")
+        .eq("created_by_broker_id", brokerId)
+        .eq("is_active", false);
+      
+      if (!draftError && drafts) {
+        const draftItems: BrokerProject[] = drafts.map((p: any) => ({
+          id: p.id, // use project id as identifier for drafts
+          project: p as Project,
+          url: "",
+          isDraft: true,
+        }));
+        setMyDraftProjects(draftItems);
+      }
     } catch (error) {
       console.error("Error fetching broker projects:", error);
     } finally {
@@ -149,6 +174,26 @@ export function useBrokerProjects(brokerId?: string | null) {
     }
   };
 
+  const deleteDraft = async (projectId: string) => {
+    setIsSaving(true);
+    try {
+      // Remove broker_projects link if exists
+      await supabase.from("broker_projects").delete().eq("project_id", projectId).eq("broker_id", brokerId!);
+      // Delete the project
+      const { error } = await supabase.from("projects").delete().eq("id", projectId);
+      if (error) throw error;
+      toast.success("Rascunho excluído!");
+      await fetchBrokerProjects();
+      return true;
+    } catch (error) {
+      console.error("Error deleting draft:", error);
+      toast.error("Erro ao excluir rascunho.");
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const updateSlug = async (newSlug: string) => {
     if (!brokerId || !newSlug.trim()) return false;
     setIsSaving(true);
@@ -203,12 +248,14 @@ export function useBrokerProjects(brokerId?: string | null) {
     broker,
     brokerProjects,
     myCreatedProjects,
+    myDraftProjects,
     availableProjects,
     unassociatedProjects,
     isLoading,
     isSaving,
     addProject,
     removeProject,
+    deleteDraft,
     updateSlug,
     checkSlugAvailability,
     getProjectUrl,

@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft, ChevronRight, Sparkles, Send, RefreshCw, Check, Eye, MessageSquare, Loader2,
-  Building2, MapPin, Rocket, X, Upload, Image, Trash2, FileVideo, Home,
+  Building2, MapPin, Rocket, X, Upload, Image, Trash2, FileVideo, Home, Save,
 } from "lucide-react";
 import DynamicLandingPage from "@/components/landing/DynamicLandingPage";
 
@@ -24,6 +24,7 @@ interface WizardProps {
   editProject?: {
     id: string; name: string; slug: string; city: string; city_slug: string;
     landing_content: LandingContent | null; webhook_url: string | null;
+    description?: string | null; type?: string; status?: string; location?: string;
   };
   onComplete?: () => void;
   /** Broker mode: simplified wizard for brokers creating their own projects */
@@ -78,8 +79,24 @@ interface DraftState {
 export default function ProjectWizard({ inline, onBack, editProject, onComplete, brokerMode, brokerId }: WizardProps) {
   const { createProject, updateProject } = useProjects();
   const STEP_LABELS = brokerMode ? BROKER_STEP_LABELS : ADMIN_STEP_LABELS;
-  const [step, setStep] = useState(editProject ? (brokerMode ? 2 : 3) : 0);
-  const [data, setData] = useState<WizardData>(initialData);
+  const isDraftEdit = editProject && !editProject.landing_content;
+  const [step, setStep] = useState(editProject ? (isDraftEdit ? 0 : (brokerMode ? 2 : 3)) : 0);
+  const [data, setData] = useState<WizardData>(() => {
+    if (editProject) {
+      return {
+        ...initialData,
+        name: editProject.name || "",
+        slug: editProject.slug || "",
+        city: editProject.city || "",
+        city_slug: editProject.city_slug || "",
+        description: editProject.description || "",
+        type: (editProject.type as ProjectType) || "empreendimento",
+        status: (editProject.status as ProjectStatus) || "pre_launch",
+        location: editProject.location || "",
+      };
+    }
+    return initialData;
+  });
   const [landingContent, setLandingContent] = useState<LandingContent | null>(editProject?.landing_content || null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -371,16 +388,84 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     generateLanding(msg);
   };
 
+  const handleSaveDraft = async () => {
+    if (!brokerMode || !brokerId || !data.name.trim()) return;
+    setIsSaving(true);
+    try {
+      const payload = {
+        name: data.name.trim(),
+        slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+        city: data.city.trim(),
+        city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+        description: data.description.trim() || null,
+        status: data.status,
+        type: data.type,
+        created_by_broker_id: brokerId,
+        is_active: false,
+      };
+
+      if (editProject) {
+        // Update existing draft
+        const { error } = await supabase
+          .from("projects")
+          .update(payload)
+          .eq("id", editProject.id);
+        if (error) throw error;
+      } else {
+        // Create new draft
+        const { data: newProject, error } = await supabase
+          .from("projects")
+          .insert(payload)
+          .select("id")
+          .single();
+        if (error) throw error;
+        // Auto-link to broker_projects
+        await supabase
+          .from("broker_projects")
+          .insert({ broker_id: brokerId, project_id: newProject.id, is_active: true });
+      }
+
+      clearDraft();
+      toast.success("Rascunho salvo!");
+      onComplete?.();
+      onBack?.();
+    } catch (err) {
+      console.error("Save draft error:", err);
+      toast.error("Erro ao salvar rascunho.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handlePublish = async () => {
     if (!landingContent) return;
     setIsSaving(true);
 
     try {
       if (editProject) {
-        await updateProject(editProject.id, { landing_content: landingContent } as any);
-        toast.success("Landing page atualizada!");
+        // If editing a draft, activate it + set landing content
+        if (isDraftEdit) {
+          const { error } = await supabase
+            .from("projects")
+            .update({
+              name: data.name.trim(),
+              slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+              city: data.city.trim(),
+              city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+              description: data.description.trim() || null,
+              status: data.status,
+              type: data.type,
+              landing_content: landingContent as any,
+              is_active: true,
+            })
+            .eq("id", editProject.id);
+          if (error) throw error;
+          toast.success("Landing page publicada!");
+        } else {
+          await updateProject(editProject.id, { landing_content: landingContent } as any);
+          toast.success("Landing page atualizada!");
+        }
       } else if (brokerMode && brokerId) {
-        // Broker mode: insert directly with created_by_broker_id
         const projectPayload = {
           name: data.name.trim(),
           slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
@@ -402,7 +487,6 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
 
         if (projError) throw projError;
 
-        // Auto-link to broker_projects
         const { error: linkError } = await supabase
           .from("broker_projects")
           .insert({ broker_id: brokerId, project_id: newProject.id, is_active: true });
@@ -906,7 +990,7 @@ Faixa de preço: A partir de R$ 320.000`}
       {/* Bottom nav */}
       <div className="border-t border-[#2a2a2e] pt-4 mt-4">
         <div className="flex gap-3">
-          {step > 0 && !editProject ? (
+          {step > 0 && (!editProject || isDraftEdit) ? (
             <Button
               onClick={() => setStep(step - 1)}
               variant="outline"
@@ -922,6 +1006,19 @@ Faixa de preço: A partir de R$ 320.000`}
               className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
             >
               Cancelar
+            </Button>
+          )}
+
+          {/* Save Draft button - only in broker mode, not on last step */}
+          {brokerMode && !isLastStep && canAdvance() && (
+            <Button
+              onClick={handleSaveDraft}
+              disabled={isSaving || !data.name.trim()}
+              variant="outline"
+              className="border-[#2a2a2e] text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+              Salvar Rascunho
             </Button>
           )}
 

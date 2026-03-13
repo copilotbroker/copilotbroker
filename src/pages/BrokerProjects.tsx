@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   Building2, Copy, Check, ExternalLink, Trash2, Plus,
   Link as LinkIcon, RefreshCw, ArrowLeft, Save, ClipboardList,
-  Sparkles, Home, Pencil,
+  Sparkles, Home, Pencil, FileEdit,
 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";
 import {
@@ -38,8 +38,8 @@ const BrokerProjects = () => {
   const [editingProject, setEditingProject] = useState<any>(null);
 
   const {
-    broker, brokerProjects, myCreatedProjects, unassociatedProjects,
-    isLoading, isSaving, addProject, removeProject, updateSlug, pendingCount, refetch,
+    broker, brokerProjects, myCreatedProjects, myDraftProjects, unassociatedProjects,
+    isLoading, isSaving, addProject, removeProject, deleteDraft, updateSlug, pendingCount, refetch,
   } = useBrokerProjects(brokerId);
 
   useEffect(() => {
@@ -149,6 +149,72 @@ const BrokerProjects = () => {
     );
   }
 
+  const openEditWizard = (project: any) => {
+    setEditingProject({
+      id: project.id,
+      name: project.name,
+      slug: project.slug,
+      city: project.city,
+      city_slug: project.city_slug,
+      landing_content: project.landing_content || null,
+      webhook_url: null,
+      description: project.description || null,
+      type: project.type || "empreendimento",
+      status: project.status || "pre_launch",
+    });
+    setShowWizard(true);
+  };
+
+  const renderDraftCard = (bp: { id: string; project: any }) => (
+    <div
+      key={bp.id}
+      className="bg-[#1e1e22] border border-dashed border-yellow-500/40 rounded-lg p-3 hover:border-yellow-500/60 transition-colors"
+    >
+      <div className="flex items-start gap-3">
+        {bp.project.type === "imovel" ? (
+          <Home className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+        ) : (
+          <Building2 className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+        )}
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-foreground truncate text-sm">{bp.project.name}</h3>
+            <span className="text-[10px] text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
+              Rascunho
+            </span>
+            {bp.project.city && (
+              <span className="text-[10px] text-muted-foreground bg-[#2a2a2e] px-1.5 py-0.5 rounded shrink-0">
+                {bp.project.city}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground/70">
+            Landing page ainda não publicada. Continue a edição para publicar.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => openEditWizard(bp.project)}
+            className="p-1.5 rounded-md bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors"
+            title="Continuar edição"
+          >
+            <FileEdit className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => deleteDraft(bp.project.id)}
+            disabled={isSaving}
+            className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+            title="Excluir rascunho"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderProjectCard = (bp: { id: string; project: any; url: string }, isOwn?: boolean) => (
     <div
       key={bp.id}
@@ -181,18 +247,7 @@ const BrokerProjects = () => {
         <div className="flex items-center gap-1 shrink-0">
           {isOwn && (
             <button
-              onClick={() => {
-                setEditingProject({
-                  id: bp.project.id,
-                  name: bp.project.name,
-                  slug: bp.project.slug,
-                  city: bp.project.city,
-                  city_slug: bp.project.city_slug,
-                  landing_content: bp.project.landing_content,
-                  webhook_url: null,
-                });
-                setShowWizard(true);
-              }}
+              onClick={() => openEditWizard(bp.project)}
               className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-[#FFFF00] hover:bg-[#2a2a2e] transition-colors"
               title="Editar landing page"
             >
@@ -247,6 +302,7 @@ const BrokerProjects = () => {
             <h1 className="text-xl font-bold text-foreground">Landing Pages</h1>
             <p className="text-sm text-muted-foreground">
               {brokerProjects.length + myCreatedProjects.length} {(brokerProjects.length + myCreatedProjects.length) === 1 ? 'ativo' : 'ativos'}
+              {myDraftProjects.length > 0 && ` · ${myDraftProjects.length} rascunho${myDraftProjects.length > 1 ? 's' : ''}`}
             </p>
           </div>
         </div>
@@ -289,7 +345,7 @@ const BrokerProjects = () => {
         <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
           <TabsTrigger value="carteira" className="data-[state=active]:bg-[#2a2a2e]">
             <Home className="w-4 h-4 mr-1.5" />
-            Minha Carteira ({myCreatedProjects.length})
+            Minha Carteira ({myCreatedProjects.length + myDraftProjects.length})
           </TabsTrigger>
           <TabsTrigger value="empresa" className="data-[state=active]:bg-[#2a2a2e]">
             <Building2 className="w-4 h-4 mr-1.5" />
@@ -369,7 +425,13 @@ const BrokerProjects = () => {
           </div>
 
           <div className="grid gap-3">
-            {myCreatedProjects.length === 0 ? (
+            {/* Draft projects first */}
+            {myDraftProjects.map((bp) => renderDraftCard(bp))}
+
+            {/* Published projects */}
+            {myCreatedProjects.map((bp) => renderProjectCard(bp, true))}
+
+            {myCreatedProjects.length === 0 && myDraftProjects.length === 0 && (
               <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
                 <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-2">Crie seus próprios empreendimentos e imóveis.</p>
@@ -379,8 +441,6 @@ const BrokerProjects = () => {
                   Criar meu primeiro
                 </Button>
               </div>
-            ) : (
-              myCreatedProjects.map((bp) => renderProjectCard(bp, true))
             )}
           </div>
         </TabsContent>
