@@ -973,19 +973,19 @@ Faixa de preço: A partir de R$ 320.000`}
     </div>
   );
 
-  // Handle link import success
   const handleLinkImportSuccess = (scraped: ScrapedData) => {
     setScrapedData(scraped);
-    // Auto-populate wizard fields from scraped data
+    // Auto-populate wizard fields from scraped data (name/city already set by user in review)
     setData(prev => ({
       ...prev,
-      name: prev.name || scraped.title || "",
-      slug: prev.slug || toSlug(scraped.title || ""),
+      name: scraped.title || prev.name,
+      slug: toSlug(scraped.title || prev.name),
+      city: scraped.city || prev.city,
+      city_slug: scraped.city ? toSlug(scraped.city) : prev.city_slug,
       description: [scraped.description, scraped.rawText].filter(Boolean).join("\n\n"),
     }));
-    // Set import mode to manual and jump to content step for review
     setImportMode("manual");
-    // Jump to content step (step 1) for review, then user advances to IA
+    // Jump to content step (step 1) for review
     setStep(1);
   };
 
