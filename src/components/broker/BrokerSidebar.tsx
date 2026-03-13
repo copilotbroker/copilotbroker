@@ -42,9 +42,7 @@ export function BrokerSidebar({
 
   const handleNavClick = (mode: "kanban" | "list") => {
     if (!isAdminPage) {
-      navigate("/corretor/admin");
-      // Small delay to let navigation complete before changing view mode
-      setTimeout(() => onViewChange(mode), 50);
+      navigate(`/corretor/admin?view=${mode}`);
     } else {
       onViewChange(mode);
     }

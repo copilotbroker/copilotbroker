@@ -37,7 +37,9 @@ const BrokerAdmin = () => {
   const [broker, setBroker] = useState<BrokerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialView = (searchParams.get("view") === "list" ? "list" : "kanban") as "kanban" | "list";
+  const [viewMode, setViewMode] = useState<"kanban" | "list">(initialView);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
   const navigate = useNavigate();

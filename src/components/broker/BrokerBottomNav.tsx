@@ -85,8 +85,7 @@ export function BrokerBottomNav({
     setIsMoreOpen(false);
     if (action === "list") {
       if (!isAdminPage) {
-        navigate("/corretor/admin");
-        setTimeout(() => onViewChange("list"), 50);
+        navigate("/corretor/admin?view=list");
       } else {
         onViewChange("list");
       }
