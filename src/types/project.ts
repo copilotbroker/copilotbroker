@@ -1,3 +1,5 @@
+export type ProjectType = 'empreendimento' | 'imovel';
+
 export interface Project {
   id: string;
   name: string;
@@ -13,6 +15,8 @@ export interface Project {
   webhook_url: string | null;
   ai_prompt: string | null;
   landing_content: LandingContent | null;
+  type: ProjectType;
+  created_by_broker_id: string | null;
   created_at: string;
   updated_at: string;
 }
