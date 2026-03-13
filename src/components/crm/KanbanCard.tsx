@@ -49,7 +49,8 @@ const ORIGIN_COLORS: Record<string, string> = {
 // Progress percentage by status
 const STATUS_PROGRESS: Record<string, number> = {
   new: 10,
-  info_sent: 30,
+  info_sent: 25,
+  awaiting_docs: 35,
   scheduling: 50,
   docs_received: 75,
   registered: 100,
