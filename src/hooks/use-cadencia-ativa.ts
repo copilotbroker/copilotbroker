@@ -148,7 +148,7 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
 export async function cancelCadenciaForLead(leadId: string): Promise<void> {
   const { data: campaigns } = await (supabase
     .from("whatsapp_campaigns")
-    .select("id") as any)
+    .select("id, lead_previous_status") as any)
     .eq("lead_id", leadId)
     .eq("status", "running");
 
