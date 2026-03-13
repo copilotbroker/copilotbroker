@@ -33,7 +33,11 @@ export function useBrokerProjects(brokerId?: string | null) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const buildUrl = (project: Project, brokerSlug: string) => {
+  const buildUrl = (project: Project, brokerSlug: string, forBrokerId?: string) => {
+    // Broker-owned projects use /corretor/cidade/projeto (no broker slug in URL)
+    if (project.created_by_broker_id && project.created_by_broker_id === forBrokerId) {
+      return `/corretor/${project.city_slug}/${project.slug}`;
+    }
     if (project.slug === "estanciavelha") return `/estanciavelha/${brokerSlug}`;
     if (project.slug === "prontos") return `/prontos/${brokerSlug}`;
     return `/${project.city_slug}/${project.slug}/${brokerSlug}`;
