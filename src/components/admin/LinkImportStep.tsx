@@ -89,7 +89,7 @@ export default function LinkImportStep({ onImportSuccess, onBack }: LinkImportSt
       setResult(scraped);
       setEditableImages(scraped.images || []);
       setPropertyName(scraped.title || "");
-      setPropertyCity("");
+      setPropertyCity(scraped.city || "");
       setFailedImages(new Set());
       setProgressStep(PROGRESS_STEPS.length);
     } catch (err: any) {
