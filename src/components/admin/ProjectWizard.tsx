@@ -94,8 +94,18 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     }
   }, [step]);
 
-  const set = (field: keyof WizardData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setData(prev => ({ ...prev, [field]: e.target.value }));
+  const toSlug = (text: string) =>
+    text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  const set = (field: keyof WizardData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setData(prev => {
+      const next = { ...prev, [field]: val };
+      if (field === "name") next.slug = toSlug(val);
+      if (field === "city") next.city_slug = toSlug(val);
+      return next;
+    });
+  };
 
   // Media upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -268,7 +278,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   };
 
   const canAdvance = () => {
-    if (step === 0) return data.name && data.slug && data.city && data.city_slug;
+    if (step === 0) return data.name && data.city;
     return true;
   };
 
@@ -336,21 +346,10 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
         <Input value={data.name} onChange={set("name")} placeholder={data.type === "imovel" ? "Casa Alto Padrão - Bairro Nobre" : "Residencial Alto da Serra"} className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={cn("grid gap-4", brokerMode ? "grid-cols-1" : "grid-cols-2")}>
         <div className="space-y-2">
           <Label className="text-sm text-slate-300">Cidade *</Label>
           <Input value={data.city} onChange={set("city")} placeholder="Portão" className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm text-slate-300">Slug Cidade (URL) *</Label>
-          <Input value={data.city_slug} onChange={(e) => setData(p => ({ ...p, city_slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))} placeholder="portao" className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
-        </div>
-      </div>
-
-      <div className={cn("grid gap-4", brokerMode ? "grid-cols-1" : "grid-cols-2")}>
-        <div className="space-y-2">
-          <Label className="text-sm text-slate-300">Slug Projeto (URL) *</Label>
-          <Input value={data.slug} onChange={(e) => setData(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))} placeholder="alto-da-serra" className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600" />
         </div>
         {!brokerMode && (
           <div className="space-y-2">
