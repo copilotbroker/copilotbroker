@@ -201,7 +201,7 @@ export function CadenciaSheet({
       const whStart = instanceData?.working_hours_start || "09:00";
       const whEnd = instanceData?.working_hours_end || "21:00";
 
-      // Create campaign with lead_id
+      // Create campaign with lead_id and preserve current status
       const { data: campaign, error: campErr } = await (supabase
         .from("whatsapp_campaigns") as any)
         .insert({
@@ -210,6 +210,7 @@ export function CadenciaSheet({
           status: "running",
           total_leads: steps.length,
           lead_id: leadId,
+          lead_previous_status: leadStatus || "new",
         })
         .select()
         .single();
