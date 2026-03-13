@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   Link2, Sparkles, Loader2, Globe, ImageIcon, FileText, LayoutTemplate,
-  CheckCircle, AlertTriangle, ArrowRight, ChevronLeft, X, GripVertical, Trash2, MapPin, Home,
+  CheckCircle, AlertTriangle, ArrowRight, ChevronLeft, X, GripVertical, Trash2, MapPin, Home, Save,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
