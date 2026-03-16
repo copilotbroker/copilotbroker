@@ -349,15 +349,16 @@ async function persistInboundMediaIfNeeded(
   messageType: string,
   metadata: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const sourceUrl = typeof metadata.file_url === "string" ? metadata.file_url : "";
-  if (!sourceUrl || messageType === "text") return metadata;
+  const { thumbnail_base64: thumbnailBase64, ...baseMetadata } = metadata;
+  const sourceUrl = typeof baseMetadata.file_url === "string" ? baseMetadata.file_url : "";
+  if (messageType === "text") return baseMetadata;
 
   const normalizedPhone = getCanonicalPhoneNormalized(phone);
-  const existingStoragePath = typeof metadata.storage_path === "string" ? metadata.storage_path : null;
+  const existingStoragePath = typeof baseMetadata.storage_path === "string" ? baseMetadata.storage_path : null;
   const alreadyHosted = sourceUrl.includes("/storage/v1/object/public/project-media/");
   if (alreadyHosted) {
     return {
-      ...metadata,
+      ...baseMetadata,
       storage_path: existingStoragePath,
       phone_normalized: normalizedPhone,
       is_inline_ready: true,
@@ -365,11 +366,82 @@ async function persistInboundMediaIfNeeded(
   }
 
   const fallbackMetadata = {
-    ...metadata,
-    source_file_url: sourceUrl,
+    ...baseMetadata,
+    source_file_url: sourceUrl || undefined,
     phone_normalized: normalizedPhone,
     is_inline_ready: false,
   };
+
+  const uploadToBucket = async (
+    binary: ArrayBuffer | Uint8Array,
+    mimeType: string,
+    extraMetadata: Record<string, unknown> = {},
+  ) => {
+    const extension = getExtensionFromMimeType(mimeType);
+    const fileName = sanitizeFileName(
+      typeof baseMetadata.file_name === "string" ? baseMetadata.file_name : undefined,
+      extension,
+    );
+    const path = `inbox/inbound/${normalizedPhone}/${Date.now()}-${fileName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("project-media")
+      .upload(path, binary, {
+        contentType: mimeType,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.warn("⚠️ Could not upload inbound media to bucket", uploadError);
+      return null;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from("project-media").getPublicUrl(path);
+    const sizeBytes = binary instanceof Uint8Array ? binary.byteLength : binary.byteLength;
+
+    return {
+      ...baseMetadata,
+      ...extraMetadata,
+      file_url: publicUrlData.publicUrl,
+      thumbnail_url: messageType === "image" ? publicUrlData.publicUrl : baseMetadata.thumbnail_url,
+      storage_path: path,
+      mime_type: mimeType,
+      file_name: fileName,
+      size_bytes: Number(baseMetadata.size_bytes) || sizeBytes,
+      source_file_url: sourceUrl || undefined,
+      phone_normalized: normalizedPhone,
+      is_inline_ready: true,
+    };
+  };
+
+  const thumbnailBytes = messageType === "image" && typeof thumbnailBase64 === "string"
+    ? decodeBase64ToBytes(thumbnailBase64)
+    : null;
+
+  const persistThumbnailFallback = async (reason: string) => {
+    if (!thumbnailBytes) return fallbackMetadata;
+    console.log("🖼️ Using embedded thumbnail fallback for inbound image", {
+      reason,
+      phone: normalizedPhone,
+      sourceUrl,
+    });
+
+    const uploadedPreview = await uploadToBucket(thumbnailBytes, "image/jpeg", {
+      preview_only: true,
+      preview_source: "embedded_thumbnail",
+    });
+
+    return uploadedPreview || {
+      ...fallbackMetadata,
+      mime_type: "image/jpeg",
+      size_bytes: thumbnailBytes.byteLength,
+      preview_only: true,
+      preview_source: "embedded_thumbnail",
+    };
+  };
+
+  if (!sourceUrl) {
+    return await persistThumbnailFallback("missing_source_url");
+  }
 
   try {
     const tokensToTry = [payload.token, UAZAPI_TOKEN].filter((value): value is string => Boolean(value?.trim()));
@@ -384,72 +456,54 @@ async function persistInboundMediaIfNeeded(
         lastContentType,
         isWhatsAppHosted: isWhatsAppHostedMediaUrl(sourceUrl),
       });
-      return fallbackMetadata;
+      return await persistThumbnailFallback("fetch_failed");
     }
 
     const arrayBuffer = await mediaResponse.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
     const responseMimeType = mediaResponse.headers.get("content-type") || undefined;
-    const mimeType = responseMimeType || (typeof metadata.mime_type === "string" ? metadata.mime_type : undefined) || getMimeTypeFromFileName(typeof metadata.file_name === "string" ? metadata.file_name : undefined);
+    const metadataMimeType = typeof baseMetadata.mime_type === "string" ? baseMetadata.mime_type : undefined;
+    const fileNameMimeType = getMimeTypeFromFileName(typeof baseMetadata.file_name === "string" ? baseMetadata.file_name : undefined);
+    const detectedMimeType = getMimeTypeFromBytes(bytes);
+    const mimeType = [responseMimeType, metadataMimeType, fileNameMimeType, detectedMimeType]
+      .find((value) => value && value !== "application/octet-stream")
+      || detectedMimeType
+      || responseMimeType
+      || metadataMimeType
+      || fileNameMimeType;
     const looksRenderable = isLikelyRenderableMimeType(mimeType, messageType) && hasValidBinarySignature(bytes, mimeType);
 
-    if (!looksRenderable) {
+    if (!looksRenderable || !mimeType) {
       console.warn("⚠️ Inbound media rejected before upload", {
         sourceUrl,
         messageType,
         mimeType,
+        detectedMimeType,
         size: arrayBuffer.byteLength,
         lastStatus,
         lastContentType,
         attemptedWithAuth,
         isWhatsAppHosted: isWhatsAppHostedMediaUrl(sourceUrl),
       });
-      return {
-        ...fallbackMetadata,
-        mime_type: mimeType || metadata.mime_type,
-        size_bytes: Number(metadata.size_bytes) || arrayBuffer.byteLength,
-      };
+      const thumbnailFallback = await persistThumbnailFallback("source_not_renderable");
+      return thumbnailFallback.is_inline_ready
+        ? thumbnailFallback
+        : {
+            ...fallbackMetadata,
+            mime_type: mimeType || baseMetadata.mime_type,
+            size_bytes: Number(baseMetadata.size_bytes) || arrayBuffer.byteLength,
+          };
     }
 
-    const extension = getExtensionFromMimeType(mimeType);
-    const fileName = sanitizeFileName(
-      typeof metadata.file_name === "string" ? metadata.file_name : undefined,
-      extension,
-    );
-    const path = `inbox/inbound/${normalizedPhone}/${Date.now()}-${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("project-media")
-      .upload(path, arrayBuffer, {
-        contentType: mimeType,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.warn("⚠️ Could not upload inbound media to bucket", uploadError);
-      return {
-        ...fallbackMetadata,
-        mime_type: mimeType || metadata.mime_type,
-        size_bytes: Number(metadata.size_bytes) || arrayBuffer.byteLength,
-      };
-    }
-
-    const { data: publicUrlData } = supabase.storage.from("project-media").getPublicUrl(path);
-
-    return {
-      ...metadata,
-      file_url: publicUrlData.publicUrl,
-      storage_path: path,
-      mime_type: mimeType || metadata.mime_type,
-      file_name: fileName,
-      size_bytes: Number(metadata.size_bytes) || arrayBuffer.byteLength,
-      source_file_url: sourceUrl,
-      phone_normalized: normalizedPhone,
-      is_inline_ready: true,
+    const uploadedMedia = await uploadToBucket(arrayBuffer, mimeType);
+    return uploadedMedia || {
+      ...fallbackMetadata,
+      mime_type: mimeType || baseMetadata.mime_type,
+      size_bytes: Number(baseMetadata.size_bytes) || arrayBuffer.byteLength,
     };
   } catch (error) {
     console.warn("⚠️ Error while persisting inbound media", error);
-    return fallbackMetadata;
+    return await persistThumbnailFallback("unexpected_error");
   }
 }
 
