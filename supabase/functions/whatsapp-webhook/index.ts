@@ -315,10 +315,19 @@ function hasValidBinarySignature(bytes: Uint8Array, mimeType?: string) {
   return bytes.length > 32;
 }
 
-function isWhatsAppHostedMediaUrl(url?: string) {
-  if (!url) return false;
-  const normalized = url.toLowerCase();
-  return normalized.includes("mmg.whatsapp.net") || normalized.includes("mms.whatsapp.net");
+async function convertImageToWebp(bytes: Uint8Array) {
+  const image = await Image.decode(bytes);
+  const maxDimension = 1600;
+  const width = image.width;
+  const height = image.height;
+  const largestDimension = Math.max(width, height);
+
+  if (largestDimension > maxDimension) {
+    const scale = maxDimension / largestDimension;
+    image.resize(Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));
+  }
+
+  return await image.encode(80, Image.WEBP);
 }
 
 async function fetchInboundMedia(sourceUrl: string, tokens: string[]) {
