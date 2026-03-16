@@ -167,6 +167,14 @@ export function ConversationList({
   const sortedConversations = useMemo(() => {
     const sorted = [...kpiFilteredConversations];
     switch (sortMode) {
+      case "recent": {
+        sorted.sort((a, b) => {
+          const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+          const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+          return bTime - aTime;
+        });
+        break;
+      }
       case "unread":
         sorted.sort((a, b) => (b.unread_count || 0) - (a.unread_count || 0));
         break;
