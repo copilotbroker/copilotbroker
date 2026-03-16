@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Conversation } from "@/hooks/use-conversations";
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -218,6 +218,16 @@ export function ConversationList({
     }
   };
 
+  const formatLastInteraction = (value: string | null) => {
+    if (!value) return "--:--";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "--:--";
+    if (isToday(date)) return format(date, "HH:mm", { locale: ptBR });
+    if (isYesterday(date)) return "Ontem";
+    return format(date, "dd/MM", { locale: ptBR });
+  };
+
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="space-y-2 px-3 pb-1 pt-3">
@@ -342,19 +352,17 @@ export function ConversationList({
                         {leadName.charAt(0).toUpperCase()}
                       </div>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1 overflow-hidden pr-12">
+                        <div className="relative min-w-0">
                           <span className={cn(
-                            "min-w-0 flex-1 truncate text-sm leading-none",
+                            "block truncate pr-1 text-sm leading-none",
                             isUnread ? "font-bold text-foreground" : "font-medium text-foreground"
                           )}>
                             {leadName}
                           </span>
-                          {conv.last_message_at && (
-                            <span className="w-11 flex-shrink-0 text-right text-[10px] leading-none text-muted-foreground">
-                              {format(new Date(conv.last_message_at), "HH:mm", { locale: ptBR })}
-                            </span>
-                          )}
+                          <span className="absolute right-0 top-0 z-10 w-10 bg-card text-right text-[10px] leading-none text-muted-foreground">
+                            {formatLastInteraction(conv.last_message_at)}
+                          </span>
                         </div>
 
                         <p className={cn(

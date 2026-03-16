@@ -1,61 +1,60 @@
 
-Objetivo
-- Fazer a data/hora da última interação aparecer de forma confiável em todos os cards da lista do Inbox.
-- Aplicar a regra de exibição:
-  - mesmo dia: `HH:mm`
-  - ontem: `Ontem`
-  - mais de 1 dia: `DD/MM`
-- Considerar concluído só quando o valor estiver realmente visível no card ao lado do nome.
 
-Diagnóstico provável
-- O layout atual já tenta renderizar `last_message_at`, então o problema parece ser um destes:
-  1. o campo está chegando `null`/inconsistente em parte dos registros
-  2. o card não está reservando espaço visual suficiente para o timestamp
-  3. a lista está usando só `conversations.last_message_at`, mas há casos em que a interação mais recente existe apenas em `conversation_messages`
-- Pelo screenshot, o horário não está aparecendo em nenhum card, então preciso tratar tanto a fonte do dado quanto a renderização.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-O que vou revisar
-1. Fonte do timestamp
-- Auditar `use-conversations.ts` para confirmar como `last_message_at` chega e como a deduplicação por telefone preserva esse campo.
-- Se necessário, adotar fallback consistente, nesta ordem:
-  - `last_message_at`
-  - `updated_at`
-  - timestamp da mensagem mais recente, se já houver disponível/viável no fluxo atual
+### Problema 1: Nomes dos leads não aparecem
 
-2. Formatação da exibição
-- Criar uma função local de formatação no `ConversationList.tsx`:
-  - hoje => `HH:mm`
-  - ontem => `Ontem`
-  - anterior => `DD/MM`
-- Garantir comparação correta por dia local, evitando erro em virada de data.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-3. Layout do cabeçalho do card
-- Reestruturar a linha superior para reservar espaço fixo ao timestamp.
-- Nome com `truncate` apenas na área esquerda.
-- Timestamp com largura mínima fixa, `shrink-0`, alinhado à direita e sempre visível.
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-4. Preservar limpeza visual
-- Manter removida a segunda linha de telefone.
-- Manter badge binário do Kanban:
-  - `Lead vinculado`
-  - `Sem card no Kanban`
-- Não reintroduzir “origem” do lead.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-Arquivos a ajustar
-- `src/hooks/use-conversations.ts`
-- `src/components/inbox/ConversationList.tsx`
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-Abordagem técnica
-- Validar se a query já ordena por `last_message_at desc` e se a deduplicação mantém o timestamp mais recente.
-- Se houver buracos no dado, complementar a resolução do timestamp no hook antes de entregar `conversations` para a UI.
-- No componente, substituir o `format(..., "HH:mm")` atual por uma função de exibição contextual.
-- Ajustar o container do nome/tempo para impedir que o horário suma por truncamento.
+### Problema 2: Marcar como lida quando lida no celular
 
-Validação após implementação
-- Conferir na rota atual `/corretor/inbox`.
-- Verificar visualmente que cada card mostra um dos 3 formatos:
-  - `14:35`
-  - `Ontem`
-  - `08/03`
-- Validar que o timestamp aparece ao lado do nome, não abaixo nem oculto.
-- Confirmar que a ordenação continua por interação mais recente primeiro.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
+
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
+
+### Arquivos a editar
+
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

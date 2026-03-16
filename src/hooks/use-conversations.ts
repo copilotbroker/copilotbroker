@@ -126,6 +126,57 @@ export function useConversations(options: UseConversationsOptions = {}) {
       if (error) throw error;
 
       let filtered = (data || []) as unknown as Conversation[];
+      const conversationIds = filtered.map((conversation) => conversation.id);
+      const missingLastMessageIds = filtered
+        .filter((conversation) => !conversation.last_message_at)
+        .map((conversation) => conversation.id);
+
+      const [latestMessagesResult, fallbackMessagesResult] = await Promise.all([
+        conversationIds.length > 0
+          ? supabase
+              .from("conversation_messages")
+              .select("conversation_id, created_at")
+              .in("conversation_id", conversationIds)
+              .order("created_at", { ascending: false })
+              .limit(1000)
+          : Promise.resolve({ data: [], error: null }),
+        missingLastMessageIds.length > 0
+          ? supabase
+              .from("conversation_messages")
+              .select("conversation_id, sender_name, created_at")
+              .in("conversation_id", missingLastMessageIds)
+              .eq("direction", "inbound")
+              .not("sender_name", "is", null)
+              .order("created_at", { ascending: false })
+              .limit(500)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (latestMessagesResult.error) throw latestMessagesResult.error;
+      if (fallbackMessagesResult.error) throw fallbackMessagesResult.error;
+
+      const lastMessageAtByConversation = new Map<string, string>();
+      for (const row of latestMessagesResult.data || []) {
+        if (!lastMessageAtByConversation.has(row.conversation_id)) {
+          lastMessageAtByConversation.set(row.conversation_id, row.created_at);
+        }
+      }
+
+      const senderNameByConversation = new Map<string, string>();
+      for (const row of fallbackMessagesResult.data || []) {
+        if (!senderNameByConversation.has(row.conversation_id) && row.sender_name) {
+          senderNameByConversation.set(row.conversation_id, row.sender_name);
+        }
+      }
+
+      filtered = filtered.map((conversation) => ({
+        ...conversation,
+        last_message_at:
+          conversation.last_message_at ||
+          lastMessageAtByConversation.get(conversation.id) ||
+          conversation.updated_at ||
+          null,
+      }));
 
       const conversationsByPhone = new Map<string, Conversation>();
       for (const conversation of filtered) {
@@ -149,6 +200,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
           display_name: primary.display_name || secondary.display_name,
           display_name_source: primary.display_name_source || secondary.display_name_source,
           last_message_type: primary.last_message_type || secondary.last_message_type,
+          last_message_at: primary.last_message_at || secondary.last_message_at,
           unread_count: Math.max(primary.unread_count || 0, secondary.unread_count || 0),
           ai_mode: primary.ai_mode === "ai_active" || secondary.ai_mode === "ai_active" ? "ai_active" : primary.ai_mode,
         });
@@ -160,27 +212,12 @@ export function useConversations(options: UseConversationsOptions = {}) {
       if (noLeadConvs.length > 0) {
         const allVariants = [...new Set(noLeadConvs.flatMap((c) => getPhoneSearchVariants(c.phone_normalized)))];
 
-        const [{ data: matchedLeads }, { data: senderNames }] = await Promise.all([
-          supabase
-            .from("leads")
-            .select("id, name, whatsapp, status, project_id, notes, lead_origin")
-            .in("whatsapp", allVariants.slice(0, 100)),
-          supabase
-            .from("conversation_messages")
-            .select("conversation_id, sender_name, created_at")
-            .in("conversation_id", noLeadConvs.map((c) => c.id))
-            .eq("direction", "inbound")
-            .not("sender_name", "is", null)
-            .order("created_at", { ascending: false })
-            .limit(500),
-        ]);
+        const { data: matchedLeads, error: leadsError } = await supabase
+          .from("leads")
+          .select("id, name, whatsapp, status, project_id, notes, lead_origin")
+          .in("whatsapp", allVariants.slice(0, 100));
 
-        const senderNameByConversation = new Map<string, string>();
-        for (const row of senderNames || []) {
-          if (!senderNameByConversation.has(row.conversation_id) && row.sender_name) {
-            senderNameByConversation.set(row.conversation_id, row.sender_name);
-          }
-        }
+        if (leadsError) throw leadsError;
 
         const phoneToLead = new Map<string, any>();
         for (const lead of matchedLeads || []) {
@@ -210,7 +247,18 @@ export function useConversations(options: UseConversationsOptions = {}) {
           return resolveConversationIdentity(conversation);
         });
       } else {
-        filtered = filtered.map((conversation) => resolveConversationIdentity(conversation));
+        filtered = filtered.map((conversation) => {
+          const senderName = senderNameByConversation.get(conversation.id)?.trim();
+          if (senderName && (!conversation.display_name || ["phone", "sender_name"].includes(conversation.display_name_source || ""))) {
+            return resolveConversationIdentity({
+              ...conversation,
+              display_name: senderName,
+              display_name_source: "sender_name",
+            });
+          }
+
+          return resolveConversationIdentity(conversation);
+        });
       }
 
       if (options.search) {
