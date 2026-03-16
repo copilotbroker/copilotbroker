@@ -59,6 +59,8 @@ const getMessageStatusIcon = (status?: string) => {
       return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
     case "sent":
       return <Check className="h-3 w-3 text-muted-foreground" />;
+    case "failed":
+      return <Clock3 className="h-3 w-3 text-destructive" />;
     default:
       return <Clock3 className="h-3 w-3 text-muted-foreground" />;
   }

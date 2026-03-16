@@ -64,15 +64,23 @@ const sortMessagesAsc = (items: ConversationMessage[]) => (
   [...items].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 );
 
+const getMessageClientId = (message: ConversationMessage) => {
+  const metadata = (message.metadata || {}) as Record<string, unknown>;
+  return typeof metadata.client_id === "string" ? metadata.client_id : null;
+};
+
+const getMessageMergeKey = (message: ConversationMessage) => getMessageClientId(message) || message.id;
+
 const mergeMessages = (current: ConversationMessage[], incoming: ConversationMessage[]) => {
-  const byId = new Map(current.map((message) => [message.id, message]));
+  const byKey = new Map(current.map((message) => [getMessageMergeKey(message), message]));
 
   for (const message of incoming) {
-    const existing = byId.get(message.id);
-    byId.set(message.id, existing ? { ...existing, ...message } : message);
+    const key = getMessageMergeKey(message);
+    const existing = byKey.get(key);
+    byKey.set(key, existing ? { ...existing, ...message } : message);
   }
 
-  return sortMessagesAsc([...byId.values()]);
+  return sortMessagesAsc([...byKey.values()]);
 };
 
 export function useConversations(options: UseConversationsOptions = {}) {
