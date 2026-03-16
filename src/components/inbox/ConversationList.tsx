@@ -269,10 +269,10 @@ export function ConversationList({
                 key={f.id}
                 onClick={() => onStatusFilterChange(f.id)}
                 className={cn(
-                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
+                  "flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
                   statusFilter === f.id
-                    ? "bg-primary text-primary-foreground font-medium"
-                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    ? "border-border bg-card text-foreground font-medium"
+                    : "border-transparent bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                 )}
               >
                 <Icon className="h-3 w-3" />

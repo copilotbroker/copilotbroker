@@ -319,7 +319,7 @@ export function ConversationThread({
       )}
 
       {isAiActive && (
-        <div className="flex items-center justify-between border-b border-border bg-accent/60 px-3 py-2">
+        <div className="flex items-center justify-between border-b border-border bg-card px-3 py-2">
           <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
