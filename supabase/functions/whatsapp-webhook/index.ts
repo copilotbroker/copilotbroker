@@ -233,12 +233,6 @@ function getExtensionFromMimeType(mimeType?: string) {
   return mime.split("/")[1]?.split(";")[0];
 }
 
-function isEncryptedWhatsAppMediaUrl(url?: string) {
-  if (!url) return false;
-  const normalized = url.toLowerCase();
-  return normalized.includes("mmg.whatsapp.net") || normalized.includes("mms.whatsapp.net");
-}
-
 function getAuthHeadersForMedia(token?: string) {
   if (!token) return [] as HeadersInit[];
   return [
@@ -287,6 +281,12 @@ function hasValidBinarySignature(bytes: Uint8Array, mimeType?: string) {
   return bytes.length > 32;
 }
 
+function isWhatsAppHostedMediaUrl(url?: string) {
+  if (!url) return false;
+  const normalized = url.toLowerCase();
+  return normalized.includes("mmg.whatsapp.net") || normalized.includes("mms.whatsapp.net");
+}
+
 async function fetchInboundMedia(sourceUrl: string, tokens: string[]) {
   const authHeaders = [
     ...tokens.flatMap((token) => getAuthHeadersForMedia(token)),
@@ -301,12 +301,12 @@ async function fetchInboundMedia(sourceUrl: string, tokens: string[]) {
     lastStatus = response.status;
     lastContentType = response.headers.get("content-type");
     if (response.ok) {
-      return { response, lastStatus, lastContentType };
+      return { response, lastStatus, lastContentType, attemptedWithAuth: Object.keys(headers).length > 0 };
     }
     await response.arrayBuffer().catch(() => null);
   }
 
-  return { response: null, lastStatus, lastContentType };
+  return { response: null, lastStatus, lastContentType, attemptedWithAuth: false };
 }
 
 async function persistInboundMediaIfNeeded(
@@ -338,14 +338,9 @@ async function persistInboundMediaIfNeeded(
     is_inline_ready: false,
   };
 
-  if (isEncryptedWhatsAppMediaUrl(sourceUrl)) {
-    console.warn("⚠️ Skipping encrypted WhatsApp media URL for inline preview", { sourceUrl, messageType, phone: normalizedPhone });
-    return fallbackMetadata;
-  }
-
   try {
     const tokensToTry = [payload.token, UAZAPI_TOKEN].filter((value): value is string => Boolean(value?.trim()));
-    const { response: mediaResponse, lastStatus, lastContentType } = await fetchInboundMedia(sourceUrl, tokensToTry);
+    const { response: mediaResponse, lastStatus, lastContentType, attemptedWithAuth } = await fetchInboundMedia(sourceUrl, tokensToTry);
 
     if (!mediaResponse) {
       console.warn("⚠️ Could not fetch inbound media for preview", {
