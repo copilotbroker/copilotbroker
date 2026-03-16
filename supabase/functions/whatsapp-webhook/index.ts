@@ -1225,9 +1225,12 @@ async function handleIncomingMessage(
     console.log(`📱 LID fallback: chatid="${chatid}" → sender_pn="${msg.sender_pn}" → phone="${phone}"`);
   }
 
-  const mediaMetadata = extractMediaMetadata(msg, payload);
+  let mediaMetadata = extractMediaMetadata(msg, payload);
   const messageText = msg.text || mediaMetadata.caption || "";
   const resolvedMessageType = inferMessageType(messageText, typeof mediaMetadata.mime_type === "string" ? mediaMetadata.mime_type : undefined, typeof mediaMetadata.raw_type === "string" ? mediaMetadata.raw_type : undefined);
+  if (!msg.fromMe) {
+    mediaMetadata = await persistInboundMediaIfNeeded(supabase, payload, phone, resolvedMessageType, mediaMetadata);
+  }
   const direction = msg.fromMe ? "outbound" : "inbound";
   console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | text="${messageText.substring(0, 50)}"`);
 
