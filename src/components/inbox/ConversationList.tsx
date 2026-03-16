@@ -331,7 +331,7 @@ export function ConversationList({
                     <div className="flex items-start gap-3">
                       <div className={cn(
                         "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                        isUnread ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                        isUnread ? "bg-muted text-foreground" : "bg-muted/70 text-muted-foreground"
                       )}>
                         {leadName.charAt(0).toUpperCase()}
                       </div>

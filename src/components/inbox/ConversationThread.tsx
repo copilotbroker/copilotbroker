@@ -439,10 +439,10 @@ export function ConversationThread({
             accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
             onChange={(e) => setPendingFile(e.target.files?.[0] || null)}
           />
-          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion} title="Pedir sugestão ao Copiloto">
+          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion} title="Pedir sugestão ao Copiloto">
             {isGeneratingSuggestion ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" /> : <Sparkles className="h-5 w-5" />}
           </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
+          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
             <Paperclip className="h-4 w-4" />
           </Button>
           <Textarea
