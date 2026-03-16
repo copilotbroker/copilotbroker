@@ -225,9 +225,88 @@ function getExtensionFromMimeType(mimeType?: string) {
   if (mime.startsWith("image/gif")) return "gif";
   if (mime.startsWith("audio/ogg")) return "ogg";
   if (mime.startsWith("audio/mpeg")) return "mp3";
+  if (mime.startsWith("audio/mp4") || mime.startsWith("audio/m4a")) return "m4a";
+  if (mime.startsWith("audio/wav")) return "wav";
   if (mime.startsWith("video/mp4")) return "mp4";
+  if (mime.startsWith("video/quicktime")) return "mov";
   if (mime.includes("pdf")) return "pdf";
   return mime.split("/")[1]?.split(";")[0];
+}
+
+function isEncryptedWhatsAppMediaUrl(url?: string) {
+  if (!url) return false;
+  const normalized = url.toLowerCase();
+  return normalized.includes("mmg.whatsapp.net") || normalized.includes("mms.whatsapp.net");
+}
+
+function getAuthHeadersForMedia(token?: string) {
+  if (!token) return [] as HeadersInit[];
+  return [
+    { token },
+    { admintoken: token },
+    { apikey: token },
+    { "x-api-key": token },
+    { Authorization: `Bearer ${token}` },
+  ];
+}
+
+function getMimeTypeFromFileName(fileName?: string) {
+  const lower = fileName?.toLowerCase() || "";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".mp4")) return "video/mp4";
+  if (lower.endsWith(".mov")) return "video/quicktime";
+  if (lower.endsWith(".mp3")) return "audio/mpeg";
+  if (lower.endsWith(".ogg")) return "audio/ogg";
+  if (lower.endsWith(".wav")) return "audio/wav";
+  if (lower.endsWith(".m4a")) return "audio/mp4";
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  return undefined;
+}
+
+function isLikelyRenderableMimeType(mimeType?: string, messageType?: string) {
+  const mime = mimeType?.toLowerCase() || "";
+  if (!mime) return false;
+  if (messageType === "image") return mime.startsWith("image/");
+  if (messageType === "audio") return mime.startsWith("audio/");
+  if (messageType === "video") return mime.startsWith("video/");
+  if (messageType === "document") return mime.startsWith("application/") || mime.startsWith("text/");
+  return /^(image|audio|video|application|text)\//.test(mime);
+}
+
+function hasValidBinarySignature(bytes: Uint8Array, mimeType?: string) {
+  const mime = mimeType?.toLowerCase() || "";
+  if (!bytes.length) return false;
+  if (mime.startsWith("image/jpeg")) return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (mime.startsWith("image/png")) return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  if (mime.startsWith("image/gif")) return bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46;
+  if (mime.startsWith("image/webp")) return bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
+  if (mime.startsWith("application/pdf")) return bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
+  return bytes.length > 32;
+}
+
+async function fetchInboundMedia(sourceUrl: string, tokens: string[]) {
+  const authHeaders = [
+    ...tokens.flatMap((token) => getAuthHeadersForMedia(token)),
+    {},
+  ];
+
+  let lastStatus: number | null = null;
+  let lastContentType: string | null = null;
+
+  for (const headers of authHeaders) {
+    const response = await fetch(sourceUrl, { headers });
+    lastStatus = response.status;
+    lastContentType = response.headers.get("content-type");
+    if (response.ok) {
+      return { response, lastStatus, lastContentType };
+    }
+    await response.arrayBuffer().catch(() => null);
+  }
+
+  return { response: null, lastStatus, lastContentType };
 }
 
 async function persistInboundMediaIfNeeded(
@@ -240,51 +319,64 @@ async function persistInboundMediaIfNeeded(
   const sourceUrl = typeof metadata.file_url === "string" ? metadata.file_url : "";
   if (!sourceUrl || messageType === "text") return metadata;
 
-  const alreadyHosted = sourceUrl.includes("/storage/v1/object/public/project-media/");
   const normalizedPhone = getCanonicalPhoneNormalized(phone);
   const existingStoragePath = typeof metadata.storage_path === "string" ? metadata.storage_path : null;
+  const alreadyHosted = sourceUrl.includes("/storage/v1/object/public/project-media/");
   if (alreadyHosted) {
     return {
       ...metadata,
       storage_path: existingStoragePath,
       phone_normalized: normalizedPhone,
+      is_inline_ready: true,
     };
   }
 
+  const fallbackMetadata = {
+    ...metadata,
+    source_file_url: sourceUrl,
+    phone_normalized: normalizedPhone,
+    is_inline_ready: false,
+  };
+
+  if (isEncryptedWhatsAppMediaUrl(sourceUrl)) {
+    console.warn("⚠️ Skipping encrypted WhatsApp media URL for inline preview", { sourceUrl, messageType, phone: normalizedPhone });
+    return fallbackMetadata;
+  }
+
   try {
-    const authHeaders: HeadersInit[] = [];
-    if (payload.token) {
-      authHeaders.push({ token: payload.token });
-      authHeaders.push({ Authorization: `Bearer ${payload.token}` });
-    }
-    if (UAZAPI_TOKEN) {
-      authHeaders.push({ token: UAZAPI_TOKEN });
-      authHeaders.push({ Authorization: `Bearer ${UAZAPI_TOKEN}` });
-    }
-    authHeaders.push({});
+    const tokensToTry = [payload.token, UAZAPI_TOKEN].filter((value): value is string => Boolean(value?.trim()));
+    const { response: mediaResponse, lastStatus, lastContentType } = await fetchInboundMedia(sourceUrl, tokensToTry);
 
-    let mediaResponse: Response | null = null;
-    for (const headers of authHeaders) {
-      const response = await fetch(sourceUrl, { headers });
-      if (response.ok) {
-        mediaResponse = response;
-        break;
-      }
-    }
-
-    if (!mediaResponse?.ok) {
-      console.warn("⚠️ Could not fetch inbound media for preview", { sourceUrl, messageType, phone: normalizedPhone });
-      return {
-        ...metadata,
-        source_file_url: sourceUrl,
-        phone_normalized: normalizedPhone,
-      };
+    if (!mediaResponse) {
+      console.warn("⚠️ Could not fetch inbound media for preview", {
+        sourceUrl,
+        messageType,
+        phone: normalizedPhone,
+        lastStatus,
+        lastContentType,
+      });
+      return fallbackMetadata;
     }
 
     const arrayBuffer = await mediaResponse.arrayBuffer();
-    const mimeType = typeof metadata.mime_type === "string" && metadata.mime_type
-      ? metadata.mime_type
-      : mediaResponse.headers.get("content-type") || undefined;
+    const bytes = new Uint8Array(arrayBuffer);
+    const responseMimeType = mediaResponse.headers.get("content-type") || undefined;
+    const mimeType = responseMimeType || (typeof metadata.mime_type === "string" ? metadata.mime_type : undefined) || getMimeTypeFromFileName(typeof metadata.file_name === "string" ? metadata.file_name : undefined);
+
+    if (!isLikelyRenderableMimeType(mimeType, messageType) || !hasValidBinarySignature(bytes, mimeType)) {
+      console.warn("⚠️ Inbound media rejected before upload", {
+        sourceUrl,
+        messageType,
+        mimeType,
+        size: arrayBuffer.byteLength,
+      });
+      return {
+        ...fallbackMetadata,
+        mime_type: mimeType || metadata.mime_type,
+        size_bytes: Number(metadata.size_bytes) || arrayBuffer.byteLength,
+      };
+    }
+
     const extension = getExtensionFromMimeType(mimeType);
     const fileName = sanitizeFileName(
       typeof metadata.file_name === "string" ? metadata.file_name : undefined,
@@ -302,9 +394,9 @@ async function persistInboundMediaIfNeeded(
     if (uploadError) {
       console.warn("⚠️ Could not upload inbound media to bucket", uploadError);
       return {
-        ...metadata,
-        source_file_url: sourceUrl,
-        phone_normalized: normalizedPhone,
+        ...fallbackMetadata,
+        mime_type: mimeType || metadata.mime_type,
+        size_bytes: Number(metadata.size_bytes) || arrayBuffer.byteLength,
       };
     }
 
@@ -323,11 +415,7 @@ async function persistInboundMediaIfNeeded(
     };
   } catch (error) {
     console.warn("⚠️ Error while persisting inbound media", error);
-    return {
-      ...metadata,
-      source_file_url: sourceUrl,
-      phone_normalized: normalizedPhone,
-    };
+    return fallbackMetadata;
   }
 }
 

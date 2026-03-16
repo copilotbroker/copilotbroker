@@ -184,20 +184,24 @@ export function MessageMedia({ msg }: MessageMediaProps) {
         {icon}
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{fileName}</p>
-          <p className="text-xs text-muted-foreground">{mimeType || "Abrir arquivo"}</p>
+          <p className="text-xs text-muted-foreground">
+            {inlineReady ? (mimeType || "Abrir arquivo") : "Mídia recebida sem preview disponível"}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button asChild size="sm" variant="outline">
-            <a href={resolvedUrl} target="_blank" rel="noreferrer">
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          </Button>
-          <Button asChild size="sm">
-            <a href={resolvedUrl} download={fileName}>
-              <Download className="h-4 w-4" />
-            </a>
-          </Button>
-        </div>
+        {resolvedUrl ? (
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="outline">
+              <a href={resolvedUrl} target="_blank" rel="noreferrer">
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </Button>
+            <Button asChild size="sm">
+              <a href={resolvedUrl} download={fileName}>
+                <Download className="h-4 w-4" />
+              </a>
+            </Button>
+          </div>
+        ) : null}
       </div>
       {caption ? <p className="whitespace-pre-wrap break-words">{caption}</p> : null}
     </div>
