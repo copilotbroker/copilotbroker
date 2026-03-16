@@ -531,7 +531,7 @@ export function useConversationMessages(
 
     const createdAt = new Date().toISOString();
     const clientId = `client-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    const optimisticMetadata = {
+    const optimisticMetadata: Record<string, unknown> = {
       ...(normalizedPayload.metadata || {}),
       client_id: clientId,
     };
