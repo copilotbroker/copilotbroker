@@ -66,7 +66,6 @@ const initialFilters: LeadFilters = {
 const Admin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<LeadFilters>(initialFilters);
-  const [activeTab, setActiveTab] = useState<"crm" | "leads" | "brokers" | "roletas" | "projects" | "analytics">("crm");
   const [currentPage, setCurrentPage] = useState(0);
   
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
