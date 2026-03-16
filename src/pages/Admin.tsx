@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ import { CsvImportModal } from "@/components/admin/CsvImportModal";
 import RoletaManagement from "@/components/admin/RoletaManagement";
 import { KanbanBoard } from "@/components/crm";
 import { LeadStatus } from "@/types/crm";
+import { getAdminTabFromPath, type AdminRouteTabId } from "@/components/admin/adminNavigation";
 
 interface Lead {
   id: string;
@@ -65,14 +66,15 @@ const initialFilters: LeadFilters = {
 const Admin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<LeadFilters>(initialFilters);
-  const [activeTab, setActiveTab] = useState<"crm" | "leads" | "brokers" | "roletas" | "projects" | "analytics">("crm");
   const [currentPage, setCurrentPage] = useState(0);
   
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { role, isLoading: isRoleLoading } = useUserRole();
   const queryClient = useQueryClient();
+  const activeTab = getAdminTabFromPath(location.pathname) as Exclude<AdminRouteTabId, "inbox" | "copilot">;
 
   // CRM search term (separate from leads table search)
   const [crmSearchTerm, setCrmSearchTerm] = useState("");
@@ -438,7 +440,6 @@ const Admin = () => {
       </Helmet>
       <AdminLayout
         activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab as typeof activeTab)}
         onLogout={handleLogout}
         searchTerm={currentSearchTerm}
         onSearchChange={handleSearchChange}

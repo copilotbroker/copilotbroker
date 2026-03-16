@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { 
-  LayoutDashboard, Users, Brain, Plus, Bell, LogOut, 
-  MoreHorizontal, Building2, Shuffle, Settings, MessageCircle, Bot
+import {
+  LayoutDashboard, Users, Plus, Bell, LogOut,
+  MoreHorizontal, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -16,29 +16,27 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { SettingsPanel } from "./SettingsPanel";
+import { ADMIN_ROUTE_TABS, type AdminRouteTabId, getAdminPathByTab } from "./adminNavigation";
 
 interface MobileBottomNavProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab: AdminRouteTabId;
   onAddLead?: () => void;
   onNotificationsClick?: () => void;
 }
 
-const DRAWER_ITEMS_STATIC = [
-  { id: "inbox", label: "Inbox", icon: MessageCircle },
-  { id: "brokers", label: "Corretores", icon: Users },
-  { id: "roletas", label: "Roletas", icon: Shuffle },
-  { id: "projects", label: "Empreendimentos", icon: Building2 },
-  { id: "copilot", label: "Copiloto", icon: Bot },
-  { id: "analytics", label: "Inteligência", icon: Brain },
-  { id: "settings", label: "Configurações", icon: Settings },
-];
+interface BottomNavItem {
+  id: "notifications" | "crm" | "add" | "leads" | "more";
+  icon: typeof LayoutDashboard;
+  badge?: number;
+  isFab?: boolean;
+}
 
-export function MobileBottomNav({ 
-  activeTab, 
-  onTabChange, 
+const DRAWER_ITEMS_STATIC = ADMIN_ROUTE_TABS.filter((item) => !["crm", "leads"].includes(item.id));
+
+export function MobileBottomNav({
+  activeTab,
   onAddLead,
-  onNotificationsClick 
+  onNotificationsClick
 }: MobileBottomNavProps) {
   const { unreadCount } = useNotifications();
   const { unreadCount: inboxUnread } = useInboxUnread();
@@ -46,11 +44,11 @@ export function MobileBottomNav({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const DRAWER_ITEMS = DRAWER_ITEMS_STATIC.map(item =>
+  const drawerItems = DRAWER_ITEMS_STATIC.map(item =>
     item.id === "inbox" ? { ...item, badge: inboxUnread } : item
   );
 
-  const navItems = [
+  const navItems: BottomNavItem[] = [
     { id: "notifications", icon: Bell, badge: unreadCount },
     { id: "crm", icon: LayoutDashboard },
     { id: "add", icon: Plus, isFab: true },
@@ -72,21 +70,17 @@ export function MobileBottomNav({
     } else if (id === "more") {
       setIsMoreOpen(true);
     } else {
-      onTabChange(id);
+      navigate(getAdminPathByTab(id as AdminRouteTabId));
     }
   };
 
   const handleDrawerItemClick = (id: string) => {
     setIsMoreOpen(false);
-    if (id === "inbox") {
-      navigate("/admin/inbox");
-    } else if (id === "copilot") {
-      navigate("/admin/copiloto");
-    } else if (id === "settings") {
+    if (id === "settings") {
       setIsSettingsOpen(true);
-    } else {
-      onTabChange(id);
+      return;
     }
+    navigate(getAdminPathByTab(id as AdminRouteTabId));
   };
 
   return (
@@ -96,7 +90,7 @@ export function MobileBottomNav({
         <div className="relative flex items-center justify-around px-2 py-2 pb-safe">
           {navItems.map((item) => {
             const Icon = item.icon;
-            
+
             if (item.isFab) {
               return (
                 <button
@@ -114,9 +108,9 @@ export function MobileBottomNav({
                 </button>
               );
             }
-            
+
             const isActive = activeTab === item.id;
-          
+
             return (
               <button
                 key={item.id}
@@ -124,8 +118,8 @@ export function MobileBottomNav({
                 className={cn(
                   "flex items-center justify-center p-3 min-w-[48px]",
                   "transition-colors duration-200 relative",
-                  isActive 
-                    ? "text-[#FFFF00]" 
+                  isActive
+                    ? "text-[#FFFF00]"
                     : "text-slate-500 active:text-slate-300"
                 )}
               >
@@ -146,14 +140,13 @@ export function MobileBottomNav({
         </div>
       </nav>
 
-      {/* Drawer "Mais" */}
       <Drawer open={isMoreOpen} onOpenChange={setIsMoreOpen}>
         <DrawerContent className="bg-[#141417] border-[#2a2a2e]">
           <DrawerHeader className="pb-2">
             <DrawerTitle className="text-white text-lg">Menu</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6 flex flex-col gap-1">
-            {DRAWER_ITEMS.map((item) => {
+            {drawerItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
@@ -171,16 +164,24 @@ export function MobileBottomNav({
                 >
                   <div className="relative">
                     <Icon className="w-5 h-5" />
-                    {(item as any).badge > 0 && (
+                    {(item as { badge?: number }).badge ? (
                       <span className="absolute -top-2 -right-2 min-w-[16px] h-[16px] rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center px-0.5">
-                        {(item as any).badge > 99 ? "99+" : (item as any).badge}
+                        {(item as { badge?: number }).badge! > 99 ? "99+" : (item as { badge?: number }).badge}
                       </span>
-                    )}
+                    ) : null}
                   </div>
                   <span className="text-sm font-medium">{item.label}</span>
                 </button>
               );
             })}
+
+            <button
+              onClick={() => { setIsMoreOpen(false); setIsSettingsOpen(true); }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground active:bg-card transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="text-sm font-medium">Configurações</span>
+            </button>
 
             <div className="border-t border-[#2a2a2e] my-2" />
 
@@ -195,7 +196,6 @@ export function MobileBottomNav({
         </DrawerContent>
       </Drawer>
 
-      {/* Settings Panel */}
       <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </>
   );

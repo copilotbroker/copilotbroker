@@ -1,82 +1,60 @@
 
-Objetivo
-- Resolver definitivamente o bug da sidebar no admin para que cada área principal tenha navegação previsível, URL própria e destaque correto, sem “cair no kanban” ao sair de páginas como Copiloto.
 
-Diagnóstico
-- Hoje o admin mistura dois modelos:
-  - áreas internas da rota `/admin` controladas por `activeTab` em estado local (`crm`, `leads`, `brokers`, `roletas`, `projects`, `analytics`)
-  - páginas separadas com rota própria (`/admin/copiloto`, `/admin/inbox`)
-- A sidebar e o menu mobile chamam `onTabChange`, mas em páginas separadas como `AdminCopilotConfig` esse callback apenas faz `navigate("/admin")`, ignorando qual item foi clicado.
-- Resultado: ao clicar em “Inteligência” dentro de Copiloto, a navegação volta para `/admin` sem contexto e abre o tab padrão (`crm`/kanban).
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-Solução definitiva
-1. Tornar a navegação do admin orientada por URL
-- Substituir o `activeTab` local do `Admin.tsx` por um estado derivado da URL.
-- Adotar rotas explícitas para os módulos principais, por exemplo:
-  - `/admin/crm`
-  - `/admin/leads`
-  - `/admin/corretores`
-  - `/admin/roletas`
-  - `/admin/empreendimentos`
-  - `/admin/inteligencia`
-  - manter `/admin/inbox`
-  - manter `/admin/copiloto`
+### Problema 1: Nomes dos leads não aparecem
 
-2. Centralizar o mapa de navegação do admin
-- Criar uma única fonte de verdade para relacionar:
-  - `id` do item
-  - rota
-  - label
-  - regra de ativo
-- Fazer `AdminSidebar`, `MobileBottomNav` e `AdminHeader` consumirem esse mapa, em vez de dependerem de `onTabChange` com lógica espalhada.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-3. Atualizar o shell do admin para navegação real
-- No `AdminLayout`, trocar o contrato de “troca de tab” por navegação por rota.
-- O item clicado deve sempre navegar para sua rota correspondente, independentemente da página atual.
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-4. Refatorar `Admin.tsx`
-- Fazer `Admin.tsx` responder a uma rota/módulo atual em vez de guardar o módulo em `useState`.
-- Renderizar cada seção com base no segmento atual da rota.
-- Preservar filtros e busca apenas onde fizer sentido; opcionalmente mover alguns estados para query string depois.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-5. Ajustar páginas especiais
-- `AdminCopilotConfig` e `AdminInbox` devem usar o mesmo mecanismo de navegação do restante do admin.
-- Assim, clicar em “Inteligência” dentro de Copiloto levará diretamente para `/admin/inteligencia`, e não para o padrão do CRM.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-6. Compatibilidade e estabilidade
-- Manter `/admin` redirecionando para uma rota padrão explícita, como `/admin/crm`.
-- Garantir que o item ativo da sidebar seja calculado pela rota atual.
-- Revisar breadcrumbs/títulos para refletirem a rota, não estado interno.
+### Problema 2: Marcar como lida quando lida no celular
 
-Arquivos principais a alterar
-- `src/App.tsx`
-- `src/pages/Admin.tsx`
-- `src/pages/AdminCopilotConfig.tsx`
-- `src/pages/AdminInbox.tsx`
-- `src/components/admin/AdminLayout.tsx`
-- `src/components/admin/AdminSidebar.tsx`
-- `src/components/admin/MobileBottomNav.tsx`
-- `src/components/admin/AdminHeader.tsx`
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-Resultado esperado
-- Cada módulo do admin passa a ter URL própria.
-- Sidebar e menu mobile funcionam corretamente a partir de qualquer página.
-- O item ativo sempre corresponde à tela atual.
-- Navegar de Copiloto para Inteligência, Corretores, Roletas etc. deixa de abrir o kanban por engano.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
 
-Detalhe técnico
-- O problema não é só visual: é de arquitetura de navegação.
-- A correção definitiva é eliminar a dependência de `activeTab` local como fonte principal de navegação no admin e usar a rota como verdade única.
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
-Critérios de aceite
-- Em `/admin/copiloto`, clicar em “Inteligência” abre a tela de inteligência diretamente.
-- Em `/admin/copiloto`, clicar em “Corretores”, “Roletas” ou “Empreendimentos” abre o módulo correto.
-- Em qualquer tela admin, a sidebar destaca corretamente o item ativo.
-- `/admin` redireciona consistentemente para a área padrão sem comportamento ambíguo.
+### Arquivos a editar
 
-<lov-actions>
-<lov-suggestion message="Test the admin navigation end-to-end by clicking every sidebar and mobile menu item from Copiloto, Inbox, and CRM to confirm each one opens the correct route.">Verify that it works</lov-suggestion>
-<lov-suggestion message="Implement the definitive admin navigation fix by giving each admin module its own route and making the sidebar route-driven instead of state-driven.">Fix admin sidebar routing</lov-suggestion>
-<lov-suggestion message="Add URL query persistence for filters and search in the admin modules so refreshing the page preserves the current view state.">Persist admin filters in URL</lov-suggestion>
-<lov-suggestion message="Refactor the broker area to use the same route-driven navigation architecture as the admin area for consistency and fewer navigation bugs.">Align broker navigation</lov-suggestion>
-</lov-actions>
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

@@ -4,11 +4,11 @@ import { AdminHeader } from "./AdminHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { NotificationPanel } from "./NotificationPanel";
+import { type AdminRouteTabId } from "./adminNavigation";
 
 interface AdminLayoutProps {
   children: ReactNode;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab: AdminRouteTabId;
   onLogout: () => void;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
@@ -19,7 +19,6 @@ interface AdminLayoutProps {
 export function AdminLayout({
   children,
   activeTab,
-  onTabChange,
   onLogout,
   searchTerm,
   onSearchChange,
@@ -30,23 +29,18 @@ export function AdminLayout({
 
   return (
     <div className="min-h-screen bg-[#0f0f12] admin-scrollbar">
-      {/* Sidebar - fixed left, hidden on mobile */}
       <AdminSidebar
         activeTab={activeTab}
-        onTabChange={onTabChange}
         onLogout={onLogout}
         onAddLead={onAddLead}
       />
 
-      {/* Mobile Bottom Navigation */}
       <MobileBottomNav
         activeTab={activeTab}
-        onTabChange={onTabChange}
         onAddLead={onAddLead}
         onNotificationsClick={() => setIsNotificationsOpen(true)}
       />
 
-      {/* Mobile Notifications Sheet */}
       <Sheet open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>
         <SheetContent side="left" className="w-full sm:max-w-md bg-[#0f0f12] border-[#2a2a2e] p-0">
           <SheetHeader className="p-4 border-b border-[#2a2a2e]">
@@ -58,7 +52,6 @@ export function AdminLayout({
         </SheetContent>
       </Sheet>
 
-      {/* Main content - offset by sidebar width on desktop */}
       <div className="md:ml-16 min-h-screen flex flex-col pb-20 md:pb-0">
         <AdminHeader
           activeTab={activeTab}
