@@ -318,8 +318,6 @@ export function ConversationList({
                 ? (Date.now() - new Date(conv.last_message_at).getTime()) / (1000 * 60 * 60)
                 : 0;
               const hasCadenciaAtiva = conv.lead_id ? cadenciaLeadIds.has(conv.lead_id) : false;
-              const hasResolvedName = !!conv.display_name && conv.display_name !== conv.phone;
-              const isDirectWhatsapp = !conv.lead_id && conv.display_name_source !== "lead";
               const preview = getLastPreview(conv);
 
               return (
@@ -345,22 +343,22 @@ export function ConversationList({
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
                           <span className={cn(
-                            "min-w-0 flex-1 truncate text-sm",
+                            "min-w-0 flex-1 truncate text-sm leading-none",
                             isUnread ? "font-bold text-foreground" : "font-medium text-foreground"
                           )}>
                             {leadName}
                           </span>
-                          <span className="flex-shrink-0 whitespace-nowrap text-[10px] text-muted-foreground">
-                            {conv.last_message_at
-                              ? format(new Date(conv.last_message_at), "HH:mm", { locale: ptBR })
-                              : ""}
-                          </span>
+                          {conv.last_message_at && (
+                            <span className="w-11 flex-shrink-0 text-right text-[10px] leading-none text-muted-foreground">
+                              {format(new Date(conv.last_message_at), "HH:mm", { locale: ptBR })}
+                            </span>
+                          )}
                         </div>
 
                         <p className={cn(
-                          "mt-1 truncate text-xs",
+                          "mt-1.5 truncate pr-1 text-xs",
                           isUnread ? "text-foreground/80" : "text-muted-foreground"
                         )}>
                           {conv.last_message_direction === "outbound" && "Você: "}
@@ -377,15 +375,11 @@ export function ConversationList({
                             <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
                               <LayoutGrid className="mr-1 h-3 w-3" /> Lead vinculado
                             </Badge>
-                          ) : isDirectWhatsapp ? (
+                          ) : (
                             <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
-                              <MessageCircleMore className="mr-1 h-3 w-3" /> WhatsApp direto
+                              <LayoutGrid className="mr-1 h-3 w-3" /> Sem card no Kanban
                             </Badge>
-                          ) : hasResolvedName ? (
-                            <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
-                              <MessageCircleMore className="mr-1 h-3 w-3" /> Nome identificado
-                            </Badge>
-                          ) : null}
+                          )}
                           {conv.last_message_type && conv.last_message_type !== "text" && (
                             <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
                               Mídia
