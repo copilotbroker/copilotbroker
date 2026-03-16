@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import {
   Search, Inbox, MessageSquare, AlertTriangle, Clock, Flame,
   ArrowUpDown, ThermometerSun, Target, Check, Zap,
-  ChevronDown, LayoutGrid, Archive, Image as ImageIcon, Play
+  ChevronDown, LayoutGrid, Archive, Image as ImageIcon, Play,
+  MoreVertical, Eye, EyeOff
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
