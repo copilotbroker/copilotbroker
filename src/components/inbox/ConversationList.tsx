@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Conversation } from "@/hooks/use-conversations";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -167,6 +167,14 @@ export function ConversationList({
   const sortedConversations = useMemo(() => {
     const sorted = [...kpiFilteredConversations];
     switch (sortMode) {
+      case "recent": {
+        sorted.sort((a, b) => {
+          const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+          const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+          return bTime - aTime;
+        });
+        break;
+      }
       case "unread":
         sorted.sort((a, b) => (b.unread_count || 0) - (a.unread_count || 0));
         break;
@@ -337,19 +345,16 @@ export function ConversationList({
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <span className={cn(
-                              "block truncate text-sm",
-                              isUnread ? "font-bold text-foreground" : "font-medium text-foreground"
-                            )}>
-                              {leadName}
-                            </span>
-                            <span className="block truncate text-[10px] text-muted-foreground">{conv.phone}</span>
-                          </div>
-                          <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className={cn(
+                            "min-w-0 flex-1 truncate text-sm",
+                            isUnread ? "font-bold text-foreground" : "font-medium text-foreground"
+                          )}>
+                            {leadName}
+                          </span>
+                          <span className="flex-shrink-0 whitespace-nowrap text-[10px] text-muted-foreground">
                             {conv.last_message_at
-                              ? formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ptBR })
+                              ? format(new Date(conv.last_message_at), "HH:mm", { locale: ptBR })
                               : ""}
                           </span>
                         </div>
