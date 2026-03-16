@@ -1099,19 +1099,12 @@ async function handleIncomingMessage(
 
     if (inst) {
       const brokerId = (inst as { broker_id: string }).broker_id;
-      const phoneNorm = phone.replace(/\D/g, "");
-      
-      // Find the conversation
-      const { data: convForAuto } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("broker_id", brokerId)
-        .eq("phone_normalized", phoneNorm)
-        .maybeSingle();
+      const canonicalPhone = getCanonicalPhone(phone);
+      const phoneNorm = getCanonicalPhoneNormalized(phone);
+      const convForAuto = await getOrCreateCanonicalConversation(supabase, brokerId, phone);
 
       if (convForAuto) {
-        // Don't await — let it run in the background so webhook responds fast
-        handleAutoResponse(supabase, brokerId, phone, phoneNorm, convForAuto.id, msg.pushName)
+        handleAutoResponse(supabase, brokerId, canonicalPhone, phoneNorm, convForAuto.id, msg.pushName)
           .catch(err => console.error("Auto-response background error:", err));
       }
     }

@@ -578,15 +578,19 @@ app.post("/process", async (c) => {
 
         // Sync to conversation_messages (Inbox)
         try {
-          const phoneNorm = "+" + formatPhoneForUAZAPI(queueMsg.phone);
+          const canonicalPhone = getCanonicalPhone(queueMsg.phone);
+          const canonicalNormalized = getCanonicalPhoneNormalized(queueMsg.phone);
+          const phoneVariants = getPhoneVariants(queueMsg.phone);
 
-          // Find or create conversation
-          let { data: conv } = await supabase
+          const { data: existingConversations } = await supabase
             .from("conversations")
-            .select("id")
+            .select("id, lead_id, ai_mode, created_at")
             .eq("broker_id", instance.broker_id)
-            .eq("phone_normalized", phoneNorm)
-            .maybeSingle();
+            .in("phone_normalized", phoneVariants.map((value) => value.replace(/\D/g, "")))
+            .order("created_at", { ascending: true });
+
+          let conv = existingConversations?.[0] || null;
+          const duplicateIds = existingConversations?.slice(1).map((item) => item.id) || [];
 
           if (!conv) {
             const { data: newConv } = await supabase
@@ -594,14 +598,26 @@ app.post("/process", async (c) => {
               .insert({
                 broker_id: instance.broker_id,
                 lead_id: queueMsg.lead_id,
-                phone: queueMsg.phone,
-                phone_normalized: phoneNorm,
+                phone: canonicalPhone,
+                phone_normalized: canonicalNormalized,
                 status: "active",
-                ai_mode: "ai_active",
+                ai_mode: "copilot",
               })
-              .select("id")
+              .select("id, lead_id, ai_mode, created_at")
               .single();
             conv = newConv;
+          } else {
+            await supabase.from("conversations").update({
+              phone: canonicalPhone,
+              phone_normalized: canonicalNormalized,
+              lead_id: conv.lead_id || queueMsg.lead_id || null,
+              updated_at: new Date().toISOString(),
+            }).eq("id", conv.id);
+          }
+
+          if (conv && duplicateIds.length > 0) {
+            await supabase.from("conversation_messages").update({ conversation_id: conv.id }).in("conversation_id", duplicateIds);
+            await supabase.from("conversations").delete().in("id", duplicateIds);
           }
 
           if (conv) {

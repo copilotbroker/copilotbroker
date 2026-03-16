@@ -74,11 +74,37 @@ export function useConversations(options: UseConversationsOptions = {}) {
 
       let filtered = (data || []) as unknown as Conversation[];
 
+      // Merge duplicated conversations client-side by broker + canonical phone to hide legacy residues
+      const conversationsByPhone = new Map<string, Conversation>();
+      for (const conversation of filtered) {
+        const canonicalPhone = conversation.phone_normalized.replace(/\D/g, "").slice(-13);
+        const current = conversationsByPhone.get(canonicalPhone);
+
+        if (!current) {
+          conversationsByPhone.set(canonicalPhone, conversation);
+          continue;
+        }
+
+        const currentTime = current.last_message_at ? new Date(current.last_message_at).getTime() : 0;
+        const nextTime = conversation.last_message_at ? new Date(conversation.last_message_at).getTime() : 0;
+        const primary = nextTime > currentTime ? conversation : current;
+        const secondary = primary.id === current.id ? conversation : current;
+
+        conversationsByPhone.set(canonicalPhone, {
+          ...primary,
+          lead_id: primary.lead_id || secondary.lead_id,
+          lead: primary.lead || secondary.lead || null,
+          unread_count: Math.max(primary.unread_count || 0, secondary.unread_count || 0),
+          ai_mode: primary.ai_mode === "ai_active" || secondary.ai_mode === "ai_active" ? "ai_active" : primary.ai_mode,
+        });
+      }
+
+      filtered = [...conversationsByPhone.values()];
+
       // Enrich conversations without lead_id: try to find lead name by phone
       const noLeadConvs = filtered.filter(c => !c.lead_id && c.phone_normalized);
       if (noLeadConvs.length > 0) {
         const phones = noLeadConvs.map(c => c.phone_normalized);
-        // Also try with +55 prefix variants
         const phoneVariants = phones.flatMap(p => {
           const cleaned = p.replace(/\D/g, "");
           return [cleaned, `+${cleaned}`, `+55${cleaned}`, cleaned.startsWith("55") ? cleaned.substring(2) : cleaned];
@@ -91,7 +117,6 @@ export function useConversations(options: UseConversationsOptions = {}) {
           .in("whatsapp", uniqueVariants.slice(0, 100));
 
         if (matchedLeads && matchedLeads.length > 0) {
-          // Build phone->lead map (normalize whatsapp for matching)
           const phoneToLead = new Map<string, typeof matchedLeads[0]>();
           for (const lead of matchedLeads) {
             const normalized = (lead.whatsapp || "").replace(/\D/g, "");
@@ -100,11 +125,9 @@ export function useConversations(options: UseConversationsOptions = {}) {
             }
           }
 
-          // Enrich conversations
           filtered = filtered.map(c => {
             if (c.lead_id || c.lead) return c;
             const normalized = c.phone_normalized.replace(/\D/g, "");
-            // Try full match, then last 11 digits
             const match = phoneToLead.get(normalized) ||
               [...phoneToLead.entries()].find(([k]) =>
                 k.endsWith(normalized.slice(-11)) || normalized.endsWith(k.slice(-11))
