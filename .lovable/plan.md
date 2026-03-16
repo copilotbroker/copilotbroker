@@ -1,56 +1,60 @@
 
-Objetivo
-- Fazer o envio da mensagem parecer imediato, sem a sensação de travamento da tela ao clicar em “Enviar”.
 
-Diagnóstico
-- Hoje o composer fica preso ao tempo total do envio porque `ConversationThread` espera terminar:
-  1. upload do anexo, se houver
-  2. chamada da função `inbox-send-message`
-  3. resposta da API externa de WhatsApp
-  4. gravação da mensagem no backend
-- No hook `sendMessage`, a UI só recebe retorno depois que toda essa cadeia termina.
-- Isso cria latência percebida, mesmo quando o envio funciona corretamente.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-O que vou ajustar
-1. UI otimista no chat
-- Inserir a mensagem imediatamente na thread ao clicar em enviar, com status visual de “enviando”.
-- Limpar o campo de texto na hora, antes de esperar o backend.
-- Manter o foco no input para a interface continuar responsiva.
+### Problema 1: Nomes dos leads não aparecem
 
-2. Envio assíncrono sem bloquear a experiência
-- Fazer `sendMessage` retornar um item otimista instantaneamente e disparar o envio real em segundo plano.
-- Quando o backend responder:
-  - atualizar a mensagem otimista para `sent`
-  - ou marcar erro/falha se o envio não concluir
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-3. Sincronização segura com realtime/polling
-- Reaproveitar o merge por `id` já existente no hook, mas adicionar deduplicação também para mensagens otimistas temporárias.
-- Quando a mensagem real chegar via realtime/polling, substituir a temporária sem duplicar no chat.
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-4. Lista do Inbox mais responsiva
-- Atualizar imediatamente preview/horário da conversa ao enviar, sem esperar o backend.
-- Depois reconciliar com os dados oficiais que chegam da base.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-Arquivos a ajustar
-- `src/hooks/use-conversations.ts`
-- `src/components/inbox/ConversationThread.tsx`
-- possivelmente `src/pages/BrokerInbox.tsx` para refletir preview/estado otimista na conversa selecionada
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-Abordagem técnica
-- Adicionar um objeto de mensagem temporária com `id` local e `status: "pending"`.
-- Inserir essa mensagem no estado antes do `supabase.functions.invoke(...)`.
-- Rodar a chamada real em background e fazer patch no item temporário quando voltar sucesso/erro.
-- Para anexos, manter upload prévio quando necessário, mas sem segurar a limpeza do campo e o render da bolha.
-- Evitar toast de erro genérico quando a mensagem já estiver visível; em vez disso, mostrar falha no próprio item.
+### Problema 2: Marcar como lida quando lida no celular
 
-Resultado esperado
-- Ao clicar em enviar, a mensagem aparece instantaneamente na conversa.
-- O input responde sem “congelar”.
-- O envio real continua acontecendo em segundo plano.
-- Se houver atraso da API externa, o usuário vê “enviando” em vez de sentir a página travada.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-Validação
-- Testar envio de texto e confirmar que a bolha aparece imediatamente.
-- Testar nova mensagem em conversa longa para garantir que não duplica.
-- Testar falha de envio e confirmar que o item mostra erro de forma clara.
-- Verificar que lista do Inbox também atualiza preview/horário sem atraso perceptível.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
+
+### Arquivos a editar
+
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

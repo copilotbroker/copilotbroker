@@ -49,11 +49,41 @@ export default function BrokerInbox() {
   }, [navigate]);
 
   const isArchived = statusFilter === "archived";
-  const { conversations, isLoading, totalUnread, markAsRead, archiveConversation, unarchiveConversation, updateAiMode } =
-    useConversations({ brokerId: brokerId || undefined, search, statusFilter: isArchived ? "all" : statusFilter, isArchived });
+  const {
+    conversations,
+    isLoading,
+    totalUnread,
+    markAsRead,
+    archiveConversation,
+    unarchiveConversation,
+    updateAiMode,
+    updateConversationState,
+  } = useConversations({ brokerId: brokerId || undefined, search, statusFilter: isArchived ? "all" : statusFilter, isArchived });
 
   const { messages, isLoading: messagesLoading, sendMessage } =
-    useConversationMessages(selectedConversation?.id || null);
+    useConversationMessages(selectedConversation?.id || null, (update) => {
+      if (!selectedConversation) return;
+
+      updateConversationState(selectedConversation.id, (current) => ({
+        ...current,
+        status: "attending",
+        last_message_at: update.timestamp,
+        last_message_preview: update.preview,
+        last_message_direction: "outbound",
+        last_message_type: update.messageType,
+        updated_at: update.timestamp,
+      }));
+
+      setSelectedConversation((prev) => prev ? {
+        ...prev,
+        status: "attending",
+        last_message_at: update.timestamp,
+        last_message_preview: update.preview,
+        last_message_direction: "outbound",
+        last_message_type: update.messageType,
+        updated_at: update.timestamp,
+      } : prev);
+    });
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
 
