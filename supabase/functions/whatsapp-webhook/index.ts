@@ -202,6 +202,14 @@ function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payl
     || (typeof content.jpegThumbnail === "string" ? content.jpegThumbnail : undefined)
     || (typeof data.JPEGThumbnail === "string" ? data.JPEGThumbnail : undefined)
     || (typeof data.jpegThumbnail === "string" ? data.jpegThumbnail : undefined);
+  const mediaKey = (typeof content.mediaKey === "string" ? content.mediaKey : undefined)
+    || (typeof data.mediaKey === "string" ? data.mediaKey : undefined);
+  const directPath = (typeof content.directPath === "string" ? content.directPath : undefined)
+    || (typeof data.directPath === "string" ? data.directPath : undefined);
+  const fileSha256 = (typeof content.fileSHA256 === "string" ? content.fileSHA256 : undefined)
+    || (typeof data.fileSHA256 === "string" ? data.fileSHA256 : undefined);
+  const fileEncSha256 = (typeof content.fileEncSHA256 === "string" ? content.fileEncSHA256 : undefined)
+    || (typeof data.fileEncSHA256 === "string" ? data.fileEncSHA256 : undefined);
 
   return {
     file_url: fileUrl,
@@ -213,6 +221,10 @@ function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payl
     size_bytes: sizeBytes,
     thumbnail_url: thumbnailUrl,
     thumbnail_base64: thumbnailBase64,
+    media_key: mediaKey,
+    direct_path: directPath,
+    file_sha256: fileSha256,
+    file_enc_sha256: fileEncSha256,
   };
 }
 
@@ -292,6 +304,53 @@ function decodeBase64ToBytes(value?: string) {
   } catch {
     return null;
   }
+}
+
+function getWhatsAppMediaHkdfInfo(messageType: string) {
+  switch (messageType) {
+    case "image":
+      return "WhatsApp Image Keys";
+    case "video":
+      return "WhatsApp Video Keys";
+    case "audio":
+      return "WhatsApp Audio Keys";
+    case "document":
+      return "WhatsApp Document Keys";
+    default:
+      return "WhatsApp Image Keys";
+  }
+}
+
+async function deriveWhatsAppMediaKeys(mediaKeyBase64: string, messageType: string) {
+  const mediaKeyBytes = decodeBase64ToBytes(mediaKeyBase64);
+  if (!mediaKeyBytes) return null;
+
+  const hkdfKey = await crypto.subtle.importKey("raw", mediaKeyBytes, "HKDF", false, ["deriveBits"]);
+  const infoBytes = new TextEncoder().encode(getWhatsAppMediaHkdfInfo(messageType));
+  const derivedBits = await crypto.subtle.deriveBits({
+    name: "HKDF",
+    hash: "SHA-256",
+    salt: new Uint8Array(32),
+    info: infoBytes,
+  }, hkdfKey, 896);
+
+  const derived = new Uint8Array(derivedBits);
+  return {
+    iv: derived.slice(0, 16),
+    cipherKey: derived.slice(16, 48),
+    macKey: derived.slice(48, 80),
+    refKey: derived.slice(80, 112),
+  };
+}
+
+async function decryptWhatsAppMedia(encBytes: Uint8Array, mediaKeyBase64: string, messageType: string) {
+  const keys = await deriveWhatsAppMediaKeys(mediaKeyBase64, messageType);
+  if (!keys || encBytes.byteLength <= 10) return null;
+
+  const cipherBytes = encBytes.slice(0, -10);
+  const cryptoKey = await crypto.subtle.importKey("raw", keys.cipherKey, { name: "AES-CBC" }, false, ["decrypt"]);
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-CBC", iv: keys.iv }, cryptoKey, cipherBytes);
+  return new Uint8Array(decrypted);
 }
 
 function isLikelyRenderableMimeType(mimeType?: string, messageType?: string) {
@@ -510,17 +569,34 @@ async function persistInboundMediaIfNeeded(
     }
 
     const arrayBuffer = await mediaResponse.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
+    const encryptedBytes = new Uint8Array(arrayBuffer);
     const responseMimeType = mediaResponse.headers.get("content-type") || undefined;
     const metadataMimeType = typeof baseMetadata.mime_type === "string" ? baseMetadata.mime_type : undefined;
     const fileNameMimeType = getMimeTypeFromFileName(typeof baseMetadata.file_name === "string" ? baseMetadata.file_name : undefined);
+
+    let bytes = encryptedBytes;
+    let decryptedFromProvider = false;
+    const mediaKey = typeof baseMetadata.media_key === "string" ? baseMetadata.media_key : undefined;
+
+    if (mediaKey && isWhatsAppHostedMediaUrl(sourceUrl)) {
+      try {
+        const decryptedBytes = await decryptWhatsAppMedia(encryptedBytes, mediaKey, messageType);
+        if (decryptedBytes && decryptedBytes.byteLength > 0) {
+          bytes = decryptedBytes;
+          decryptedFromProvider = true;
+        }
+      } catch (decryptError) {
+        console.warn("⚠️ Could not decrypt WhatsApp media", decryptError, { sourceUrl, messageType, phone: normalizedPhone });
+      }
+    }
+
     const detectedMimeType = getMimeTypeFromBytes(bytes);
-    const mimeType = [responseMimeType, metadataMimeType, fileNameMimeType, detectedMimeType]
+    const mimeType = [metadataMimeType, fileNameMimeType, detectedMimeType, responseMimeType]
       .find((value) => value && value !== "application/octet-stream")
       || detectedMimeType
-      || responseMimeType
       || metadataMimeType
-      || fileNameMimeType;
+      || fileNameMimeType
+      || responseMimeType;
     const looksRenderable = isLikelyRenderableMimeType(mimeType, messageType) && hasValidBinarySignature(bytes, mimeType);
 
     if (!looksRenderable || !mimeType) {
@@ -529,7 +605,9 @@ async function persistInboundMediaIfNeeded(
         messageType,
         mimeType,
         detectedMimeType,
-        size: arrayBuffer.byteLength,
+        size: bytes.byteLength,
+        encryptedSize: encryptedBytes.byteLength,
+        decryptedFromProvider,
         lastStatus,
         lastContentType,
         attemptedWithAuth,
@@ -541,7 +619,7 @@ async function persistInboundMediaIfNeeded(
         : {
             ...fallbackMetadata,
             mime_type: messageType === "image" ? "image/webp" : (mimeType || baseMetadata.mime_type),
-            size_bytes: Number(baseMetadata.size_bytes) || arrayBuffer.byteLength,
+            size_bytes: Number(baseMetadata.size_bytes) || bytes.byteLength,
           };
     }
 
@@ -549,13 +627,15 @@ async function persistInboundMediaIfNeeded(
       phone: normalizedPhone,
       sourceUrl,
       mimeType,
-      size: arrayBuffer.byteLength,
+      size: bytes.byteLength,
+      encryptedSize: encryptedBytes.byteLength,
+      decryptedFromProvider,
       messageType,
     });
 
-    const uploadedMedia = await uploadToBucket(arrayBuffer, mimeType, {
+    const uploadedMedia = await uploadToBucket(bytes, mimeType, {
       preview_only: false,
-      preview_source: "original_media",
+      preview_source: decryptedFromProvider ? "original_media_decrypted" : "original_media",
     });
     return uploadedMedia || await persistThumbnailFallback("webp_conversion_failed");
   } catch (error) {
