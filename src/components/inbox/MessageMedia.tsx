@@ -47,8 +47,8 @@ export function MessageMedia({ msg }: MessageMediaProps) {
   const thumbnailUrl = typeof metadata.thumbnail_url === "string" ? metadata.thumbnail_url : null;
   const inlineReady = metadata.is_inline_ready === true || !!storagePath;
   const bucketUrl = useMemo(() => getPublicUrlFromStoragePath(storagePath), [storagePath]);
-  const resolvedUrl = inlineReady ? (bucketUrl || primaryUrl) : primaryUrl;
-  const resolvedThumbnail = inlineReady ? (thumbnailUrl || resolvedUrl) : thumbnailUrl;
+  const resolvedUrl = inlineReady ? (bucketUrl || primaryUrl) : null;
+  const resolvedThumbnail = inlineReady ? (thumbnailUrl || bucketUrl || primaryUrl) : thumbnailUrl;
 
   const caption = msg.content && !["Foto", "Áudio", "Vídeo", "Documento", "[Mídia]"].includes(msg.content)
     ? msg.content
@@ -65,7 +65,14 @@ export function MessageMedia({ msg }: MessageMediaProps) {
   );
 
   if (!resolvedUrl) {
-    return <p className="whitespace-pre-wrap break-words">{msg.content}</p>;
+    return (
+      <div className="space-y-2">
+        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+        {primaryUrl ? (
+          <p className="text-xs text-muted-foreground">Aguardando processamento da mídia para visualização inline.</p>
+        ) : null}
+      </div>
+    );
   }
 
   if (isImage) {

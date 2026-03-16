@@ -1,5 +1,6 @@
 import { Hono } from "https://deno.land/x/hono@v3.12.11/mod.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { Image } from "jsr:@matmen/imagescript";
 
 const app = new Hono().basePath("/whatsapp-webhook");
 
@@ -314,6 +315,21 @@ function hasValidBinarySignature(bytes: Uint8Array, mimeType?: string) {
   return bytes.length > 32;
 }
 
+async function convertImageToWebp(bytes: Uint8Array) {
+  const image = await Image.decode(bytes);
+  const maxDimension = 1600;
+  const width = image.width;
+  const height = image.height;
+  const largestDimension = Math.max(width, height);
+
+  if (largestDimension > maxDimension) {
+    const scale = maxDimension / largestDimension;
+    image.resize(Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));
+  }
+
+  return await image.encode(80, Image.WEBP);
+}
+
 function isWhatsAppHostedMediaUrl(url?: string) {
   if (!url) return false;
   const normalized = url.toLowerCase();
@@ -377,16 +393,44 @@ async function persistInboundMediaIfNeeded(
     mimeType: string,
     extraMetadata: Record<string, unknown> = {},
   ) => {
-    const extension = getExtensionFromMimeType(mimeType);
-    const fileName = sanitizeFileName(
-      typeof baseMetadata.file_name === "string" ? baseMetadata.file_name : undefined,
-      extension,
-    );
+    const normalizedMimeType = messageType === "image" ? "image/webp" : mimeType;
+    const extension = getExtensionFromMimeType(normalizedMimeType);
+    const originalFileName = typeof baseMetadata.file_name === "string" ? baseMetadata.file_name : undefined;
+    const fileName = messageType === "image"
+      ? sanitizeFileName(originalFileName?.replace(/\.[^.]+$/, "") || `media-${Date.now()}`, extension)
+      : sanitizeFileName(originalFileName, extension);
+
+    let uploadBinary: ArrayBuffer | Uint8Array = binary;
+    let sizeBytes = binary instanceof Uint8Array ? binary.byteLength : binary.byteLength;
+
+    if (messageType === "image") {
+      try {
+        const imageBytes = binary instanceof Uint8Array ? binary : new Uint8Array(binary);
+        uploadBinary = await convertImageToWebp(imageBytes);
+        sizeBytes = uploadBinary.byteLength;
+        console.log("🖼️ Converted inbound image to WEBP", {
+          phone: normalizedPhone,
+          originalMimeType: mimeType,
+          outputMimeType: normalizedMimeType,
+          originalSizeBytes: imageBytes.byteLength,
+          outputSizeBytes: sizeBytes,
+          previewOnly: extraMetadata.preview_only === true,
+        });
+      } catch (conversionError) {
+        console.warn("⚠️ Failed to convert inbound image to WEBP", conversionError, {
+          phone: normalizedPhone,
+          mimeType,
+          sourceUrl,
+        });
+        return null;
+      }
+    }
+
     const path = `inbox/inbound/${normalizedPhone}/${Date.now()}-${fileName}`;
     const { error: uploadError } = await supabase.storage
       .from("project-media")
-      .upload(path, binary, {
-        contentType: mimeType,
+      .upload(path, uploadBinary, {
+        contentType: normalizedMimeType,
         upsert: false,
       });
 
@@ -396,7 +440,13 @@ async function persistInboundMediaIfNeeded(
     }
 
     const { data: publicUrlData } = supabase.storage.from("project-media").getPublicUrl(path);
-    const sizeBytes = binary instanceof Uint8Array ? binary.byteLength : binary.byteLength;
+    console.log("📦 Uploaded inbound media to bucket", {
+      phone: normalizedPhone,
+      path,
+      mimeType: normalizedMimeType,
+      previewOnly: extraMetadata.preview_only === true,
+      sourceUrl,
+    });
 
     return {
       ...baseMetadata,
@@ -404,7 +454,7 @@ async function persistInboundMediaIfNeeded(
       file_url: publicUrlData.publicUrl,
       thumbnail_url: messageType === "image" ? publicUrlData.publicUrl : baseMetadata.thumbnail_url,
       storage_path: path,
-      mime_type: mimeType,
+      mime_type: normalizedMimeType,
       file_name: fileName,
       size_bytes: Number(baseMetadata.size_bytes) || sizeBytes,
       source_file_url: sourceUrl || undefined,
@@ -432,7 +482,7 @@ async function persistInboundMediaIfNeeded(
 
     return uploadedPreview || {
       ...fallbackMetadata,
-      mime_type: "image/jpeg",
+      mime_type: "image/webp",
       size_bytes: thumbnailBytes.byteLength,
       preview_only: true,
       preview_source: "embedded_thumbnail",
@@ -490,17 +540,24 @@ async function persistInboundMediaIfNeeded(
         ? thumbnailFallback
         : {
             ...fallbackMetadata,
-            mime_type: mimeType || baseMetadata.mime_type,
+            mime_type: messageType === "image" ? "image/webp" : (mimeType || baseMetadata.mime_type),
             size_bytes: Number(baseMetadata.size_bytes) || arrayBuffer.byteLength,
           };
     }
 
-    const uploadedMedia = await uploadToBucket(arrayBuffer, mimeType);
-    return uploadedMedia || {
-      ...fallbackMetadata,
-      mime_type: mimeType || baseMetadata.mime_type,
-      size_bytes: Number(baseMetadata.size_bytes) || arrayBuffer.byteLength,
-    };
+    console.log("✅ Original inbound media fetched", {
+      phone: normalizedPhone,
+      sourceUrl,
+      mimeType,
+      size: arrayBuffer.byteLength,
+      messageType,
+    });
+
+    const uploadedMedia = await uploadToBucket(arrayBuffer, mimeType, {
+      preview_only: false,
+      preview_source: "original_media",
+    });
+    return uploadedMedia || await persistThumbnailFallback("webp_conversion_failed");
   } catch (error) {
     console.warn("⚠️ Error while persisting inbound media", error);
     return await persistThumbnailFallback("unexpected_error");
