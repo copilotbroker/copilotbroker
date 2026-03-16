@@ -548,11 +548,14 @@ export type Database = {
           broker_id: string
           copilot_suggestions_count: number
           created_at: string
+          display_name: string | null
+          display_name_source: string | null
           id: string
           is_archived: boolean
           last_message_at: string | null
           last_message_direction: string | null
           last_message_preview: string | null
+          last_message_type: string
           lead_id: string | null
           opportunity_score: number | null
           phone: string
@@ -567,11 +570,14 @@ export type Database = {
           broker_id: string
           copilot_suggestions_count?: number
           created_at?: string
+          display_name?: string | null
+          display_name_source?: string | null
           id?: string
           is_archived?: boolean
           last_message_at?: string | null
           last_message_direction?: string | null
           last_message_preview?: string | null
+          last_message_type?: string
           lead_id?: string | null
           opportunity_score?: number | null
           phone: string
@@ -586,11 +592,14 @@ export type Database = {
           broker_id?: string
           copilot_suggestions_count?: number
           created_at?: string
+          display_name?: string | null
+          display_name_source?: string | null
           id?: string
           is_archived?: boolean
           last_message_at?: string | null
           last_message_direction?: string | null
           last_message_preview?: string | null
+          last_message_type?: string
           lead_id?: string | null
           opportunity_score?: number | null
           phone?: string
