@@ -71,8 +71,10 @@ const Admin = () => {
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { role, isLoading: isRoleLoading } = useUserRole();
   const queryClient = useQueryClient();
+  const activeTab = getAdminTabFromPath(location.pathname) as Exclude<AdminRouteTabId, "inbox" | "copilot">;
 
   // CRM search term (separate from leads table search)
   const [crmSearchTerm, setCrmSearchTerm] = useState("");
