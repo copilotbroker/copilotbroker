@@ -35,8 +35,15 @@ export interface ConversationMessage {
   sent_by: string;
   status: string;
   uazapi_message_id: string | null;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
   created_at: string;
+}
+
+export interface OutboundMessagePayload {
+  content: string;
+  sentBy?: string;
+  messageType?: "text" | "image" | "audio" | "video" | "document";
+  metadata?: Record<string, unknown>;
 }
 
 interface UseConversationsOptions {
