@@ -12,13 +12,20 @@ const formatPhoneForUAZAPI = (phone: string): string => {
   return cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
 };
 
-/**
- * Send text via UAZAPI with fallback endpoints + auth headers
- */
+const getAuthHeaders = (token: string) => [
+  { token },
+  { admintoken: token },
+  { apikey: token },
+  { "x-api-key": token },
+  { Authorization: `Bearer ${token}` },
+];
+
 async function sendViaUAZAPI(
   instanceToken: string | null,
   phone: string,
-  text: string
+  content: string,
+  messageType: string = "text",
+  metadata?: Record<string, unknown>
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const cleanPhone = formatPhoneForUAZAPI(phone);
   const token = instanceToken || UAZAPI_TOKEN;
@@ -26,31 +33,36 @@ async function sendViaUAZAPI(
   let baseUrl = UAZAPI_INSTANCE_URL.replace(/\/$/, "");
   try {
     baseUrl = new URL(baseUrl).origin;
-  } catch { /* keep as-is */ }
+  } catch {}
 
-  // Fallback endpoints
-  const endpoints = ["/send/text", "/chat/send/text"];
-  // Fallback auth headers
-  const authHeaders = [
-    { token },
-    { admintoken: token },
-    { apikey: token },
-    { "x-api-key": token },
-    { Authorization: `Bearer ${token}` },
-  ];
+  const mediaUrl = typeof metadata?.file_url === "string" ? metadata.file_url : undefined;
+  const fileName = typeof metadata?.file_name === "string" ? metadata.file_name : undefined;
+  const mimeType = typeof metadata?.mime_type === "string" ? metadata.mime_type : undefined;
+  const caption = content || "";
 
-  for (const endpoint of endpoints) {
-    for (const authHeader of authHeaders) {
+  const requests = messageType === "text"
+    ? [
+        { endpoint: "/send/text", body: { number: cleanPhone, text: content } },
+        { endpoint: "/chat/send/text", body: { number: cleanPhone, text: content } },
+      ]
+    : [
+        { endpoint: `/send/${messageType}`, body: { number: cleanPhone, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
+        { endpoint: `/chat/send/${messageType}`, body: { number: cleanPhone, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
+        { endpoint: "/send/media", body: { number: cleanPhone, mediatype: messageType, media: mediaUrl, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
+        { endpoint: "/chat/send/media", body: { number: cleanPhone, mediatype: messageType, media: mediaUrl, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
+      ];
+
+  for (const request of requests) {
+    for (const authHeader of getAuthHeaders(token)) {
       try {
-        const url = `${baseUrl}${endpoint}`;
-        const res = await fetch(url, {
+        const res = await fetch(`${baseUrl}${request.endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeader },
-          body: JSON.stringify({ number: cleanPhone, text }),
+          body: JSON.stringify(request.body),
         });
 
         if (res.status === 401 || res.status === 404) {
-          await res.text(); // consume body
+          await res.text();
           continue;
         }
 
@@ -60,20 +72,14 @@ async function sendViaUAZAPI(
         }
 
         let result: Record<string, unknown> = {};
-        try { result = JSON.parse(responseText); } catch { /* ok */ }
+        try { result = JSON.parse(responseText); } catch {}
+        if (result.error) return { success: false, error: String(result.error) };
 
-        if (result.error) {
-          return { success: false, error: String(result.error) };
-        }
-
-        const messageId = String(
-          result.id || result.messageid || (result.key as Record<string, unknown>)?.id || ""
-        );
-        console.log(`✅ Mensagem enviada via ${endpoint} para ${cleanPhone}`);
+        const messageId = String(result.id || result.messageid || (result.key as Record<string, unknown>)?.id || "");
+        console.log(`✅ Mensagem ${messageType} enviada via ${request.endpoint} para ${cleanPhone}`);
         return { success: true, messageId };
       } catch (err) {
-        console.warn(`⚠️ Falha ${endpoint}:`, (err as Error).message);
-        continue;
+        console.warn(`⚠️ Falha ${request.endpoint}:`, (err as Error).message);
       }
     }
   }
