@@ -85,6 +85,9 @@ const App = () => (
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
+            <Route path="/corretor/admin" element={<Navigate to="/corretor/crm" replace />} />
+            <Route path="/corretor/crm" element={<BrokerAdmin />} />
+            <Route path="/corretor/leads" element={<BrokerAdmin />} />
             <Route path="/corretor/empreendimentos" element={<BrokerProjects />} />
             <Route path="/corretor/whatsapp" element={<Navigate to="/corretor/copiloto" replace />} />
             <Route path="/admin" element={<Navigate to="/admin/crm" replace />} />
@@ -97,7 +100,6 @@ const App = () => (
             <Route path="/admin/whatsapp" element={<Navigate to="/admin/copiloto" replace />} />
             <Route path="/admin/inbox" element={<AdminInbox />} />
             <Route path="/admin/copiloto" element={<AdminCopilotConfig />} />
-            <Route path="/corretor/admin" element={<BrokerAdmin />} />
             <Route path="/corretor/roletas" element={<BrokerRoletasPage />} />
             <Route path="/corretor/inbox" element={<BrokerInbox />} />
             <Route path="/corretor/copiloto" element={<BrokerCopilotConfig />} />

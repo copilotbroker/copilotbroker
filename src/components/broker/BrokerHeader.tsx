@@ -1,4 +1,6 @@
 import { Search } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { BROKER_TAB_LABELS, getBrokerTabFromPath } from "./brokerNavigation";
 
 interface BrokerHeaderProps {
   brokerName?: string;
@@ -11,28 +13,32 @@ export function BrokerHeader({
   searchTerm,
   onSearchChange,
 }: BrokerHeaderProps) {
+  const location = useLocation();
+  const activeTab = getBrokerTabFromPath(location.pathname);
+  const copy = BROKER_TAB_LABELS[activeTab];
+
   return (
     <header className="sticky top-0 z-30 bg-[#141417]/95 backdrop-blur-sm border-b border-[#2a2a2e] pt-safe">
-      {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between px-4 py-3">
-        <h1 className="text-lg font-bold text-white">Meus Leads</h1>
+        <div>
+          <h1 className="text-lg font-bold text-white">{copy.title}</h1>
+          {copy.subtitle && <p className="text-xs text-slate-400 mt-0.5">{copy.subtitle}</p>}
+        </div>
       </div>
 
-      {/* Desktop Header */}
-      <div className="hidden lg:flex items-center justify-between px-6 py-3">
-        <nav className="flex items-center gap-2 text-sm">
+      <div className="hidden lg:flex items-center justify-between px-6 py-3 gap-4">
+        <nav className="flex items-center gap-2 text-sm min-w-0">
           <span className="text-slate-500">Corretor</span>
           <span className="text-slate-500">›</span>
-          <span className="text-slate-200 font-medium">Meus Leads</span>
+          <span className="text-slate-200 font-medium">{copy.title}</span>
           {brokerName && (
             <>
               <span className="text-slate-600">·</span>
-              <span className="text-slate-500">{brokerName}</span>
+              <span className="text-slate-500 truncate">{brokerName}</span>
             </>
           )}
         </nav>
 
-        {/* Search (optional) */}
         {onSearchChange && (
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
