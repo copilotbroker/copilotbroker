@@ -427,7 +427,7 @@ export function ConversationThread({
                 {pendingType === "document" && "Documento pronto para envio."}
               </p>
             </div>
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setPendingFile(null)}>Remover</Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => setPendingFile(null)}>Remover</Button>
           </div>
         )}
 
