@@ -1,75 +1,60 @@
 
-Objetivo
-- Reverter apenas a parte visual de cores da Inbox para a paleta anterior, preservando as melhorias funcionais já implementadas em nomes, mídia, status e produtividade.
 
-O que identifiquei
-- A mudança principal de paleta veio do uso mais agressivo dos tokens globais atuais:
-  - `bg-accent`, `text-primary`, `bg-primary/15`, `bg-muted/30`, `border-primary/30`
-- Na Inbox isso fez o amarelo ganhar muito destaque em áreas que antes eram mais neutras/dark.
-- O problema não parece ser estrutural do tema global, e sim como `ConversationList.tsx` e `ConversationThread.tsx` passaram a consumir esses tokens.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-Plano de reversão
-1. Restaurar a hierarquia visual anterior da Inbox
-- Voltar a lista e a thread para base escura/neutra.
-- Deixar o amarelo somente como cor de destaque pontual:
-  - conversa selecionada
-  - botão principal
-  - badges realmente prioritários
-  - ícones/estados estratégicos
+### Problema 1: Nomes dos leads não aparecem
 
-2. Reverter os pontos mais sensíveis na lista de conversas
-- Reduzir o uso de amarelo em:
-  - avatar
-  - cards KPI
-  - filtros ativos
-  - item selecionado
-  - contadores e ícones
-- Retornar para cards em tons de `card`, `muted`, `border` e usar highlight mais contido.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-3. Reverter os pontos mais sensíveis na thread
-- Ajustar:
-  - header da conversa
-  - avatar superior
-  - badges de status/tipo
-  - fundo das bolhas
-  - estados de mídia/documento
-- Manter leitura clean, com contraste bom e visual mais sóbrio, no padrão dark do CRM.
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-4. Preservar as melhorias recentes
-- Não mexer na lógica de:
-  - `display_name`
-  - `sender_name`
-  - mídia
-  - realtime/status
-  - criação de lead
-- A mudança será visual, não funcional.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-Arquivos a ajustar
-- `src/components/inbox/ConversationList.tsx`
-- `src/components/inbox/ConversationThread.tsx`
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-Abordagem técnica
-- Trocar classes que hoje puxam muito `primary/accent` por combinações mais neutras:
-  - `bg-card`
-  - `bg-muted/40`
-  - `hover:bg-muted/60`
-  - `border-border`
-  - `text-foreground`
-  - `text-muted-foreground`
-- Reservar `primary` para poucos pontos de ação e feedback.
-- Evitar mexer no `src/index.css` global, a menos que eu encontre algum ajuste realmente necessário e isolado da Inbox.
+### Problema 2: Marcar como lida quando lida no celular
 
-Resultado esperado
-- A Inbox volta a ter a sensação visual anterior: mais dark, elegante e discreta.
-- As funcionalidades novas permanecem intactas.
-- O amarelo deixa de “dominar” a tela e passa a atuar só como cor de destaque.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-Validação após implementação
-- Conferir visual em `/corretor/inbox` no desktop atual.
-- Verificar especialmente:
-  - item selecionado da lista
-  - KPIs
-  - filtros
-  - header da conversa
-  - bolhas e badges
-  - composer/anexos
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
+
+### Arquivos a editar
+
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

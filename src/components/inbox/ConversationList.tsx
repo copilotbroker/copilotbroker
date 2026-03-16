@@ -85,8 +85,8 @@ function InboxKPIs({ conversations, activeKpi, onKpiClick }: { conversations: Co
               key={kpi.id}
               onClick={() => onKpiClick(kpi.id)}
               className={cn(
-                "flex flex-col items-center rounded-lg py-1.5 transition-all border border-border/60 bg-muted/30 hover:bg-muted/50",
-                isActive && "bg-accent text-accent-foreground border-primary/30"
+                "flex flex-col items-center rounded-lg border border-border bg-card py-1.5 transition-all hover:bg-muted/40",
+                isActive && "border-border bg-muted/60 text-foreground"
               )}
             >
               <div className="flex items-center gap-0.5">
@@ -226,7 +226,7 @@ export function ConversationList({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground">
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground">
                 <ArrowUpDown className="h-3 w-3" />
                 Ordenar
                 <ChevronDown className="h-3 w-3" />
@@ -269,10 +269,10 @@ export function ConversationList({
                 key={f.id}
                 onClick={() => onStatusFilterChange(f.id)}
                 className={cn(
-                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
+                  "flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
                   statusFilter === f.id
-                    ? "bg-primary text-primary-foreground font-medium"
-                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    ? "border-border bg-card text-foreground font-medium"
+                    : "border-transparent bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                 )}
               >
                 <Icon className="h-3 w-3" />
@@ -321,9 +321,9 @@ export function ConversationList({
                     className={cn(
                       "w-full rounded-xl border px-3 py-3 text-left transition-colors",
                       isSelected
-                        ? "border-primary/30 bg-accent"
+                        ? "border-border bg-card"
                         : isUnread
-                        ? "border-border bg-card hover:bg-accent/60"
+                        ? "border-border bg-card hover:bg-muted/60"
                         : "border-transparent hover:bg-muted/60"
                     )}
                     style={hasCadenciaAtiva ? RING_PULSE_STYLE : undefined}
@@ -331,7 +331,7 @@ export function ConversationList({
                     <div className="flex items-start gap-3">
                       <div className={cn(
                         "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                        isUnread ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                        isUnread ? "bg-muted text-foreground" : "bg-muted/70 text-muted-foreground"
                       )}>
                         {leadName.charAt(0).toUpperCase()}
                       </div>

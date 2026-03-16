@@ -118,10 +118,10 @@ function MessageMedia({ msg }: { msg: ConversationMessage }) {
   }
 
   return (
-    <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-background/60 p-3 transition-colors hover:bg-background">
+    <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-muted/40">
       <FileText className="h-5 w-5 text-muted-foreground" />
       <div className="min-w-0">
-        <p className="truncate font-medium">{fileName}</p>
+        <p className="truncate font-medium text-foreground">{fileName}</p>
         <p className="text-xs text-muted-foreground">{mimeType || "Abrir arquivo"}</p>
       </div>
     </a>
@@ -263,7 +263,7 @@ export function ConversationThread({
           </Button>
 
           <button onClick={onOpenLeadPanel} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-foreground">
               {leadName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -308,7 +308,7 @@ export function ConversationThread({
       </div>
 
       {!conversation.lead_id && onCreateLead && (
-        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+        <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <LayoutGrid className="h-3 w-3" /> Contato sem card no Kanban
           </span>
@@ -319,7 +319,7 @@ export function ConversationThread({
       )}
 
       {isAiActive && (
-        <div className="flex items-center justify-between border-b border-border bg-accent/60 px-3 py-2">
+        <div className="flex items-center justify-between border-b border-border bg-card px-3 py-2">
           <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
@@ -327,13 +327,13 @@ export function ConversationThread({
             </span>
             <Zap className="h-3.5 w-3.5" /> Piloto Automático ativo
           </span>
-          <Button size="sm" variant="outline" className="h-7 gap-1 rounded-full px-3 text-xs" onClick={() => onToggleAiMode("copilot")}>
+          <Button size="sm" variant="outline" className="h-7 gap-1 rounded-full border-border bg-card px-3 text-xs hover:bg-muted/40" onClick={() => onToggleAiMode("copilot")}>
             <User className="h-3 w-3" /> Desativar Piloto
           </Button>
         </div>
       )}
       {isCopilot && (
-        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+        <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2">
           <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
             <User className="h-3.5 w-3.5" /> Modo Copiloto
           </span>
@@ -375,16 +375,16 @@ export function ConversationThread({
                       "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
                       isOutbound
                         ? isAi
-                          ? "rounded-br-sm bg-accent text-accent-foreground"
-                          : "rounded-br-sm bg-primary text-primary-foreground"
+                          ? "rounded-br-sm border border-border bg-card text-foreground"
+                          : "rounded-br-sm border border-border bg-muted text-foreground"
                         : "rounded-bl-sm border border-border bg-card text-card-foreground"
                     )}>
-                      {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-primary-foreground/80"><Bot className="h-3 w-3" /> Copiloto</span>}
+                      {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-muted-foreground"><Bot className="h-3 w-3" /> Copiloto</span>}
                       {!isOutbound && msg.sender_name && <span className="mb-1 block text-[10px] text-muted-foreground">{msg.sender_name}</span>}
                       {msg.message_type === "text" ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : <MessageMedia msg={msg} />}
                       <span className={cn(
                         "mt-1 flex items-center justify-end gap-1 text-[10px]",
-                        isOutbound ? "text-primary-foreground/70" : "text-muted-foreground"
+                        "text-muted-foreground"
                       )}>
                         {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
                         {isOutbound && getMessageStatusIcon(msg.status)}
@@ -399,7 +399,7 @@ export function ConversationThread({
       </div>
 
       {copilotSuggestion && (
-        <div className="mx-3 mb-2 rounded-lg border border-border bg-card p-3">
+        <div className="mx-3 mb-2 rounded-lg border border-border bg-card/90 p-3">
           <p className="mb-1 flex items-center gap-1 text-[10px] text-muted-foreground"><Sparkles className="h-3 w-3" /> Sugestão do Copiloto</p>
           <p className="whitespace-pre-wrap text-sm text-foreground">{copilotSuggestion}</p>
           <div className="mt-2 flex gap-2">
@@ -411,7 +411,7 @@ export function ConversationThread({
 
       <div className="space-y-2 border-t border-border px-3 pb-3 pt-2 pb-safe">
         {pendingFile && pendingType && (
-          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground">
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card/90 px-3 py-2 text-sm text-foreground">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 {pendingType === "image" && <ImageIcon className="h-4 w-4 text-muted-foreground" />}
@@ -427,7 +427,7 @@ export function ConversationThread({
                 {pendingType === "document" && "Documento pronto para envio."}
               </p>
             </div>
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setPendingFile(null)}>Remover</Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => setPendingFile(null)}>Remover</Button>
           </div>
         )}
 
@@ -439,10 +439,10 @@ export function ConversationThread({
             accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
             onChange={(e) => setPendingFile(e.target.files?.[0] || null)}
           />
-          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion} title="Pedir sugestão ao Copiloto">
+          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion} title="Pedir sugestão ao Copiloto">
             {isGeneratingSuggestion ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" /> : <Sparkles className="h-5 w-5" />}
           </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
+          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
             <Paperclip className="h-4 w-4" />
           </Button>
           <Textarea
