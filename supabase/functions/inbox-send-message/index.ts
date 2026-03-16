@@ -111,9 +111,9 @@ serve(async (req) => {
       });
     }
 
-    const { conversation_id, content } = await req.json();
-    if (!conversation_id || !content) {
-      return new Response(JSON.stringify({ error: "conversation_id and content are required" }), {
+    const { conversation_id, content, sent_by, message_type, metadata } = await req.json();
+    if (!conversation_id || (!content && !metadata?.file_url)) {
+      return new Response(JSON.stringify({ error: "conversation_id and content or file are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -147,11 +147,15 @@ serve(async (req) => {
       );
     }
 
+    const normalizedType = typeof message_type === "string" ? message_type : "text";
+
     // 3. Send via UAZAPI
     const sendResult = await sendViaUAZAPI(
       instance.instance_token,
       conv.phone_normalized || conv.phone,
-      content
+      content || "",
+      normalizedType,
+      metadata
     );
 
     if (!sendResult.success) {
@@ -161,15 +165,20 @@ serve(async (req) => {
       );
     }
 
+    const previewText = normalizedType === "text"
+      ? content
+      : (typeof metadata?.file_name === "string" ? `📎 ${metadata.file_name}` : "[Mídia]");
+
     // 4. Save message in conversation_messages
     const { data: msg, error: msgError } = await supabase
       .from("conversation_messages")
       .insert({
         conversation_id,
         direction: "outbound",
-        content,
-        sent_by: "human",
-        message_type: "text",
+        content: content || previewText,
+        sent_by: sent_by || "human",
+        message_type: normalizedType,
+        metadata: metadata || null,
         status: "sent",
         uazapi_message_id: sendResult.messageId || null,
       })
@@ -187,7 +196,7 @@ serve(async (req) => {
           lead_id: conv.lead_id,
           interaction_type: "whatsapp_enviada",
           broker_id: conv.broker_id,
-          notes: content.substring(0, 200),
+          notes: String(previewText || "").substring(0, 200),
           channel: "whatsapp",
           created_by: user.id,
         });
@@ -202,7 +211,7 @@ serve(async (req) => {
       .update({
         status: "attending",
         last_message_at: new Date().toISOString(),
-        last_message_preview: content.substring(0, 100),
+        last_message_preview: String(previewText || "").substring(0, 100),
         last_message_direction: "outbound",
         updated_at: new Date().toISOString(),
       })
