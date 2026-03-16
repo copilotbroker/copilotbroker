@@ -352,15 +352,15 @@ export function ConversationList({
                         {leadName.charAt(0).toUpperCase()}
                       </div>
 
-                      <div className="min-w-0 flex-1 overflow-hidden pr-12">
-                        <div className="relative min-w-0">
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <div className="flex items-start justify-between gap-2">
                           <span className={cn(
-                            "block truncate pr-1 text-sm leading-none",
+                            "min-w-0 flex-1 truncate text-sm leading-none",
                             isUnread ? "font-bold text-foreground" : "font-medium text-foreground"
                           )}>
                             {leadName}
                           </span>
-                          <span className="absolute right-0 top-0 z-10 w-10 bg-card text-right text-[10px] leading-none text-muted-foreground">
+                          <span className="flex-shrink-0 text-right text-[10px] leading-none text-muted-foreground">
                             {formatLastInteraction(conv.last_message_at)}
                           </span>
                         </div>

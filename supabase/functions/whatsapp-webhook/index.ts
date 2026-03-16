@@ -124,43 +124,77 @@ function getPhoneVariants(phone: string): string[] {
 function inferMessageType(messageText: string, mimeType?: string, rawType?: string): string {
   const lowerMime = mimeType?.toLowerCase() || "";
   const lowerType = rawType?.toLowerCase() || "";
+
   if (lowerMime.startsWith("image/") || lowerType.includes("image")) return "image";
-  if (lowerMime.startsWith("audio/") || lowerType.includes("audio") || lowerType.includes("ptt")) return "audio";
+  if (lowerMime.startsWith("audio/") || lowerType.includes("audio") || lowerType.includes("ptt") || lowerType.includes("voice")) return "audio";
   if (lowerMime.startsWith("video/") || lowerType.includes("video")) return "video";
+  if (
+    lowerMime.includes("pdf") ||
+    lowerMime.includes("officedocument") ||
+    lowerMime.includes("msword") ||
+    lowerMime.includes("spreadsheet") ||
+    lowerMime.startsWith("application/") ||
+    lowerType.includes("document") ||
+    lowerType.includes("file")
+  ) {
+    return "document";
+  }
+
   if (!messageText && (lowerMime || lowerType)) return "document";
   return messageText ? "text" : "document";
 }
 
 function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payload: UAZAPIv2Payload) {
   const data = payload.data || {};
+  const content = typeof payload.message === "object" && payload.message && typeof (payload.message as Record<string, unknown>).content === "object"
+    ? ((payload.message as Record<string, unknown>).content as Record<string, unknown>)
+    : {};
+
   const mimeType = (typeof msg.mimetype === "string" ? msg.mimetype : undefined)
+    || (typeof content.mimetype === "string" ? content.mimetype : undefined)
     || (typeof data.mimetype === "string" ? data.mimetype : undefined)
     || (typeof data.mime_type === "string" ? data.mime_type : undefined);
   const fileUrl = (typeof msg.mediaUrl === "string" ? msg.mediaUrl : undefined)
     || (typeof msg.url === "string" ? msg.url : undefined)
+    || (typeof content.URL === "string" ? content.URL : undefined)
+    || (typeof content.url === "string" ? content.url : undefined)
     || (typeof data.mediaUrl === "string" ? data.mediaUrl : undefined)
     || (typeof data.url === "string" ? data.url : undefined)
     || (typeof data.file_url === "string" ? data.file_url : undefined);
   const fileName = (typeof msg.fileName === "string" ? msg.fileName : undefined)
     || (typeof msg.mediaName === "string" ? msg.mediaName : undefined)
+    || (typeof content.fileName === "string" ? content.fileName : undefined)
+    || (typeof content.filename === "string" ? content.filename : undefined)
     || (typeof data.fileName === "string" ? data.fileName : undefined)
     || (typeof data.file_name === "string" ? data.file_name : undefined);
   const rawType = (typeof msg.type === "string" ? msg.type : undefined)
+    || (typeof (msg as Record<string, unknown>).mediaType === "string" ? (msg as Record<string, unknown>).mediaType as string : undefined)
+    || (typeof (msg as Record<string, unknown>).messageType === "string" ? (msg as Record<string, unknown>).messageType as string : undefined)
+    || (typeof content.mediaType === "string" ? content.mediaType : undefined)
+    || (typeof content.messageType === "string" ? content.messageType : undefined)
     || (typeof data.type === "string" ? data.type : undefined)
-    || (typeof data.mediaType === "string" ? data.mediaType : undefined);
+    || (typeof data.mediaType === "string" ? data.mediaType : undefined)
+    || (typeof data.messageType === "string" ? data.messageType : undefined);
   const caption = (typeof msg.caption === "string" ? msg.caption : undefined)
+    || (typeof content.caption === "string" ? content.caption : undefined)
     || (typeof data.caption === "string" ? data.caption : undefined);
-  const durationSeconds = typeof data.duration_seconds === "number"
+  const durationSeconds = typeof content.seconds === "number"
+    ? content.seconds
+    : typeof data.duration_seconds === "number"
     ? data.duration_seconds
     : typeof data.seconds === "number"
     ? data.seconds
     : undefined;
-  const sizeBytes = typeof data.size_bytes === "number"
+  const sizeBytes = typeof content.fileLength === "number"
+    ? content.fileLength
+    : typeof data.size_bytes === "number"
     ? data.size_bytes
     : typeof data.fileLength === "number"
     ? data.fileLength
     : undefined;
-  const thumbnailUrl = (typeof data.thumbnail_url === "string" ? data.thumbnail_url : undefined)
+  const thumbnailUrl = (typeof content.thumbnailUrl === "string" ? content.thumbnailUrl : undefined)
+    || (typeof content.thumbnail === "string" ? content.thumbnail : undefined)
+    || (typeof data.thumbnail_url === "string" ? data.thumbnail_url : undefined)
     || (typeof data.thumb === "string" ? data.thumb : undefined);
 
   return {
