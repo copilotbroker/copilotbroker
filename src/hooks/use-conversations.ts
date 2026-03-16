@@ -398,6 +398,12 @@ export function useConversations(options: UseConversationsOptions = {}) {
     }
   }, []);
 
+  const updateConversationState = useCallback((conversationId: string, updater: (current: Conversation) => Conversation) => {
+    setConversations((prev) => prev.map((conversation) => (
+      conversation.id === conversationId ? updater(conversation) : conversation
+    )));
+  }, []);
+
   return {
     conversations,
     isLoading,
@@ -407,6 +413,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
     archiveConversation,
     unarchiveConversation,
     updateAiMode,
+    updateConversationState,
   };
 }
 
