@@ -120,7 +120,46 @@ function getPhoneVariants(phone: string): string[] {
   return [...variants].filter(Boolean);
 }
 
-// ========================= ERROR LOGGING =========================
+
+function inferMessageType(messageText: string, mimeType?: string, rawType?: string): string {
+  const lowerMime = mimeType?.toLowerCase() || "";
+  const lowerType = rawType?.toLowerCase() || "";
+  if (lowerMime.startsWith("image/") || lowerType.includes("image")) return "image";
+  if (lowerMime.startsWith("audio/") || lowerType.includes("audio") || lowerType.includes("ptt")) return "audio";
+  if (lowerMime.startsWith("video/") || lowerType.includes("video")) return "video";
+  if (!messageText && (lowerMime || lowerType)) return "document";
+  return messageText ? "text" : "document";
+}
+
+function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payload: UAZAPIv2Payload) {
+  const data = payload.data || {};
+  const mimeType = (typeof msg.mimetype === "string" ? msg.mimetype : undefined)
+    || (typeof data.mimetype === "string" ? data.mimetype : undefined)
+    || (typeof data.mime_type === "string" ? data.mime_type : undefined);
+  const fileUrl = (typeof msg.mediaUrl === "string" ? msg.mediaUrl : undefined)
+    || (typeof msg.url === "string" ? msg.url : undefined)
+    || (typeof data.mediaUrl === "string" ? data.mediaUrl : undefined)
+    || (typeof data.url === "string" ? data.url : undefined)
+    || (typeof data.file_url === "string" ? data.file_url : undefined);
+  const fileName = (typeof msg.fileName === "string" ? msg.fileName : undefined)
+    || (typeof msg.mediaName === "string" ? msg.mediaName : undefined)
+    || (typeof data.fileName === "string" ? data.fileName : undefined)
+    || (typeof data.file_name === "string" ? data.file_name : undefined);
+  const rawType = (typeof msg.type === "string" ? msg.type : undefined)
+    || (typeof data.type === "string" ? data.type : undefined)
+    || (typeof data.mediaType === "string" ? data.mediaType : undefined);
+  const caption = (typeof msg.caption === "string" ? msg.caption : undefined)
+    || (typeof data.caption === "string" ? data.caption : undefined);
+
+  return {
+    file_url: fileUrl,
+    file_name: fileName,
+    mime_type: mimeType,
+    raw_type: rawType,
+    caption,
+  };
+}
+
 
 async function logError(
   supabase: SupabaseClient,
