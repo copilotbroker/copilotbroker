@@ -18,6 +18,7 @@ import { CsvImportModal } from "@/components/admin/CsvImportModal";
 import RoletaManagement from "@/components/admin/RoletaManagement";
 import { KanbanBoard } from "@/components/crm";
 import { LeadStatus } from "@/types/crm";
+import { getAdminTabFromPath, type AdminRouteTabId } from "@/components/admin/adminNavigation";
 
 interface Lead {
   id: string;
