@@ -327,7 +327,7 @@ export function ConversationThread({
             </span>
             <Zap className="h-3.5 w-3.5" /> Piloto Automático ativo
           </span>
-          <Button size="sm" variant="outline" className="h-7 gap-1 rounded-full px-3 text-xs" onClick={() => onToggleAiMode("copilot")}>
+          <Button size="sm" variant="outline" className="h-7 gap-1 rounded-full border-border bg-card px-3 text-xs hover:bg-muted/40" onClick={() => onToggleAiMode("copilot")}>
             <User className="h-3 w-3" /> Desativar Piloto
           </Button>
         </div>
