@@ -1,60 +1,73 @@
 
+Objetivo
+- Corrigir o tratamento de mídia recebida no Inbox para que fotos apareçam como foto, não como “Documento”.
+- Garantir que o horário no card da conversa continue aparecendo corretamente quando a última interação for uma mídia.
 
-## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
+Diagnóstico confirmado
+- O problema principal está no backend que arquiva mensagens recebidas do WhatsApp.
+- Nos logs do webhook, a mensagem recebida traz a URL da mídia dentro de `message.content.URL` e o tipo real vem como áudio/foto/mídia.
+- Porém a função `whatsapp-webhook` hoje extrai mídia só de campos rasos (`msg.mediaUrl`, `msg.url`, `payload.data...`) e ignora `message.content`.
+- Resultado:
+  - `file_url` fica ausente no `metadata`
+  - o tipo cai em fallback incorreto e/ou vira `document`
+  - no chat o `MessageMedia` não consegue renderizar imagem porque depende de `metadata.file_url`
+  - a conversa salva `last_message_preview = "Documento"` e isso também impacta o card da lista
 
-### Problema 1: Nomes dos leads não aparecem
+Evidências vistas
+- No banco, as últimas mensagens da conversa `1c5215bb...` estão sendo gravadas como:
+  - `message_type = document`
+  - `content = Documento`
+  - `metadata = { raw_type: "media" }`
+- Ou seja: a mídia está chegando, mas está sendo arquivada sem URL, mime type e nome de arquivo.
+- Como o card usa `last_message_at` + `last_message_type`, o horário pode “sumir” visualmente em cenários onde o cabeçalho fica comprimido junto com preview/badges de mídia; preciso reforçar isso também no layout.
 
-A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
+O que vou ajustar
+1. Corrigir extração de mídia no `whatsapp-webhook`
+- Expandir `extractMediaMetadata` para ler também `payload.message.content`.
+- Mapear corretamente:
+  - `content.URL` -> `file_url`
+  - `content.mimetype` -> `mime_type`
+  - `content.fileLength` -> `size_bytes`
+  - `content.seconds` -> `duration_seconds`
+  - demais campos úteis quando existirem
+- Ler também `message.mediaType` / `message.messageType` para classificar corretamente imagem, áudio, vídeo e documento.
 
-```
-lead:leads!conversations_lead_id_fkey(id, name, status, ...)
-```
+2. Corrigir classificação do tipo de mensagem
+- Ajustar `inferMessageType` para reconhecer melhor:
+  - `image` / `ImageMessage`
+  - `audio` / `AudioMessage` / `ptt`
+  - `video` / `VideoMessage`
+  - documentos reais
+- Evitar o fallback genérico para `document` quando a mensagem for claramente foto/áudio/vídeo.
 
-E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
+3. Preservar preview e card da lista
+- Com `message_type` correto, a trigger já deve gerar preview mais adequado (`Foto`, `Áudio`, etc.).
+- Vou revisar o layout do timestamp no `ConversationList` para garantir que ele continue visível mesmo com previews de mídia e badges ativos.
 
-**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
+4. Compatibilidade com mensagens já salvas incorretamente
+- Como as mensagens antigas já estão gravadas sem metadados, o conserto principal valerá para novas mídias.
+- Se fizer sentido no fluxo atual, posso incluir um fallback visual no frontend para exibir melhor itens de mídia sem `file_url`, mas o ganho real vem do webhook.
 
-### Problema 2: Marcar como lida quando lida no celular
+Arquivos envolvidos
+- `supabase/functions/whatsapp-webhook/index.ts`
+- `src/components/inbox/ConversationList.tsx`
+- possivelmente `src/components/inbox/ConversationThread.tsx` apenas para fallback visual leve
 
-O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
+Resultado esperado
+- Quando o lead enviar uma foto:
+  - a mensagem entra como `image`
+  - a imagem aparece dentro da conversa
+  - o preview do card mostra algo como foto/mídia correta, não “Documento”
+  - o horário ao lado do nome continua visível no card
 
-UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+Validação
+- Pedir nova foto de teste no `/corretor/inbox`
+- Confirmar no chat que a imagem renderiza
+- Confirmar no card da conversa que:
+  - o preview mudou de “Documento” para o tipo correto
+  - o horário aparece ao lado do nome
+- Conferir também áudio e vídeo para não quebrar o restante da Inbox
 
-**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
-1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
-2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
-
-### Arquivos a editar
-
-| Ação | Arquivo |
-|------|---------|
-| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
-| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
-
-### Detalhes técnicos
-
-**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
-
-**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
-```typescript
-// Update conversation_messages status
-await supabase
-  .from("conversation_messages")
-  .update({ status: "read" })
-  .eq("uazapi_message_id", messageId);
-
-// Find conversation and reset unread
-const { data: msg } = await supabase
-  .from("conversation_messages")
-  .select("conversation_id")
-  .eq("uazapi_message_id", messageId)
-  .maybeSingle();
-
-if (msg) {
-  await supabase
-    .from("conversations")
-    .update({ unread_count: 0, status: "attending" })
-    .eq("id", msg.conversation_id);
-}
-```
-
+Detalhe técnico
+- O problema não parece ser no componente `MessageMedia`; ele já renderiza corretamente se receber `metadata.file_url`.
+- O bug está antes: a função que arquiva a mensagem recebida não está montando os metadados certos a partir do payload real da UAZAPI.
