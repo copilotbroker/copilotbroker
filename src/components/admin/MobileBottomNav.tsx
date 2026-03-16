@@ -48,13 +48,13 @@ export function MobileBottomNav({
     item.id === "inbox" ? { ...item, badge: inboxUnread } : item
   );
 
-  const navItems = [
+  const navItems: BottomNavItem[] = [
     { id: "notifications", icon: Bell, badge: unreadCount },
     { id: "crm", icon: LayoutDashboard },
     { id: "add", icon: Plus, isFab: true },
     { id: "leads", icon: Users },
     { id: "more", icon: MoreHorizontal },
-  ] as const;
+  ];
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

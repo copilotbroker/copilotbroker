@@ -224,10 +224,6 @@ export default function AdminCopilotConfig() {
       </Helmet>
       <AdminLayout
         activeTab="copilot"
-        onTabChange={(tab) => {
-          if (tab === "copilot") return;
-          navigate("/admin");
-        }}
         onLogout={handleLogout}
       >
         <div className="max-w-6xl mx-auto space-y-6">

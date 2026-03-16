@@ -440,7 +440,6 @@ const Admin = () => {
       </Helmet>
       <AdminLayout
         activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab as typeof activeTab)}
         onLogout={handleLogout}
         searchTerm={currentSearchTerm}
         onSearchChange={handleSearchChange}

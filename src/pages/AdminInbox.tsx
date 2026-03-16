@@ -301,7 +301,7 @@ export default function AdminInbox() {
         </div>
       </div>
 
-      <MobileBottomNav activeTab="inbox" onTabChange={(tab) => navigate("/admin")} />
+      <MobileBottomNav activeTab="inbox" />
 
       {/* Create Lead Modal */}
       {selectedConversation && (
