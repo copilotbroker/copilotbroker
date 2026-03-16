@@ -89,14 +89,28 @@ function formatPhoneE164(phone: string): string {
   return `+${cleaned}`;
 }
 
-function extractPhoneFromChatId(chatid: string): string {
-  return formatPhoneE164(chatid.split("@")[0]);
+function getCanonicalPhone(phone: string): string {
+  return formatPhoneE164(phone);
 }
 
-function getPhoneVariants(phone: string): [string, string] {
-  const phoneWithoutPlus = phone.startsWith("+") ? phone.substring(1) : phone;
-  const phoneWithPlus = phone.startsWith("+") ? phone : "+" + phone;
-  return [phoneWithPlus, phoneWithoutPlus];
+function getCanonicalPhoneNormalized(phone: string): string {
+  return getCanonicalPhone(phone).replace(/\D/g, "");
+}
+
+function extractPhoneFromChatId(chatid: string): string {
+  return getCanonicalPhone(chatid.split("@")[0]);
+}
+
+function getPhoneVariants(phone: string): string[] {
+  const canonical = getCanonicalPhone(phone);
+  const normalized = canonical.replace(/\D/g, "");
+  const variants = new Set<string>([
+    canonical,
+    normalized,
+    normalized.startsWith("55") ? normalized.slice(2) : normalized,
+    `+${normalized}`,
+  ]);
+  return [...variants].filter(Boolean);
 }
 
 // ========================= ERROR LOGGING =========================
@@ -408,6 +422,80 @@ async function processOptout(
 
 // ========================= CONVERSATION ARCHIVING =========================
 
+async function getOrCreateCanonicalConversation(
+  supabase: SupabaseClient,
+  brokerId: string,
+  phone: string,
+  leadId?: string | null,
+): Promise<{ id: string } | null> {
+  const canonicalPhone = getCanonicalPhone(phone);
+  const canonicalNormalized = getCanonicalPhoneNormalized(phone);
+  const phoneVariants = getPhoneVariants(phone);
+
+  const { data: existing } = await supabase
+    .from("conversations")
+    .select("id, lead_id, ai_mode, created_at, phone, phone_normalized")
+    .eq("broker_id", brokerId)
+    .in("phone_normalized", phoneVariants.map((value) => value.replace(/\D/g, "")))
+    .order("created_at", { ascending: true });
+
+  if (existing && existing.length > 0) {
+    const primary = existing[0] as { id: string; lead_id: string | null; ai_mode: string; phone: string; phone_normalized: string };
+    const duplicateIds = existing.slice(1).map((conv: any) => conv.id);
+
+    if (duplicateIds.length > 0) {
+      await supabase.from("conversation_messages").update({ conversation_id: primary.id }).in("conversation_id", duplicateIds);
+
+      const duplicateWithLead = existing.find((conv: any) => conv.lead_id);
+      await supabase
+        .from("conversations")
+        .update({
+          lead_id: primary.lead_id || leadId || duplicateWithLead?.lead_id || null,
+          phone: canonicalPhone,
+          phone_normalized: canonicalNormalized,
+          ai_mode: primary.ai_mode === "ai_active" ? "ai_active" : "copilot",
+          is_archived: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", primary.id);
+
+      await supabase.from("conversations").delete().in("id", duplicateIds);
+    } else if (primary.phone !== canonicalPhone || primary.phone_normalized !== canonicalNormalized || (!primary.lead_id && leadId)) {
+      await supabase
+        .from("conversations")
+        .update({
+          phone: canonicalPhone,
+          phone_normalized: canonicalNormalized,
+          lead_id: primary.lead_id || leadId || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", primary.id);
+    }
+
+    return { id: primary.id };
+  }
+
+  const { data: created, error: createError } = await supabase
+    .from("conversations")
+    .insert({
+      broker_id: brokerId,
+      lead_id: leadId || null,
+      phone: canonicalPhone,
+      phone_normalized: canonicalNormalized,
+      ai_mode: "copilot",
+      status: "active",
+    })
+    .select("id")
+    .single();
+
+  if (createError) {
+    console.log("Could not create canonical conversation:", createError.message);
+    return null;
+  }
+
+  return created as { id: string };
+}
+
 async function archiveMessageToConversation(
   supabase: SupabaseClient,
   phone: string,
@@ -421,7 +509,6 @@ async function archiveMessageToConversation(
   if (!instanceName) return;
 
   try {
-    // Find broker by instance
     const { data: inst } = await supabase
       .from("broker_whatsapp_instances")
       .select("broker_id")
@@ -430,25 +517,10 @@ async function archiveMessageToConversation(
 
     if (!inst) return;
     const brokerId = (inst as { broker_id: string }).broker_id;
-    const phoneNormalized = phone.replace(/\D/g, "");
+    const conv = await getOrCreateCanonicalConversation(supabase, brokerId, phone);
 
-    // Upsert conversation
-    const { data: conv, error: convError } = await supabase
-      .from("conversations")
-      .upsert({
-        broker_id: brokerId,
-        phone: phone,
-        phone_normalized: phoneNormalized,
-      }, { onConflict: "broker_id,phone_normalized", ignoreDuplicates: false })
-      .select("id")
-      .single();
+    if (!conv) return;
 
-    if (convError || !conv) {
-      console.log("Could not upsert conversation:", convError?.message);
-      return;
-    }
-
-    // Insert message
     await supabase.from("conversation_messages").insert({
       conversation_id: (conv as { id: string }).id,
       direction,
@@ -1027,19 +1099,12 @@ async function handleIncomingMessage(
 
     if (inst) {
       const brokerId = (inst as { broker_id: string }).broker_id;
-      const phoneNorm = phone.replace(/\D/g, "");
-      
-      // Find the conversation
-      const { data: convForAuto } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("broker_id", brokerId)
-        .eq("phone_normalized", phoneNorm)
-        .maybeSingle();
+      const canonicalPhone = getCanonicalPhone(phone);
+      const phoneNorm = getCanonicalPhoneNormalized(phone);
+      const convForAuto = await getOrCreateCanonicalConversation(supabase, brokerId, phone);
 
       if (convForAuto) {
-        // Don't await — let it run in the background so webhook responds fast
-        handleAutoResponse(supabase, brokerId, phone, phoneNorm, convForAuto.id, msg.pushName)
+        handleAutoResponse(supabase, brokerId, canonicalPhone, phoneNorm, convForAuto.id, msg.pushName)
           .catch(err => console.error("Auto-response background error:", err));
       }
     }
