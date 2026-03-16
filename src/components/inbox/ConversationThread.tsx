@@ -379,7 +379,7 @@ export function ConversationThread({
                           : "rounded-br-sm border border-border bg-muted text-foreground"
                         : "rounded-bl-sm border border-border bg-card text-card-foreground"
                     )}>
-                      {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-primary-foreground/80"><Bot className="h-3 w-3" /> Copiloto</span>}
+                      {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-muted-foreground"><Bot className="h-3 w-3" /> Copiloto</span>}
                       {!isOutbound && msg.sender_name && <span className="mb-1 block text-[10px] text-muted-foreground">{msg.sender_name}</span>}
                       {msg.message_type === "text" ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : <MessageMedia msg={msg} />}
                       <span className={cn(
