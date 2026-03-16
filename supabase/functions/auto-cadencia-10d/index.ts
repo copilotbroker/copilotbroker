@@ -258,6 +258,8 @@ Deno.serve(async (req) => {
     };
 
     // 9. Create campaign
+    const restoreStatus = lead.status === "new" ? "info_sent" : lead.status;
+
     const { data: campaign, error: campErr } = await supabase
       .from("whatsapp_campaigns")
       .insert({
@@ -267,7 +269,7 @@ Deno.serve(async (req) => {
         total_leads: stepsToUse.length,
         lead_id: leadId,
         project_id: lead.project_id,
-        lead_previous_status: lead.status,
+        lead_previous_status: restoreStatus,
       })
       .select()
       .single();
