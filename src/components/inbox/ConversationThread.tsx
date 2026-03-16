@@ -399,7 +399,7 @@ export function ConversationThread({
       </div>
 
       {copilotSuggestion && (
-        <div className="mx-3 mb-2 rounded-lg border border-border bg-card p-3">
+        <div className="mx-3 mb-2 rounded-lg border border-border bg-card/90 p-3">
           <p className="mb-1 flex items-center gap-1 text-[10px] text-muted-foreground"><Sparkles className="h-3 w-3" /> Sugestão do Copiloto</p>
           <p className="whitespace-pre-wrap text-sm text-foreground">{copilotSuggestion}</p>
           <div className="mt-2 flex gap-2">
