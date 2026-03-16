@@ -202,6 +202,14 @@ function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payl
     || (typeof content.jpegThumbnail === "string" ? content.jpegThumbnail : undefined)
     || (typeof data.JPEGThumbnail === "string" ? data.JPEGThumbnail : undefined)
     || (typeof data.jpegThumbnail === "string" ? data.jpegThumbnail : undefined);
+  const mediaKey = (typeof content.mediaKey === "string" ? content.mediaKey : undefined)
+    || (typeof data.mediaKey === "string" ? data.mediaKey : undefined);
+  const directPath = (typeof content.directPath === "string" ? content.directPath : undefined)
+    || (typeof data.directPath === "string" ? data.directPath : undefined);
+  const fileSha256 = (typeof content.fileSHA256 === "string" ? content.fileSHA256 : undefined)
+    || (typeof data.fileSHA256 === "string" ? data.fileSHA256 : undefined);
+  const fileEncSha256 = (typeof content.fileEncSHA256 === "string" ? content.fileEncSHA256 : undefined)
+    || (typeof data.fileEncSHA256 === "string" ? data.fileEncSHA256 : undefined);
 
   return {
     file_url: fileUrl,
@@ -213,6 +221,10 @@ function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payl
     size_bytes: sizeBytes,
     thumbnail_url: thumbnailUrl,
     thumbnail_base64: thumbnailBase64,
+    media_key: mediaKey,
+    direct_path: directPath,
+    file_sha256: fileSha256,
+    file_enc_sha256: fileEncSha256,
   };
 }
 
