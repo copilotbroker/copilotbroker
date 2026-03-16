@@ -265,6 +265,34 @@ function getMimeTypeFromFileName(fileName?: string) {
   return undefined;
 }
 
+function getMimeTypeFromBytes(bytes: Uint8Array) {
+  if (bytes.length < 4) return undefined;
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return "image/png";
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return "image/gif";
+  if (bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return "image/webp";
+  if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) return "application/pdf";
+  if (bytes.length >= 4 && bytes[0] === 0x4f && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) return "audio/ogg";
+  if (bytes.length >= 12 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) return "video/mp4";
+  return undefined;
+}
+
+function decodeBase64ToBytes(value?: string) {
+  if (!value) return null;
+  try {
+    const normalized = (value.includes(",") ? value.split(",").pop() : value)?.replace(/\s+/g, "") || "";
+    if (!normalized) return null;
+    const binary = atob(normalized);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
 function isLikelyRenderableMimeType(mimeType?: string, messageType?: string) {
   const mime = mimeType?.toLowerCase() || "";
   if (!mime) return false;
