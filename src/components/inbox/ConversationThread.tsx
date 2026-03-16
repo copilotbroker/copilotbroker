@@ -54,13 +54,13 @@ interface ConversationThreadProps {
 const getMessageStatusIcon = (status?: string) => {
   switch (status) {
     case "read":
-      return <CheckCheck className="w-3 h-3" />;
+      return <CheckCheck className="h-3 w-3 text-primary" />;
     case "delivered":
-      return <CheckCheck className="w-3 h-3" />;
+      return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
     case "sent":
-      return <Check className="w-3 h-3" />;
+      return <Check className="h-3 w-3 text-muted-foreground" />;
     default:
-      return <Clock3 className="w-3 h-3" />;
+      return <Clock3 className="h-3 w-3 text-muted-foreground" />;
   }
 };
 
@@ -74,50 +74,52 @@ const getMessageTypeLabel = (type: string) => {
   }
 };
 
+const formatMessageDay = (date: string) => format(new Date(date), "d 'de' MMMM", { locale: ptBR });
+
 function MessageMedia({ msg }: { msg: ConversationMessage }) {
   const metadata = (msg.metadata || {}) as Record<string, unknown>;
   const fileUrl = typeof metadata.file_url === "string" ? metadata.file_url : null;
+  const thumbnailUrl = typeof metadata.thumbnail_url === "string" ? metadata.thumbnail_url : null;
   const fileName = typeof metadata.file_name === "string" ? metadata.file_name : getMessageTypeLabel(msg.message_type);
   const mimeType = typeof metadata.mime_type === "string" ? metadata.mime_type : "";
 
-  if (!fileUrl) {
-    return <p className="whitespace-pre-wrap break-words">{msg.content}</p>;
-  }
+  if (!fileUrl) return <p className="whitespace-pre-wrap break-words">{msg.content}</p>;
 
   if (msg.message_type === "image") {
     return (
       <a href={fileUrl} target="_blank" rel="noreferrer" className="block space-y-2">
         <img src={fileUrl} alt={fileName} className="max-h-72 w-full rounded-xl object-cover" loading="lazy" />
-        {msg.content && msg.content !== "[Mídia]" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+        {msg.content && msg.content !== "Foto" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
       </a>
     );
   }
 
   if (msg.message_type === "audio") {
     return (
-      <div className="space-y-2 min-w-[240px]">
+      <div className="min-w-[240px] space-y-2">
         <audio controls className="w-full">
           <source src={fileUrl} type={mimeType || undefined} />
         </audio>
-        {msg.content && msg.content !== "[Mídia]" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+        {msg.content && msg.content !== "Áudio" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
       </div>
     );
   }
 
   if (msg.message_type === "video") {
     return (
-      <div className="space-y-2 min-w-[240px]">
+      <div className="min-w-[240px] space-y-2">
+        {thumbnailUrl ? <img src={thumbnailUrl} alt={fileName} className="max-h-56 w-full rounded-xl object-cover" loading="lazy" /> : null}
         <video controls className="max-h-80 w-full rounded-xl bg-black">
           <source src={fileUrl} type={mimeType || undefined} />
         </video>
-        {msg.content && msg.content !== "[Mídia]" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+        {msg.content && msg.content !== "Vídeo" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
       </div>
     );
   }
 
   return (
-    <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/40 p-3 hover:bg-background/60 transition-colors">
-      <FileText className="w-5 h-5 text-muted-foreground" />
+    <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-background/60 p-3 transition-colors hover:bg-background">
+      <FileText className="h-5 w-5 text-muted-foreground" />
       <div className="min-w-0">
         <p className="truncate font-medium">{fileName}</p>
         <p className="text-xs text-muted-foreground">{mimeType || "Abrir arquivo"}</p>

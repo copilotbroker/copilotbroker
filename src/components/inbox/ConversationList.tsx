@@ -68,39 +68,37 @@ function InboxKPIs({ conversations, activeKpi, onKpiClick }: { conversations: Co
     return { active, unread, atRisk, hot };
   }, [conversations]);
 
-  const kpis = [
-    { id: "active", label: "Ativas", value: stats.active, color: "text-slate-300" },
-    { id: "unread", label: "Não lidas", value: stats.unread, color: "text-red-400", highlight: stats.unread > 0 },
-    { id: "hot", label: "Quentes", value: stats.hot, color: "text-orange-400", icon: Flame },
-    { id: "risk", label: "Em risco", value: stats.atRisk, color: "text-red-400", icon: AlertTriangle },
-  ];
+    const kpis = [
+      { id: "active", label: "Ativas", value: stats.active, tone: "muted" },
+      { id: "unread", label: "Não lidas", value: stats.unread, tone: "destructive", highlight: stats.unread > 0 },
+      { id: "hot", label: "Quentes", value: stats.hot, tone: "warning", icon: Flame },
+      { id: "risk", label: "Em risco", value: stats.atRisk, tone: "destructive", icon: AlertTriangle },
+    ];
 
-  return (
-    <div className="grid grid-cols-4 gap-1 px-3 py-2">
-      {kpis.map((kpi) => {
-        const Icon = kpi.icon;
-        const isActive = activeKpi === kpi.id;
-        return (
-          <button
-            key={kpi.id}
-            onClick={() => onKpiClick(kpi.id)}
-            className={cn(
-              "flex flex-col items-center py-1.5 rounded-lg transition-all",
-              isActive
-                ? "bg-indigo-500/15 ring-1 ring-indigo-500/30"
-                : kpi.highlight ? "bg-red-500/10 hover:bg-red-500/15" : "bg-[#1A1D27] hover:bg-[#22252F]"
-            )}
-          >
-            <div className="flex items-center gap-0.5">
-              {Icon && <Icon className={cn("w-3 h-3", kpi.color)} />}
-              <span className={cn("text-base font-bold", kpi.color)}>{kpi.value}</span>
-            </div>
-            <span className="text-[9px] text-slate-500">{kpi.label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
+    return (
+      <div className="grid grid-cols-4 gap-1 px-3 py-2">
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon;
+          const isActive = activeKpi === kpi.id;
+          return (
+            <button
+              key={kpi.id}
+              onClick={() => onKpiClick(kpi.id)}
+              className={cn(
+                "flex flex-col items-center rounded-lg py-1.5 transition-all border border-border/60 bg-muted/30 hover:bg-muted/50",
+                isActive && "bg-accent text-accent-foreground border-primary/30"
+              )}
+            >
+              <div className="flex items-center gap-0.5">
+                {Icon && <Icon className="h-3 w-3 text-primary" />}
+                <span className="text-base font-bold text-foreground">{kpi.value}</span>
+              </div>
+              <span className="text-[9px] text-muted-foreground">{kpi.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
 }
 
 // Stable animation style for active cadence (matches KanbanCard)
