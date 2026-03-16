@@ -366,7 +366,7 @@ export function useConversationMessages(conversationId: string | null) {
     fetchMessages();
   }, [fetchMessages]);
 
-  // Realtime for new messages
+  // Realtime for new messages and status updates
   useEffect(() => {
     if (!conversationId) return;
     const channel = supabase
@@ -378,10 +378,19 @@ export function useConversationMessages(conversationId: string | null) {
         filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => {
         const newMsg = payload.new as unknown as ConversationMessage;
-        setMessages(prev => {
-          if (prev.some(m => m.id === newMsg.id)) return prev;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === newMsg.id)) return prev;
           return [...prev, newMsg];
         });
+      })
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "conversation_messages",
+        filter: `conversation_id=eq.${conversationId}`,
+      }, (payload) => {
+        const updatedMsg = payload.new as unknown as ConversationMessage;
+        setMessages((prev) => prev.map((m) => m.id === updatedMsg.id ? updatedMsg : m));
       })
       .subscribe();
 

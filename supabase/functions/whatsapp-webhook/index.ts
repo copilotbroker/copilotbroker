@@ -587,7 +587,7 @@ async function archiveMessageToConversation(
     await supabase.from("conversation_messages").insert({
       conversation_id: (conv as { id: string }).id,
       direction,
-      content: messageText || "[Mídia]",
+      content: messageText || (messageType === "image" ? "Foto" : messageType === "audio" ? "Áudio" : messageType === "video" ? "Vídeo" : messageType === "document" ? "Documento" : "[Mídia]"),
       message_type: messageType,
       metadata: metadata || null,
       sender_name: senderName,
