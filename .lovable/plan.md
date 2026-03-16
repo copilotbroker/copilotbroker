@@ -1,60 +1,53 @@
 
+Objetivo
+- Fazer imagens recebidas do lead aparecerem como miniatura inline na conversa, mantendo também a opção de abrir/baixar.
 
-## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
+O que identifiquei
+- O componente do chat já sabe renderizar miniatura quando a mensagem chega com:
+  - `message_type = "image"`
+  - `metadata.file_url`
+- Hoje isso ainda falha em parte dos recebimentos porque o webhook salva a mídia com URL do WhatsApp/UAZAPI (`mmg.whatsapp.net ... .enc`), que normalmente não é exibível direto no navegador.
+- Resultado: o frontend cai no comportamento de arquivo/documento, exigindo clique/download em vez de preview inline.
 
-### Problema 1: Nomes dos leads não aparecem
+Como vou corrigir
+1. Ajustar o webhook de entrada de mídia
+- No `whatsapp-webhook`, além de detectar `message.content.URL` e MIME corretamente, vou tratar imagens recebidas de forma especial:
+  - baixar a mídia no backend
+  - salvar no bucket `project-media`
+  - gravar no `metadata.file_url` a URL pública do arquivo salvo
+- Vou manter também metadados úteis como `mime_type`, `file_name`, `size_bytes` e, quando existir, `thumbnail_url`.
 
-A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
+2. Garantir classificação correta de imagem
+- Reforçar a lógica de tipo para reconhecer imagem por:
+  - `messageType`
+  - `mediaType`
+  - `mimetype`
+- Isso evita que foto entre como `document`.
 
-```
-lead:leads!conversations_lead_id_fkey(id, name, status, ...)
-```
+3. Melhorar fallback visual no chat
+- Mesmo quando faltar algum campo secundário, o `ConversationThread` continuará priorizando renderizar `<img>` para mensagens `image`.
+- Vou preservar o clique na miniatura para abrir a imagem em tamanho maior/nova aba, sem remover o comportamento de download.
 
-E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
+4. Validar impacto no card da conversa
+- Como `last_message_type` e preview já dependem do tipo salvo, a lista deve passar a mostrar mídia de forma mais correta para novas imagens recebidas.
 
-**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
+Arquivos envolvidos
+- `supabase/functions/whatsapp-webhook/index.ts`
+- `src/components/inbox/ConversationThread.tsx`
 
-### Problema 2: Marcar como lida quando lida no celular
+Abordagem técnica
+- Usar o bucket público já existente `project-media`.
+- Fazer upload do binário da imagem recebida no backend em vez de confiar na URL criptografada externa.
+- Salvar a URL pública final na mensagem arquivada para que a miniatura funcione direto no chat.
 
-O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
+Resultado esperado
+- Quando o lead enviar uma foto nova:
+  - ela aparecerá dentro da bolha da conversa como miniatura
+  - o corretor poderá clicar para abrir a imagem
+  - não precisará baixar o arquivo só para visualizar
 
-UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
-
-**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
-1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
-2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
-
-### Arquivos a editar
-
-| Ação | Arquivo |
-|------|---------|
-| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
-| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
-
-### Detalhes técnicos
-
-**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
-
-**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
-```typescript
-// Update conversation_messages status
-await supabase
-  .from("conversation_messages")
-  .update({ status: "read" })
-  .eq("uazapi_message_id", messageId);
-
-// Find conversation and reset unread
-const { data: msg } = await supabase
-  .from("conversation_messages")
-  .select("conversation_id")
-  .eq("uazapi_message_id", messageId)
-  .maybeSingle();
-
-if (msg) {
-  await supabase
-    .from("conversations")
-    .update({ unread_count: 0, status: "attending" })
-    .eq("id", msg.conversation_id);
-}
-```
-
+Validação
+- Pedir uma nova imagem de teste pelo WhatsApp
+- Confirmar no Inbox que a foto aparece inline
+- Confirmar que clicar na miniatura abre a imagem
+- Confirmar que outras mídias, como áudio e documento, continuam funcionando normalmente
