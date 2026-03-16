@@ -389,9 +389,9 @@ export function ConversationThread({
                       {msg.message_type === "text" ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : <MessageMedia msg={msg} />}
                       <span className={cn(
                         "mt-1 flex items-center justify-end gap-1 text-[10px]",
-                        "text-muted-foreground"
+                        msg.status === "failed" ? "text-destructive" : "text-muted-foreground"
                       )}>
-                        {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                        {msg.status === "failed" ? "Falhou" : format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
                         {isOutbound && getMessageStatusIcon(msg.status)}
                       </span>
                     </div>

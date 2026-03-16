@@ -417,7 +417,10 @@ export function useConversations(options: UseConversationsOptions = {}) {
   };
 }
 
-export function useConversationMessages(conversationId: string | null) {
+export function useConversationMessages(
+  conversationId: string | null,
+  onConversationPreviewUpdate?: (update: { preview: string; messageType: string; timestamp: string }) => void,
+) {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -526,50 +529,69 @@ export function useConversationMessages(conversationId: string | null) {
           metadata: payload.metadata,
         };
 
-    try {
-      const { data, error } = await supabase.functions.invoke("inbox-send-message", {
-        body: {
-          conversation_id: conversationId,
-          content: normalizedPayload.content,
-          sent_by: normalizedPayload.sentBy,
-          message_type: normalizedPayload.messageType,
-          metadata: normalizedPayload.metadata,
-        },
-      });
+    const createdAt = new Date().toISOString();
+    const clientId = `client-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const optimisticMetadata = {
+      ...(normalizedPayload.metadata || {}),
+      client_id: clientId,
+    };
+    const optimisticMessage: ConversationMessage = {
+      id: `temp:${clientId}`,
+      conversation_id: conversationId,
+      direction: "outbound",
+      content: normalizedPayload.content,
+      sent_by: normalizedPayload.sentBy || "human",
+      message_type: normalizedPayload.messageType || "text",
+      metadata: optimisticMetadata,
+      sender_name: null,
+      status: "pending",
+      uazapi_message_id: null,
+      created_at: createdAt,
+    };
 
-      if (error) {
-        console.error("Edge function error, falling back to local insert:", error);
-        const { data: fallbackData, error: fbError } = await supabase
-          .from("conversation_messages")
-          .insert({
+    setMessages((prev) => mergeMessages(prev, [optimisticMessage]));
+    onConversationPreviewUpdate?.({
+      preview: normalizedPayload.messageType === "text"
+        ? normalizedPayload.content
+        : (typeof optimisticMetadata.file_name === "string" ? `📎 ${optimisticMetadata.file_name}` : "[Mídia]"),
+      messageType: normalizedPayload.messageType || "text",
+      timestamp: createdAt,
+    });
+
+    void (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("inbox-send-message", {
+          body: {
             conversation_id: conversationId,
-            direction: "outbound",
             content: normalizedPayload.content,
             sent_by: normalizedPayload.sentBy,
             message_type: normalizedPayload.messageType,
-            metadata: normalizedPayload.metadata || null,
-            status: "pending",
-          } as any)
-          .select()
-          .single();
+            metadata: optimisticMetadata,
+          },
+        });
 
-        if (fbError) {
-          toast.error("Erro ao enviar mensagem");
-          return null;
+        if (error) throw error;
+
+        if (data?.message_id) {
+          setMessages((prev) => mergeMessages(prev, [{
+            ...optimisticMessage,
+            id: data.message_id,
+            status: "sent",
+            uazapi_message_id: data.uazapi_message_id || null,
+          }]));
+          return;
         }
 
-        setMessages((prev) => mergeMessages(prev, [fallbackData as ConversationMessage]));
-        toast.warning("Mensagem salva localmente (envio pendente)");
-        return fallbackData;
+        setMessages((prev) => mergeMessages(prev, [{ ...optimisticMessage, status: "sent" }]));
+      } catch (err) {
+        console.error("Erro ao enviar mensagem:", err);
+        setMessages((prev) => mergeMessages(prev, [{ ...optimisticMessage, status: "failed" }]));
+        toast.error("Falha ao enviar mensagem");
       }
+    })();
 
-      return data;
-    } catch (err) {
-      console.error("Erro ao enviar mensagem:", err);
-      toast.error("Erro ao enviar mensagem");
-      return null;
-    }
-  }, [conversationId]);
+    return optimisticMessage;
+  }, [conversationId, onConversationPreviewUpdate]);
 
   return { messages, isLoading, fetchMessages, sendMessage };
 }
