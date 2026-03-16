@@ -355,7 +355,7 @@ Deno.serve(async (req) => {
       interaction_type: "atendimento_iniciado",
       old_status: lead.status,
       new_status: "awaiting_docs",
-      notes: `⚡ Cadência 10D ativada automaticamente (${stepsToUse.length} etapas):\n\n${stepsPreview}`,
+      notes: `⚡ Cadência 10D ativada automaticamente — retorno previsto para ${restoreStatus === "info_sent" ? "Atendimento" : restoreStatus} (${stepsToUse.length} etapas):\n\n${stepsPreview}`,
     });
 
     // 14. Log working hours adjustments if any
