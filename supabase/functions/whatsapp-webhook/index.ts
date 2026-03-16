@@ -89,14 +89,28 @@ function formatPhoneE164(phone: string): string {
   return `+${cleaned}`;
 }
 
-function extractPhoneFromChatId(chatid: string): string {
-  return formatPhoneE164(chatid.split("@")[0]);
+function getCanonicalPhone(phone: string): string {
+  return formatPhoneE164(phone);
 }
 
-function getPhoneVariants(phone: string): [string, string] {
-  const phoneWithoutPlus = phone.startsWith("+") ? phone.substring(1) : phone;
-  const phoneWithPlus = phone.startsWith("+") ? phone : "+" + phone;
-  return [phoneWithPlus, phoneWithoutPlus];
+function getCanonicalPhoneNormalized(phone: string): string {
+  return getCanonicalPhone(phone).replace(/\D/g, "");
+}
+
+function extractPhoneFromChatId(chatid: string): string {
+  return getCanonicalPhone(chatid.split("@")[0]);
+}
+
+function getPhoneVariants(phone: string): string[] {
+  const canonical = getCanonicalPhone(phone);
+  const normalized = canonical.replace(/\D/g, "");
+  const variants = new Set<string>([
+    canonical,
+    normalized,
+    normalized.startsWith("55") ? normalized.slice(2) : normalized,
+    `+${normalized}`,
+  ]);
+  return [...variants].filter(Boolean);
 }
 
 // ========================= ERROR LOGGING =========================

@@ -65,8 +65,20 @@ const isWithinWorkingHours = (startTime: string, endTime: string): boolean => {
 // Format phone to clean number for UAZAPI
 const formatPhoneForUAZAPI = (phone: string): string => {
   const cleaned = phone.replace(/\D/g, "");
-  // Remove + if present
   return cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
+};
+
+const getCanonicalPhone = (phone: string): string => `+${formatPhoneForUAZAPI(phone)}`;
+const getCanonicalPhoneNormalized = (phone: string): string => formatPhoneForUAZAPI(phone);
+const getPhoneVariants = (phone: string): string[] => {
+  const canonical = getCanonicalPhone(phone);
+  const normalized = getCanonicalPhoneNormalized(phone);
+  const variants = new Set<string>([
+    canonical,
+    normalized,
+    normalized.startsWith("55") ? normalized.slice(2) : normalized,
+  ]);
+  return [...variants].filter(Boolean);
 };
 
 // Send message via UAZAPI
