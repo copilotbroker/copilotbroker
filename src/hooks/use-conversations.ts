@@ -7,13 +7,6 @@ const MESSAGE_FETCH_LIMIT = 200;
 const INBOX_POLL_INTERVAL_MS = 12000;
 const THREAD_POLL_INTERVAL_MS = 6000;
 
-export interface ConversationLastMessageMedia {
-  file_url?: string | null;
-  thumbnail_url?: string | null;
-  file_name?: string | null;
-  mime_type?: string | null;
-}
-
 export interface Conversation {
   id: string;
   broker_id: string;
@@ -27,7 +20,6 @@ export interface Conversation {
   last_message_preview: string | null;
   last_message_direction: string | null;
   last_message_type?: string | null;
-  last_message_media?: ConversationLastMessageMedia | null;
   display_name?: string | null;
   display_name_source?: string | null;
   unread_count: number;
@@ -170,7 +162,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
         conversationIds.length > 0
           ? supabase
               .from("conversation_messages")
-              .select("conversation_id, created_at, message_type, metadata, content")
+              .select("conversation_id, created_at")
               .in("conversation_id", conversationIds)
               .order("created_at", { ascending: false })
               .limit(1000)
@@ -191,21 +183,9 @@ export function useConversations(options: UseConversationsOptions = {}) {
       if (fallbackMessagesResult.error) throw fallbackMessagesResult.error;
 
       const lastMessageAtByConversation = new Map<string, string>();
-      const lastMessageMediaByConversation = new Map<string, ConversationLastMessageMedia | null>();
       for (const row of latestMessagesResult.data || []) {
         if (!lastMessageAtByConversation.has(row.conversation_id)) {
           lastMessageAtByConversation.set(row.conversation_id, row.created_at);
-
-          const metadata = (row.metadata || {}) as Record<string, unknown>;
-          lastMessageMediaByConversation.set(row.conversation_id, {
-            file_url: typeof metadata.file_url === "string" ? metadata.file_url : null,
-            thumbnail_url: typeof metadata.thumbnail_url === "string" ? metadata.thumbnail_url : null,
-            file_name:
-              typeof metadata.file_name === "string"
-                ? metadata.file_name
-                : (typeof row.content === "string" && row.message_type === "document" ? row.content : null),
-            mime_type: typeof metadata.mime_type === "string" ? metadata.mime_type : null,
-          });
         }
       }
 
@@ -223,7 +203,6 @@ export function useConversations(options: UseConversationsOptions = {}) {
           lastMessageAtByConversation.get(conversation.id) ||
           conversation.updated_at ||
           null,
-        last_message_media: lastMessageMediaByConversation.get(conversation.id) || null,
       }));
 
       const conversationsByPhone = new Map<string, Conversation>();
