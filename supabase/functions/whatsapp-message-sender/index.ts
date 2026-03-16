@@ -623,17 +623,10 @@ app.post("/process", async (c) => {
             .single();
 
           if (currentLead && (currentLead as { status: string }).status === "new") {
-            // Save previous status in campaign
-            if (queueMsg.campaign_id) {
-              await supabase
-                .from("whatsapp_campaigns")
-                .update({ lead_previous_status: "new" })
-                .eq("id", queueMsg.campaign_id);
-            }
             await supabase
               .from("leads")
               .update({
-                status: "awaiting_docs",
+                status: "info_sent",
                 status_distribuicao: "atendimento_iniciado",
                 atendimento_iniciado_em: new Date().toISOString(),
                 reserva_expira_em: null,
@@ -648,11 +641,11 @@ app.post("/process", async (c) => {
                 broker_id: instance.broker_id,
                 interaction_type: "status_change",
                 old_status: "new",
-                new_status: "awaiting_docs",
-                notes: "Lead movido para Copiloto Ativo automaticamente após envio da 1ª mensagem da campanha",
+                new_status: "info_sent",
+                notes: "Lead movido para Atendimento automaticamente após envio da 1ª mensagem da campanha",
               });
 
-            console.log(`Lead ${queueMsg.lead_id} moved to awaiting_docs (Copiloto Ativo) after campaign step 1`);
+            console.log(`Lead ${queueMsg.lead_id} moved to info_sent (Atendimento) after campaign step 1`);
           }
         }
 
