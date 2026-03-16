@@ -85,8 +85,8 @@ function InboxKPIs({ conversations, activeKpi, onKpiClick }: { conversations: Co
               key={kpi.id}
               onClick={() => onKpiClick(kpi.id)}
               className={cn(
-                "flex flex-col items-center rounded-lg py-1.5 transition-all border border-border/60 bg-muted/30 hover:bg-muted/50",
-                isActive && "bg-accent text-accent-foreground border-primary/30"
+                "flex flex-col items-center rounded-lg border border-border bg-card py-1.5 transition-all hover:bg-muted/40",
+                isActive && "border-border bg-muted/60 text-foreground"
               )}
             >
               <div className="flex items-center gap-0.5">

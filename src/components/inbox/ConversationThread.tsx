@@ -118,10 +118,10 @@ function MessageMedia({ msg }: { msg: ConversationMessage }) {
   }
 
   return (
-    <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-background/60 p-3 transition-colors hover:bg-background">
+    <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-muted/40">
       <FileText className="h-5 w-5 text-muted-foreground" />
       <div className="min-w-0">
-        <p className="truncate font-medium">{fileName}</p>
+        <p className="truncate font-medium text-foreground">{fileName}</p>
         <p className="text-xs text-muted-foreground">{mimeType || "Abrir arquivo"}</p>
       </div>
     </a>
