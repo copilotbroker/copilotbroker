@@ -194,45 +194,56 @@ export function ConversationList({
     return sorted;
   }, [kpiFilteredConversations, sortMode]);
 
+  const getLastPreview = (conv: Conversation) => {
+    const preview = conv.last_message_preview || "Sem mensagens";
+    switch (conv.last_message_type) {
+      case "image":
+        return preview === "Sem mensagens" ? "📷 Foto" : `📷 ${preview}`;
+      case "audio":
+        return preview === "Sem mensagens" ? "🎙️ Áudio" : `🎙️ ${preview}`;
+      case "video":
+        return preview === "Sem mensagens" ? "🎬 Vídeo" : `🎬 ${preview}`;
+      case "document":
+        return preview === "Sem mensagens" ? "📄 Documento" : `📄 ${preview}`;
+      default:
+        return preview;
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full bg-[#0F1117]">
-      {/* Header */}
-      <div className="px-3 pt-3 pb-1 space-y-2">
+    <div className="flex h-full flex-col bg-background">
+      <div className="space-y-2 px-3 pb-1 pt-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Inbox className="w-5 h-5 text-indigo-400" />
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <Inbox className="h-5 w-5 text-primary" />
             {isAdminView ? "Inbox Admin" : "Inbox"}
             {totalUnread > 0 && (
-              <Badge variant="destructive" className="text-xs px-1.5 py-0 min-w-[20px] h-5">
+              <Badge variant="destructive" className="min-w-[20px] px-1.5 py-0 text-xs h-5">
                 {totalUnread}
               </Badge>
             )}
           </h2>
 
-          {/* Sort selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-400 gap-1">
-                <ArrowUpDown className="w-3 h-3" />
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground">
+                <ArrowUpDown className="h-3 w-3" />
                 Ordenar
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-[#1A1D27] border-[#2A2D37]">
+            <DropdownMenuContent align="end">
               {SORT_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 return (
                   <DropdownMenuItem
                     key={opt.id}
                     onClick={() => setSortMode(opt.id)}
-                    className={cn(
-                      "text-xs gap-2",
-                      sortMode === opt.id ? "text-indigo-400" : "text-slate-300"
-                    )}
+                    className={cn("gap-2 text-xs", sortMode === opt.id && "text-primary")}
                   >
-                    <Icon className="w-3 h-3" />
+                    <Icon className="h-3 w-3" />
                     {opt.label}
-                    {sortMode === opt.id && <Check className="w-3 h-3 ml-auto" />}
+                    {sortMode === opt.id && <Check className="ml-auto h-3 w-3" />}
                   </DropdownMenuItem>
                 );
               })}
@@ -240,19 +251,17 @@ export function ConversationList({
           </DropdownMenu>
         </div>
 
-        {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar por nome ou telefone..."
-            className="pl-8 h-9 bg-[#1A1D27] border-[#2A2D37] text-sm text-white placeholder:text-slate-500"
+            className="h-9 pl-8 text-sm"
           />
         </div>
 
-        {/* Status filter chips */}
-        <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="scrollbar-hide flex gap-1 overflow-x-auto pb-1">
           {STATUS_FILTERS.map((f) => {
             const Icon = f.icon;
             return (
@@ -260,13 +269,13 @@ export function ConversationList({
                 key={f.id}
                 onClick={() => onStatusFilterChange(f.id)}
                 className={cn(
-                  "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs whitespace-nowrap transition-colors",
+                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
                   statusFilter === f.id
-                    ? "bg-indigo-500 text-white font-medium"
-                    : "bg-[#1A1D27] text-slate-400 hover:bg-[#2A2D37]"
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <Icon className="w-3 h-3" />
+                <Icon className="h-3 w-3" />
                 {f.label}
               </button>
             );
@@ -274,24 +283,22 @@ export function ConversationList({
         </div>
       </div>
 
-      {/* KPIs */}
       <InboxKPIs conversations={conversations} activeKpi={activeKpi} onKpiClick={handleKpiClick} />
 
-      {/* Conversation list */}
       <ScrollArea className="flex-1">
-        <div className="px-2 pb-2 space-y-0.5">
+        <div className="space-y-1 px-2 pb-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : sortedConversations.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
-              <Inbox className="w-10 h-10 mx-auto mb-2 opacity-40" />
+            <div className="py-12 text-center text-muted-foreground">
+              <Inbox className="mx-auto mb-2 h-10 w-10 opacity-40" />
               <p className="text-sm">Nenhuma conversa encontrada</p>
             </div>
           ) : (
             sortedConversations.map((conv) => {
-              const leadName = (conv.lead as any)?.name || conv.phone;
+              const leadName = conv.display_name || (conv.lead as any)?.name || conv.phone;
               const leadStatus = (conv.lead as any)?.status;
               const isSelected = selectedId === conv.id;
               const isUnread = conv.unread_count > 0;
@@ -303,134 +310,135 @@ export function ConversationList({
                 ? (Date.now() - new Date(conv.last_message_at).getTime()) / (1000 * 60 * 60)
                 : 0;
               const hasCadenciaAtiva = conv.lead_id ? cadenciaLeadIds.has(conv.lead_id) : false;
-              const preview = conv.last_message_preview || "Sem mensagens";
-              const mediaPreview = preview === "[Mídia]" ? "📎 Mídia recebida" : preview;
-              const hasResolvedName = !!(conv.lead as any)?.name && (conv.lead as any)?.name !== conv.phone;
+              const hasResolvedName = !!conv.display_name && conv.display_name !== conv.phone;
+              const isDirectWhatsapp = !conv.lead_id && conv.display_name_source !== "lead";
+              const preview = getLastPreview(conv);
 
               return (
                 <div key={conv.id} className="group relative">
                   <button
                     onClick={() => onSelect(conv)}
                     className={cn(
-                      "w-full flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
+                      "w-full rounded-xl border px-3 py-3 text-left transition-colors",
                       isSelected
-                        ? "bg-indigo-500/10 border border-indigo-500/20"
+                        ? "border-primary/30 bg-accent"
                         : isUnread
-                        ? "bg-[#1A1D27] hover:bg-[#22252F]"
-                        : "hover:bg-[#1A1D27]"
+                        ? "border-border bg-card hover:bg-accent/60"
+                        : "border-transparent hover:bg-muted/60"
                     )}
                     style={hasCadenciaAtiva ? RING_PULSE_STYLE : undefined}
                   >
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
-                      isUnread ? "bg-indigo-500/20 text-indigo-400" : "bg-[#2A2D37] text-slate-400"
-                    )}>
-                      {leadName.charAt(0).toUpperCase()}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="min-w-0">
-                          <span className={cn(
-                            "text-sm truncate block",
-                            isUnread ? "font-bold text-white" : "font-medium text-slate-300"
-                          )}>
-                            {leadName}
-                          </span>
-                          <span className="text-[10px] text-slate-500 truncate block">{conv.phone}</span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 whitespace-nowrap">
-                          {conv.last_message_at
-                            ? formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ptBR })
-                            : ""}
-                        </span>
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold",
+                        isUnread ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                      )}>
+                        {leadName.charAt(0).toUpperCase()}
                       </div>
 
-                      <p className={cn(
-                        "text-xs truncate mt-1",
-                        isUnread ? "text-slate-300" : "text-slate-500"
-                      )}>
-                        {conv.last_message_direction === "outbound" && "Você: "}
-                        {mediaPreview}
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className={cn(
+                              "block truncate text-sm",
+                              isUnread ? "font-bold text-foreground" : "font-medium text-foreground"
+                            )}>
+                              {leadName}
+                            </span>
+                            <span className="block truncate text-[10px] text-muted-foreground">{conv.phone}</span>
+                          </div>
+                          <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                            {conv.last_message_at
+                              ? formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ptBR })
+                              : ""}
+                          </span>
+                        </div>
 
-                      <div className="flex items-center gap-1 mt-1 flex-wrap">
-                        {isUnread && conv.unread_count > 0 && (
-                          <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">
-                            {conv.unread_count}
-                          </Badge>
-                        )}
-                        {conv.lead_id ? (
-                          <span className="flex items-center gap-0.5 text-[10px] text-emerald-400">
-                            <LayoutGrid className="w-3 h-3" /> Lead vinculado
-                          </span>
-                        ) : hasResolvedName ? (
-                          <span className="flex items-center gap-0.5 text-[10px] text-sky-400">
-                            <MessageCircleMore className="w-3 h-3" /> Nome identificado
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-0.5 text-[10px] text-orange-400">
-                            <MessageCircleMore className="w-3 h-3" /> WA direto
-                          </span>
-                        )}
-                        {preview === "[Mídia]" && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-slate-400">
-                            📎 Mídia
-                          </span>
-                        )}
-                        {isHot && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-orange-400">
-                            <Flame className="w-3 h-3" /> Quente
-                          </span>
-                        )}
-                        {isAtRisk && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-red-400 animate-pulse">
-                            <AlertTriangle className="w-3 h-3" /> Risco
-                          </span>
-                        )}
-                        {hasCopilot && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-green-400">
-                            <Zap className="w-3 h-3" /> Piloto Auto
-                          </span>
-                        )}
-                        {score > 0 && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-indigo-400/70">
-                            <Target className="w-3 h-3" /> {score}%
-                          </span>
-                        )}
-                        {idleHours > 24 && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-amber-400/70">
-                            <Clock className="w-3 h-3" /> {idleHours > 48 ? `${Math.floor(idleHours / 24)}d` : `${Math.round(idleHours)}h`} parado
-                          </span>
-                        )}
+                        <p className={cn(
+                          "mt-1 truncate text-xs",
+                          isUnread ? "text-foreground/80" : "text-muted-foreground"
+                        )}>
+                          {conv.last_message_direction === "outbound" && "Você: "}
+                          {preview}
+                        </p>
+
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
+                          {isUnread && conv.unread_count > 0 && (
+                            <Badge variant="destructive" className="h-4 px-1 py-0 text-[10px]">
+                              {conv.unread_count}
+                            </Badge>
+                          )}
+                          {conv.lead_id ? (
+                            <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+                              <LayoutGrid className="mr-1 h-3 w-3" /> Lead vinculado
+                            </Badge>
+                          ) : isDirectWhatsapp ? (
+                            <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+                              <MessageCircleMore className="mr-1 h-3 w-3" /> WhatsApp direto
+                            </Badge>
+                          ) : hasResolvedName ? (
+                            <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+                              <MessageCircleMore className="mr-1 h-3 w-3" /> Nome identificado
+                            </Badge>
+                          ) : null}
+                          {conv.last_message_type && conv.last_message_type !== "text" && (
+                            <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+                              Mídia
+                            </Badge>
+                          )}
+                          {isHot && (
+                            <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+                              <Flame className="mr-1 h-3 w-3" /> Quente
+                            </Badge>
+                          )}
+                          {isAtRisk && (
+                            <Badge variant="destructive" className="h-4 px-1.5 text-[10px]">
+                              <AlertTriangle className="mr-1 h-3 w-3" /> Risco
+                            </Badge>
+                          )}
+                          {hasCopilot && (
+                            <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+                              <Zap className="mr-1 h-3 w-3" /> Piloto Auto
+                            </Badge>
+                          )}
+                          {score > 0 && (
+                            <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+                              <Target className="mr-1 h-3 w-3" /> {score}%
+                            </Badge>
+                          )}
+                          {idleHours > 24 && (
+                            <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+                              <Clock className="mr-1 h-3 w-3" /> {idleHours > 48 ? `${Math.floor(idleHours / 24)}d` : `${Math.round(idleHours)}h`} parado
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </button>
 
-                  {/* Quick actions on hover */}
                   {(onMarkAsRead || onArchive) && (
-                    <div className="absolute right-2 top-2 hidden group-hover:flex items-center gap-0.5">
+                    <div className="absolute right-2 top-2 hidden items-center gap-0.5 group-hover:flex">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-500 hover:text-white">
-                            <MoreVertical className="w-3.5 h-3.5" />
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
+                            <MoreVertical className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-[#1A1D27] border-[#2A2D37]">
+                        <DropdownMenuContent align="end">
                           {isUnread && onMarkAsRead && (
                             <DropdownMenuItem
                               onClick={(e) => { e.stopPropagation(); onMarkAsRead(conv.id); }}
-                              className="text-xs gap-2 text-slate-300"
+                              className="gap-2 text-xs"
                             >
-                              <Eye className="w-3 h-3" /> Marcar como lida
+                              <Eye className="h-3 w-3" /> Marcar como lida
                             </DropdownMenuItem>
                           )}
                           {onArchive && (
                             <DropdownMenuItem
                               onClick={(e) => { e.stopPropagation(); onArchive(conv.id); }}
-                              className="text-xs gap-2 text-slate-300"
+                              className="gap-2 text-xs"
                             >
-                              <EyeOff className="w-3 h-3" /> Arquivar
+                              <EyeOff className="h-3 w-3" /> Arquivar
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
