@@ -411,7 +411,7 @@ export function ConversationThread({
 
       <div className="space-y-2 border-t border-border px-3 pb-3 pt-2 pb-safe">
         {pendingFile && pendingType && (
-          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground">
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card/90 px-3 py-2 text-sm text-foreground">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 {pendingType === "image" && <ImageIcon className="h-4 w-4 text-muted-foreground" />}
