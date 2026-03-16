@@ -21,6 +21,7 @@ import {
   Clock3,
 } from "lucide-react";
 import { CadenceCountdown } from "./CadenceCountdown";
+import { MessageMedia } from "./MessageMedia";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -66,69 +67,7 @@ const getMessageStatusIcon = (status?: string) => {
   }
 };
 
-const getMessageTypeLabel = (type: string) => {
-  switch (type) {
-    case "image": return "Imagem";
-    case "audio": return "Áudio";
-    case "video": return "Vídeo";
-    case "document": return "Documento";
-    default: return "Mídia";
-  }
-};
-
 const formatMessageDay = (date: string) => format(new Date(date), "d 'de' MMMM", { locale: ptBR });
-
-function MessageMedia({ msg }: { msg: ConversationMessage }) {
-  const metadata = (msg.metadata || {}) as Record<string, unknown>;
-  const fileUrl = typeof metadata.file_url === "string" ? metadata.file_url : null;
-  const thumbnailUrl = typeof metadata.thumbnail_url === "string" ? metadata.thumbnail_url : null;
-  const fileName = typeof metadata.file_name === "string" ? metadata.file_name : getMessageTypeLabel(msg.message_type);
-  const mimeType = typeof metadata.mime_type === "string" ? metadata.mime_type : "";
-
-  if (!fileUrl) return <p className="whitespace-pre-wrap break-words">{msg.content}</p>;
-
-  if (msg.message_type === "image") {
-    return (
-      <a href={fileUrl} target="_blank" rel="noreferrer" className="block space-y-2">
-        <img src={fileUrl} alt={fileName} className="max-h-72 w-full rounded-xl object-cover" loading="lazy" />
-        {msg.content && msg.content !== "Foto" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
-      </a>
-    );
-  }
-
-  if (msg.message_type === "audio") {
-    return (
-      <div className="min-w-[240px] space-y-2">
-        <audio controls className="w-full">
-          <source src={fileUrl} type={mimeType || undefined} />
-        </audio>
-        {msg.content && msg.content !== "Áudio" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
-      </div>
-    );
-  }
-
-  if (msg.message_type === "video") {
-    return (
-      <div className="min-w-[240px] space-y-2">
-        {thumbnailUrl ? <img src={thumbnailUrl} alt={fileName} className="max-h-56 w-full rounded-xl object-cover" loading="lazy" /> : null}
-        <video controls className="max-h-80 w-full rounded-xl bg-black">
-          <source src={fileUrl} type={mimeType || undefined} />
-        </video>
-        {msg.content && msg.content !== "Vídeo" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
-      </div>
-    );
-  }
-
-  return (
-    <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-muted/40">
-      <FileText className="h-5 w-5 text-muted-foreground" />
-      <div className="min-w-0">
-        <p className="truncate font-medium text-foreground">{fileName}</p>
-        <p className="text-xs text-muted-foreground">{mimeType || "Abrir arquivo"}</p>
-      </div>
-    </a>
-  );
-}
 
 export function ConversationThread({
   conversation,
