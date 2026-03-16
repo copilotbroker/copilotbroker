@@ -26,8 +26,7 @@ import ProjectWizard from "@/components/admin/ProjectWizard";
 
 const BrokerProjects = () => {
   const navigate = useNavigate();
-  const { role, brokerId, isLoading: isRoleLoading } = useUserRole();
-  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
