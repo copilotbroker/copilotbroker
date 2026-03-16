@@ -375,8 +375,8 @@ export function ConversationThread({
                       "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
                       isOutbound
                         ? isAi
-                          ? "rounded-br-sm bg-accent text-accent-foreground"
-                          : "rounded-br-sm bg-primary text-primary-foreground"
+                          ? "rounded-br-sm border border-border bg-card text-foreground"
+                          : "rounded-br-sm border border-border bg-muted text-foreground"
                         : "rounded-bl-sm border border-border bg-card text-card-foreground"
                     )}>
                       {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-primary-foreground/80"><Bot className="h-3 w-3" /> Copiloto</span>}

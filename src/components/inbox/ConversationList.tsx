@@ -321,9 +321,9 @@ export function ConversationList({
                     className={cn(
                       "w-full rounded-xl border px-3 py-3 text-left transition-colors",
                       isSelected
-                        ? "border-primary/30 bg-accent"
+                        ? "border-border bg-card"
                         : isUnread
-                        ? "border-border bg-card hover:bg-accent/60"
+                        ? "border-border bg-card hover:bg-muted/60"
                         : "border-transparent hover:bg-muted/60"
                     )}
                     style={hasCadenciaAtiva ? RING_PULSE_STYLE : undefined}
