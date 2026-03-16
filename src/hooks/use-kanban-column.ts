@@ -50,9 +50,22 @@ function applyFilters(query: any, filters: KanbanColumnFilters) {
     }
   }
   if (filters.searchTerm && filters.searchTerm.trim()) {
-    const term = filters.searchTerm.trim().replace(/[(),."'\\%_]/g, "");
-    if (term) {
-      query = query.or(`name.ilike.%${term}%,whatsapp.ilike.%${term}%`);
+    const rawTerm = filters.searchTerm.trim();
+    const textTerm = rawTerm.replace(/[(),."'\\%_]/g, "");
+    const digitsTerm = rawTerm.replace(/\D/g, "");
+    const orFilters = [];
+
+    if (textTerm) {
+      orFilters.push(`name.ilike.%${textTerm}%`);
+      orFilters.push(`whatsapp.ilike.%${textTerm}%`);
+    }
+
+    if (digitsTerm && digitsTerm !== textTerm) {
+      orFilters.push(`whatsapp.ilike.%${digitsTerm}%`);
+    }
+
+    if (orFilters.length > 0) {
+      query = query.or(orFilters.join(","));
     }
   }
   return query;
