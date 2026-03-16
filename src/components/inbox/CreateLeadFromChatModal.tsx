@@ -63,57 +63,58 @@ export function CreateLeadFromChatModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#1a1a1e] border-[#2a2a2e] text-white sm:max-w-md">
+      <DialogContent className="border-border bg-card text-card-foreground sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-white">
-            <LayoutGrid className="w-5 h-5 text-orange-400" />
+          <DialogTitle className="flex items-center gap-2 text-foreground">
+            <LayoutGrid className="h-5 w-5 text-primary" />
             Criar Card no Kanban
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Phone (read-only) */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-400">WhatsApp</Label>
+            <Label className="text-xs text-muted-foreground">WhatsApp</Label>
             <Input
               value={phone}
               disabled
-              className="bg-[#2a2a2e] border-[#3a3a3e] text-slate-300 text-sm"
+              className="text-sm"
             />
           </div>
 
-          {/* Name */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-400">
-              Nome do Lead {isPhoneName && <span className="text-orange-400">*</span>}
+            <Label className="text-xs text-muted-foreground">
+              Nome do Lead {isPhoneName && <span className="text-primary">*</span>}
             </Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Digite o nome do lead"
-              className="bg-[#2a2a2e] border-[#3a3a3e] text-white text-sm placeholder:text-slate-500"
+              className="text-sm"
               autoFocus={isPhoneName}
             />
-            {isPhoneName && (
-              <p className="text-[10px] text-orange-400">
-                Não foi possível identificar o nome. Por favor, preencha.
+            {isPhoneName ? (
+              <p className="text-[10px] text-primary">
+                Não foi possível identificar o nome. Preencha manualmente para criar o card.
+              </p>
+            ) : (
+              <p className="text-[10px] text-muted-foreground">
+                Sugestão preenchida a partir da identificação da conversa.
               </p>
             )}
           </div>
 
-          {/* Project */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-400">Empreendimento</Label>
+            <Label className="text-xs text-muted-foreground">Empreendimento</Label>
             <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger className="bg-[#2a2a2e] border-[#3a3a3e] text-white text-sm">
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Selecione o empreendimento" />
               </SelectTrigger>
-              <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                <SelectItem value="none" className="text-slate-400 text-sm">
+              <SelectContent>
+                <SelectItem value="none" className="text-sm">
                   Sem empreendimento
                 </SelectItem>
                 {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id} className="text-slate-300 text-sm">
+                  <SelectItem key={p.id} value={p.id} className="text-sm">
                     {p.name}
                   </SelectItem>
                 ))}
@@ -126,14 +127,12 @@ export function CreateLeadFromChatModal({
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="text-slate-400"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={!name.trim() || isLoading}
-            className="bg-orange-500 hover:bg-orange-600 text-white"
           >
             Criar Card
           </Button>

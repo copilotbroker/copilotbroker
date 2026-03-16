@@ -54,13 +54,13 @@ interface ConversationThreadProps {
 const getMessageStatusIcon = (status?: string) => {
   switch (status) {
     case "read":
-      return <CheckCheck className="w-3 h-3" />;
+      return <CheckCheck className="h-3 w-3 text-primary" />;
     case "delivered":
-      return <CheckCheck className="w-3 h-3" />;
+      return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
     case "sent":
-      return <Check className="w-3 h-3" />;
+      return <Check className="h-3 w-3 text-muted-foreground" />;
     default:
-      return <Clock3 className="w-3 h-3" />;
+      return <Clock3 className="h-3 w-3 text-muted-foreground" />;
   }
 };
 
@@ -74,50 +74,52 @@ const getMessageTypeLabel = (type: string) => {
   }
 };
 
+const formatMessageDay = (date: string) => format(new Date(date), "d 'de' MMMM", { locale: ptBR });
+
 function MessageMedia({ msg }: { msg: ConversationMessage }) {
   const metadata = (msg.metadata || {}) as Record<string, unknown>;
   const fileUrl = typeof metadata.file_url === "string" ? metadata.file_url : null;
+  const thumbnailUrl = typeof metadata.thumbnail_url === "string" ? metadata.thumbnail_url : null;
   const fileName = typeof metadata.file_name === "string" ? metadata.file_name : getMessageTypeLabel(msg.message_type);
   const mimeType = typeof metadata.mime_type === "string" ? metadata.mime_type : "";
 
-  if (!fileUrl) {
-    return <p className="whitespace-pre-wrap break-words">{msg.content}</p>;
-  }
+  if (!fileUrl) return <p className="whitespace-pre-wrap break-words">{msg.content}</p>;
 
   if (msg.message_type === "image") {
     return (
       <a href={fileUrl} target="_blank" rel="noreferrer" className="block space-y-2">
         <img src={fileUrl} alt={fileName} className="max-h-72 w-full rounded-xl object-cover" loading="lazy" />
-        {msg.content && msg.content !== "[Mídia]" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+        {msg.content && msg.content !== "Foto" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
       </a>
     );
   }
 
   if (msg.message_type === "audio") {
     return (
-      <div className="space-y-2 min-w-[240px]">
+      <div className="min-w-[240px] space-y-2">
         <audio controls className="w-full">
           <source src={fileUrl} type={mimeType || undefined} />
         </audio>
-        {msg.content && msg.content !== "[Mídia]" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+        {msg.content && msg.content !== "Áudio" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
       </div>
     );
   }
 
   if (msg.message_type === "video") {
     return (
-      <div className="space-y-2 min-w-[240px]">
+      <div className="min-w-[240px] space-y-2">
+        {thumbnailUrl ? <img src={thumbnailUrl} alt={fileName} className="max-h-56 w-full rounded-xl object-cover" loading="lazy" /> : null}
         <video controls className="max-h-80 w-full rounded-xl bg-black">
           <source src={fileUrl} type={mimeType || undefined} />
         </video>
-        {msg.content && msg.content !== "[Mídia]" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+        {msg.content && msg.content !== "Vídeo" && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
       </div>
     );
   }
 
   return (
-    <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/40 p-3 hover:bg-background/60 transition-colors">
-      <FileText className="w-5 h-5 text-muted-foreground" />
+    <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-background/60 p-3 transition-colors hover:bg-background">
+      <FileText className="h-5 w-5 text-muted-foreground" />
       <div className="min-w-0">
         <p className="truncate font-medium">{fileName}</p>
         <p className="text-xs text-muted-foreground">{mimeType || "Abrir arquivo"}</p>
@@ -155,10 +157,10 @@ export function ConversationThread({
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
-  const leadName = (conversation.lead as any)?.name || conversation.phone;
+  const leadName = conversation.display_name || (conversation.lead as any)?.name || conversation.phone;
   const isAiActive = conversation.ai_mode === "ai_active";
   const isCopilot = conversation.ai_mode === "copilot";
-  const hasResolvedName = !!(conversation.lead as any)?.name && (conversation.lead as any)?.name !== conversation.phone;
+  const hasResolvedName = !!conversation.display_name && conversation.display_name !== conversation.phone;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -240,7 +242,7 @@ export function ConversationThread({
 
   return (
     <div
-      className="flex flex-col h-full bg-[#0F1117]"
+      className="flex h-full flex-col bg-background"
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0].clientX;
         touchStartY.current = e.touches[0].clientY;
@@ -254,139 +256,176 @@ export function ConversationThread({
         if (dx > 80 && dy < 60) onBack();
       }}
     >
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-[#2A2D37] bg-[#151820]">
-        <Button variant="ghost" size="icon" onClick={onBack} className="lg:hidden text-slate-400 h-8 w-8">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
+      <div className="border-b border-border bg-card px-3 py-2">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={onBack} className="lg:hidden h-8 w-8 text-muted-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
 
-        <button onClick={onOpenLeadPanel} className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-sm flex-shrink-0">
-            {leadName.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{leadName}</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-[10px] text-slate-500">{conversation.phone}</p>
-              <Badge variant="outline" className="h-4 text-[10px] px-1.5">
-                {conversation.lead_id ? "Lead vinculado" : hasResolvedName ? "Nome identificado" : "WhatsApp direto"}
-              </Badge>
+          <button onClick={onOpenLeadPanel} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+              {leadName.charAt(0).toUpperCase()}
             </div>
-          </div>
-        </button>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">{leadName}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[10px] text-muted-foreground">{conversation.phone}</p>
+                <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+                  {conversation.lead_id ? "Lead vinculado" : hasResolvedName ? "Nome identificado" : "WhatsApp direto"}
+                </Badge>
+                {conversation.status && (
+                  <Badge variant="secondary" className="h-4 px-1.5 text-[10px] capitalize">
+                    {conversation.status}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </button>
 
-        <div className="flex items-center gap-1">
-          {conversation.lead_id && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenLead ? onOpenLead(conversation.lead_id!) : navigate(`/corretor/lead/${conversation.lead_id}`)}
-              className="text-slate-400 hover:text-indigo-400 h-8 w-8"
-              title="Ver perfil do lead"
-            >
-              <UserRoundSearch className="w-4 h-4" />
-            </Button>
-          )}
-          {conversation.is_archived && onUnarchive ? (
-            <Button variant="ghost" size="icon" onClick={onUnarchive} className="text-slate-400 h-8 w-8" title="Desarquivar">
-              <ArchiveRestore className="w-4 h-4" />
-            </Button>
-          ) : (
-            <Button variant="ghost" size="icon" onClick={onArchive} className="text-slate-400 h-8 w-8" title="Arquivar">
-              <Archive className="w-4 h-4" />
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {conversation.lead_id && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenLead ? onOpenLead(conversation.lead_id!) : navigate(`/corretor/lead/${conversation.lead_id}`)}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="Ver perfil do lead"
+              >
+                <UserRoundSearch className="h-4 w-4" />
+              </Button>
+            )}
+            {conversation.is_archived && onUnarchive ? (
+              <Button variant="ghost" size="icon" onClick={onUnarchive} className="h-8 w-8 text-muted-foreground" title="Desarquivar">
+                <ArchiveRestore className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" onClick={onArchive} className="h-8 w-8 text-muted-foreground" title="Arquivar">
+                <Archive className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       {!conversation.lead_id && onCreateLead && (
-        <div className="flex items-center justify-between px-3 py-1.5 bg-orange-500/10 border-b border-orange-500/20">
-          <span className="text-xs text-orange-400 flex items-center gap-1">
-            <LayoutGrid className="w-3 h-3" /> Contato sem card no Kanban
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <LayoutGrid className="h-3 w-3" /> Contato sem card no Kanban
           </span>
-          <Button size="sm" className="h-6 text-xs bg-orange-500 hover:bg-orange-600 text-white" onClick={onCreateLead}>
+          <Button size="sm" className="h-7 text-xs" onClick={onCreateLead}>
             Criar Card
           </Button>
         </div>
       )}
 
       {isAiActive && (
-        <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-green-500/15 via-green-500/10 to-emerald-500/15 border-b border-green-500/20 backdrop-blur-sm">
-          <span className="text-xs text-green-400 flex items-center gap-1.5 font-medium">
+        <div className="flex items-center justify-between border-b border-border bg-accent/60 px-3 py-2">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            <Zap className="w-3.5 h-3.5" /> Piloto Automático ativo
+            <Zap className="h-3.5 w-3.5" /> Piloto Automático ativo
           </span>
-          <Button size="sm" variant="outline" className="h-7 text-xs border-green-500/30 text-green-400 hover:bg-green-500/20 hover:text-green-300 transition-all rounded-full px-3 gap-1" onClick={() => onToggleAiMode("copilot")}>
-            <User className="w-3 h-3" /> Desativar Piloto
+          <Button size="sm" variant="outline" className="h-7 gap-1 rounded-full px-3 text-xs" onClick={() => onToggleAiMode("copilot")}>
+            <User className="h-3 w-3" /> Desativar Piloto
           </Button>
         </div>
       )}
       {isCopilot && (
-        <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-indigo-500/10 border-b border-blue-500/20 backdrop-blur-sm">
-          <span className="text-xs text-blue-400 flex items-center gap-1.5 font-medium">
-            <User className="w-3.5 h-3.5" /> Modo Copiloto
-            <span className="text-blue-500/60 font-normal">(Humano no controle)</span>
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <User className="h-3.5 w-3.5" /> Modo Copiloto
           </span>
-          <Button size="sm" className="h-7 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white border-0 shadow-lg shadow-green-500/20 transition-all rounded-full px-3 gap-1" onClick={() => onToggleAiMode("ai_active")}>
-            <Zap className="w-3 h-3" /> Ativar Piloto Automático
+          <Button size="sm" className="h-7 gap-1 rounded-full px-3 text-xs" onClick={() => onToggleAiMode("ai_active")}>
+            <Zap className="h-3 w-3" /> Ativar Piloto
           </Button>
         </div>
       )}
 
       {conversation.lead_id && <CadenceCountdown leadId={conversation.lead_id} brokerId={conversation.broker_id} />}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3">
         {isLoading ? (
-          <div className="flex justify-center py-8"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" /></div>
+          <div className="flex justify-center py-8"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
         ) : messages.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 text-sm">Nenhuma mensagem ainda. Envie a primeira!</div>
+          <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma mensagem ainda. Envie a primeira!</div>
         ) : (
-          messages.map((msg) => {
-            const isOutbound = msg.direction === "outbound";
-            const isAi = msg.sent_by === "ai";
+          <div className="space-y-3">
+            {messages.map((msg, index) => {
+              const isOutbound = msg.direction === "outbound";
+              const isAi = msg.sent_by === "ai";
+              const previousMessage = messages[index - 1];
+              const showDayDivider = !previousMessage || formatMessageDay(previousMessage.created_at) !== formatMessageDay(msg.created_at);
 
-            return (
-              <div key={msg.id} className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
-                <div className={cn(
-                  "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
-                  isOutbound ? (isAi ? "bg-green-600/20 text-green-100 rounded-br-sm" : "bg-indigo-600/20 text-indigo-100 rounded-br-sm") : "bg-[#2A2D37] text-slate-200 rounded-bl-sm"
-                )}>
-                  {isAi && <span className="text-[10px] text-green-400 flex items-center gap-0.5 mb-0.5"><Bot className="w-3 h-3" /> Copiloto</span>}
-                  {!isOutbound && msg.sender_name && <span className="text-[10px] text-slate-400 block mb-1">{msg.sender_name}</span>}
-                  {msg.message_type === "text" ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : <MessageMedia msg={msg} />}
-                  <span className="text-[10px] opacity-60 mt-1 flex items-center justify-end gap-1">
-                    {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
-                    {isOutbound && getMessageStatusIcon(msg.status)}
-                  </span>
+              return (
+                <div key={msg.id}>
+                  {showDayDivider && (
+                    <div className="my-4 flex items-center gap-3">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                        {formatMessageDay(msg.created_at)}
+                      </span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                  )}
+
+                  <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
+                    <div className={cn(
+                      "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
+                      isOutbound
+                        ? isAi
+                          ? "rounded-br-sm bg-accent text-accent-foreground"
+                          : "rounded-br-sm bg-primary text-primary-foreground"
+                        : "rounded-bl-sm border border-border bg-card text-card-foreground"
+                    )}>
+                      {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-primary-foreground/80"><Bot className="h-3 w-3" /> Copiloto</span>}
+                      {!isOutbound && msg.sender_name && <span className="mb-1 block text-[10px] text-muted-foreground">{msg.sender_name}</span>}
+                      {msg.message_type === "text" ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : <MessageMedia msg={msg} />}
+                      <span className={cn(
+                        "mt-1 flex items-center justify-end gap-1 text-[10px]",
+                        isOutbound ? "text-primary-foreground/70" : "text-muted-foreground"
+                      )}>
+                        {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                        {isOutbound && getMessageStatusIcon(msg.status)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
 
       {copilotSuggestion && (
-        <div className="mx-3 mb-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-          <p className="text-[10px] text-blue-400 mb-1 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Sugestão do Copiloto</p>
-          <p className="text-sm text-slate-200 whitespace-pre-wrap">{copilotSuggestion}</p>
-          <div className="flex gap-2 mt-2">
-            <Button size="sm" className="h-7 text-xs bg-indigo-500 text-white hover:bg-indigo-400" onClick={handleInsertSuggestion}>Inserir no campo</Button>
-            <Button size="sm" variant="ghost" className="h-7 text-xs text-slate-400" onClick={onDismissSuggestion}>Ignorar</Button>
+        <div className="mx-3 mb-2 rounded-lg border border-border bg-card p-3">
+          <p className="mb-1 flex items-center gap-1 text-[10px] text-muted-foreground"><Sparkles className="h-3 w-3" /> Sugestão do Copiloto</p>
+          <p className="whitespace-pre-wrap text-sm text-foreground">{copilotSuggestion}</p>
+          <div className="mt-2 flex gap-2">
+            <Button size="sm" className="h-7 text-xs" onClick={handleInsertSuggestion}>Inserir no campo</Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onDismissSuggestion}>Ignorar</Button>
           </div>
         </div>
       )}
 
-      <div className="px-3 pb-3 pt-1 border-t border-[#2A2D37] pb-safe space-y-2">
+      <div className="space-y-2 border-t border-border px-3 pb-3 pt-2 pb-safe">
         {pendingFile && pendingType && (
-          <div className="flex items-center justify-between rounded-xl border border-[#2A2D37] bg-[#1A1D27] px-3 py-2 text-sm text-slate-300">
-            <div className="flex items-center gap-2 min-w-0">
-              {pendingType === "image" && <ImageIcon className="w-4 h-4" />}
-              {pendingType === "audio" && <Mic className="w-4 h-4" />}
-              {pendingType === "video" && <Video className="w-4 h-4" />}
-              {pendingType === "document" && <FileText className="w-4 h-4" />}
-              <span className="truncate">{pendingFile.name}</span>
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                {pendingType === "image" && <ImageIcon className="h-4 w-4 text-muted-foreground" />}
+                {pendingType === "audio" && <Mic className="h-4 w-4 text-muted-foreground" />}
+                {pendingType === "video" && <Video className="h-4 w-4 text-muted-foreground" />}
+                {pendingType === "document" && <FileText className="h-4 w-4 text-muted-foreground" />}
+                <span className="truncate">{pendingFile.name}</span>
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {pendingType === "image" && "Imagem pronta para envio com legenda opcional."}
+                {pendingType === "audio" && "Áudio pronto para envio."}
+                {pendingType === "video" && "Vídeo pronto para envio."}
+                {pendingType === "document" && "Documento pronto para envio."}
+              </p>
             </div>
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setPendingFile(null)}>Remover</Button>
           </div>
@@ -400,11 +439,11 @@ export function ConversationThread({
             accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
             onChange={(e) => setPendingFile(e.target.files?.[0] || null)}
           />
-          <Button variant="ghost" size="icon" className="text-blue-400 hover:text-blue-300 h-9 w-9 flex-shrink-0" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion} title="Pedir sugestão ao Copiloto">
-            {isGeneratingSuggestion ? <div className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full" /> : <Sparkles className="w-5 h-5" />}
+          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion} title="Pedir sugestão ao Copiloto">
+            {isGeneratingSuggestion ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" /> : <Sparkles className="h-5 w-5" />}
           </Button>
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white h-9 w-9 flex-shrink-0" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
-            <Paperclip className="w-4 h-4" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
+            <Paperclip className="h-4 w-4" />
           </Button>
           <Textarea
             ref={inputRef}
@@ -412,11 +451,11 @@ export function ConversationThread({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem..."}
-            className="min-h-[36px] max-h-[120px] resize-none bg-[#1A1D27] border-[#2A2D37] text-sm text-white placeholder:text-slate-500 py-2"
+            className="max-h-[120px] min-h-[36px] resize-none py-2 text-sm"
             rows={1}
           />
-          <Button size="icon" className="bg-indigo-500 hover:bg-indigo-400 text-white h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
-            <Send className="w-4 h-4" />
+          <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
+            <Send className="h-4 w-4" />
           </Button>
         </div>
       </div>
