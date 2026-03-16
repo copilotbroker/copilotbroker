@@ -349,6 +349,7 @@ async function persistInboundMediaIfNeeded(
         phone: normalizedPhone,
         lastStatus,
         lastContentType,
+        isWhatsAppHosted: isWhatsAppHostedMediaUrl(sourceUrl),
       });
       return fallbackMetadata;
     }
@@ -357,13 +358,18 @@ async function persistInboundMediaIfNeeded(
     const bytes = new Uint8Array(arrayBuffer);
     const responseMimeType = mediaResponse.headers.get("content-type") || undefined;
     const mimeType = responseMimeType || (typeof metadata.mime_type === "string" ? metadata.mime_type : undefined) || getMimeTypeFromFileName(typeof metadata.file_name === "string" ? metadata.file_name : undefined);
+    const looksRenderable = isLikelyRenderableMimeType(mimeType, messageType) && hasValidBinarySignature(bytes, mimeType);
 
-    if (!isLikelyRenderableMimeType(mimeType, messageType) || !hasValidBinarySignature(bytes, mimeType)) {
+    if (!looksRenderable) {
       console.warn("⚠️ Inbound media rejected before upload", {
         sourceUrl,
         messageType,
         mimeType,
         size: arrayBuffer.byteLength,
+        lastStatus,
+        lastContentType,
+        attemptedWithAuth,
+        isWhatsAppHosted: isWhatsAppHostedMediaUrl(sourceUrl),
       });
       return {
         ...fallbackMetadata,
