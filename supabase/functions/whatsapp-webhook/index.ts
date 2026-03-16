@@ -18,6 +18,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "
 interface UAZAPIv2Payload {
   EventType?: string;
   instanceName?: string;
+  token?: string;
   message?: {
     chatid?: string;
     fromMe?: boolean;
@@ -207,6 +208,100 @@ function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payl
     size_bytes: sizeBytes,
     thumbnail_url: thumbnailUrl,
   };
+}
+
+function sanitizeFileName(fileName?: string, fallbackExtension?: string) {
+  const base = (fileName || `media-${Date.now()}`).replace(/[^a-zA-Z0-9._-]/g, "-");
+  if (base.includes(".")) return base;
+  return fallbackExtension ? `${base}.${fallbackExtension}` : base;
+}
+
+function getExtensionFromMimeType(mimeType?: string) {
+  if (!mimeType) return undefined;
+  const mime = mimeType.toLowerCase();
+  if (mime.startsWith("image/jpeg")) return "jpg";
+  if (mime.startsWith("image/png")) return "png";
+  if (mime.startsWith("image/webp")) return "webp";
+  if (mime.startsWith("image/gif")) return "gif";
+  if (mime.startsWith("audio/ogg")) return "ogg";
+  if (mime.startsWith("audio/mpeg")) return "mp3";
+  if (mime.startsWith("video/mp4")) return "mp4";
+  if (mime.includes("pdf")) return "pdf";
+  return mime.split("/")[1]?.split(";")[0];
+}
+
+async function persistInboundMediaIfNeeded(
+  supabase: SupabaseClient,
+  payload: UAZAPIv2Payload,
+  phone: string,
+  messageType: string,
+  metadata: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const sourceUrl = typeof metadata.file_url === "string" ? metadata.file_url : "";
+  if (!sourceUrl || messageType === "text") return metadata;
+
+  const alreadyHosted = sourceUrl.includes("/storage/v1/object/public/project-media/");
+  if (alreadyHosted) return metadata;
+
+  try {
+    const authHeaders: HeadersInit[] = [];
+    if (payload.token) authHeaders.push({ token: payload.token });
+    if (UAZAPI_TOKEN) authHeaders.push({ token: UAZAPI_TOKEN });
+    authHeaders.push({});
+
+    let mediaResponse: Response | null = null;
+    for (const headers of authHeaders) {
+      const response = await fetch(sourceUrl, { headers });
+      if (response.ok) {
+        mediaResponse = response;
+        break;
+      }
+    }
+
+    if (!mediaResponse?.ok) {
+      console.warn("⚠️ Could not fetch inbound media for preview", { sourceUrl, messageType });
+      return metadata;
+    }
+
+    const arrayBuffer = await mediaResponse.arrayBuffer();
+    const mimeType = typeof metadata.mime_type === "string" && metadata.mime_type
+      ? metadata.mime_type
+      : mediaResponse.headers.get("content-type") || undefined;
+    const extension = getExtensionFromMimeType(mimeType);
+    const fileName = sanitizeFileName(
+      typeof metadata.file_name === "string" ? metadata.file_name : undefined,
+      extension,
+    );
+    const normalizedPhone = getCanonicalPhoneNormalized(phone);
+    const path = `inbox/inbound/${normalizedPhone}/${Date.now()}-${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("project-media")
+      .upload(path, arrayBuffer, {
+        contentType: mimeType,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.warn("⚠️ Could not upload inbound media to bucket", uploadError);
+      return metadata;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from("project-media").getPublicUrl(path);
+
+    return {
+      ...metadata,
+      file_url: publicUrlData.publicUrl,
+      storage_path: path,
+      mime_type: mimeType || metadata.mime_type,
+      file_name: fileName,
+      size_bytes: Number(metadata.size_bytes) || arrayBuffer.byteLength,
+      source_file_url: sourceUrl,
+    };
+  } catch (error) {
+    console.warn("⚠️ Error while persisting inbound media", error);
+    return metadata;
+  }
 }
 
 
@@ -1130,9 +1225,12 @@ async function handleIncomingMessage(
     console.log(`📱 LID fallback: chatid="${chatid}" → sender_pn="${msg.sender_pn}" → phone="${phone}"`);
   }
 
-  const mediaMetadata = extractMediaMetadata(msg, payload);
+  let mediaMetadata = extractMediaMetadata(msg, payload);
   const messageText = msg.text || mediaMetadata.caption || "";
   const resolvedMessageType = inferMessageType(messageText, typeof mediaMetadata.mime_type === "string" ? mediaMetadata.mime_type : undefined, typeof mediaMetadata.raw_type === "string" ? mediaMetadata.raw_type : undefined);
+  if (!msg.fromMe) {
+    mediaMetadata = await persistInboundMediaIfNeeded(supabase, payload, phone, resolvedMessageType, mediaMetadata);
+  }
   const direction = msg.fromMe ? "outbound" : "inbound";
   console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | text="${messageText.substring(0, 50)}"`);
 
