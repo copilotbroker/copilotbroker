@@ -340,6 +340,9 @@ export function ConversationList({
                 : 0;
               const hasCadenciaAtiva = conv.lead_id ? cadenciaLeadIds.has(conv.lead_id) : false;
               const preview = getLastPreview(conv);
+              const mediaThumb = getMediaThumb(conv);
+              const isImagePreview = conv.last_message_type === "image";
+              const isVideoPreview = conv.last_message_type === "video";
 
               return (
                 <div key={conv.id} className="group relative">
@@ -376,13 +379,39 @@ export function ConversationList({
                           </span>
                         </div>
 
-                        <p className={cn(
-                          "mt-1.5 truncate pr-1 text-xs",
-                          isUnread ? "text-foreground/80" : "text-muted-foreground"
-                        )}>
-                          {conv.last_message_direction === "outbound" && "Você: "}
-                          {preview}
-                        </p>
+                        <div className="mt-1.5 flex items-center gap-2 overflow-hidden">
+                          {(isImagePreview || isVideoPreview) && (
+                            <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                              {mediaThumb ? (
+                                <img
+                                  src={mediaThumb}
+                                  alt={isImagePreview ? "Prévia da imagem" : "Thumbnail do vídeo"}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                  {isImagePreview ? <ImageIcon className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                                </div>
+                              )}
+                              {isVideoPreview && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-foreground/15">
+                                  <span className="rounded-full bg-background/90 p-1 text-foreground">
+                                    <Play className="h-3 w-3 fill-current" />
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <p className={cn(
+                            "min-w-0 flex-1 truncate pr-1 text-xs",
+                            isUnread ? "text-foreground/80" : "text-muted-foreground"
+                          )}>
+                            {conv.last_message_direction === "outbound" && "Você: "}
+                            {preview}
+                          </p>
+                        </div>
 
                         <div className="mt-1 flex flex-wrap items-center gap-1">
                           {isUnread && conv.unread_count > 0 && (
