@@ -384,7 +384,7 @@ export function ConversationThread({
                       {msg.message_type === "text" ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : <MessageMedia msg={msg} />}
                       <span className={cn(
                         "mt-1 flex items-center justify-end gap-1 text-[10px]",
-                        isOutbound ? "text-primary-foreground/70" : "text-muted-foreground"
+                        "text-muted-foreground"
                       )}>
                         {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
                         {isOutbound && getMessageStatusIcon(msg.status)}
