@@ -1,52 +1,60 @@
 
-Objetivo
-- Mostrar miniaturas no Inbox para mídias recebidas/enviadas:
-  - imagem com preview visível
-  - vídeo com thumbnail
-- Manter a lista leve e sem quebrar o layout atual.
 
-O que já existe
-- A thread da conversa já renderiza imagem e vídeo usando `metadata.file_url` e `metadata.thumbnail_url`.
-- O webhook já tenta salvar `file_url` e `thumbnail_url` no `metadata`.
-- A lista (`ConversationList.tsx`) hoje mostra apenas texto/emoji no preview da última mensagem.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-Plano de implementação
-1. Melhorar o card da conversa no Inbox
-- Atualizar `ConversationList.tsx` para detectar quando `last_message_type` for `image` ou `video`.
-- Exibir uma miniatura pequena no preview do card:
-  - imagem: usar `file_url` ou `thumbnail_url`
-  - vídeo: priorizar `thumbnail_url`; se não houver, mostrar fallback visual de vídeo
-- Manter o texto ao lado/abaixo da thumbnail para legenda/nome do arquivo quando existir.
+### Problema 1: Nomes dos leads não aparecem
 
-2. Levar os metadados da última mídia para a lista
-- Revisar `useConversations` para garantir que a lista tenha acesso não só a `last_message_type` e `last_message_preview`, mas também aos metadados da última mensagem (`file_url`, `thumbnail_url`, `file_name`).
-- Se hoje a tabela `conversations` não guarda isso diretamente, buscar junto da última mensagem na carga das conversas e anexar ao objeto exibido na UI.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-3. Padronizar fallbacks
-- Imagem sem URL válida: mostrar placeholder com ícone de foto.
-- Vídeo sem thumbnail: mostrar card com ícone de play/filme.
-- Documento/áudio continuam com o comportamento atual, sem thumbnail real.
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-4. Preservar performance
-- Thumbnail pequena, com `object-cover`, dimensões fixas e `loading="lazy"` quando aplicável.
-- Não carregar galeria nem mídia completa no card; só a miniatura necessária.
-- Continuar priorizando ordenação, unread badge e horário sem deslocar o layout.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-5. Compatibilizar com mensagens antigas e novas
-- Novas mensagens devem aproveitar os metadados já gravados pelo webhook.
-- Mensagens antigas sem `thumbnail_url` ainda terão fallback visual, sem quebrar a interface.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-Arquivos envolvidos
-- `src/components/inbox/ConversationList.tsx`
-- `src/hooks/use-conversations.ts`
-- possivelmente `src/components/inbox/ConversationThread.tsx` apenas para reaproveitar helpers visuais
-- possivelmente `supabase/functions/whatsapp-webhook/index.ts` se eu identificar necessidade de enriquecer thumbnail para vídeos recebidos
+### Problema 2: Marcar como lida quando lida no celular
 
-Resultado esperado
-- Na lista do Inbox, quando a última mensagem for foto, aparece uma miniatura da imagem.
-- Quando for vídeo, aparece uma thumbnail do vídeo ou um fallback visual consistente.
-- O usuário consegue identificar rapidamente do que se trata a mídia antes de abrir a conversa.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-Detalhe técnico
-- O ponto principal não é a thread, e sim fazer a lista conhecer os metadados da última mensagem.
-- Vou seguir uma abordagem segura: enriquecer o objeto da conversa com dados da última mensagem e renderizar um preview compacto no card, sem alterar a lógica principal do chat.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
+
+### Arquivos a editar
+
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+
