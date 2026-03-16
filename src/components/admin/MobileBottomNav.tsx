@@ -24,6 +24,13 @@ interface MobileBottomNavProps {
   onNotificationsClick?: () => void;
 }
 
+interface BottomNavItem {
+  id: "notifications" | "crm" | "add" | "leads" | "more";
+  icon: typeof LayoutDashboard;
+  badge?: number;
+  isFab?: boolean;
+}
+
 const DRAWER_ITEMS_STATIC = ADMIN_ROUTE_TABS.filter((item) => !["crm", "leads"].includes(item.id));
 
 export function MobileBottomNav({

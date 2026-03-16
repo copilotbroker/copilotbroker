@@ -203,10 +203,7 @@ export default function AdminInbox() {
 
   return (
     <div className="min-h-screen bg-[#141417] pt-safe">
-      <AdminSidebar activeTab="inbox" onTabChange={(tab) => {
-        if (tab === "inbox") return;
-        navigate("/admin");
-      }} onLogout={handleLogout} />
+      <AdminSidebar activeTab="inbox" onLogout={handleLogout} />
 
       <div className="md:pl-16">
         <div className="flex h-[calc(100vh-64px)] md:h-screen overflow-hidden">
