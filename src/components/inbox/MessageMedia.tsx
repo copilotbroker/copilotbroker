@@ -45,21 +45,22 @@ export function MessageMedia({ msg }: MessageMediaProps) {
   const storagePath = typeof metadata.storage_path === "string" ? metadata.storage_path : null;
   const primaryUrl = typeof metadata.file_url === "string" ? metadata.file_url : null;
   const thumbnailUrl = typeof metadata.thumbnail_url === "string" ? metadata.thumbnail_url : null;
+  const inlineReady = metadata.is_inline_ready === true || !!storagePath;
   const bucketUrl = useMemo(() => getPublicUrlFromStoragePath(storagePath), [storagePath]);
-  const resolvedUrl = bucketUrl || primaryUrl;
-  const resolvedThumbnail = thumbnailUrl || resolvedUrl;
+  const resolvedUrl = inlineReady ? (bucketUrl || primaryUrl) : primaryUrl;
+  const resolvedThumbnail = inlineReady ? (thumbnailUrl || resolvedUrl) : thumbnailUrl;
 
   const caption = msg.content && !["Foto", "Áudio", "Vídeo", "Documento", "[Mídia]"].includes(msg.content)
     ? msg.content
     : "";
 
-  const isImage = msg.message_type === "image" && !!resolvedUrl && !previewFailed && (
+  const isImage = inlineReady && msg.message_type === "image" && !!resolvedUrl && !previewFailed && (
     mimeType.startsWith("image/") || hasRenderableExtension(resolvedUrl, [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg"])
   );
-  const isVideo = msg.message_type === "video" && !!resolvedUrl && (
+  const isVideo = inlineReady && msg.message_type === "video" && !!resolvedUrl && (
     mimeType.startsWith("video/") || hasRenderableExtension(resolvedUrl, [".mp4", ".webm", ".ogg", ".mov"])
   );
-  const isAudio = msg.message_type === "audio" && !!resolvedUrl && (
+  const isAudio = inlineReady && msg.message_type === "audio" && !!resolvedUrl && (
     mimeType.startsWith("audio/") || hasRenderableExtension(resolvedUrl, [".mp3", ".ogg", ".wav", ".m4a", ".aac"])
   );
 
