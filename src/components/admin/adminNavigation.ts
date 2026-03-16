@@ -1,0 +1,47 @@
+import { Brain, Building2, LayoutDashboard, MessageCircle, Shuffle, Users, Bot } from "lucide-react";
+
+export const ADMIN_ROUTE_TABS = [
+  { id: "crm", label: "CRM", path: "/admin/crm", icon: LayoutDashboard },
+  { id: "leads", label: "Leads", path: "/admin/leads", icon: Users },
+  { id: "inbox", label: "Inbox", path: "/admin/inbox", icon: MessageCircle },
+  { id: "brokers", label: "Corretores", path: "/admin/corretores", icon: Users },
+  { id: "roletas", label: "Roletas", path: "/admin/roletas", icon: Shuffle },
+  { id: "projects", label: "Empreendimentos", path: "/admin/empreendimentos", icon: Building2 },
+  { id: "copilot", label: "Copiloto", path: "/admin/copiloto", icon: Bot },
+  { id: "analytics", label: "Inteligência", path: "/admin/inteligencia", icon: Brain },
+] as const;
+
+export type AdminRouteTabId = typeof ADMIN_ROUTE_TABS[number]["id"];
+
+export const ADMIN_TAB_LABELS: Record<AdminRouteTabId, { title: string; subtitle?: string }> = {
+  crm: { title: "CRM", subtitle: "Gerencie seus leads e pipeline de vendas" },
+  leads: { title: "Leads", subtitle: "Visualize e exporte todos os leads" },
+  inbox: { title: "Inbox", subtitle: "Gerencie conversas e atendimento em tempo real" },
+  brokers: { title: "Corretores", subtitle: "Cadastre e gerencie corretores parceiros" },
+  roletas: { title: "Roletas", subtitle: "Gerencie distribuição e regras de atendimento" },
+  projects: { title: "Empreendimentos", subtitle: "Configure seus empreendimentos ativos" },
+  copilot: { title: "Copiloto IA", subtitle: "Configure o assistente IA dos corretores" },
+  analytics: { title: "Analytics", subtitle: "Acompanhe métricas e performance" },
+};
+
+export const ADMIN_DEFAULT_TAB: AdminRouteTabId = "crm";
+
+export const ADMIN_TAB_BY_SEGMENT: Record<string, AdminRouteTabId> = {
+  crm: "crm",
+  leads: "leads",
+  corretores: "brokers",
+  roletas: "roletas",
+  empreendimentos: "projects",
+  inteligencia: "analytics",
+  inbox: "inbox",
+  copiloto: "copilot",
+};
+
+export function getAdminPathByTab(tab: AdminRouteTabId) {
+  return ADMIN_ROUTE_TABS.find((item) => item.id === tab)?.path ?? "/admin/crm";
+}
+
+export function getAdminTabFromPath(pathname: string): AdminRouteTabId {
+  const segment = pathname.split("/").filter(Boolean)[1];
+  return ADMIN_TAB_BY_SEGMENT[segment ?? ""] ?? ADMIN_DEFAULT_TAB;
+}

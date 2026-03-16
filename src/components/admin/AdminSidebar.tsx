@@ -1,15 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Building2, 
-  Brain, 
+import {
   Settings,
   Plus,
-  Shuffle,
-  MessageCircle,
-  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoEnove from "@/assets/logo-enove-mini.png";
@@ -24,32 +17,20 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { NotificationPanel } from "./NotificationPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { supabase } from "@/integrations/supabase/client";
+import { ADMIN_ROUTE_TABS, type AdminRouteTabId, getAdminPathByTab } from "./adminNavigation";
 
 interface AdminSidebarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab: AdminRouteTabId;
   onLogout: () => void;
   onAddLead?: () => void;
 }
 
-const NAV_ITEMS = [
-  { id: "crm", label: "CRM", icon: LayoutDashboard },
-  { id: "leads", label: "Leads", icon: Users },
-  { id: "inbox", label: "Inbox", icon: MessageCircle },
-  { id: "brokers", label: "Corretores", icon: Users },
-  { id: "roletas", label: "Roletas", icon: Shuffle },
-  { id: "projects", label: "Empreendimentos", icon: Building2 },
-  { id: "copilot", label: "Copiloto", icon: Bot },
-  { id: "analytics", label: "Inteligência", icon: Brain },
-];
-
-export function AdminSidebar({ activeTab, onTabChange, onLogout, onAddLead }: AdminSidebarProps) {
+export function AdminSidebar({ activeTab, onLogout, onAddLead }: AdminSidebarProps) {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [userInitial, setUserInitial] = useState("A");
   const { unreadCount: inboxUnread } = useInboxUnread();
 
-  // Fetch user initial
   useEffect(() => {
     const fetchUserInitial = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -59,19 +40,18 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout, onAddLead }: Ad
     };
     fetchUserInitial();
   }, []);
+
   return (
     <TooltipProvider delayDuration={100}>
       <aside className="fixed left-0 top-0 bottom-0 z-40 hidden md:flex flex-col w-16 bg-[#141417] border-r border-[#2a2a2e]">
-        {/* Logo area - aligned with header breadcrumb row */}
         <div className="flex items-center justify-center pt-4 pb-3">
-          <img 
-            src={logoEnove} 
-            alt="Enove" 
+          <img
+            src={logoEnove}
+            alt="Enove"
             className="h-6 w-6 object-contain"
           />
         </div>
 
-        {/* FAB - Floating Action Button */}
         <div className="flex items-center justify-center py-5">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -93,38 +73,28 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout, onAddLead }: Ad
           </Tooltip>
         </div>
 
-        {/* Main Navigation */}
         <nav className="flex-1 flex flex-col items-center gap-1 py-4">
-          {NAV_ITEMS.map((item) => {
+          {ADMIN_ROUTE_TABS.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
             const isInbox = item.id === "inbox";
-            
+
             return (
               <Tooltip key={item.id}>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => {
-                      if (item.id === "inbox") {
-                        navigate("/admin/inbox");
-                      } else if (item.id === "copilot") {
-                        navigate("/admin/copiloto");
-                      } else {
-                        onTabChange(item.id);
-                      }
-                    }}
+                    onClick={() => navigate(getAdminPathByTab(item.id))}
                     className={cn(
                       "relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200",
                       isInbox
                         ? isActive
                           ? "bg-[hsl(145,80%,42%)]/20 text-[hsl(145,80%,55%)] shadow-[0_0_12px_hsl(145,80%,42%,0.3)]"
                           : "text-[hsl(145,80%,55%)]/70 hover:text-[hsl(145,80%,55%)] hover:bg-[hsl(145,80%,42%)]/10 hover:shadow-[0_0_8px_hsl(145,80%,42%,0.15)]"
-                        : isActive 
-                          ? "bg-primary/20 text-primary" 
+                        : isActive
+                          ? "bg-primary/20 text-primary"
                           : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     )}
                   >
-                    {/* Active indicator bar */}
                     {isActive && (
                       <div className={cn(
                         "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full",
@@ -147,15 +117,12 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout, onAddLead }: Ad
           })}
         </nav>
 
-        {/* Bottom Section */}
         <div className="flex flex-col items-center gap-2 py-4 border-t border-[#2a2a2e]">
-          {/* Notifications */}
           <NotificationPanel />
 
-          {/* Settings */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <button 
+              <button
                 onClick={() => setIsSettingsOpen(true)}
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
@@ -167,10 +134,9 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout, onAddLead }: Ad
             </TooltipContent>
           </Tooltip>
 
-          {/* User Avatar / Logout */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <button 
+              <button
                 onClick={onLogout}
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-primary/50 transition-colors"
               >
@@ -187,10 +153,9 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout, onAddLead }: Ad
           </Tooltip>
         </div>
 
-        {/* Settings Panel */}
-        <SettingsPanel 
-          isOpen={isSettingsOpen} 
-          onClose={() => setIsSettingsOpen(false)} 
+        <SettingsPanel
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
         />
       </aside>
     </TooltipProvider>
