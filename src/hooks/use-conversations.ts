@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const CONVERSATION_FETCH_LIMIT = 100;
+const MESSAGE_FETCH_LIMIT = 200;
+const INBOX_POLL_INTERVAL_MS = 12000;
+const THREAD_POLL_INTERVAL_MS = 6000;
+
 export interface Conversation {
   id: string;
   broker_id: string;
@@ -23,7 +28,6 @@ export interface Conversation {
   copilot_suggestions_count: number;
   created_at: string;
   updated_at: string;
-  // Joined
   lead?: { id: string; name: string; status: string; project_id: string | null; notes: string | null; lead_origin: string | null } | null;
   project?: { id: string; name: string } | null;
 }
@@ -55,6 +59,21 @@ interface UseConversationsOptions {
   search?: string;
   isArchived?: boolean;
 }
+
+const sortMessagesAsc = (items: ConversationMessage[]) => (
+  [...items].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+);
+
+const mergeMessages = (current: ConversationMessage[], incoming: ConversationMessage[]) => {
+  const byId = new Map(current.map((message) => [message.id, message]));
+
+  for (const message of incoming) {
+    const existing = byId.get(message.id);
+    byId.set(message.id, existing ? { ...existing, ...message } : message);
+  }
+
+  return sortMessagesAsc([...byId.values()]);
+};
 
 export function useConversations(options: UseConversationsOptions = {}) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -122,7 +141,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
       if (options.brokerId) query = query.eq("broker_id", options.brokerId);
       if (options.statusFilter && options.statusFilter !== "all") query = query.eq("status", options.statusFilter);
 
-      const { data, error } = await query.limit(100);
+      const { data, error } = await query.limit(CONVERSATION_FETCH_LIMIT);
       if (error) throw error;
 
       let filtered = (data || []) as unknown as Conversation[];
@@ -284,7 +303,6 @@ export function useConversations(options: UseConversationsOptions = {}) {
     fetchConversations();
   }, [fetchConversations]);
 
-  // Realtime
   useEffect(() => {
     const channel = supabase
       .channel("conversations-realtime")
@@ -294,6 +312,14 @@ export function useConversations(options: UseConversationsOptions = {}) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
+  }, [fetchConversations]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      fetchConversations();
+    }, INBOX_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
   }, [fetchConversations]);
 
   const markAsRead = useCallback(async (conversationId: string) => {
@@ -321,19 +347,12 @@ export function useConversations(options: UseConversationsOptions = {}) {
     fetchConversations();
   }, [fetchConversations]);
 
-  /**
-   * Update AI mode with full handoff logic:
-   * - When switching to 'copilot': cancel pending queue messages + log handoff
-   * - When switching to 'ai_active': log reactivation
-   */
   const updateAiMode = useCallback(async (conversationId: string, mode: string) => {
-    // 1. Update ai_mode on conversation
     await supabase
       .from("conversations")
       .update({ ai_mode: mode } as any)
       .eq("id", conversationId);
 
-    // 2. Get conversation details for handoff logic
     const { data: conv } = await supabase
       .from("conversations")
       .select("lead_id, broker_id")
@@ -342,7 +361,6 @@ export function useConversations(options: UseConversationsOptions = {}) {
 
     if (conv?.lead_id) {
       if (mode === "copilot") {
-        // Cancel pending queue messages for this lead
         await supabase
           .from("whatsapp_message_queue")
           .update({
@@ -353,7 +371,6 @@ export function useConversations(options: UseConversationsOptions = {}) {
           .eq("lead_id", conv.lead_id)
           .in("status", ["queued", "scheduled"]);
 
-        // Log handoff interaction
         await supabase.from("lead_interactions").insert({
           lead_id: conv.lead_id,
           interaction_type: "note_added" as any,
@@ -362,7 +379,6 @@ export function useConversations(options: UseConversationsOptions = {}) {
           channel: "system",
         } as any);
       } else {
-        // Log AI reactivation
         await supabase.from("lead_interactions").insert({
           lead_id: conv.lead_id,
           interaction_type: "note_added" as any,
@@ -391,18 +407,22 @@ export function useConversationMessages(conversationId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchMessages = useCallback(async () => {
-    if (!conversationId) return;
+    if (!conversationId) {
+      setMessages([]);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from("conversation_messages")
         .select("*")
         .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true })
-        .limit(200);
+        .order("created_at", { ascending: false })
+        .limit(MESSAGE_FETCH_LIMIT);
 
       if (error) throw error;
-      setMessages((data || []) as unknown as ConversationMessage[]);
+      setMessages(sortMessagesAsc((data || []) as unknown as ConversationMessage[]));
     } catch (error) {
       console.error("Erro ao buscar mensagens:", error);
     } finally {
@@ -410,13 +430,40 @@ export function useConversationMessages(conversationId: string | null) {
     }
   }, [conversationId]);
 
+  const fetchNewMessages = useCallback(async () => {
+    if (!conversationId) return;
+
+    const lastLoadedAt = messages[messages.length - 1]?.created_at;
+    if (!lastLoadedAt) {
+      await fetchMessages();
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("conversation_messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .gt("created_at", lastLoadedAt)
+        .order("created_at", { ascending: true })
+        .limit(MESSAGE_FETCH_LIMIT);
+
+      if (error) throw error;
+      if (!data?.length) return;
+
+      setMessages((prev) => mergeMessages(prev, data as unknown as ConversationMessage[]));
+    } catch (error) {
+      console.error("Erro ao buscar novas mensagens:", error);
+    }
+  }, [conversationId, fetchMessages, messages]);
+
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
 
-  // Realtime for new messages and status updates
   useEffect(() => {
     if (!conversationId) return;
+
     const channel = supabase
       .channel(`conv-messages-${conversationId}`)
       .on("postgres_changes", {
@@ -426,10 +473,7 @@ export function useConversationMessages(conversationId: string | null) {
         filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => {
         const newMsg = payload.new as unknown as ConversationMessage;
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === newMsg.id)) return prev;
-          return [...prev, newMsg];
-        });
+        setMessages((prev) => mergeMessages(prev, [newMsg]));
       })
       .on("postgres_changes", {
         event: "UPDATE",
@@ -438,16 +482,23 @@ export function useConversationMessages(conversationId: string | null) {
         filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => {
         const updatedMsg = payload.new as unknown as ConversationMessage;
-        setMessages((prev) => prev.map((m) => m.id === updatedMsg.id ? updatedMsg : m));
+        setMessages((prev) => mergeMessages(prev, [updatedMsg]));
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
 
-  /**
-   * Send message via backend function (text or media)
-   */
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const intervalId = window.setInterval(() => {
+      fetchNewMessages();
+    }, THREAD_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [conversationId, fetchNewMessages]);
+
   const sendMessage = useCallback(async (payload: string | OutboundMessagePayload, sentBy = "human") => {
     if (!conversationId) return null;
 
@@ -491,6 +542,8 @@ export function useConversationMessages(conversationId: string | null) {
           toast.error("Erro ao enviar mensagem");
           return null;
         }
+
+        setMessages((prev) => mergeMessages(prev, [fallbackData as ConversationMessage]));
         toast.warning("Mensagem salva localmente (envio pendente)");
         return fallbackData;
       }
