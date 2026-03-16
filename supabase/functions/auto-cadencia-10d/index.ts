@@ -258,6 +258,8 @@ Deno.serve(async (req) => {
     };
 
     // 9. Create campaign
+    const restoreStatus = lead.status === "new" ? "info_sent" : lead.status;
+
     const { data: campaign, error: campErr } = await supabase
       .from("whatsapp_campaigns")
       .insert({
@@ -267,7 +269,7 @@ Deno.serve(async (req) => {
         total_leads: stepsToUse.length,
         lead_id: leadId,
         project_id: lead.project_id,
-        lead_previous_status: lead.status,
+        lead_previous_status: restoreStatus,
       })
       .select()
       .single();
@@ -353,7 +355,7 @@ Deno.serve(async (req) => {
       interaction_type: "atendimento_iniciado",
       old_status: lead.status,
       new_status: "awaiting_docs",
-      notes: `⚡ Cadência 10D ativada automaticamente (${stepsToUse.length} etapas):\n\n${stepsPreview}`,
+      notes: `⚡ Cadência 10D ativada automaticamente — retorno previsto para ${restoreStatus === "info_sent" ? "Atendimento" : restoreStatus} (${stepsToUse.length} etapas):\n\n${stepsPreview}`,
     });
 
     // 14. Log working hours adjustments if any

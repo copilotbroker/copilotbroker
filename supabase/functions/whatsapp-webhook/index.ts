@@ -244,6 +244,8 @@ async function processReply(
 
           if (lead && (lead as { status: string }).status === "awaiting_docs") {
             const restoreStatus = (campaignData as any).lead_previous_status || "info_sent";
+            const restoreLabel = restoreStatus === "info_sent" ? "Atendimento" : restoreStatus;
+
             await supabase
               .from("leads")
               .update({ status: restoreStatus, updated_at: new Date().toISOString() })
@@ -254,7 +256,7 @@ async function processReply(
               interaction_type: "status_change",
               old_status: "awaiting_docs",
               new_status: restoreStatus,
-              notes: `Cadência concluída — lead restaurado para ${restoreStatus}`,
+              notes: `Cadência concluída — lead voltou para ${restoreLabel}`,
             });
             console.log(`Lead ${campaignData.lead_id} restored to ${restoreStatus} after cadence completion`);
           }
