@@ -65,7 +65,14 @@ export function MessageMedia({ msg }: MessageMediaProps) {
   );
 
   if (!resolvedUrl) {
-    return <p className="whitespace-pre-wrap break-words">{msg.content}</p>;
+    return (
+      <div className="space-y-2">
+        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+        {primaryUrl ? (
+          <p className="text-xs text-muted-foreground">Aguardando processamento da mídia para visualização inline.</p>
+        ) : null}
+      </div>
+    );
   }
 
   if (isImage) {
