@@ -61,6 +61,53 @@ export function useConversations(options: UseConversationsOptions = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [totalUnread, setTotalUnread] = useState(0);
 
+  const getPhoneSearchVariants = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, "");
+    const withoutCountry = cleaned.startsWith("55") ? cleaned.slice(2) : cleaned;
+    const withCountry = withoutCountry.startsWith("55") ? withoutCountry : `55${withoutCountry}`;
+    const tenDigits = withoutCountry.length === 10 ? withoutCountry : null;
+    const elevenDigits = withoutCountry.length === 11 ? withoutCountry : null;
+    const withNinthDigit = tenDigits ? `${tenDigits.slice(0, 2)}9${tenDigits.slice(2)}` : null;
+    const withoutNinthDigit = elevenDigits ? `${elevenDigits.slice(0, 2)}${elevenDigits.slice(3)}` : null;
+
+    return [...new Set([
+      cleaned,
+      withoutCountry,
+      withCountry,
+      tenDigits,
+      elevenDigits,
+      withNinthDigit,
+      withoutNinthDigit,
+      tenDigits ? `55${tenDigits}` : null,
+      elevenDigits ? `55${elevenDigits}` : null,
+      withNinthDigit ? `55${withNinthDigit}` : null,
+      withoutNinthDigit ? `55${withoutNinthDigit}` : null,
+    ].filter(Boolean) as string[])];
+  };
+
+  const resolveConversationIdentity = (conversation: Conversation, matchedLead?: any) => {
+    const leadData = conversation.lead || (matchedLead ? {
+      id: matchedLead.id,
+      name: matchedLead.name,
+      status: matchedLead.status,
+      project_id: matchedLead.project_id,
+      notes: matchedLead.notes,
+      lead_origin: matchedLead.lead_origin,
+    } : null);
+
+    const resolvedName = leadData?.name || conversation.display_name || conversation.phone;
+    const resolvedSource = leadData?.name
+      ? "lead"
+      : (conversation.display_name_source || (conversation.display_name ? "conversation" : "phone"));
+
+    return {
+      ...conversation,
+      lead: leadData,
+      display_name: resolvedName,
+      display_name_source: resolvedSource,
+    };
+  };
+
   const fetchConversations = useCallback(async () => {
     try {
       let query = supabase
@@ -72,19 +119,14 @@ export function useConversations(options: UseConversationsOptions = {}) {
         .eq("is_archived", options.isArchived ?? false)
         .order("last_message_at", { ascending: false });
 
-      if (options.brokerId) {
-        query = query.eq("broker_id", options.brokerId);
-      }
-      if (options.statusFilter && options.statusFilter !== "all") {
-        query = query.eq("status", options.statusFilter);
-      }
+      if (options.brokerId) query = query.eq("broker_id", options.brokerId);
+      if (options.statusFilter && options.statusFilter !== "all") query = query.eq("status", options.statusFilter);
 
       const { data, error } = await query.limit(100);
       if (error) throw error;
 
       let filtered = (data || []) as unknown as Conversation[];
 
-      // Merge duplicated conversations client-side by broker + canonical phone to hide legacy residues
       const conversationsByPhone = new Map<string, Conversation>();
       for (const conversation of filtered) {
         const canonicalPhone = conversation.phone_normalized.replace(/\D/g, "").slice(-13);
@@ -104,6 +146,9 @@ export function useConversations(options: UseConversationsOptions = {}) {
           ...primary,
           lead_id: primary.lead_id || secondary.lead_id,
           lead: primary.lead || secondary.lead || null,
+          display_name: primary.display_name || secondary.display_name,
+          display_name_source: primary.display_name_source || secondary.display_name_source,
+          last_message_type: primary.last_message_type || secondary.last_message_type,
           unread_count: Math.max(primary.unread_count || 0, secondary.unread_count || 0),
           ai_mode: primary.ai_mode === "ai_active" || secondary.ai_mode === "ai_active" ? "ai_active" : primary.ai_mode,
         });
@@ -111,25 +156,19 @@ export function useConversations(options: UseConversationsOptions = {}) {
 
       filtered = [...conversationsByPhone.values()];
 
-      // Enrich conversations without lead_id: try phone match + latest WhatsApp sender name
-      const noLeadConvs = filtered.filter(c => !c.lead_id && c.phone_normalized);
+      const noLeadConvs = filtered.filter((c) => !c.lead_id && !c.lead && c.phone_normalized);
       if (noLeadConvs.length > 0) {
-        const phones = noLeadConvs.map(c => c.phone_normalized);
-        const phoneVariants = phones.flatMap(p => {
-          const cleaned = p.replace(/\D/g, "");
-          return [cleaned, `+${cleaned}`, `+55${cleaned}`, cleaned.startsWith("55") ? cleaned.substring(2) : cleaned];
-        });
-        const uniqueVariants = [...new Set(phoneVariants)].filter(Boolean);
+        const allVariants = [...new Set(noLeadConvs.flatMap((c) => getPhoneSearchVariants(c.phone_normalized)))];
 
         const [{ data: matchedLeads }, { data: senderNames }] = await Promise.all([
           supabase
             .from("leads")
             .select("id, name, whatsapp, status, project_id, notes, lead_origin")
-            .in("whatsapp", uniqueVariants.slice(0, 100)),
+            .in("whatsapp", allVariants.slice(0, 100)),
           supabase
             .from("conversation_messages")
             .select("conversation_id, sender_name, created_at")
-            .in("conversation_id", noLeadConvs.map(c => c.id))
+            .in("conversation_id", noLeadConvs.map((c) => c.id))
             .eq("direction", "inbound")
             .not("sender_name", "is", null)
             .order("created_at", { ascending: false })
@@ -143,62 +182,43 @@ export function useConversations(options: UseConversationsOptions = {}) {
           }
         }
 
-        const phoneToLead = new Map<string, (typeof matchedLeads extends (infer T)[] ? T : never)>();
+        const phoneToLead = new Map<string, any>();
         for (const lead of matchedLeads || []) {
-          const normalized = (lead.whatsapp || "").replace(/\D/g, "");
-          if (!phoneToLead.has(normalized)) {
-            phoneToLead.set(normalized, lead as any);
+          for (const variant of getPhoneSearchVariants(lead.whatsapp || "")) {
+            if (!phoneToLead.has(variant)) phoneToLead.set(variant, lead);
           }
         }
 
-        filtered = filtered.map(c => {
-          if (c.lead_id || c.lead) return c;
-          const normalized = c.phone_normalized.replace(/\D/g, "");
-          const match = phoneToLead.get(normalized) ||
-            [...phoneToLead.entries()].find(([k]) =>
-              k.endsWith(normalized.slice(-11)) || normalized.endsWith(k.slice(-11))
-            )?.[1];
-
-          if (match) {
-            return {
-              ...c,
-              lead: {
-                id: (match as any).id,
-                name: (match as any).name,
-                status: (match as any).status,
-                project_id: (match as any).project_id,
-                notes: (match as any).notes,
-                lead_origin: (match as any).lead_origin,
-              } as any,
-            };
+        filtered = filtered.map((conversation) => {
+          if (conversation.lead_id || conversation.lead) {
+            return resolveConversationIdentity(conversation);
           }
 
-          const senderName = senderNameByConversation.get(c.id)?.trim();
-          if (senderName) {
-            return {
-              ...c,
-              lead: {
-                id: c.id,
-                name: senderName,
-                status: "direct_whatsapp",
-                project_id: null,
-                notes: null,
-                lead_origin: "whatsapp_direto",
-              } as any,
-            };
+          const normalizedVariants = getPhoneSearchVariants(conversation.phone_normalized);
+          const match = normalizedVariants.map((variant) => phoneToLead.get(variant)).find(Boolean);
+          if (match) return resolveConversationIdentity(conversation, match);
+
+          const senderName = senderNameByConversation.get(conversation.id)?.trim();
+          if (senderName && (!conversation.display_name || ["phone", "sender_name"].includes(conversation.display_name_source || ""))) {
+            return resolveConversationIdentity({
+              ...conversation,
+              display_name: senderName,
+              display_name_source: "sender_name",
+            });
           }
 
-          return c;
+          return resolveConversationIdentity(conversation);
         });
+      } else {
+        filtered = filtered.map((conversation) => resolveConversationIdentity(conversation));
       }
 
-      // Client-side search
       if (options.search) {
         const s = options.search.toLowerCase();
-        filtered = filtered.filter(c =>
+        filtered = filtered.filter((c) =>
           c.phone.includes(s) ||
           c.phone_normalized.includes(s) ||
-          (c.lead as any)?.name?.toLowerCase().includes(s) ||
+          c.display_name?.toLowerCase().includes(s) ||
           c.last_message_preview?.toLowerCase().includes(s)
         );
       }
