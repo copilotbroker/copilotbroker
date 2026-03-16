@@ -14,6 +14,9 @@ export interface Conversation {
   last_message_at: string | null;
   last_message_preview: string | null;
   last_message_direction: string | null;
+  last_message_type?: string | null;
+  display_name?: string | null;
+  display_name_source?: string | null;
   unread_count: number;
   opportunity_score: number;
   temperature: number;

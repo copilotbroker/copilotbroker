@@ -150,6 +150,18 @@ function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payl
     || (typeof data.mediaType === "string" ? data.mediaType : undefined);
   const caption = (typeof msg.caption === "string" ? msg.caption : undefined)
     || (typeof data.caption === "string" ? data.caption : undefined);
+  const durationSeconds = typeof data.duration_seconds === "number"
+    ? data.duration_seconds
+    : typeof data.seconds === "number"
+    ? data.seconds
+    : undefined;
+  const sizeBytes = typeof data.size_bytes === "number"
+    ? data.size_bytes
+    : typeof data.fileLength === "number"
+    ? data.fileLength
+    : undefined;
+  const thumbnailUrl = (typeof data.thumbnail_url === "string" ? data.thumbnail_url : undefined)
+    || (typeof data.thumb === "string" ? data.thumb : undefined);
 
   return {
     file_url: fileUrl,
@@ -157,6 +169,9 @@ function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payl
     mime_type: mimeType,
     raw_type: rawType,
     caption,
+    duration_seconds: durationSeconds,
+    size_bytes: sizeBytes,
+    thumbnail_url: thumbnailUrl,
   };
 }
 
