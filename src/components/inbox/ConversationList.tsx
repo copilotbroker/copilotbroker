@@ -305,6 +305,9 @@ export function ConversationList({
                 ? (Date.now() - new Date(conv.last_message_at).getTime()) / (1000 * 60 * 60)
                 : 0;
               const hasCadenciaAtiva = conv.lead_id ? cadenciaLeadIds.has(conv.lead_id) : false;
+              const preview = conv.last_message_preview || "Sem mensagens";
+              const mediaPreview = preview === "[Mídia]" ? "📎 Mídia recebida" : preview;
+              const hasResolvedName = !!(conv.lead as any)?.name && (conv.lead as any)?.name !== conv.phone;
 
               return (
                 <div key={conv.id} className="group relative">
@@ -320,7 +323,6 @@ export function ConversationList({
                     )}
                     style={hasCadenciaAtiva ? RING_PULSE_STYLE : undefined}
                   >
-                    {/* Avatar */}
                     <div className={cn(
                       "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
                       isUnread ? "bg-indigo-500/20 text-indigo-400" : "bg-[#2A2D37] text-slate-400"
@@ -328,15 +330,17 @@ export function ConversationList({
                       {leadName.charAt(0).toUpperCase()}
                     </div>
 
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <span className={cn(
-                          "text-sm truncate",
-                          isUnread ? "font-bold text-white" : "font-medium text-slate-300"
-                        )}>
-                          {leadName}
-                        </span>
+                        <div className="min-w-0">
+                          <span className={cn(
+                            "text-sm truncate block",
+                            isUnread ? "font-bold text-white" : "font-medium text-slate-300"
+                          )}>
+                            {leadName}
+                          </span>
+                          <span className="text-[10px] text-slate-500 truncate block">{conv.phone}</span>
+                        </div>
                         <span className="text-[10px] text-slate-500 whitespace-nowrap">
                           {conv.last_message_at
                             ? formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ptBR })
@@ -344,21 +348,37 @@ export function ConversationList({
                         </span>
                       </div>
 
-                      {/* Preview */}
                       <p className={cn(
-                        "text-xs truncate mt-0.5",
+                        "text-xs truncate mt-1",
                         isUnread ? "text-slate-300" : "text-slate-500"
                       )}>
                         {conv.last_message_direction === "outbound" && "Você: "}
-                        {conv.last_message_preview || "Sem mensagens"}
+                        {mediaPreview}
                       </p>
 
-                      {/* Badges */}
                       <div className="flex items-center gap-1 mt-1 flex-wrap">
                         {isUnread && conv.unread_count > 0 && (
                           <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">
                             {conv.unread_count}
                           </Badge>
+                        )}
+                        {conv.lead_id ? (
+                          <span className="flex items-center gap-0.5 text-[10px] text-emerald-400">
+                            <LayoutGrid className="w-3 h-3" /> Lead vinculado
+                          </span>
+                        ) : hasResolvedName ? (
+                          <span className="flex items-center gap-0.5 text-[10px] text-sky-400">
+                            <MessageCircleMore className="w-3 h-3" /> Nome identificado
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-0.5 text-[10px] text-orange-400">
+                            <MessageCircleMore className="w-3 h-3" /> WA direto
+                          </span>
+                        )}
+                        {preview === "[Mídia]" && (
+                          <span className="flex items-center gap-0.5 text-[10px] text-slate-400">
+                            📎 Mídia
+                          </span>
                         )}
                         {isHot && (
                           <span className="flex items-center gap-0.5 text-[10px] text-orange-400">
@@ -383,16 +403,6 @@ export function ConversationList({
                         {idleHours > 24 && (
                           <span className="flex items-center gap-0.5 text-[10px] text-amber-400/70">
                             <Clock className="w-3 h-3" /> {idleHours > 48 ? `${Math.floor(idleHours / 24)}d` : `${Math.round(idleHours)}h`} parado
-                          </span>
-                        )}
-                        {/* Lead linkage badge */}
-                        {conv.lead_id ? (
-                          <span className="flex items-center gap-0.5 text-[10px] text-emerald-400">
-                            <LayoutGrid className="w-3 h-3" /> Kanban
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-0.5 text-[10px] text-orange-400">
-                            <MessageCircleMore className="w-3 h-3" /> WA direto
                           </span>
                         )}
                       </div>

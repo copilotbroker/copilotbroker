@@ -504,7 +504,9 @@ async function archiveMessageToConversation(
   instanceName?: string,
   senderName?: string,
   sentBy: string = "human",
-  uazapiMessageId?: string
+  uazapiMessageId?: string,
+  messageType: string = "text",
+  metadata?: Record<string, unknown>
 ): Promise<void> {
   if (!instanceName) return;
 
@@ -525,7 +527,8 @@ async function archiveMessageToConversation(
       conversation_id: (conv as { id: string }).id,
       direction,
       content: messageText || "[Mídia]",
-      message_type: messageText ? "text" : "media",
+      message_type: messageType,
+      metadata: metadata || null,
       sender_name: senderName,
       sent_by: sentBy,
       status: "delivered",

@@ -366,27 +366,42 @@ export function useConversationMessages(conversationId: string | null) {
   }, [conversationId]);
 
   /**
-   * Send message via edge function (real UAZAPI delivery)
+   * Send message via backend function (text or media)
    */
-  const sendMessage = useCallback(async (content: string, sentBy = "human") => {
+  const sendMessage = useCallback(async (payload: string | OutboundMessagePayload, sentBy = "human") => {
     if (!conversationId) return null;
+
+    const normalizedPayload: OutboundMessagePayload = typeof payload === "string"
+      ? { content: payload, sentBy, messageType: "text" }
+      : {
+          content: payload.content,
+          sentBy: payload.sentBy || sentBy,
+          messageType: payload.messageType || "text",
+          metadata: payload.metadata,
+        };
 
     try {
       const { data, error } = await supabase.functions.invoke("inbox-send-message", {
-        body: { conversation_id: conversationId, content },
+        body: {
+          conversation_id: conversationId,
+          content: normalizedPayload.content,
+          sent_by: normalizedPayload.sentBy,
+          message_type: normalizedPayload.messageType,
+          metadata: normalizedPayload.metadata,
+        },
       });
 
       if (error) {
-        // Fallback: save locally if edge function fails
         console.error("Edge function error, falling back to local insert:", error);
         const { data: fallbackData, error: fbError } = await supabase
           .from("conversation_messages")
           .insert({
             conversation_id: conversationId,
             direction: "outbound",
-            content,
-            sent_by: sentBy,
-            message_type: "text",
+            content: normalizedPayload.content,
+            sent_by: normalizedPayload.sentBy,
+            message_type: normalizedPayload.messageType,
+            metadata: normalizedPayload.metadata || null,
             status: "pending",
           } as any)
           .select()
@@ -396,7 +411,7 @@ export function useConversationMessages(conversationId: string | null) {
           toast.error("Erro ao enviar mensagem");
           return null;
         }
-        toast.warning("Mensagem salva localmente (envio WhatsApp pendente)");
+        toast.warning("Mensagem salva localmente (envio pendente)");
         return fallbackData;
       }
 
