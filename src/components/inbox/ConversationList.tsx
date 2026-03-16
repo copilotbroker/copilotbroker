@@ -205,16 +205,28 @@ export function ConversationList({
     const preview = conv.last_message_preview || "Sem mensagens";
     switch (conv.last_message_type) {
       case "image":
-        return preview === "Sem mensagens" ? "📷 Foto" : `📷 ${preview}`;
+        return preview === "Sem mensagens" || preview === "Foto" ? "Foto" : preview;
       case "audio":
         return preview === "Sem mensagens" ? "🎙️ Áudio" : `🎙️ ${preview}`;
       case "video":
-        return preview === "Sem mensagens" ? "🎬 Vídeo" : `🎬 ${preview}`;
+        return preview === "Sem mensagens" || preview === "Vídeo" ? "Vídeo" : preview;
       case "document":
         return preview === "Sem mensagens" ? "📄 Documento" : `📄 ${preview}`;
       default:
         return preview;
     }
+  };
+
+  const getMediaThumb = (conv: Conversation) => {
+    if (conv.last_message_type === "image") {
+      return conv.last_message_media?.thumbnail_url || conv.last_message_media?.file_url || null;
+    }
+
+    if (conv.last_message_type === "video") {
+      return conv.last_message_media?.thumbnail_url || null;
+    }
+
+    return null;
   };
 
   const formatLastInteraction = (value: string | null) => {
