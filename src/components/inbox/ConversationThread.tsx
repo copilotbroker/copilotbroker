@@ -157,10 +157,10 @@ export function ConversationThread({
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
-  const leadName = (conversation.lead as any)?.name || conversation.phone;
+  const leadName = conversation.display_name || (conversation.lead as any)?.name || conversation.phone;
   const isAiActive = conversation.ai_mode === "ai_active";
   const isCopilot = conversation.ai_mode === "copilot";
-  const hasResolvedName = !!(conversation.lead as any)?.name && (conversation.lead as any)?.name !== conversation.phone;
+  const hasResolvedName = !!conversation.display_name && conversation.display_name !== conversation.phone;
 
   useEffect(() => {
     if (scrollRef.current) {
