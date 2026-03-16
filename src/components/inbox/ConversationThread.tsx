@@ -308,7 +308,7 @@ export function ConversationThread({
       </div>
 
       {!conversation.lead_id && onCreateLead && (
-        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2">
+        <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <LayoutGrid className="h-3 w-3" /> Contato sem card no Kanban
           </span>
