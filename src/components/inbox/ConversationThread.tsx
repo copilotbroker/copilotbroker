@@ -263,7 +263,7 @@ export function ConversationThread({
           </Button>
 
           <button onClick={onOpenLeadPanel} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-foreground">
               {leadName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">

@@ -226,7 +226,7 @@ export function ConversationList({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground">
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground">
                 <ArrowUpDown className="h-3 w-3" />
                 Ordenar
                 <ChevronDown className="h-3 w-3" />
