@@ -218,6 +218,16 @@ export function ConversationList({
     }
   };
 
+  const formatLastInteraction = (value: string | null) => {
+    if (!value) return "--:--";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "--:--";
+    if (isToday(date)) return format(date, "HH:mm", { locale: ptBR });
+    if (isYesterday(date)) return "Ontem";
+    return format(date, "dd/MM", { locale: ptBR });
+  };
+
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="space-y-2 px-3 pb-1 pt-3">
