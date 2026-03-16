@@ -302,9 +302,10 @@ const BrokerProjects = () => {
     <BrokerLayout
       brokerName={broker?.name}
       brokerInitial={brokerInitial}
-      viewMode={viewMode}
-      onViewChange={setViewMode}
+      viewMode="kanban"
+      onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
       onLogout={handleLogout}
+      isLeader={isLeader}
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 overflow-hidden">

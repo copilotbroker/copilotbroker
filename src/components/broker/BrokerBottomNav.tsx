@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Plus, Bell, MessageSquare, MoreHorizontal, List, Building2, LogOut, RotateCw, Inbox, Bot } from "lucide-react";
+import { Plus, Bell, MoreHorizontal, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useInboxUnread } from "@/hooks/use-inbox-unread";
@@ -12,6 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { BROKER_ROUTE_TABS, getBrokerPathByTab, getBrokerTabFromPath } from "./brokerNavigation";
 
 interface BrokerBottomNavProps {
   viewMode: "kanban" | "list";
@@ -27,7 +28,6 @@ interface BrokerBottomNavProps {
 export function BrokerBottomNav({
   viewMode,
   onViewChange,
-  onCopyLink,
   onAddLead,
   onNotificationsClick,
   isLeader = false,
@@ -39,21 +39,20 @@ export function BrokerBottomNav({
   const navigate = useNavigate();
   const location = useLocation();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const activeTab = getBrokerTabFromPath(location.pathname);
 
-  const isCopilotActive = location.pathname === "/corretor/copiloto";
-  const isInboxActive = location.pathname === "/corretor/inbox";
-  const isAdminPage = location.pathname === "/corretor/admin";
+  const baseItems = BROKER_ROUTE_TABS.filter((item) => ["crm", "inbox", "copilot"].includes(item.id));
 
   const navItems: Array<{
     id: string;
-    icon: typeof LayoutDashboard;
+    icon: (typeof baseItems)[number]["icon"] | typeof Plus | typeof MoreHorizontal;
     isFab?: boolean;
     badge?: number;
   }> = [
-    ...(inboxEnabled ? [{ id: "inbox", icon: Inbox, badge: inboxUnread }] : []),
-    { id: "kanban", icon: LayoutDashboard },
+    ...(inboxEnabled ? [{ id: "inbox", icon: baseItems.find((item) => item.id === "inbox")!.icon, badge: inboxUnread }] : []),
+    { id: viewMode === "list" ? "leads" : "crm", icon: baseItems.find((item) => item.id === "crm")!.icon },
     { id: "add", icon: Plus, isFab: true },
-    ...(copilotEnabled ? [{ id: "copilot", icon: Bot }] : []),
+    ...(copilotEnabled ? [{ id: "copilot", icon: baseItems.find((item) => item.id === "copilot")!.icon }] : []),
     { id: "more", icon: MoreHorizontal },
   ];
 
@@ -64,18 +63,12 @@ export function BrokerBottomNav({
   };
 
   const handleClick = (id: string) => {
-    if (id === "kanban") {
-      if (!isAdminPage) {
-        navigate("/corretor/admin?view=kanban");
-      } else {
-        onViewChange("kanban");
-      }
+    if (id === "crm" || id === "leads") {
+      onViewChange(id === "leads" ? "list" : "kanban");
     } else if (id === "add") {
       onAddLead?.();
-    } else if (id === "inbox") {
-      navigate("/corretor/inbox");
-    } else if (id === "copilot") {
-      navigate("/corretor/copiloto");
+    } else if (id === "inbox" || id === "copilot") {
+      navigate(getBrokerPathByTab(id));
     } else if (id === "more") {
       setIsMoreOpen(true);
     }
@@ -83,18 +76,10 @@ export function BrokerBottomNav({
 
   const handleMoreAction = (action: string) => {
     setIsMoreOpen(false);
-    if (action === "list") {
-      if (!isAdminPage) {
-        navigate("/corretor/admin?view=list");
-      } else {
-        onViewChange("list");
-      }
-    } else if (action === "projects") {
-      navigate("/corretor/empreendimentos");
-    } else if (action === "roletas") {
-      navigate("/corretor/roletas");
-    } else if (action === "copilot") {
-      navigate("/corretor/copiloto");
+    if (action === "leads") {
+      onViewChange("list");
+    } else if (action === "projects" || action === "roletas") {
+      navigate(getBrokerPathByTab(action as "projects" | "roletas"));
     } else if (action === "notifications") {
       onNotificationsClick?.();
     } else if (action === "logout") {
@@ -103,44 +88,42 @@ export function BrokerBottomNav({
   };
 
   const getItemColor = (id: string) => {
-    if (id === "kanban" && viewMode === "kanban" && isAdminPage) {
+    if ((id === "crm" && activeTab === "crm") || (id === "leads" && activeTab === "leads")) {
       return "text-[#FFFF00]";
     }
-    if (id === "copilot" && isCopilotActive) {
+    if (id === "copilot" && activeTab === "copilot") {
       return "text-blue-400";
     }
-    if (id === "inbox" && isInboxActive) {
+    if (id === "inbox" && activeTab === "inbox") {
       return "text-[#FFFF00]";
     }
     return "text-slate-500 active:text-slate-300";
   };
 
   const getActiveIndicator = (id: string) => {
-    if (id === "kanban" && viewMode === "kanban" && !isCopilotActive) return true;
-    if (id === "copilot" && isCopilotActive) return true;
+    if ((id === "crm" && activeTab === "crm") || (id === "leads" && activeTab === "leads")) return true;
+    if (id === "copilot" && activeTab === "copilot") return true;
+    if (id === "inbox" && activeTab === "inbox") return true;
     return false;
   };
 
   const moreMenuItems = [
-    { id: "list", label: "Modo Lista", icon: List, description: "Alternar para visualização em lista" },
-    { id: "notifications", label: "Notificações", icon: Bell, description: "Ver notificações", badge: unreadCount },
-    ...(isLeader ? [{ id: "roletas", label: "Roletas", icon: RotateCw, description: "Gerenciar roletas da equipe" }] : []),
-    { id: "projects", label: "Landing Pages", icon: Building2, description: "Ver suas landing pages" },
-    { id: "logout", label: "Sair", icon: LogOut, description: "Encerrar sessão", destructive: true },
+    { id: "leads", label: "Modo Lista", description: "Abrir visão em lista" },
+    { id: "notifications", label: "Notificações", description: "Ver notificações", badge: unreadCount },
+    ...(isLeader ? [{ id: "roletas", label: "Roletas", description: "Gerenciar roletas da equipe" }] : []),
+    { id: "projects", label: "Landing Pages", description: "Ver suas landing pages" },
+    { id: "logout", label: "Sair", description: "Encerrar sessão", destructive: true },
   ];
 
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
-        {/* Background with blur */}
         <div className="absolute inset-0 bg-[#141417]/95 backdrop-blur-lg border-t border-[#2a2a2e]" />
 
-        {/* Safe area padding for iOS */}
         <div className="relative flex items-center justify-around px-2 py-2 pb-safe">
           {navItems.map((item) => {
             const Icon = item.icon;
 
-            // FAB button (center)
             if (item.isFab) {
               return (
                 <button
@@ -171,7 +154,6 @@ export function BrokerBottomNav({
               >
                 <div className="relative">
                   <Icon className="w-6 h-6" />
-                  {/* Facebook-style notification badge */}
                   {(item.badge ?? 0) > 0 && (
                     <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-md shadow-red-500/50">
                       {item.badge! > 99 ? "99+" : item.badge}
@@ -179,7 +161,6 @@ export function BrokerBottomNav({
                   )}
                 </div>
 
-                {/* Active indicator dot */}
                 {getActiveIndicator(item.id) && (
                   <div className={cn(
                     "absolute bottom-1.5 w-1 h-1 rounded-full",
@@ -192,7 +173,6 @@ export function BrokerBottomNav({
         </div>
       </nav>
 
-      {/* More menu Sheet */}
       <Sheet open={isMoreOpen} onOpenChange={setIsMoreOpen}>
         <SheetContent side="bottom" className="bg-[#1e1e22] border-[#2a2a2e] rounded-t-2xl px-4 pb-8">
           <SheetHeader className="pb-3">
@@ -201,7 +181,19 @@ export function BrokerBottomNav({
 
           <div className="space-y-1 mt-2">
             {moreMenuItems.map((menuItem) => {
-              const MenuIcon = menuItem.icon;
+              const isDestructive = Boolean((menuItem as { destructive?: boolean }).destructive);
+              const isNotifications = menuItem.id === "notifications";
+              const Icon =
+                menuItem.id === "projects"
+                  ? BROKER_ROUTE_TABS.find((item) => item.id === "projects")!.icon
+                  : menuItem.id === "roletas"
+                    ? BROKER_ROUTE_TABS.find((item) => item.id === "roletas")!.icon
+                    : menuItem.id === "notifications"
+                      ? Bell
+                      : menuItem.id === "leads"
+                        ? BROKER_ROUTE_TABS.find((item) => item.id === "leads")!.icon
+                        : LogOut;
+
               return (
                 <button
                   key={menuItem.id}
@@ -209,17 +201,24 @@ export function BrokerBottomNav({
                   className={cn(
                     "w-full flex items-center gap-4 px-4 py-4 rounded-xl",
                     "transition-colors duration-150",
-                    menuItem.destructive
+                    isDestructive
                       ? "text-red-400 hover:bg-red-500/10 active:bg-red-500/20"
                       : "text-slate-200 hover:bg-[#2a2a2e] active:bg-[#333338]"
                   )}
                 >
-                  <MenuIcon className="w-5 h-5 shrink-0" />
+                  <div className="relative shrink-0">
+                    <Icon className="w-5 h-5" />
+                    {isNotifications && (menuItem.badge ?? 0) > 0 && (
+                      <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-md shadow-red-500/50">
+                        {menuItem.badge! > 99 ? "99+" : menuItem.badge}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-left">
                     <p className="text-sm font-medium">{menuItem.label}</p>
                     <p className={cn(
                       "text-xs mt-0.5",
-                      menuItem.destructive ? "text-red-400/60" : "text-slate-500"
+                      isDestructive ? "text-red-400/60" : "text-slate-500"
                     )}>
                       {menuItem.description}
                     </p>
