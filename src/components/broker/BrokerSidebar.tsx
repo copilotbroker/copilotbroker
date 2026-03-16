@@ -1,8 +1,9 @@
-import { LogOut, LayoutDashboard, List, ExternalLink, Plus, Building2, RotateCw, Inbox, Bot } from "lucide-react";
+import { LogOut, ExternalLink, Plus } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import logoEnoveMini from "@/assets/logo-enove-mini.png";
 import { NotificationPanel } from "@/components/admin/NotificationPanel";
+import { BROKER_ROUTE_TABS, getBrokerPathByTab, getBrokerTabFromPath } from "./brokerNavigation";
 
 interface BrokerSidebarProps {
   viewMode: "kanban" | "list";
@@ -15,11 +16,6 @@ interface BrokerSidebarProps {
   inboxEnabled?: boolean;
   copilotEnabled?: boolean;
 }
-
-const NAV_ITEMS = [
-  { id: "kanban", label: "Kanban", icon: LayoutDashboard },
-  { id: "list", label: "Lista", icon: List },
-] as const;
 
 export function BrokerSidebar({
   viewMode,
@@ -34,28 +30,26 @@ export function BrokerSidebar({
 }: BrokerSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const isAdminPage = location.pathname === "/corretor/admin";
-  const isRoletasPage = location.pathname === "/corretor/roletas";
-  const isInboxPage = location.pathname === "/corretor/inbox";
-  const isCopilotPage = location.pathname === "/corretor/copiloto";
-  const isProjectsPage = location.pathname === "/corretor/empreendimentos";
+  const activeTab = getBrokerTabFromPath(location.pathname);
 
-  const handleNavClick = (mode: "kanban" | "list") => {
-    if (!isAdminPage) {
-      navigate(`/corretor/admin?view=${mode}`);
-    } else {
-      onViewChange(mode);
-    }
+  const navigationItems = BROKER_ROUTE_TABS.filter((item) => {
+    if (item.id === "roletas") return isLeader;
+    if (item.id === "inbox") return inboxEnabled;
+    if (item.id === "copilot") return copilotEnabled;
+    return item.id !== "projects" || true;
+  });
+
+  const handleTabClick = (tabId: "crm" | "leads") => {
+    const mode = tabId === "leads" ? "list" : "kanban";
+    onViewChange(mode);
   };
-  
+
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-16 hidden lg:flex flex-col bg-[#141417] border-r border-[#2a2a2e]">
-      {/* Logo */}
       <div className="flex items-center justify-center pt-4 pb-2">
         <img src={logoEnoveMini} alt="Enove" className="h-8 w-8 object-contain" />
       </div>
 
-      {/* Add Lead FAB */}
       <div className="flex items-center justify-center py-3">
         <button
           onClick={onAddLead}
@@ -66,28 +60,39 @@ export function BrokerSidebar({
         </button>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 flex flex-col items-center gap-1 px-2 py-4">
-        {NAV_ITEMS.map((item) => {
+        {navigationItems.map((item) => {
           const Icon = item.icon;
-          const isActive = isAdminPage && viewMode === item.id;
+          const isActive = activeTab === item.id || (item.id === "crm" && viewMode === "kanban" && activeTab === "crm") || (item.id === "leads" && viewMode === "list" && activeTab === "leads");
+          const isInbox = item.id === "inbox";
+          const isCopilot = item.id === "copilot";
 
           return (
             <button
               key={item.id}
-              onClick={() => handleNavClick(item.id)}
+              onClick={() => {
+                if (item.id === "crm" || item.id === "leads") {
+                  handleTabClick(item.id);
+                  return;
+                }
+                navigate(getBrokerPathByTab(item.id));
+              }}
               className={cn(
                 "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
                 "hover:bg-[#2a2a2e] group relative",
                 isActive
-                  ? "bg-[#2a2a2e] text-[#FFFF00]"
-                  : "text-slate-400 hover:text-white"
+                  ? isInbox
+                    ? "bg-[#2a2a2e] text-[hsl(145,80%,55%)]"
+                    : isCopilot
+                      ? "bg-[#2a2a2e] text-blue-400"
+                      : "bg-[#2a2a2e] text-[#FFFF00]"
+                  : isInbox
+                    ? "text-[hsl(145,80%,55%)]/70 hover:text-[hsl(145,80%,55%)]"
+                    : "text-slate-400 hover:text-white"
               )}
               title={item.label}
             >
               <Icon className="w-5 h-5" />
-              
-              {/* Tooltip */}
               <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 {item.label}
               </span>
@@ -95,75 +100,6 @@ export function BrokerSidebar({
           );
         })}
 
-        {/* Inbox */}
-        {inboxEnabled && (
-          <button
-            onClick={() => navigate("/corretor/inbox")}
-            className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative",
-              isInboxPage ? "bg-[#2a2a2e] text-[hsl(145,80%,55%)]" : "text-[hsl(145,80%,55%)]/70 hover:text-[hsl(145,80%,55%)]"
-            )}
-            title="Inbox"
-          >
-            <Inbox className="w-5 h-5" />
-            <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Inbox
-            </span>
-          </button>
-        )}
-
-        {/* Copiloto */}
-        {copilotEnabled && (
-          <button
-            onClick={() => navigate("/corretor/copiloto")}
-            className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative",
-              isCopilotPage ? "bg-[#2a2a2e] text-blue-400" : "text-slate-400 hover:text-white"
-            )}
-            title="Copiloto"
-          >
-            <Bot className="w-5 h-5" />
-            <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Copiloto
-            </span>
-          </button>
-        )}
-
-        {/* Removed: WhatsApp is now inside Copiloto */}
-
-        {/* Roletas - only for leaders */}
-        {isLeader && (
-          <button
-            onClick={() => navigate("/corretor/roletas")}
-            className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative mt-2",
-              isRoletasPage ? "bg-[#2a2a2e] text-[#FFFF00]" : "text-slate-400 hover:text-white"
-            )}
-            title="Roletas"
-          >
-            <RotateCw className="w-5 h-5" />
-            <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Roletas
-            </span>
-          </button>
-        )}
-
-        {/* Landing Pages */}
-        <button
-          onClick={() => navigate("/corretor/empreendimentos")}
-          className={cn(
-            "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-[#2a2a2e] group relative mt-2",
-            isProjectsPage ? "bg-[#2a2a2e] text-[#FFFF00]" : "text-slate-400 hover:text-white"
-          )}
-          title="Landing Pages"
-        >
-          <Building2 className="w-5 h-5" />
-          <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Landing Pages
-          </span>
-        </button>
-
-        {/* Open Landing Page */}
         {onOpenLanding && (
           <button
             onClick={onOpenLanding}
@@ -178,17 +114,13 @@ export function BrokerSidebar({
         )}
       </nav>
 
-      {/* Bottom section */}
       <div className="flex flex-col items-center gap-2 px-2 py-4 border-t border-[#2a2a2e]">
-        {/* Notifications */}
         <NotificationPanel />
 
-        {/* Broker Avatar */}
         <div className="w-8 h-8 rounded-full bg-[#FFFF00]/10 border border-[#FFFF00]/30 flex items-center justify-center">
           <span className="text-[#FFFF00] text-sm font-medium">{brokerInitial}</span>
         </div>
 
-        {/* Logout */}
         <button
           onClick={onLogout}
           className="w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-red-500/10 text-slate-400 hover:text-red-400 group relative"

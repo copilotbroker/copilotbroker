@@ -10,14 +10,14 @@ import RoletaManagement from "@/components/admin/RoletaManagement";
 
 const BrokerRoletasPage = () => {
   const navigate = useNavigate();
-  const { role, isLoading: isRoleLoading, isLeader, brokerId } = useUserRole();
+  const { role, isLoading: isRoleLoading, isLeader } = useUserRole();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!session) navigate("/auth");
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) navigate("/auth");
+    });
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) navigate("/auth");
     });
@@ -25,10 +25,15 @@ const BrokerRoletasPage = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (!isRoleLoading && !isLeader) {
-      navigate("/corretor/admin");
+    if (!isRoleLoading && role !== "broker") {
+      navigate(role === "admin" ? "/admin" : "/auth", { replace: true });
+      return;
     }
-  }, [isRoleLoading, isLeader, navigate]);
+
+    if (!isRoleLoading && !isLeader) {
+      navigate("/corretor/crm", { replace: true });
+    }
+  }, [isRoleLoading, isLeader, navigate, role]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -53,7 +58,7 @@ const BrokerRoletasPage = () => {
       </Helmet>
       <BrokerLayout
         viewMode="kanban"
-        onViewChange={() => navigate("/corretor/admin")}
+        onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
         onLogout={handleLogout}
         isLeader={isLeader}
       >

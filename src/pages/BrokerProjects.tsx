@@ -26,8 +26,7 @@ import ProjectWizard from "@/components/admin/ProjectWizard";
 
 const BrokerProjects = () => {
   const navigate = useNavigate();
-  const { role, brokerId, isLoading: isRoleLoading } = useUserRole();
-  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
@@ -140,9 +139,10 @@ const BrokerProjects = () => {
       <BrokerLayout
         brokerName={broker?.name}
         brokerInitial={brokerInitial}
-        viewMode={viewMode}
-        onViewChange={setViewMode}
+        viewMode="kanban"
+        onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
         onLogout={handleLogout}
+        isLeader={isLeader}
       >
         <div className="h-[calc(100vh-120px)]">
           <ProjectWizard
@@ -302,9 +302,10 @@ const BrokerProjects = () => {
     <BrokerLayout
       brokerName={broker?.name}
       brokerInitial={brokerInitial}
-      viewMode={viewMode}
-      onViewChange={setViewMode}
+      viewMode="kanban"
+      onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
       onLogout={handleLogout}
+      isLeader={isLeader}
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 overflow-hidden">

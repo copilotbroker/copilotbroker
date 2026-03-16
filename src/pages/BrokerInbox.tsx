@@ -10,9 +10,8 @@ import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BrokerSidebar } from "@/components/broker/BrokerSidebar";
-import { BrokerBottomNav } from "@/components/broker/BrokerBottomNav";
 import { Lock, Loader2 } from "lucide-react";
+import { BrokerLayout } from "@/components/broker";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
@@ -30,11 +29,15 @@ export default function BrokerInbox() {
 
   const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
-  // Get broker id
   useEffect(() => {
     const getBrokerId = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { navigate("/auth"); return; }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate("/auth");
+        return;
+      }
       const { data } = await supabase
         .from("brokers")
         .select("id")
@@ -57,7 +60,7 @@ export default function BrokerInbox() {
   useEffect(() => {
     const convId = searchParams.get("conversationId");
     if (convId && conversations.length > 0 && !selectedConversation) {
-      const target = conversations.find(c => c.id === convId);
+      const target = conversations.find((c) => c.id === convId);
       if (target) {
         setSelectedConversation(target);
         setSearchParams({}, { replace: true });
@@ -65,10 +68,13 @@ export default function BrokerInbox() {
     }
   }, [conversations, searchParams, selectedConversation, setSearchParams]);
 
-  const handleSelectConversation = useCallback((conv: Conversation) => {
-    setSelectedConversation(conv);
-    if (isMobile) setShowLeadPanel(false);
-  }, [isMobile]);
+  const handleSelectConversation = useCallback(
+    (conv: Conversation) => {
+      setSelectedConversation(conv);
+      if (isMobile) setShowLeadPanel(false);
+    },
+    [isMobile]
+  );
 
   const handleBack = useCallback(() => {
     setSelectedConversation(null);
@@ -88,7 +94,7 @@ export default function BrokerInbox() {
     if (!selectedConversation) return;
     const lead = selectedConversation.lead as any;
 
-    const chatHistory = messages.slice(-10).map(m => ({
+    const chatHistory = messages.slice(-10).map((m) => ({
       role: m.direction === "inbound" ? "user" : "assistant",
       content: m.content,
     }));
@@ -110,68 +116,70 @@ export default function BrokerInbox() {
     setShowCreateLeadModal(true);
   }, []);
 
-  const handleLeadCreated = useCallback(async (leadName: string, _: string, projectId: string | null) => {
-    if (!selectedConversation || !brokerId) return;
+  const handleLeadCreated = useCallback(
+    async (leadName: string, _: string, projectId: string | null) => {
+      if (!selectedConversation || !brokerId) return;
 
-    const { data: newLead, error: leadError } = await supabase
-      .from("leads")
-      .insert({
-        name: leadName,
-        whatsapp: selectedConversation.phone,
+      const { data: newLead, error: leadError } = await supabase
+        .from("leads")
+        .insert({
+          name: leadName,
+          whatsapp: selectedConversation.phone,
+          broker_id: brokerId,
+          project_id: projectId,
+          status: "new" as any,
+          source: "whatsapp",
+          lead_origin: "whatsapp_direto",
+        } as any)
+        .select("id")
+        .single();
+
+      if (leadError || !newLead) {
+        toast.error("Erro ao criar card no Kanban");
+        return;
+      }
+
+      await supabase
+        .from("conversations")
+        .update({ lead_id: (newLead as any).id } as any)
+        .eq("id", selectedConversation.id);
+
+      await supabase.from("lead_interactions").insert({
+        lead_id: (newLead as any).id,
+        interaction_type: "note" as any,
+        notes: "Lead criado a partir da Inbox (WhatsApp direto)",
         broker_id: brokerId,
-        project_id: projectId,
-        status: "new" as any,
-        source: "whatsapp",
-        lead_origin: "whatsapp_direto",
-      } as any)
-      .select("id")
-      .single();
+      } as any);
 
-    if (leadError || !newLead) {
-      toast.error("Erro ao criar card no Kanban");
-      return;
-    }
+      toast.success("Card criado no Kanban!");
+      setSelectedConversation({
+        ...selectedConversation,
+        lead_id: (newLead as any).id,
+        lead: { id: (newLead as any).id, name: leadName, status: "new", project_id: projectId, notes: null, lead_origin: "whatsapp_direto" },
+      });
+    },
+    [selectedConversation, brokerId]
+  );
 
-    await supabase
-      .from("conversations")
-      .update({ lead_id: (newLead as any).id } as any)
-      .eq("id", selectedConversation.id);
-
-    await supabase.from("lead_interactions").insert({
-      lead_id: (newLead as any).id,
-      interaction_type: "note" as any,
-      notes: "Lead criado a partir da Inbox (WhatsApp direto)",
-      broker_id: brokerId,
-    } as any);
-
-    toast.success("Card criado no Kanban!");
-    setSelectedConversation({
-      ...selectedConversation,
-      lead_id: (newLead as any).id,
-      lead: { id: (newLead as any).id, name: leadName, status: "new", project_id: projectId, notes: null, lead_origin: "whatsapp_direto" },
-    });
-  }, [selectedConversation, brokerId]);
-
-  const handleAdvanceStatus = useCallback(async (newStatus: string) => {
-    const lead = selectedConversation?.lead as any;
-    if (!lead) return;
-    const { error } = await supabase
-      .from("leads")
-      .update({ status: newStatus } as any)
-      .eq("id", lead.id);
-    if (error) {
-      toast.error("Erro ao atualizar status");
-    } else {
-      toast.success("Status atualizado!");
-    }
-  }, [selectedConversation]);
+  const handleAdvanceStatus = useCallback(
+    async (newStatus: string) => {
+      const lead = selectedConversation?.lead as any;
+      if (!lead) return;
+      const { error } = await supabase.from("leads").update({ status: newStatus } as any).eq("id", lead.id);
+      if (error) {
+        toast.error("Erro ao atualizar status");
+      } else {
+        toast.success("Status atualizado!");
+      }
+    },
+    [selectedConversation]
+  );
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
 
-  // Gating: if inbox is not enabled, show blocked screen
   if (featuresLoading) {
     return (
       <div className="min-h-screen bg-[#141417] flex items-center justify-center">
@@ -192,10 +200,10 @@ export default function BrokerInbox() {
             Esta funcionalidade não está habilitada para sua conta. Solicite ao administrador para liberar o acesso.
           </p>
           <button
-            onClick={() => navigate("/corretor/admin")}
+            onClick={() => navigate("/corretor/crm")}
             className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all"
           >
-            Voltar ao Kanban
+            Voltar ao CRM
           </button>
         </div>
       </div>
@@ -207,10 +215,13 @@ export default function BrokerInbox() {
   const showContext = showLeadPanel && !isMobile;
 
   return (
-    <div className="min-h-screen bg-[#141417] pt-safe">
-      <BrokerSidebar viewMode="kanban" onViewChange={() => navigate("/corretor/admin")} onLogout={handleLogout} inboxEnabled={inboxEnabled} />
-      <div className="lg:pl-16">
-        <div className="flex h-[calc(100vh-64px)] lg:h-screen overflow-hidden">
+    <BrokerLayout
+      viewMode="kanban"
+      onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
+      onLogout={handleLogout}
+      inboxEnabled={inboxEnabled}
+    >
+      <div className="flex h-[calc(100vh-64px)] lg:h-[calc(100vh-72px)] overflow-hidden -m-3 lg:-m-6 lg:ml-0">
         {showList && (
           <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0`}>
             <ConversationList
@@ -253,7 +264,7 @@ export default function BrokerInbox() {
                 }}
                 onToggleAiMode={(mode) => {
                   updateAiMode(selectedConversation!.id, mode);
-                  setSelectedConversation(prev => prev ? { ...prev, ai_mode: mode } : prev);
+                  setSelectedConversation((prev) => (prev ? { ...prev, ai_mode: mode } : prev));
                 }}
                 copilotSuggestion={suggestion}
                 isGeneratingSuggestion={isGenerating}
@@ -279,9 +290,7 @@ export default function BrokerInbox() {
             />
           </div>
         )}
-        </div>
       </div>
-      <BrokerBottomNav viewMode="kanban" onViewChange={() => navigate("/corretor/admin")} inboxEnabled={inboxEnabled} />
 
       {selectedConversation && brokerId && (
         <CreateLeadFromChatModal
@@ -293,6 +302,6 @@ export default function BrokerInbox() {
           onCreated={handleLeadCreated}
         />
       )}
-    </div>
+    </BrokerLayout>
   );
 }

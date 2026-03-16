@@ -1,17 +1,16 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, RefreshCw, FileSpreadsheet } from "lucide-react";
-import { useCallback } from "react";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import LeadsTable from "@/components/admin/LeadsTable";
 import { AddLeadModal } from "@/components/admin/AddLeadModal";
 import { CsvImportModal } from "@/components/admin/CsvImportModal";
 import { KanbanBoard } from "@/components/crm";
-import { BrokerLayout } from "@/components/broker";
+import { BrokerLayout, getBrokerViewModeFromPath } from "@/components/broker";
 import { BrokerRoletas } from "@/components/broker/BrokerRoletas";
 import { LeadStatus } from "@/types/crm";
 
@@ -37,21 +36,20 @@ const BrokerAdmin = () => {
   const [broker, setBroker] = useState<BrokerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const initialView = (searchParams.get("view") === "list" ? "list" : "kanban") as "kanban" | "list";
-  const [viewMode, setViewMode] = useState<"kanban" | "list">(initialView);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const viewMode = getBrokerViewModeFromPath(location.pathname);
   const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
   const { inboxEnabled, copilotEnabled } = useBrokerFeatures(brokerId);
 
   useEffect(() => {
     if (isRoleLoading) return;
     if (role === "admin") {
-      navigate("/admin");
+      navigate("/admin", { replace: true });
     } else if (role !== "broker") {
-      navigate("/auth");
+      navigate("/auth", { replace: true });
     }
   }, [role, isRoleLoading, navigate]);
 
@@ -81,18 +79,17 @@ const BrokerAdmin = () => {
     }
   }, [role, brokerId, fetchLeads]);
 
-  // Realtime subscription for leads
   useEffect(() => {
     if (!brokerId) return;
 
     const channel = supabase
       .channel(`broker-leads-${brokerId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'leads',
+          event: "*",
+          schema: "public",
+          table: "leads",
           filter: `broker_id=eq.${brokerId}`,
         },
         () => {
@@ -108,7 +105,9 @@ const BrokerAdmin = () => {
 
   const fetchBrokerInfo = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.user) return;
 
       const { data, error } = await (supabase
@@ -130,9 +129,12 @@ const BrokerAdmin = () => {
     navigate("/auth");
   };
 
-  const handleAddLead = () => {
-    setIsAddLeadOpen(true);
-  };
+  const handleViewChange = useCallback(
+    (mode: "kanban" | "list") => {
+      navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm");
+    },
+    [navigate]
+  );
 
   const handleAddLeadSuccess = () => {
     fetchLeads();
@@ -163,15 +165,15 @@ const BrokerAdmin = () => {
   return (
     <>
       <Helmet>
-        <title>CRM | Enove</title>
+        <title>{viewMode === "list" ? "Leads" : "CRM"} | Enove</title>
       </Helmet>
       <BrokerLayout
         brokerName={broker?.name}
         brokerInitial={brokerInitial}
         viewMode={viewMode}
-        onViewChange={setViewMode}
+        onViewChange={handleViewChange}
         onLogout={handleLogout}
-        onAddLead={handleAddLead}
+        onAddLead={() => setIsAddLeadOpen(true)}
         searchTerm={viewMode === "list" ? searchTerm : undefined}
         onSearchChange={viewMode === "list" ? setSearchTerm : undefined}
         isLeader={isLeader}
