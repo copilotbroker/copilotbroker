@@ -1081,14 +1081,15 @@ async function handleIncomingMessage(
     console.log(`📱 LID fallback: chatid="${chatid}" → sender_pn="${msg.sender_pn}" → phone="${phone}"`);
   }
 
-  const messageText = msg.text || "";
+  const mediaMetadata = extractMediaMetadata(msg, payload);
+  const messageText = msg.text || mediaMetadata.caption || "";
+  const resolvedMessageType = inferMessageType(messageText, typeof mediaMetadata.mime_type === "string" ? mediaMetadata.mime_type : undefined, typeof mediaMetadata.raw_type === "string" ? mediaMetadata.raw_type : undefined);
   const direction = msg.fromMe ? "outbound" : "inbound";
-  console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | text="${messageText.substring(0, 50)}"`);
+  console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | text="${messageText.substring(0, 50)}"`);
 
-  // ✅ Arquivamento de mensagens REATIVADO
   await archiveMessageToConversation(
     supabase, phone, messageText, direction as "inbound" | "outbound",
-    instanceName, msg.pushName, msg.fromMe ? "human" : "lead", msg.id
+    instanceName, msg.pushName, msg.fromMe ? "human" : "lead", msg.id, resolvedMessageType, mediaMetadata
   );
 
   // Skip further processing for outbound messages
