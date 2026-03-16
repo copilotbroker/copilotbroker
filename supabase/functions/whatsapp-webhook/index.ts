@@ -18,6 +18,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "
 interface UAZAPIv2Payload {
   EventType?: string;
   instanceName?: string;
+  token?: string;
   message?: {
     chatid?: string;
     fromMe?: boolean;
