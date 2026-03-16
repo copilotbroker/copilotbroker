@@ -197,6 +197,10 @@ function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payl
     || (typeof content.thumbnail === "string" ? content.thumbnail : undefined)
     || (typeof data.thumbnail_url === "string" ? data.thumbnail_url : undefined)
     || (typeof data.thumb === "string" ? data.thumb : undefined);
+  const thumbnailBase64 = (typeof content.JPEGThumbnail === "string" ? content.JPEGThumbnail : undefined)
+    || (typeof content.jpegThumbnail === "string" ? content.jpegThumbnail : undefined)
+    || (typeof data.JPEGThumbnail === "string" ? data.JPEGThumbnail : undefined)
+    || (typeof data.jpegThumbnail === "string" ? data.jpegThumbnail : undefined);
 
   return {
     file_url: fileUrl,
@@ -207,6 +211,7 @@ function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payl
     duration_seconds: durationSeconds,
     size_bytes: sizeBytes,
     thumbnail_url: thumbnailUrl,
+    thumbnail_base64: thumbnailBase64,
   };
 }
 
