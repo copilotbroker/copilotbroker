@@ -188,13 +188,21 @@ export function ConversationThread({
     const text = inputValue.trim();
     if ((!text && !pendingFile) || isSending) return;
 
+    const fileToSend = pendingFile;
+    const fileTypeToSend = pendingType;
+
+    setInputValue("");
+    setPendingFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    inputRef.current?.focus();
+
     setIsSending(true);
     try {
-      if (pendingFile && pendingType) {
-        const ext = pendingFile.name.split(".").pop() || "bin";
+      if (fileToSend && fileTypeToSend) {
+        const ext = fileToSend.name.split(".").pop() || "bin";
         const path = `inbox/${conversation.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from("project-media").upload(path, pendingFile, {
-          contentType: pendingFile.type,
+        const { error: uploadError } = await supabase.storage.from("project-media").upload(path, fileToSend, {
+          contentType: fileToSend.type,
           cacheControl: "3600",
           upsert: false,
         });
@@ -203,24 +211,19 @@ export function ConversationThread({
 
         const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
         await onSendMessage({
-          content: text || `📎 ${pendingFile.name}`,
-          messageType: pendingType,
+          content: text || `📎 ${fileToSend.name}`,
+          messageType: fileTypeToSend,
           metadata: {
             file_url: urlData.publicUrl,
-            file_name: pendingFile.name,
-            mime_type: pendingFile.type,
+            file_name: fileToSend.name,
+            mime_type: fileToSend.type,
             storage_path: path,
-            size_bytes: pendingFile.size,
+            size_bytes: fileToSend.size,
           },
         });
       } else {
         await onSendMessage(text);
       }
-
-      setInputValue("");
-      setPendingFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      inputRef.current?.focus();
     } catch (error) {
       console.error("Erro ao enviar mídia:", error);
       toast.error("Não foi possível enviar o anexo");
