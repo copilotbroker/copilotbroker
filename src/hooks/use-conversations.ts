@@ -7,6 +7,13 @@ const MESSAGE_FETCH_LIMIT = 200;
 const INBOX_POLL_INTERVAL_MS = 12000;
 const THREAD_POLL_INTERVAL_MS = 6000;
 
+export interface ConversationLastMessageMedia {
+  file_url?: string | null;
+  thumbnail_url?: string | null;
+  file_name?: string | null;
+  mime_type?: string | null;
+}
+
 export interface Conversation {
   id: string;
   broker_id: string;
@@ -20,6 +27,7 @@ export interface Conversation {
   last_message_preview: string | null;
   last_message_direction: string | null;
   last_message_type?: string | null;
+  last_message_media?: ConversationLastMessageMedia | null;
   display_name?: string | null;
   display_name_source?: string | null;
   unread_count: number;

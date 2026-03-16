@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import {
-  Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
-  ArrowUpDown, ThermometerSun, Target, MoreVertical, Check, Zap,
-  TrendingUp, Eye, EyeOff, ChevronDown, MessageCircleMore, LayoutGrid, Archive
+  Search, Inbox, MessageSquare, AlertTriangle, Clock, Flame,
+  ArrowUpDown, ThermometerSun, Target, Check, Zap,
+  ChevronDown, LayoutGrid, Archive, Image as ImageIcon, Play
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Conversation } from "@/hooks/use-conversations";
 import { format, isToday, isYesterday } from "date-fns";
