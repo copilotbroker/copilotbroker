@@ -35,8 +35,15 @@ export interface ConversationMessage {
   sent_by: string;
   status: string;
   uazapi_message_id: string | null;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
   created_at: string;
+}
+
+export interface OutboundMessagePayload {
+  content: string;
+  sentBy?: string;
+  messageType?: "text" | "image" | "audio" | "video" | "document";
+  metadata?: Record<string, unknown>;
 }
 
 interface UseConversationsOptions {
@@ -101,7 +108,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
 
       filtered = [...conversationsByPhone.values()];
 
-      // Enrich conversations without lead_id: try to find lead name by phone
+      // Enrich conversations without lead_id: try phone match + latest WhatsApp sender name
       const noLeadConvs = filtered.filter(c => !c.lead_id && c.phone_normalized);
       if (noLeadConvs.length > 0) {
         const phones = noLeadConvs.map(c => c.phone_normalized);
@@ -111,36 +118,75 @@ export function useConversations(options: UseConversationsOptions = {}) {
         });
         const uniqueVariants = [...new Set(phoneVariants)].filter(Boolean);
 
-        const { data: matchedLeads } = await supabase
-          .from("leads")
-          .select("id, name, whatsapp, status, project_id, notes, lead_origin")
-          .in("whatsapp", uniqueVariants.slice(0, 100));
+        const [{ data: matchedLeads }, { data: senderNames }] = await Promise.all([
+          supabase
+            .from("leads")
+            .select("id, name, whatsapp, status, project_id, notes, lead_origin")
+            .in("whatsapp", uniqueVariants.slice(0, 100)),
+          supabase
+            .from("conversation_messages")
+            .select("conversation_id, sender_name, created_at")
+            .in("conversation_id", noLeadConvs.map(c => c.id))
+            .eq("direction", "inbound")
+            .not("sender_name", "is", null)
+            .order("created_at", { ascending: false })
+            .limit(500),
+        ]);
 
-        if (matchedLeads && matchedLeads.length > 0) {
-          const phoneToLead = new Map<string, typeof matchedLeads[0]>();
-          for (const lead of matchedLeads) {
-            const normalized = (lead.whatsapp || "").replace(/\D/g, "");
-            if (!phoneToLead.has(normalized)) {
-              phoneToLead.set(normalized, lead);
-            }
+        const senderNameByConversation = new Map<string, string>();
+        for (const row of senderNames || []) {
+          if (!senderNameByConversation.has(row.conversation_id) && row.sender_name) {
+            senderNameByConversation.set(row.conversation_id, row.sender_name);
+          }
+        }
+
+        const phoneToLead = new Map<string, (typeof matchedLeads extends (infer T)[] ? T : never)>();
+        for (const lead of matchedLeads || []) {
+          const normalized = (lead.whatsapp || "").replace(/\D/g, "");
+          if (!phoneToLead.has(normalized)) {
+            phoneToLead.set(normalized, lead as any);
+          }
+        }
+
+        filtered = filtered.map(c => {
+          if (c.lead_id || c.lead) return c;
+          const normalized = c.phone_normalized.replace(/\D/g, "");
+          const match = phoneToLead.get(normalized) ||
+            [...phoneToLead.entries()].find(([k]) =>
+              k.endsWith(normalized.slice(-11)) || normalized.endsWith(k.slice(-11))
+            )?.[1];
+
+          if (match) {
+            return {
+              ...c,
+              lead: {
+                id: (match as any).id,
+                name: (match as any).name,
+                status: (match as any).status,
+                project_id: (match as any).project_id,
+                notes: (match as any).notes,
+                lead_origin: (match as any).lead_origin,
+              } as any,
+            };
           }
 
-          filtered = filtered.map(c => {
-            if (c.lead_id || c.lead) return c;
-            const normalized = c.phone_normalized.replace(/\D/g, "");
-            const match = phoneToLead.get(normalized) ||
-              [...phoneToLead.entries()].find(([k]) =>
-                k.endsWith(normalized.slice(-11)) || normalized.endsWith(k.slice(-11))
-              )?.[1];
-            if (match) {
-              return {
-                ...c,
-                lead: { id: match.id, name: match.name, status: match.status, project_id: match.project_id, notes: match.notes, lead_origin: match.lead_origin } as any,
-              };
-            }
-            return c;
-          });
-        }
+          const senderName = senderNameByConversation.get(c.id)?.trim();
+          if (senderName) {
+            return {
+              ...c,
+              lead: {
+                id: c.id,
+                name: senderName,
+                status: "direct_whatsapp",
+                project_id: null,
+                notes: null,
+                lead_origin: "whatsapp_direto",
+              } as any,
+            };
+          }
+
+          return c;
+        });
       }
 
       // Client-side search
@@ -320,27 +366,42 @@ export function useConversationMessages(conversationId: string | null) {
   }, [conversationId]);
 
   /**
-   * Send message via edge function (real UAZAPI delivery)
+   * Send message via backend function (text or media)
    */
-  const sendMessage = useCallback(async (content: string, sentBy = "human") => {
+  const sendMessage = useCallback(async (payload: string | OutboundMessagePayload, sentBy = "human") => {
     if (!conversationId) return null;
+
+    const normalizedPayload: OutboundMessagePayload = typeof payload === "string"
+      ? { content: payload, sentBy, messageType: "text" }
+      : {
+          content: payload.content,
+          sentBy: payload.sentBy || sentBy,
+          messageType: payload.messageType || "text",
+          metadata: payload.metadata,
+        };
 
     try {
       const { data, error } = await supabase.functions.invoke("inbox-send-message", {
-        body: { conversation_id: conversationId, content },
+        body: {
+          conversation_id: conversationId,
+          content: normalizedPayload.content,
+          sent_by: normalizedPayload.sentBy,
+          message_type: normalizedPayload.messageType,
+          metadata: normalizedPayload.metadata,
+        },
       });
 
       if (error) {
-        // Fallback: save locally if edge function fails
         console.error("Edge function error, falling back to local insert:", error);
         const { data: fallbackData, error: fbError } = await supabase
           .from("conversation_messages")
           .insert({
             conversation_id: conversationId,
             direction: "outbound",
-            content,
-            sent_by: sentBy,
-            message_type: "text",
+            content: normalizedPayload.content,
+            sent_by: normalizedPayload.sentBy,
+            message_type: normalizedPayload.messageType,
+            metadata: normalizedPayload.metadata || null,
             status: "pending",
           } as any)
           .select()
@@ -350,7 +411,7 @@ export function useConversationMessages(conversationId: string | null) {
           toast.error("Erro ao enviar mensagem");
           return null;
         }
-        toast.warning("Mensagem salva localmente (envio WhatsApp pendente)");
+        toast.warning("Mensagem salva localmente (envio pendente)");
         return fallbackData;
       }
 

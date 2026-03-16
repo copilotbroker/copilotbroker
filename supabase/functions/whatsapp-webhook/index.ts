@@ -28,6 +28,13 @@ interface UAZAPIv2Payload {
     pushName?: string;
     status?: string;
     sender_pn?: string;
+    mimetype?: string;
+    mediaUrl?: string;
+    url?: string;
+    type?: string;
+    caption?: string;
+    fileName?: string;
+    mediaName?: string;
   };
   event?: string;
   instance?: string;
@@ -113,7 +120,46 @@ function getPhoneVariants(phone: string): string[] {
   return [...variants].filter(Boolean);
 }
 
-// ========================= ERROR LOGGING =========================
+
+function inferMessageType(messageText: string, mimeType?: string, rawType?: string): string {
+  const lowerMime = mimeType?.toLowerCase() || "";
+  const lowerType = rawType?.toLowerCase() || "";
+  if (lowerMime.startsWith("image/") || lowerType.includes("image")) return "image";
+  if (lowerMime.startsWith("audio/") || lowerType.includes("audio") || lowerType.includes("ptt")) return "audio";
+  if (lowerMime.startsWith("video/") || lowerType.includes("video")) return "video";
+  if (!messageText && (lowerMime || lowerType)) return "document";
+  return messageText ? "text" : "document";
+}
+
+function extractMediaMetadata(msg: NonNullable<UAZAPIv2Payload["message"]>, payload: UAZAPIv2Payload) {
+  const data = payload.data || {};
+  const mimeType = (typeof msg.mimetype === "string" ? msg.mimetype : undefined)
+    || (typeof data.mimetype === "string" ? data.mimetype : undefined)
+    || (typeof data.mime_type === "string" ? data.mime_type : undefined);
+  const fileUrl = (typeof msg.mediaUrl === "string" ? msg.mediaUrl : undefined)
+    || (typeof msg.url === "string" ? msg.url : undefined)
+    || (typeof data.mediaUrl === "string" ? data.mediaUrl : undefined)
+    || (typeof data.url === "string" ? data.url : undefined)
+    || (typeof data.file_url === "string" ? data.file_url : undefined);
+  const fileName = (typeof msg.fileName === "string" ? msg.fileName : undefined)
+    || (typeof msg.mediaName === "string" ? msg.mediaName : undefined)
+    || (typeof data.fileName === "string" ? data.fileName : undefined)
+    || (typeof data.file_name === "string" ? data.file_name : undefined);
+  const rawType = (typeof msg.type === "string" ? msg.type : undefined)
+    || (typeof data.type === "string" ? data.type : undefined)
+    || (typeof data.mediaType === "string" ? data.mediaType : undefined);
+  const caption = (typeof msg.caption === "string" ? msg.caption : undefined)
+    || (typeof data.caption === "string" ? data.caption : undefined);
+
+  return {
+    file_url: fileUrl,
+    file_name: fileName,
+    mime_type: mimeType,
+    raw_type: rawType,
+    caption,
+  };
+}
+
 
 async function logError(
   supabase: SupabaseClient,
@@ -504,7 +550,9 @@ async function archiveMessageToConversation(
   instanceName?: string,
   senderName?: string,
   sentBy: string = "human",
-  uazapiMessageId?: string
+  uazapiMessageId?: string,
+  messageType: string = "text",
+  metadata?: Record<string, unknown>
 ): Promise<void> {
   if (!instanceName) return;
 
@@ -525,7 +573,8 @@ async function archiveMessageToConversation(
       conversation_id: (conv as { id: string }).id,
       direction,
       content: messageText || "[Mídia]",
-      message_type: messageText ? "text" : "media",
+      message_type: messageType,
+      metadata: metadata || null,
       sender_name: senderName,
       sent_by: sentBy,
       status: "delivered",
@@ -1032,14 +1081,15 @@ async function handleIncomingMessage(
     console.log(`📱 LID fallback: chatid="${chatid}" → sender_pn="${msg.sender_pn}" → phone="${phone}"`);
   }
 
-  const messageText = msg.text || "";
+  const mediaMetadata = extractMediaMetadata(msg, payload);
+  const messageText = msg.text || mediaMetadata.caption || "";
+  const resolvedMessageType = inferMessageType(messageText, typeof mediaMetadata.mime_type === "string" ? mediaMetadata.mime_type : undefined, typeof mediaMetadata.raw_type === "string" ? mediaMetadata.raw_type : undefined);
   const direction = msg.fromMe ? "outbound" : "inbound";
-  console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | text="${messageText.substring(0, 50)}"`);
+  console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | text="${messageText.substring(0, 50)}"`);
 
-  // ✅ Arquivamento de mensagens REATIVADO
   await archiveMessageToConversation(
     supabase, phone, messageText, direction as "inbound" | "outbound",
-    instanceName, msg.pushName, msg.fromMe ? "human" : "lead", msg.id
+    instanceName, msg.pushName, msg.fromMe ? "human" : "lead", msg.id, resolvedMessageType, mediaMetadata
   );
 
   // Skip further processing for outbound messages

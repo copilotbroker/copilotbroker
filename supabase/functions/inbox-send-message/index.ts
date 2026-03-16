@@ -12,13 +12,20 @@ const formatPhoneForUAZAPI = (phone: string): string => {
   return cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
 };
 
-/**
- * Send text via UAZAPI with fallback endpoints + auth headers
- */
+const getAuthHeaders = (token: string) => [
+  { token },
+  { admintoken: token },
+  { apikey: token },
+  { "x-api-key": token },
+  { Authorization: `Bearer ${token}` },
+];
+
 async function sendViaUAZAPI(
   instanceToken: string | null,
   phone: string,
-  text: string
+  content: string,
+  messageType: string = "text",
+  metadata?: Record<string, unknown>
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const cleanPhone = formatPhoneForUAZAPI(phone);
   const token = instanceToken || UAZAPI_TOKEN;
@@ -26,31 +33,36 @@ async function sendViaUAZAPI(
   let baseUrl = UAZAPI_INSTANCE_URL.replace(/\/$/, "");
   try {
     baseUrl = new URL(baseUrl).origin;
-  } catch { /* keep as-is */ }
+  } catch {}
 
-  // Fallback endpoints
-  const endpoints = ["/send/text", "/chat/send/text"];
-  // Fallback auth headers
-  const authHeaders = [
-    { token },
-    { admintoken: token },
-    { apikey: token },
-    { "x-api-key": token },
-    { Authorization: `Bearer ${token}` },
-  ];
+  const mediaUrl = typeof metadata?.file_url === "string" ? metadata.file_url : undefined;
+  const fileName = typeof metadata?.file_name === "string" ? metadata.file_name : undefined;
+  const mimeType = typeof metadata?.mime_type === "string" ? metadata.mime_type : undefined;
+  const caption = content || "";
 
-  for (const endpoint of endpoints) {
-    for (const authHeader of authHeaders) {
+  const requests = messageType === "text"
+    ? [
+        { endpoint: "/send/text", body: { number: cleanPhone, text: content } },
+        { endpoint: "/chat/send/text", body: { number: cleanPhone, text: content } },
+      ]
+    : [
+        { endpoint: `/send/${messageType}`, body: { number: cleanPhone, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
+        { endpoint: `/chat/send/${messageType}`, body: { number: cleanPhone, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
+        { endpoint: "/send/media", body: { number: cleanPhone, mediatype: messageType, media: mediaUrl, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
+        { endpoint: "/chat/send/media", body: { number: cleanPhone, mediatype: messageType, media: mediaUrl, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
+      ];
+
+  for (const request of requests) {
+    for (const authHeader of getAuthHeaders(token)) {
       try {
-        const url = `${baseUrl}${endpoint}`;
-        const res = await fetch(url, {
+        const res = await fetch(`${baseUrl}${request.endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeader },
-          body: JSON.stringify({ number: cleanPhone, text }),
+          body: JSON.stringify(request.body),
         });
 
         if (res.status === 401 || res.status === 404) {
-          await res.text(); // consume body
+          await res.text();
           continue;
         }
 
@@ -60,20 +72,14 @@ async function sendViaUAZAPI(
         }
 
         let result: Record<string, unknown> = {};
-        try { result = JSON.parse(responseText); } catch { /* ok */ }
+        try { result = JSON.parse(responseText); } catch {}
+        if (result.error) return { success: false, error: String(result.error) };
 
-        if (result.error) {
-          return { success: false, error: String(result.error) };
-        }
-
-        const messageId = String(
-          result.id || result.messageid || (result.key as Record<string, unknown>)?.id || ""
-        );
-        console.log(`✅ Mensagem enviada via ${endpoint} para ${cleanPhone}`);
+        const messageId = String(result.id || result.messageid || (result.key as Record<string, unknown>)?.id || "");
+        console.log(`✅ Mensagem ${messageType} enviada via ${request.endpoint} para ${cleanPhone}`);
         return { success: true, messageId };
       } catch (err) {
-        console.warn(`⚠️ Falha ${endpoint}:`, (err as Error).message);
-        continue;
+        console.warn(`⚠️ Falha ${request.endpoint}:`, (err as Error).message);
       }
     }
   }
@@ -105,9 +111,9 @@ serve(async (req) => {
       });
     }
 
-    const { conversation_id, content } = await req.json();
-    if (!conversation_id || !content) {
-      return new Response(JSON.stringify({ error: "conversation_id and content are required" }), {
+    const { conversation_id, content, sent_by, message_type, metadata } = await req.json();
+    if (!conversation_id || (!content && !metadata?.file_url)) {
+      return new Response(JSON.stringify({ error: "conversation_id and content or file are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -141,11 +147,15 @@ serve(async (req) => {
       );
     }
 
+    const normalizedType = typeof message_type === "string" ? message_type : "text";
+
     // 3. Send via UAZAPI
     const sendResult = await sendViaUAZAPI(
       instance.instance_token,
       conv.phone_normalized || conv.phone,
-      content
+      content || "",
+      normalizedType,
+      metadata
     );
 
     if (!sendResult.success) {
@@ -155,15 +165,20 @@ serve(async (req) => {
       );
     }
 
+    const previewText = normalizedType === "text"
+      ? content
+      : (typeof metadata?.file_name === "string" ? `📎 ${metadata.file_name}` : "[Mídia]");
+
     // 4. Save message in conversation_messages
     const { data: msg, error: msgError } = await supabase
       .from("conversation_messages")
       .insert({
         conversation_id,
         direction: "outbound",
-        content,
-        sent_by: "human",
-        message_type: "text",
+        content: content || previewText,
+        sent_by: sent_by || "human",
+        message_type: normalizedType,
+        metadata: metadata || null,
         status: "sent",
         uazapi_message_id: sendResult.messageId || null,
       })
@@ -181,7 +196,7 @@ serve(async (req) => {
           lead_id: conv.lead_id,
           interaction_type: "whatsapp_enviada",
           broker_id: conv.broker_id,
-          notes: content.substring(0, 200),
+          notes: String(previewText || "").substring(0, 200),
           channel: "whatsapp",
           created_by: user.id,
         });
@@ -196,7 +211,7 @@ serve(async (req) => {
       .update({
         status: "attending",
         last_message_at: new Date().toISOString(),
-        last_message_preview: content.substring(0, 100),
+        last_message_preview: String(previewText || "").substring(0, 100),
         last_message_direction: "outbound",
         updated_at: new Date().toISOString(),
       })
