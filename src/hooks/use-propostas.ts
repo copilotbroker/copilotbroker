@@ -195,29 +195,45 @@ export function usePropostas(leadId: string) {
 
   const aprovarProposta = useCallback(async (propostaId: string) => {
     try {
+      const now = new Date().toISOString();
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+
       const { error } = await supabase.from("propostas").update({
         status_proposta: "aprovada",
-        aprovada_em: new Date().toISOString(),
+        aprovada_em: now,
       } as any).eq("id", propostaId);
       if (error) throw error;
 
       const proposta = propostas.find(p => p.id === propostaId);
       if (proposta) {
+        const { error: leadError } = await supabase.from("leads").update({
+          status: "registered" as any,
+          valor_final_venda: proposta.valor_proposta,
+          data_fechamento: now,
+          registered_at: now,
+          registered_by: userId,
+          updated_at: now,
+        }).eq("id", proposta.lead_id);
+        if (leadError) throw leadError;
+
         await supabase.from("lead_interactions").insert({
           lead_id: proposta.lead_id,
-          interaction_type: "proposta_enviada" as any,
-          notes: `✅ Proposta APROVADA: R$ ${proposta.valor_proposta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
+          interaction_type: "venda_confirmada" as any,
+          old_status: "docs_received" as any,
+          new_status: "registered" as any,
+          notes: `✅ Proposta APROVADA e venda confirmada: R$ ${proposta.valor_proposta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+          created_by: userId,
         });
       }
 
-      toast.success("Proposta aprovada!");
+      await fetchPropostas();
+      toast.success("Proposta aprovada e lead movido para Vendido!");
       return true;
     } catch (err: any) {
       toast.error(err.message || "Erro ao aprovar");
       return false;
     }
-  }, [propostas]);
+  }, [fetchPropostas, propostas]);
 
   const rejeitarProposta = useCallback(async (propostaId: string, motivo: string) => {
     try {
