@@ -241,12 +241,26 @@ async function persistInboundMediaIfNeeded(
   if (!sourceUrl || messageType === "text") return metadata;
 
   const alreadyHosted = sourceUrl.includes("/storage/v1/object/public/project-media/");
-  if (alreadyHosted) return metadata;
+  const normalizedPhone = getCanonicalPhoneNormalized(phone);
+  const existingStoragePath = typeof metadata.storage_path === "string" ? metadata.storage_path : null;
+  if (alreadyHosted) {
+    return {
+      ...metadata,
+      storage_path: existingStoragePath,
+      phone_normalized: normalizedPhone,
+    };
+  }
 
   try {
     const authHeaders: HeadersInit[] = [];
-    if (payload.token) authHeaders.push({ token: payload.token });
-    if (UAZAPI_TOKEN) authHeaders.push({ token: UAZAPI_TOKEN });
+    if (payload.token) {
+      authHeaders.push({ token: payload.token });
+      authHeaders.push({ Authorization: `Bearer ${payload.token}` });
+    }
+    if (UAZAPI_TOKEN) {
+      authHeaders.push({ token: UAZAPI_TOKEN });
+      authHeaders.push({ Authorization: `Bearer ${UAZAPI_TOKEN}` });
+    }
     authHeaders.push({});
 
     let mediaResponse: Response | null = null;
@@ -259,8 +273,12 @@ async function persistInboundMediaIfNeeded(
     }
 
     if (!mediaResponse?.ok) {
-      console.warn("⚠️ Could not fetch inbound media for preview", { sourceUrl, messageType });
-      return metadata;
+      console.warn("⚠️ Could not fetch inbound media for preview", { sourceUrl, messageType, phone: normalizedPhone });
+      return {
+        ...metadata,
+        source_file_url: sourceUrl,
+        phone_normalized: normalizedPhone,
+      };
     }
 
     const arrayBuffer = await mediaResponse.arrayBuffer();
@@ -272,7 +290,6 @@ async function persistInboundMediaIfNeeded(
       typeof metadata.file_name === "string" ? metadata.file_name : undefined,
       extension,
     );
-    const normalizedPhone = getCanonicalPhoneNormalized(phone);
     const path = `inbox/inbound/${normalizedPhone}/${Date.now()}-${fileName}`;
 
     const { error: uploadError } = await supabase.storage
@@ -284,7 +301,11 @@ async function persistInboundMediaIfNeeded(
 
     if (uploadError) {
       console.warn("⚠️ Could not upload inbound media to bucket", uploadError);
-      return metadata;
+      return {
+        ...metadata,
+        source_file_url: sourceUrl,
+        phone_normalized: normalizedPhone,
+      };
     }
 
     const { data: publicUrlData } = supabase.storage.from("project-media").getPublicUrl(path);
@@ -297,10 +318,16 @@ async function persistInboundMediaIfNeeded(
       file_name: fileName,
       size_bytes: Number(metadata.size_bytes) || arrayBuffer.byteLength,
       source_file_url: sourceUrl,
+      phone_normalized: normalizedPhone,
+      is_inline_ready: true,
     };
   } catch (error) {
     console.warn("⚠️ Error while persisting inbound media", error);
-    return metadata;
+    return {
+      ...metadata,
+      source_file_url: sourceUrl,
+      phone_normalized: normalizedPhone,
+    };
   }
 }
 
