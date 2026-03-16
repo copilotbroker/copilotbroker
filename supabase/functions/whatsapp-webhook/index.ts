@@ -306,6 +306,53 @@ function decodeBase64ToBytes(value?: string) {
   }
 }
 
+function getWhatsAppMediaHkdfInfo(messageType: string) {
+  switch (messageType) {
+    case "image":
+      return "WhatsApp Image Keys";
+    case "video":
+      return "WhatsApp Video Keys";
+    case "audio":
+      return "WhatsApp Audio Keys";
+    case "document":
+      return "WhatsApp Document Keys";
+    default:
+      return "WhatsApp Image Keys";
+  }
+}
+
+async function deriveWhatsAppMediaKeys(mediaKeyBase64: string, messageType: string) {
+  const mediaKeyBytes = decodeBase64ToBytes(mediaKeyBase64);
+  if (!mediaKeyBytes) return null;
+
+  const hkdfKey = await crypto.subtle.importKey("raw", mediaKeyBytes, "HKDF", false, ["deriveBits"]);
+  const infoBytes = new TextEncoder().encode(getWhatsAppMediaHkdfInfo(messageType));
+  const derivedBits = await crypto.subtle.deriveBits({
+    name: "HKDF",
+    hash: "SHA-256",
+    salt: new Uint8Array(32),
+    info: infoBytes,
+  }, hkdfKey, 896);
+
+  const derived = new Uint8Array(derivedBits);
+  return {
+    iv: derived.slice(0, 16),
+    cipherKey: derived.slice(16, 48),
+    macKey: derived.slice(48, 80),
+    refKey: derived.slice(80, 112),
+  };
+}
+
+async function decryptWhatsAppMedia(encBytes: Uint8Array, mediaKeyBase64: string, messageType: string) {
+  const keys = await deriveWhatsAppMediaKeys(mediaKeyBase64, messageType);
+  if (!keys || encBytes.byteLength <= 10) return null;
+
+  const cipherBytes = encBytes.slice(0, -10);
+  const cryptoKey = await crypto.subtle.importKey("raw", keys.cipherKey, { name: "AES-CBC" }, false, ["decrypt"]);
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-CBC", iv: keys.iv }, cryptoKey, cipherBytes);
+  return new Uint8Array(decrypted);
+}
+
 function isLikelyRenderableMimeType(mimeType?: string, messageType?: string) {
   const mime = mimeType?.toLowerCase() || "";
   if (!mime) return false;
