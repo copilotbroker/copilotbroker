@@ -28,6 +28,13 @@ interface UAZAPIv2Payload {
     pushName?: string;
     status?: string;
     sender_pn?: string;
+    mimetype?: string;
+    mediaUrl?: string;
+    url?: string;
+    type?: string;
+    caption?: string;
+    fileName?: string;
+    mediaName?: string;
   };
   event?: string;
   instance?: string;
