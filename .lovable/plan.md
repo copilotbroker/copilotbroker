@@ -1,55 +1,60 @@
 
-Objetivo
-- Fazer a mensagem mais recente realmente aparecer dentro da conversa aberta.
-- Reforçar a sincronização do chat e da lista do Inbox para evitar novos “sumiços”.
 
-Diagnóstico confirmado
-- A lista do Inbox está correta: a conversa do Maicon mostra `last_message_preview: "Teste 2"` e `last_message_at` recente.
-- O problema está no carregamento do histórico da conversa aberta:
-  - o hook `useConversationMessages` busca `conversation_messages` com `order=created_at.asc&limit=200`
-  - isso traz as 200 mensagens mais antigas, não as mais recentes
-  - em conversas longas, a mensagem nova fica fora do recorte e não aparece no chat
-- Além disso, o chat depende fortemente de realtime; se um evento falhar, a lista e a thread podem ficar dessincronizadas.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-O que vou ajustar
-1. Corrigir a query da conversa aberta
-- Alterar o carregamento inicial do histórico para buscar as mensagens mais recentes da conversa, não as mais antigas.
-- Estratégia:
-  - buscar em ordem decrescente com limite
-  - reordenar no frontend para exibição cronológica
-- Assim o chat sempre abrirá já com as últimas mensagens, incluindo “Teste 2”.
+### Problema 1: Nomes dos leads não aparecem
 
-2. Garantir atualização em tempo real com fallback
-- Manter a subscription realtime de `conversation_messages`.
-- Adicionar fallback por polling incremental no hook da conversa aberta:
-  - buscar mensagens novas após o último `created_at` carregado
-  - deduplicar por `id`
-  - usar backoff para não gerar carga desnecessária
-- Isso cobre falhas silenciosas de realtime.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-3. Reforçar a lista do Inbox
-- Aplicar a mesma ideia de resiliência na lista:
-  - manter realtime de `conversations`
-  - adicionar polling leve/incremental para garantir que preview, horário e ordem não fiquem desatualizados
-- Preservar ordenação por `last_message_at desc`.
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-4. Validar seleção da conversa
-- Revisar se `selectedConversation` é atualizado quando a lista recebe novos dados, para evitar header/previews defasados após novas mensagens.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-Arquivos a ajustar
-- `src/hooks/use-conversations.ts`
-- possivelmente `src/pages/BrokerInbox.tsx` se eu precisar sincronizar melhor `selectedConversation` com a lista atualizada
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-Resultado esperado
-- Ao abrir a conversa do Maicon, a mensagem “Teste 2” aparecerá no histórico.
-- Novas mensagens passarão a surgir no chat aberto mesmo se o realtime falhar momentaneamente.
-- A lista e a thread ficarão consistentes entre si.
+### Problema 2: Marcar como lida quando lida no celular
 
-Validação após implementação
-- Abrir `/corretor/inbox`
-- Selecionar “Maicon Teste”
-- Confirmar que a mensagem mais recente exibida na lista também aparece no fim da conversa
-- Confirmar que uma nova mensagem recebida entra:
-  - na lista do Inbox
-  - no preview
-  - e dentro da thread aberta
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
+
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
+
+### Arquivos a editar
+
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

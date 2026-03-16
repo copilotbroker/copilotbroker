@@ -68,6 +68,20 @@ export default function BrokerInbox() {
     }
   }, [conversations, searchParams, selectedConversation, setSearchParams]);
 
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    const refreshedConversation = conversations.find((conversation) => conversation.id === selectedConversation.id);
+    if (!refreshedConversation) return;
+
+    setSelectedConversation((current) => {
+      if (!current) return current;
+      const currentSnapshot = JSON.stringify(current);
+      const nextSnapshot = JSON.stringify(refreshedConversation);
+      return currentSnapshot === nextSnapshot ? current : refreshedConversation;
+    });
+  }, [conversations, selectedConversation?.id]);
+
   const handleSelectConversation = useCallback(
     (conv: Conversation) => {
       setSelectedConversation(conv);
@@ -149,6 +163,7 @@ export default function BrokerInbox() {
         interaction_type: "note" as any,
         notes: "Lead criado a partir da Inbox (WhatsApp direto)",
         broker_id: brokerId,
+        channel: "system",
       } as any);
 
       toast.success("Card criado no Kanban!");
@@ -182,7 +197,7 @@ export default function BrokerInbox() {
 
   if (featuresLoading) {
     return (
-      <div className="min-h-screen bg-[#141417] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -190,7 +205,7 @@ export default function BrokerInbox() {
 
   if (!inboxEnabled) {
     return (
-      <div className="min-h-screen bg-[#141417] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-muted-foreground" />
@@ -223,7 +238,7 @@ export default function BrokerInbox() {
     >
       <div className="flex h-[calc(100vh-64px)] lg:h-[calc(100vh-72px)] overflow-hidden -m-3 lg:-m-6 lg:ml-0">
         {showList && (
-          <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0`}>
+          <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0`}>
             <ConversationList
               conversations={conversations}
               selectedId={selectedConversation?.id || null}
@@ -243,7 +258,7 @@ export default function BrokerInbox() {
         {showThread && (
           <div className={`flex-1 min-w-0 ${isMobile ? "animate-in slide-in-from-right-5 duration-200" : ""}`}>
             {viewingLeadId ? (
-              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" /></div>}>
+              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
                 <LeadPage embeddedLeadId={viewingLeadId} onBack={handleBackFromLead} />
               </Suspense>
             ) : (
