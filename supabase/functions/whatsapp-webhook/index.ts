@@ -330,6 +330,12 @@ async function convertImageToWebp(bytes: Uint8Array) {
   return await image.encode(80, Image.WEBP);
 }
 
+function isWhatsAppHostedMediaUrl(url?: string) {
+  if (!url) return false;
+  const normalized = url.toLowerCase();
+  return normalized.includes("mmg.whatsapp.net") || normalized.includes("mms.whatsapp.net");
+}
+
 async function fetchInboundMedia(sourceUrl: string, tokens: string[]) {
   const authHeaders = [
     ...tokens.flatMap((token) => getAuthHeadersForMedia(token)),
