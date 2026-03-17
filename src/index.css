@@ -127,6 +127,18 @@
     
     /* Enove official yellow #FFFF00 */
     --enove-yellow: 60 100% 50%;
+
+    /* CRM action palette */
+    --crm-success: 152 63% 46%;
+    --crm-success-foreground: 0 0% 100%;
+    --crm-info: 217 91% 60%;
+    --crm-info-foreground: 0 0% 100%;
+    --crm-warning: 48 100% 50%;
+    --crm-warning-foreground: 240 6% 4%;
+    --crm-accent: 271 81% 56%;
+    --crm-accent-foreground: 0 0% 100%;
+    --crm-neutral: 220 8% 18%;
+    --crm-neutral-foreground: 45 30% 96%;
     
     /* Mauricio Cardoso - Botanical Luxury Palette (Dark mode) */
     --mc-sage: 152 45% 32%;

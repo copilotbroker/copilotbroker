@@ -64,6 +64,28 @@ export default {
         enove: {
           yellow: "hsl(var(--enove-yellow))",
         },
+        crm: {
+          success: {
+            DEFAULT: "hsl(var(--crm-success))",
+            foreground: "hsl(var(--crm-success-foreground))",
+          },
+          info: {
+            DEFAULT: "hsl(var(--crm-info))",
+            foreground: "hsl(var(--crm-info-foreground))",
+          },
+          warning: {
+            DEFAULT: "hsl(var(--crm-warning))",
+            foreground: "hsl(var(--crm-warning-foreground))",
+          },
+          accent: {
+            DEFAULT: "hsl(var(--crm-accent))",
+            foreground: "hsl(var(--crm-accent-foreground))",
+          },
+          neutral: {
+            DEFAULT: "hsl(var(--crm-neutral))",
+            foreground: "hsl(var(--crm-neutral-foreground))",
+          },
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

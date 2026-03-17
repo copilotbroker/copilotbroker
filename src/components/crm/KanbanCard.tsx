@@ -385,7 +385,7 @@ export function KanbanCard({
               size="sm"
               variant={actionConfig.variant}
               onClick={handleAction}
-              className="h-8 gap-1.5 text-xs"
+              className="h-8 gap-1.5 rounded-lg px-3.5 text-xs font-semibold"
             >
               <actionConfig.icon className="h-3.5 w-3.5" />
               <span>{actionConfig.label}</span>
@@ -397,9 +397,9 @@ export function KanbanCard({
               <PopoverTrigger asChild>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="neutral"
                   onClick={(e) => e.stopPropagation()}
-                  className="h-8 px-2"
+                  className="h-8 w-8 rounded-lg px-0"
                   title="Enviar ou programar WhatsApp"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
@@ -421,7 +421,7 @@ export function KanbanCard({
                 <div className="flex items-end gap-2">
                   <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
                     <PopoverTrigger asChild>
-                      <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canSubmitMessage || isScheduling || isSendingNow}>
+                      <Button size="icon" variant="neutral" className="h-9 w-9 flex-shrink-0 rounded-lg" disabled={!canSubmitMessage || isScheduling || isSendingNow}>
                         <CalendarClock className="h-4 w-4" />
                       </Button>
                     </PopoverTrigger>
@@ -455,7 +455,7 @@ export function KanbanCard({
                     </PopoverContent>
                   </Popover>
 
-                  <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
+                  <Button size="icon" className="h-9 w-9 flex-shrink-0 rounded-lg" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
@@ -466,12 +466,12 @@ export function KanbanCard({
           {lead.status !== "new" && onCallClick && (
             <Button
               size="sm"
-              variant="outline"
+              variant="neutral"
               onClick={(e) => {
                 e.stopPropagation();
                 onCallClick(lead.id);
               }}
-              className="h-8 px-2"
+              className="h-8 w-8 rounded-lg px-0"
               title="Registrar ligação"
             >
               <Phone className="h-3.5 w-3.5" />
