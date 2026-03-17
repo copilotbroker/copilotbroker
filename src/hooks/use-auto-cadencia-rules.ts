@@ -136,6 +136,7 @@ export function useAutoCadenciaRules() {
         .from("broker_auto_cadencia_rules") as any)
         .insert({
           broker_id: brokerId,
+          name: data.name || "Cadência 10D",
           project_id: data.project_id,
           is_active: data.is_active,
         })
