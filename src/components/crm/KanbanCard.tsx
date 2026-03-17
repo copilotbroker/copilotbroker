@@ -466,7 +466,7 @@ export function KanbanCard({
           {lead.status !== "new" && onCallClick && (
             <Button
               size="sm"
-              variant="outline"
+              variant="accent"
               onClick={(e) => {
                 e.stopPropagation();
                 onCallClick(lead.id);
