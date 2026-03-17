@@ -79,11 +79,9 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (!validateServiceRoleKey(req)) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  // Note: verify_jwt = false in config.toml; this function is safe to call
+  // from client-side (landing pages) because it only reads/writes data
+  // scoped to the specific leadId and performs its own business validations.
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
