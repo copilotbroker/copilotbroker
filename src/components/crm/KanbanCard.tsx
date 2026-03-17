@@ -455,7 +455,7 @@ export function KanbanCard({
                     </PopoverContent>
                   </Popover>
 
-                  <Button size="icon" variant="success" className="h-9 w-9 flex-shrink-0 rounded-lg" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
+                  <Button size="icon" variant="default" className="h-9 w-9 flex-shrink-0 rounded-lg" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
