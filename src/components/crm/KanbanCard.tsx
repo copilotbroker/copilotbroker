@@ -107,10 +107,10 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
   const actionConfig = useMemo(() => {
     if (lead.status === "scheduling") {
       if (lead.comparecimento === true) {
-        return { label: "Fazer Proposta", icon: FileText, color: "bg-violet-500/90 hover:bg-violet-500 text-white" };
+        return { label: "Fazer Proposta", icon: FileText, color: "bg-primary text-primary-foreground hover:opacity-90" };
       }
       if (lead.comparecimento === false) {
-        return { label: "Reagendar", icon: Calendar, color: "bg-orange-500/90 hover:bg-orange-500 text-white" };
+        return { label: "Reagendar", icon: Calendar, color: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground" };
       }
     }
     return ACTION_CONFIG[lead.status];
@@ -323,17 +323,21 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
 
         {/* Contact Info */}
         <div className="space-y-2 mb-3">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <Phone className="w-3 h-3 text-slate-500" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Phone className="w-3 h-3 text-muted-foreground/70" />
             <span>{formatPhone(lead.whatsapp)}</span>
           </div>
           {lead.email && (
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <Mail className="w-3 h-3 text-slate-500" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Mail className="w-3 h-3 text-muted-foreground/70" />
               <span className="truncate">{lead.email}</span>
             </div>
           )}
-          <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
+          {lead.broker_id && (
+            <div className="pt-1">
+              <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
+            </div>
+          )}
         </div>
 
         {/* Progress Bar */}
@@ -497,14 +501,14 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
         </div>
 
         {/* Footer with avatar, time and origin */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-700/50">
+        <div className="flex items-center justify-between border-t border-border/60 pt-2">
           <div className="flex items-center gap-2">
-            <Avatar className="w-5 h-5 border border-[#2a2a2e]">
-              <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-700 text-white text-[9px] font-medium">
+            <Avatar className="h-5 w-5 border border-border/60">
+              <AvatarFallback className="bg-muted text-[9px] font-medium text-foreground">
                 {lead.broker?.name?.charAt(0) || (lead.source === "enove" ? "E" : "?")}
               </AvatarFallback>
             </Avatar>
-            <span className="text-[10px] text-slate-400 max-w-[70px] truncate" title={lead.broker?.name || "Enove"}>
+            <span className="max-w-[70px] truncate text-[10px] text-muted-foreground" title={lead.broker?.name || "Enove"}>
               {lead.broker?.name || "Enove"}
             </span>
             <span className="text-slate-600">•</span>
