@@ -178,6 +178,7 @@ export function AutoCadenciaRuleEditor({
 
   const handleSubmit = async () => {
     const data = {
+      name: ruleName.trim() || "Cadência 10D",
       project_id: projectId === "all" ? null : projectId,
       is_active: true,
     };
