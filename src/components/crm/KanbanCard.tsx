@@ -360,9 +360,15 @@ export function KanbanCard({
         )}
 
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Phone className="h-3 w-3" />
-            <span>{formatPhone(lead.whatsapp)}</span>
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <div className="flex min-w-0 items-center gap-2">
+              <Phone className="h-3 w-3 shrink-0" />
+              <span className="truncate">{formatPhone(lead.whatsapp)}</span>
+            </div>
+
+            {lead.broker_id && (
+              <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
+            )}
           </div>
 
           {lead.email && (
@@ -372,12 +378,6 @@ export function KanbanCard({
             </div>
           )}
         </div>
-
-        {lead.broker_id && (
-          <div className="mt-2">
-            <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
-          </div>
-        )}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {actionConfig && (
