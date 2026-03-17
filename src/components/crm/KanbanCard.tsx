@@ -397,7 +397,7 @@ export function KanbanCard({
               <PopoverTrigger asChild>
                 <Button
                   size="sm"
-                  variant="info"
+                  variant="success"
                   onClick={(e) => e.stopPropagation()}
                   className="h-8 w-8 rounded-lg px-0"
                   title="Enviar ou programar WhatsApp"
@@ -421,7 +421,7 @@ export function KanbanCard({
                 <div className="flex items-end gap-2">
                   <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
                     <PopoverTrigger asChild>
-                      <Button size="icon" variant="accent" className="h-9 w-9 flex-shrink-0 rounded-lg" disabled={!canSubmitMessage || isScheduling || isSendingNow}>
+                      <Button size="icon" variant="success" className="h-9 w-9 flex-shrink-0 rounded-lg" disabled={!canSubmitMessage || isScheduling || isSendingNow}>
                         <CalendarClock className="h-4 w-4" />
                       </Button>
                     </PopoverTrigger>

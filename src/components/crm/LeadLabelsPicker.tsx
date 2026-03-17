@@ -26,28 +26,30 @@ export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: L
 
   return (
     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-      <div className="flex flex-wrap items-center gap-1">
-        {visibleLeadLabels.slice(0, compact ? 2 : 3).map((label) => (
-          <span key={label.id} className={chipClassName} title={label.name}>
-            {label.name}
-          </span>
-        ))}
-        {visibleLeadLabels.length > (compact ? 2 : 3) && (
-          <span className={chipClassName}>+{visibleLeadLabels.length - (compact ? 2 : 3)}</span>
-        )}
-      </div>
+      {!compact && (
+        <div className="flex flex-wrap items-center gap-1">
+          {visibleLeadLabels.slice(0, 3).map((label) => (
+            <span key={label.id} className={chipClassName} title={label.name}>
+              {label.name}
+            </span>
+          ))}
+          {visibleLeadLabels.length > 3 && (
+            <span className={chipClassName}>+{visibleLeadLabels.length - 3}</span>
+          )}
+        </div>
+      )}
 
       <Popover>
         <PopoverTrigger asChild>
-          <button
-            className={cn(
-              "inline-flex items-center justify-center rounded-md border border-border bg-secondary text-secondary-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
-              compact ? "h-7 w-7" : "h-8 w-8",
-            )}
+          <Button
+            type="button"
+            variant="warning"
+            size="icon"
+            className={cn(compact ? "h-7 w-7 rounded-md" : "h-8 w-8 rounded-md")}
             title="Etiquetas do WhatsApp"
           >
             <Tags className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-72 border-border bg-popover p-3 text-popover-foreground">
           <div className="mb-3 flex items-start justify-between gap-2">
