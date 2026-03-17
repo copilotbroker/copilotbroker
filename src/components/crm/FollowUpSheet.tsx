@@ -30,6 +30,7 @@ interface FollowUpSheetProps {
   projectName?: string;
   brokerName?: string;
   brokerId: string;
+  leadStatus?: string;
   onCreated?: () => void;
 }
 
@@ -63,6 +64,7 @@ export function FollowUpSheet({
   projectName,
   brokerName,
   brokerId,
+  leadStatus,
   onCreated,
 }: FollowUpSheetProps) {
   const [isCreating, setIsCreating] = useState(false);
@@ -117,6 +119,9 @@ export function FollowUpSheet({
 
     setIsCreating(true);
     try {
+      const nowIso = new Date().toISOString();
+      const previousStatus = leadStatus === "awaiting_docs" ? "info_sent" : (leadStatus || "info_sent");
+
       // Create campaign
       const { data: campaign, error: campErr } = await supabase
         .from("whatsapp_campaigns")
@@ -125,6 +130,8 @@ export function FollowUpSheet({
           name: `Follow-up - ${leadName}`,
           status: "running",
           total_leads: steps.length,
+          lead_id: leadId,
+          lead_previous_status: previousStatus,
         })
         .select()
         .single();
@@ -176,19 +183,34 @@ export function FollowUpSheet({
       const { error: qErr } = await supabase.from("whatsapp_message_queue").insert(queueItems);
       if (qErr) throw qErr;
 
-      // Log interaction with full message content
-      const stepsPreview = steps.map((s, i) => `Etapa ${i + 1}: ${s.messageContent}`).join("\n");
-      await supabase.from("lead_interactions").insert({
-        lead_id: leadId,
-        interaction_type: "note_added" as any,
-        channel: "whatsapp",
-        notes: `Follow-up WhatsApp agendado (${steps.length} etapas):\n\n${stepsPreview}`,
-        created_by: (await supabase.auth.getUser()).data.user?.id,
-      });
+      await supabase.from("leads").update({
+        status: "awaiting_docs" as any,
+        atendimento_iniciado_em: nowIso,
+        status_distribuicao: "atendimento_iniciado" as any,
+        reserva_expira_em: null,
+        updated_at: nowIso,
+      }).eq("id", leadId);
 
-      toast.success("Follow-up agendado com sucesso!");
-      onCreated?.();
-      onOpenChange(false);
+      const currentUser = (await supabase.auth.getUser()).data.user;
+      await supabase.from("lead_interactions").insert([
+        {
+          lead_id: leadId,
+          interaction_type: "status_change" as any,
+          old_status: previousStatus as any,
+          new_status: "awaiting_docs" as any,
+          channel: "whatsapp",
+          broker_id: brokerId,
+          created_by: currentUser?.id,
+          notes: `Lead movido para Copiloto Ativo ao ativar follow-up`,
+        },
+        {
+          lead_id: leadId,
+          interaction_type: "note_added" as any,
+          channel: "whatsapp",
+          notes: `Follow-up WhatsApp agendado (${steps.length} etapas):\n\n${steps.map((s, i) => `Etapa ${i + 1}: ${s.messageContent}`).join("\n")}`,
+          created_by: currentUser?.id,
+        }
+      ]);
     } catch (err: any) {
       toast.error(err.message || "Erro ao agendar follow-up");
     } finally {

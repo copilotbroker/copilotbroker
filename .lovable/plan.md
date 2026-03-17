@@ -1,84 +1,60 @@
 
-Objetivo
 
-Garantir que qualquer lead com fluxo futuro ativo vá para a coluna “Copiloto ativo” e exiba sempre o botão “Parar”, cobrindo:
-- cadência,
-- follow-up,
-- mensagem avulsa programada.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-O que encontrei no código
+### Problema 1: Nomes dos leads não aparecem
 
-- O destaque visual de automação já considera duas fontes:
-  - `whatsapp_campaigns.status = running`
-  - `whatsapp_message_queue.status in ("queued","scheduled","sending","paused_by_system")`
-- Porém o botão “Parar” no card hoje depende apenas de `hasCadenciaAtiva`, que vem só de `whatsapp_campaigns`. Resultado:
-  - leads com mensagens futuras sem campanha não mostram “Parar”
-  - follow-ups/mensagens programadas podem estar ativos sem refletir corretamente no botão
-- O movimento para “Copiloto ativo” está inconsistente entre fluxos:
-  - Inbox agendado move o lead para `awaiting_docs`
-  - `CadenciaSheet` também move
-  - `FollowUpSheet` não está preservando nem atualizando status do lead para `awaiting_docs`
-- O cancelamento do card também está incompleto:
-  - `handleCancelCadencia` chama apenas `cancelCadenciaForLead`
-  - isso não cancela mensagens avulsas futuras nem follow-ups fora dessa lógica
-- Há risco de UI ficar atrasada até o realtime/refetch concluir, então faz sentido aplicar atualização otimista com rollback, como no padrão sugerido.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-Plano de implementação
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-1. Unificar a regra de “fluxo ativo”
-- Criar um conceito único de fluxo ativo no Kanban:
-  - `hasActiveFlow = campanha rodando OU fila futura ativa`
-- Usar essa mesma regra para:
-  - mover o card visualmente para “Copiloto ativo”
-  - exibir o botão “Parar”
-  - aplicar destaque visual no card
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-2. Corrigir criação de follow-up
-- Atualizar `FollowUpSheet` para, ao criar follow-up:
-  - salvar `lead_id` e `lead_previous_status` na campanha
-  - mover o lead para `awaiting_docs`
-  - registrar interação com status anterior preservado
-- Isso elimina os casos em que o follow-up existe mas o lead continua em “Atendimento”.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-3. Substituir o cancelamento por “Parar tudo”
-- Trocar a ação atual do card por um cancelamento unificado:
-  - cancelar campanhas `running`
-  - cancelar itens futuros da `whatsapp_message_queue`
-  - restaurar o lead para o status anterior correto quando não restar nenhum fluxo ativo
-- Como você confirmou “Tudo”, o botão deve parar qualquer automação/agendamento do lead.
+### Problema 2: Marcar como lida quando lida no celular
 
-4. Aplicar atualização otimista no Kanban
-- Ao ativar cadência, follow-up ou agendar mensagem:
-  - atualizar imediatamente os caches do Kanban para mostrar o lead em “Copiloto ativo”
-  - ligar o estado visual do botão “Parar”
-- Em erro:
-  - rollback para a coluna/estado anterior
-- Em sucesso:
-  - invalidar queries do Kanban para reconciliar com o backend
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-5. Padronizar a restauração do status
-- Reaproveitar a lógica já existente de recuperação do `previousStatus` e garantir que:
-  - o lead só volte quando não houver mais campanha nem mensagem futura
-  - follow-up use a mesma convenção de preservação de status
-- Isso evita leads “presos” em coluna errada ou retornando cedo demais.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
 
-Arquivos que eu alteraria
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
-- `src/components/crm/KanbanBoard.tsx`
-- `src/components/crm/KanbanCard.tsx`
-- `src/components/crm/FollowUpSheet.tsx`
-- `src/components/crm/CadenciaSheet.tsx`
-- `src/hooks/use-conversations.ts`
-- `src/hooks/use-kanban-leads.ts`
-- possivelmente `supabase/functions/whatsapp-message-sender/index.ts` para consolidar a restauração final do status
+### Arquivos a editar
 
-Detalhes técnicos
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
 
-- Hoje `activeAutomationLeadIds` já detecta campanhas + fila, mas `cadenciaLeadIds` é usado sozinho para mostrar o botão “Parar”.
-- A principal correção estrutural é parar de depender só de `whatsapp_campaigns` para o botão.
-- O maior bug funcional encontrado é o `FollowUpSheet`, que agenda mensagens mas não move o lead para `awaiting_docs` com a mesma robustez dos outros fluxos.
-- A solução mais segura é centralizar:
-  - detecção de fluxo ativo
-  - cancelamento total
-  - preservação/restauração de status
-  - atualização otimista de cache
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

@@ -896,6 +896,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         projectName={lead.project?.name}
         brokerName={lead.broker?.name}
         brokerId={lead.broker?.id || ""}
+        leadStatus={lead.status}
         onCreated={refreshLead}
       />
       <CadenciaSheet
