@@ -12,6 +12,7 @@ import { VendaModal } from "@/components/crm/VendaModal";
 import { PerdaModal } from "@/components/crm/PerdaModal";
 import { FollowUpSheet } from "@/components/crm/FollowUpSheet";
 import { CadenciaSheet } from "@/components/crm/CadenciaSheet";
+import { CadenciaPickerSheet } from "@/components/crm/CadenciaPickerSheet";
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
 import { useLeadInteractions } from "@/hooks/use-lead-interactions";

@@ -6,15 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Send, Plus, Trash2, GripVertical, Zap } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  replaceTemplateVariables,
-  formatPhoneE164,
-  isValidPhone,
-  getRandomInterval,
-} from "@/types/whatsapp";
+import { replaceTemplateVariables, formatPhoneE164, isValidPhone, getRandomInterval } from "@/types/whatsapp";
+import type { AutoCadenciaStep } from "@/hooks/use-auto-cadencia-rules";
 
 interface CadenciaSheetProps {
   open: boolean;
@@ -26,6 +21,8 @@ interface CadenciaSheetProps {
   brokerName?: string;
   brokerId: string;
   leadStatus?: string;
+  cadenceName?: string;
+  initialSteps?: AutoCadenciaStep[];
   onCreated?: () => void;
 }
 

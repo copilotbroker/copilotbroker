@@ -15,8 +15,8 @@ interface AutoCadenciaRuleEditorProps {
   isOpen: boolean;
   onClose: () => void;
   editingRule: BrokerAutoCadenciaRule | null;
-  createRule: (data: { project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => Promise<any>;
-  updateRule: (id: string, data: Partial<{ project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => Promise<any>;
+  createRule: (data: { name?: string; project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => Promise<any>;
+  updateRule: (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => Promise<any>;
   isSaving: boolean;
   rules: BrokerAutoCadenciaRule[];
 }

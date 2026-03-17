@@ -39,9 +39,9 @@ export function AutoCadenciaSection() {
             <Zap className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Cadência 10D Automática</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Cadências automáticas</h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-              Ative a cadência automaticamente ao receber leads
+              Ative uma cadência automática ao receber leads
             </p>
           </div>
         </div>

@@ -12,6 +12,7 @@ export interface AutoCadenciaStep {
 export interface BrokerAutoCadenciaRule {
   id: string;
   broker_id: string;
+  name: string;
   project_id: string | null;
   is_active: boolean;
   created_at: string;
