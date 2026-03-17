@@ -69,6 +69,7 @@ export function AutoCadenciaRuleEditor({
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectId, setProjectId] = useState<string>("all");
+  const [ruleName, setRuleName] = useState("Cadência 10D");
   const [checkingConflict, setCheckingConflict] = useState(false);
   const [hasFirstMessageConflict, setHasFirstMessageConflict] = useState(false);
   const [steps, setSteps] = useState<AutoCadenciaStep[]>(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
