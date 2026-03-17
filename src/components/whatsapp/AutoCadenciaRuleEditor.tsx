@@ -128,9 +128,9 @@ export function AutoCadenciaRuleEditor({
   // Load steps when editing
   useEffect(() => {
     if (editingRule) {
+      setRuleName(editingRule.name || "Cadência 10D");
       setProjectId(editingRule.project_id || "all");
       setHasFirstMessageConflict(false);
-      // Load saved steps
       setLoadingSteps(true);
       (supabase.from("auto_cadencia_steps") as any)
         .select("*")
@@ -149,11 +149,12 @@ export function AutoCadenciaRuleEditor({
           setLoadingSteps(false);
         });
     } else {
+      setRuleName("Cadência 10D");
       setProjectId("all");
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
       if (isOpen && brokerId) checkConflict("all");
     }
-  }, [editingRule, isOpen]);
+  }, [editingRule, isOpen, brokerId]);
 
   const projectHasRule = useMemo(() => {
     if (editingRule) return false;
