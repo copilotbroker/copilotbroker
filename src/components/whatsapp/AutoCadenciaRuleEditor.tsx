@@ -176,10 +176,13 @@ export function AutoCadenciaRuleEditor({
   };
 
   const stepsValid = steps.length > 0 && steps.every(s => s.messageContent.trim().length > 0);
+  const nameValid = ruleName.trim().length > 0;
 
   const handleSubmit = async () => {
+    if (!nameValid) return;
+
     const data = {
-      name: ruleName.trim() || "Cadência 10D",
+      name: ruleName.trim(),
       project_id: projectId === "all" ? null : projectId,
       is_active: true,
     };
