@@ -1,11 +1,7 @@
-import { useMemo, useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { memo, useMemo, useState, lazy, Suspense } from "react";
 import {
   Clock,
   MessageCircle,
-  Send,
-  CalendarClock,
   Plus,
   UserX,
   Trash2,
@@ -29,21 +25,12 @@ import { LeadLabelsPicker } from "./LeadLabelsPicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Lazy-loaded heavy sub-components
+const LazyWhatsAppComposer = lazy(() => import("./KanbanCardComposer"));
+const LazyDeleteDialog = lazy(() => import("./KanbanCardDeleteDialog"));
 
 interface KanbanCardProps {
   lead: CRMLead;
@@ -90,7 +77,7 @@ const RING_PULSE_GLOW_STYLE: React.CSSProperties = {
   boxShadow: "0 0 24px hsl(var(--crm-info) / 0.18)",
 };
 
-export function KanbanCard({
+export const KanbanCard = memo(function KanbanCard({
   lead,
   isNew,
   hasAutomacaoAtiva,
@@ -111,12 +98,7 @@ export function KanbanCard({
   onCallClick,
 }: KanbanCardProps) {
   const [composerOpen, setComposerOpen] = useState(false);
-  const [messageText, setMessageText] = useState("");
-  const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState<Date | undefined>(new Date());
-  const [scheduleTime, setScheduleTime] = useState(() => format(new Date(Date.now() + 60 * 60 * 1000), "HH:mm"));
-  const [isSendingNow, setIsSendingNow] = useState(false);
-  const [isScheduling, setIsScheduling] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const actionConfig = useMemo(() => {
     if (lead.status === "scheduling") {
@@ -172,7 +154,6 @@ export function KanbanCard({
     return (now.getTime() - date.getTime()) / (1000 * 60 * 60) > 48;
   }, [lead.last_interaction_at, lead.created_at]);
 
-  const canSubmitMessage = !!messageText.trim();
   const brokerLabel = lead.broker?.name || "Enove";
   const showMetaBadges = !!(
     lead.roleta_id ||
@@ -182,14 +163,6 @@ export function KanbanCard({
     isStale ||
     hasAutomacaoAtiva
   );
-
-  const buildScheduledDateTime = () => {
-    if (!scheduleDate || !scheduleTime) return null;
-    const [hours, minutes] = scheduleTime.split(":").map(Number);
-    const nextDate = new Date(scheduleDate);
-    nextDate.setHours(hours || 0, minutes || 0, 0, 0);
-    return nextDate;
-  };
 
   const handleOriginSelect = async (origin: string) => {
     if (onUpdateOrigin) await onUpdateOrigin(lead.id, origin);
@@ -218,38 +191,6 @@ export function KanbanCard({
       case "docs_received":
         onOpenVenda?.(lead.id);
         break;
-    }
-  };
-
-  const handleSendNow = async () => {
-    const text = messageText.trim();
-    if (!text || !onSendWhatsAppNow || isSendingNow) return;
-
-    setIsSendingNow(true);
-    try {
-      await onSendWhatsAppNow(lead.id, text);
-      setMessageText("");
-      setComposerOpen(false);
-    } finally {
-      setIsSendingNow(false);
-    }
-  };
-
-  const handleScheduleMessage = async () => {
-    const text = messageText.trim();
-    const scheduledDate = buildScheduledDateTime();
-
-    if (!text || !scheduledDate || !onScheduleWhatsApp || isScheduling) return;
-    if (scheduledDate.getTime() <= Date.now()) return;
-
-    setIsScheduling(true);
-    try {
-      await onScheduleWhatsApp(lead.id, text, scheduledDate.toISOString());
-      setMessageText("");
-      setScheduleOpen(false);
-      setComposerOpen(false);
-    } finally {
-      setIsScheduling(false);
     }
   };
 
@@ -332,29 +273,27 @@ export function KanbanCard({
             )}
 
             {hasAutomacaoAtiva && (
-              <TooltipProvider delayDuration={250}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1 rounded-md border border-crm-success/30 bg-crm-success/10 px-1.5 py-0.5">
-                      <span className="h-2 w-2 rounded-full bg-crm-success animate-dot-pulse" />
-                      <span className="text-[10px] font-medium text-crm-success">Copiloto ativo</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCancelCadencia?.(lead.id);
-                        }}
-                        className="rounded p-0.5 text-crm-success/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
-                        title="Parar fluxo"
-                      >
-                        <Square className="h-2.5 w-2.5" />
-                      </button>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    {hasCadenciaAtiva ? "Cadência ativa — clique para parar tudo" : "Fluxo futuro ativo — clique para parar tudo"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 rounded-md border border-crm-success/30 bg-crm-success/10 px-1.5 py-0.5">
+                    <span className="h-2 w-2 rounded-full bg-crm-success animate-dot-pulse" />
+                    <span className="text-[10px] font-medium text-crm-success">Copiloto ativo</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCancelCadencia?.(lead.id);
+                      }}
+                      className="rounded p-0.5 text-crm-success/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      title="Parar fluxo"
+                    >
+                      <Square className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {hasCadenciaAtiva ? "Cadência ativa — clique para parar tudo" : "Fluxo futuro ativo — clique para parar tudo"}
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         )}
@@ -405,61 +344,19 @@ export function KanbanCard({
                   <MessageCircle className="h-3.5 w-3.5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-80 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
-                <div>
-                  <p className="text-sm font-medium text-foreground">Mensagem para {lead.name}</p>
-                  <p className="text-xs text-muted-foreground">Escreva aqui e escolha entre enviar agora ou programar.</p>
-                </div>
-
-                <Textarea
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  placeholder="Digite sua mensagem..."
-                  className="min-h-[96px] resize-none"
-                />
-
-                <div className="flex items-end gap-2">
-                  <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
-                    <PopoverTrigger asChild>
-                      <Button size="icon" variant="success" className="h-9 w-9 flex-shrink-0 rounded-lg" disabled={!canSubmitMessage || isScheduling || isSendingNow}>
-                        <CalendarClock className="h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent align="start" className="w-80 space-y-3 p-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">Programar mensagem</p>
-                        <p className="text-xs text-muted-foreground">Use o mesmo padrão do Inbox para escolher dia e horário.</p>
-                      </div>
-
-                      <DatePickerCalendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="rounded-md border border-border" />
-
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground">Horário</label>
-                        <input
-                          type="time"
-                          value={scheduleTime}
-                          onChange={(e) => setScheduleTime(e.target.value)}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                        />
-                      </div>
-
-                      <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
-                        {buildScheduledDateTime()
-                          ? `Envio para ${format(buildScheduledDateTime()!, "dd/MM 'às' HH:mm", { locale: ptBR })}`
-                          : "Selecione uma data e horário válidos."}
-                      </div>
-
-                      <Button variant="accent" className="w-full" onClick={handleScheduleMessage} disabled={!canSubmitMessage || isScheduling || !buildScheduledDateTime()}>
-                        {isScheduling ? "Programando..." : "Confirmar agendamento"}
-                      </Button>
-                    </PopoverContent>
-                  </Popover>
-
-                  <Button size="icon" variant="success" className="h-9 w-9 flex-shrink-0 rounded-lg" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </PopoverContent>
+              {composerOpen && (
+                <PopoverContent align="start" className="w-80 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
+                  <Suspense fallback={<div className="h-40 flex items-center justify-center text-xs text-muted-foreground">Carregando...</div>}>
+                    <LazyWhatsAppComposer
+                      leadId={lead.id}
+                      leadName={lead.name}
+                      onSendWhatsAppNow={onSendWhatsAppNow}
+                      onScheduleWhatsApp={onScheduleWhatsApp}
+                      onClose={() => setComposerOpen(false)}
+                    />
+                  </Suspense>
+                </PopoverContent>
+              )}
             </Popover>
           )}
 
@@ -495,33 +392,30 @@ export function KanbanCard({
             )}
 
             {onDelete && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-8 w-8 rounded-lg border-border bg-transparent p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    title="Excluir lead"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir lead?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. O lead <strong>{lead.name}</strong> e todos os dados relacionados serão excluídos permanentemente.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(lead.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Excluir
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteDialogOpen(true);
+                  }}
+                  className="h-8 w-8 rounded-lg border-border bg-transparent p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  title="Excluir lead"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                {deleteDialogOpen && (
+                  <Suspense fallback={null}>
+                    <LazyDeleteDialog
+                      leadName={lead.name}
+                      open={deleteDialogOpen}
+                      onOpenChange={setDeleteDialogOpen}
+                      onConfirm={() => onDelete(lead.id)}
+                    />
+                  </Suspense>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -546,40 +440,38 @@ export function KanbanCard({
             </div>
           </div>
 
-          <TooltipProvider delayDuration={300}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <OriginCombobox
-                    currentOrigin={lead.lead_origin}
-                    onSelect={handleOriginSelect}
-                    trigger={
-                      lead.lead_origin ? (
-                        <button className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary">
-                          {getOriginDisplayLabel(lead.lead_origin)}
-                        </button>
-                      ) : (
-                        <button className="rounded-md border border-dashed border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
-                          <span className="flex items-center gap-1">
-                            <Plus className="h-2.5 w-2.5" />
-                            Origem
-                          </span>
-                        </button>
-                      )
-                    }
-                  />
-                </div>
-              </TooltipTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <OriginCombobox
+                  currentOrigin={lead.lead_origin}
+                  onSelect={handleOriginSelect}
+                  trigger={
+                    lead.lead_origin ? (
+                      <button className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary">
+                        {getOriginDisplayLabel(lead.lead_origin)}
+                      </button>
+                    ) : (
+                      <button className="rounded-md border border-dashed border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+                        <span className="flex items-center gap-1">
+                          <Plus className="h-2.5 w-2.5" />
+                          Origem
+                        </span>
+                      </button>
+                    )
+                  }
+                />
+              </div>
+            </TooltipTrigger>
 
-              {(lead as any).lead_origin_detail && (
-                <TooltipContent side="top" className="max-w-[250px] text-xs">
-                  <span>{(lead as any).lead_origin_detail}</span>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+            {(lead as any).lead_origin_detail && (
+              <TooltipContent side="top" className="max-w-[250px] text-xs">
+                <span>{(lead as any).lead_origin_detail}</span>
+              </TooltipContent>
+            )}
+          </Tooltip>
         </div>
       </div>
     </div>
   );
-}
+});

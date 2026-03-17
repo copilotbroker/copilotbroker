@@ -31,14 +31,15 @@ interface UseLeadWhatsAppLabelsOptions {
   leadId: string;
   brokerId?: string | null;
   phone?: string | null;
+  enabled?: boolean;
 }
 
-export function useLeadWhatsAppLabels({ leadId, brokerId, phone }: UseLeadWhatsAppLabelsOptions) {
+export function useLeadWhatsAppLabels({ leadId, brokerId, phone, enabled = true }: UseLeadWhatsAppLabelsOptions) {
   const queryClient = useQueryClient();
 
   const labelsQuery = useQuery({
     queryKey: ["whatsapp-labels", brokerId],
-    enabled: !!brokerId,
+    enabled: !!brokerId && enabled,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("whatsapp_labels")
@@ -54,7 +55,7 @@ export function useLeadWhatsAppLabels({ leadId, brokerId, phone }: UseLeadWhatsA
 
   const leadLabelsQuery = useQuery({
     queryKey: ["lead-whatsapp-labels", leadId],
-    enabled: !!leadId,
+    enabled: !!leadId && enabled,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lead_whatsapp_labels")

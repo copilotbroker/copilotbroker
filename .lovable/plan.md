@@ -1,74 +1,60 @@
 
 
-## Análise de Consumo de Memória — KanbanCard
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-Identifiquei **6 problemas concretos** que explicam o consumo excessivo de RAM ao rolar o Kanban. Nenhuma mudança de lógica é necessária — são otimizações puramente estruturais.
+### Problema 1: Nomes dos leads não aparecem
 
----
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-### Problemas Encontrados
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-**1. LeadLabelsPicker dispara 2 queries por card visível**
-Cada card monta um `useLeadWhatsAppLabels` que faz 2 chamadas ao banco: uma para labels do broker e outra para labels do lead. Com 6 colunas × ~5 cards visíveis (overscan incluso) = ~60 queries ativas simultâneas, cada uma mantendo dados em cache do React Query.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-**2. Cada card instancia um Calendar completo (date-fns)**
-O componente `Calendar` do scheduler de WhatsApp é montado dentro de um Popover para **todos** os cards, mesmo sem o usuário abrir o compositor. O `Calendar` importa date-fns e cria centenas de objetos Date internamente.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-**3. Estado do compositor inicializado eagerly**
-Linhas 116-117: `new Date()`, `format(new Date(...))` são chamados no mount de **cada card**, mesmo que o compositor nunca seja aberto. Isso gera objetos desnecessários.
+### Problema 2: Marcar como lida quando lida no celular
 
-**4. KanbanCard não usa React.memo**
-O componente re-renderiza toda vez que o parent (virtualizer) recalcula, mesmo que as props não tenham mudado. Cada re-render recria closures e objetos internos.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-**5. Múltiplas instâncias de TooltipProvider por card**
-Cada card cria 2-3 `TooltipProvider` independentes (copiloto ativo, origem, etc). O Radix TooltipProvider mantém listeners e timers globais — multiplicados por dezenas de cards.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
 
-**6. AlertDialog (excluir) montado em todos os cards**
-O `AlertDialogContent` com overlay/animação é montado no DOM para cada card que tem `onDelete`, mesmo sem interação.
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
----
+### Arquivos a editar
 
-### Plano de Otimização
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
 
-**Arquivo: `src/components/crm/KanbanCard.tsx`**
+### Detalhes técnicos
 
-1. **Envolver com `React.memo`** — comparação shallow das props evita re-renders desnecessários quando o virtualizer recalcula posições.
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
 
-2. **Lazy-load do compositor de WhatsApp** — extrair todo o bloco do Popover (compositor + Calendar + scheduler) para um componente separado que só monta quando `composerOpen === true`. Isso elimina o Calendar e os estados de scheduling de cards fechados.
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
 
-3. **Defer estado do compositor** — mover `scheduleDate` e `scheduleTime` para dentro do componente lazy, removendo `new Date()` e `format()` do mount inicial.
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
 
-4. **Lazy-load do AlertDialog de exclusão** — renderizar o conteúdo do AlertDialog apenas quando o trigger é clicado (padrão controlled), evitando overlays pré-montados.
-
-5. **Remover TooltipProvider por card** — usar um único `TooltipProvider` no nível da coluna (`KanbanColumn.tsx`) e remover as instâncias individuais dos cards.
-
-**Arquivo: `src/components/crm/KanbanColumn.tsx`**
-
-6. **Envolver a coluna com um único `TooltipProvider`** — substitui os múltiplos providers dos cards.
-
-**Arquivo: `src/components/crm/LeadLabelsPicker.tsx`**
-
-7. **Lazy-load das queries** — no modo `compact` (usado no Kanban), não disparar as queries de labels até que o Popover seja aberto. Usar `enabled: open` no `useQuery` para que os dados só sejam buscados sob demanda.
-
----
-
-### Impacto Estimado
-
-| Otimização | Economia por card | Com 30 cards visíveis |
-|---|---|---|
-| Memo (evita re-render) | ~50% menos GC pressure | Significativo ao rolar |
-| Lazy Calendar | ~200KB de objetos Date | ~6MB por coluna |
-| Lazy AlertDialog | ~10KB DOM nodes | ~300KB |
-| Lazy Labels queries | 2 queries eliminadas | 60 queries a menos |
-| TooltipProvider único | ~5KB listeners | ~150KB |
-
-**Resultado**: Redução substancial de memória sem qualquer mudança de funcionalidade. Os componentes pesados só são instanciados quando o usuário interage com o card específico.
-
----
-
-### Arquivos a alterar
-
-- `src/components/crm/KanbanCard.tsx` — memo, lazy compositor, lazy alert, remover TooltipProviders
-- `src/components/crm/KanbanColumn.tsx` — adicionar TooltipProvider wrapper
-- `src/components/crm/LeadLabelsPicker.tsx` — lazy queries no modo compact
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
 

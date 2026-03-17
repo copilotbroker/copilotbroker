@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Check, RefreshCw, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -14,10 +15,12 @@ interface LeadLabelsPickerProps {
 const chipClassName = "inline-flex items-center rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground";
 
 export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: LeadLabelsPickerProps) {
+  const [open, setOpen] = useState(false);
   const { labels, leadLabels, appliedLabelIds, isLoading, isSyncing, isToggling, syncLabels, toggleLabel } = useLeadWhatsAppLabels({
     leadId,
     brokerId,
     phone,
+    enabled: compact ? open : true,
   });
 
   const visibleLeadLabels = leadLabels
@@ -39,7 +42,7 @@ export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: L
         </div>
       )}
 
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"

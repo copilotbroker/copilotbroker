@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { Plus, MoreHorizontal, MessageSquare } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { CRMLead, LeadStatus, STATUS_CONFIG } from "@/types/crm";
 import { useKanbanColumn, KanbanColumnFilters } from "@/hooks/use-kanban-column";
 import { KanbanCard } from "./KanbanCard";
@@ -99,6 +100,7 @@ export function KanbanColumn({
   }, []);
 
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="flex flex-col w-[280px] md:min-w-[300px] md:max-w-[320px] shrink-0 min-h-[600px]">
       <div className="flex items-center gap-2.5 px-2 py-3 mb-2">
         <div className={cn("w-2 h-2 rounded-sm shrink-0", STATUS_SQUARE_COLORS[status])} />
@@ -204,5 +206,6 @@ export function KanbanColumn({
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
