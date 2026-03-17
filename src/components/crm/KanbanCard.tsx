@@ -323,17 +323,21 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
 
         {/* Contact Info */}
         <div className="space-y-2 mb-3">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <Phone className="w-3 h-3 text-slate-500" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Phone className="w-3 h-3 text-muted-foreground/70" />
             <span>{formatPhone(lead.whatsapp)}</span>
           </div>
           {lead.email && (
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <Mail className="w-3 h-3 text-slate-500" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Mail className="w-3 h-3 text-muted-foreground/70" />
               <span className="truncate">{lead.email}</span>
             </div>
           )}
-          <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
+          {lead.broker_id && (
+            <div className="pt-1">
+              <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
+            </div>
+          )}
         </div>
 
         {/* Progress Bar */}
