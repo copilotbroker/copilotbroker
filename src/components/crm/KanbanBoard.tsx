@@ -200,10 +200,10 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
           .not("lead_id", "is", null),
       ]);
 
-      const cadenceIds = new Set((campaigns || []).map((c: any) => c.lead_id).filter(Boolean));
-      const scheduledIds = (scheduledQueue || []).map((item: any) => item.lead_id).filter(Boolean);
+      const cadenceIds = new Set<string>(((campaigns || []) as Array<{ lead_id: string | null }>).map((c) => c.lead_id).filter((leadId): leadId is string => Boolean(leadId)));
+      const scheduledIds = ((scheduledQueue || []) as Array<{ lead_id: string | null }>).map((item) => item.lead_id).filter((leadId): leadId is string => Boolean(leadId));
       setCadenciaLeadIds(cadenceIds);
-      setActiveAutomationLeadIds(new Set([...cadenceIds, ...scheduledIds]));
+      setActiveAutomationLeadIds(new Set<string>([...cadenceIds, ...scheduledIds]));
     };
 
     fetchAutomationLeadIds();
