@@ -1,85 +1,60 @@
 
-Objetivo
 
-Fechar de vez a inconsistência: qualquer lead com campanha rodando ou mensagem futura pendente deve aparecer somente em “Copiloto Ativo”, com botão “Parar”, em todo o CRM.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-O que encontrei agora
+### Problema 1: Nomes dos leads não aparecem
 
-- A reconciliação do Kanban existe em `use-kanban-column.ts` e está funcionando parcialmente.
-- O card mostra “Parar” via `hasAutomacaoAtiva`, mas esse estado vem de um fetch separado em `KanbanBoard.tsx`.
-- Hoje há duas fontes de verdade paralelas:
-  1. `useKanbanColumn()` decide em qual coluna o lead entra.
-  2. `KanbanBoard` mantém `activeAutomationLeadIds` / `cadenciaLeadIds` para destaque e botão.
-- Isso abre espaço para dessincronia visual.
-- No banco, existem leads com fila ativa e status ainda `info_sent`, então a UI depende mesmo da reconciliação para escondê-los das outras colunas.
-- Também há campanhas `running` sem itens pendentes na fila; então a regra precisa continuar cobrindo campanha e fila.
-- O request do preview mostra listas gigantes em `id.not.in(...)`; isso sugere que a lógica atual está “esticando” a query no cliente e pode ficar frágil conforme o volume cresce.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-Plano de correção
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-1. Unificar a fonte de verdade do “fluxo ativo”
-- Extrair a lógica de fluxo ativo para um ponto único reutilizável.
-- O Kanban inteiro deve consumir o mesmo mapa de leads ativos para:
-  - decidir coluna,
-  - mostrar borda verde,
-  - mostrar botão “Parar”,
-  - exibir tooltip correto.
-- Remover a dependência de estados locais paralelos em `KanbanBoard`.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-2. Levar a reconciliação para nível mais estrutural
-- Em vez de cada coluna montar sua própria exclusão/inclusão via listas de IDs, criar uma camada central para “effective status”.
-- Preferência de implementação:
-  - hook compartilhado que retorna `activeFlowLeadIds` + `isLeadInActiveFlow`
-  - ou, idealmente, uma função/RPC no backend que já devolva o status efetivo do lead
-- Assim o Kanban deixa de depender de filtros fragmentados e listas enormes no URL.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-3. Garantir consistência em todos os pontos que criam fluxo
-- Revisar e padronizar:
-  - `CadenciaSheet`
-  - `FollowUpSheet`
-  - agendamento manual em `KanbanBoard`
-  - qualquer criação de campanha em `NewCampaignSheet`
-- Todos devem:
-  - salvar `lead_previous_status`,
-  - mover para `awaiting_docs`,
-  - registrar interação,
-  - invalidar a mesma chave central de fluxo ativo.
+### Problema 2: Marcar como lida quando lida no celular
 
-4. Garantir consistência em todos os pontos que encerram fluxo
-- Centralizar “Parar tudo” e também a restauração do status.
-- A restauração só deve ocorrer quando não existir:
-  - campanha `running`
-  - nem fila futura ativa
-- Aplicar a mesma rotina para cancelamento manual, término natural e envio/resposta.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-5. Expandir a mesma regra para outras telas
-- Aplicar a mesma leitura de “fluxo ativo” onde o lead aparece fora do Kanban:
-  - `LeadPage`
-  - Inbox/contexto do lead
-  - qualquer lista/tabela CRM relevante
-- Isso evita o cenário “no card está em Copiloto Ativo, mas em outra tela ainda parece Atendimento”.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
 
-Arquivos que eu revisaria/alteraria na implementação
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
-- `src/hooks/use-kanban-column.ts`
-- `src/components/crm/KanbanBoard.tsx`
-- `src/components/crm/KanbanColumn.tsx`
-- `src/components/crm/KanbanCard.tsx`
-- `src/components/crm/FollowUpSheet.tsx`
-- `src/components/crm/CadenciaSheet.tsx`
-- `src/hooks/use-cadencia-ativa.ts`
-- `src/components/whatsapp/NewCampaignSheet.tsx`
-- possivelmente uma função backend para status efetivo / fluxo ativo
+### Arquivos a editar
 
-Resultado esperado
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
 
-- Lead com cadência ativa: só em “Copiloto Ativo”.
-- Lead com follow-up ativo: só em “Copiloto Ativo”.
-- Lead com mensagem futura avulsa: só em “Copiloto Ativo”.
-- Todos eles exibem o botão “Parar”.
-- Ao cancelar tudo, o lead volta apenas uma vez, para o status correto.
-- A mesma lógica passa a valer de forma consistente em todo o CRM.
+### Detalhes técnicos
 
-Detalhe técnico mais importante
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
 
-Hoje o problema não parece ser só “faltou mudar status no banco”; o problema principal é arquitetura duplicada de estado no frontend. Enquanto coluna, destaque visual e botão dependerem de fontes diferentes, esses desencontros vão continuar aparecendo. Minha implementação focaria primeiro em eliminar essa duplicação e transformar “fluxo ativo” em uma única verdade compartilhada.
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

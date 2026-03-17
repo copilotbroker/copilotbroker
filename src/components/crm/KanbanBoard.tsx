@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { CRMLead, LeadStatus, STATUS_CONFIG, LEAD_ORIGINS } from "@/types/crm";
 import { useCustomOrigins } from "@/hooks/use-custom-origins";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
+import { useActiveFlowLeads } from "@/hooks/use-active-flow-reconciliation";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard } from "./KanbanCard";
 import { LeadDetailSheet } from "./LeadDetailSheet";
@@ -63,8 +64,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   
   const [whatsappCampaignOpen, setWhatsappCampaignOpen] = useState(false);
   const [whatsappPreselectedStatus, setWhatsappPreselectedStatus] = useState<LeadStatus | undefined>();
-  const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
-  const [activeAutomationLeadIds, setActiveAutomationLeadIds] = useState<Set<string>>(new Set());
   const [localBrokers, setLocalBrokers] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -184,41 +183,11 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     fetchProjects();
   }, [isAdmin, brokerId]);
 
-  // Fetch lead IDs with any active automation (cadência, follow-up, ou agendamento)
-  useEffect(() => {
-    const fetchAutomationLeadIds = async () => {
-      const [{ data: campaigns }, { data: scheduledQueue }] = await Promise.all([
-        (supabase
-          .from("whatsapp_campaigns")
-          .select("lead_id") as any)
-          .eq("status", "running")
-          .not("lead_id", "is", null),
-        supabase
-          .from("whatsapp_message_queue")
-          .select("lead_id")
-          .in("status", ["queued", "scheduled", "sending", "paused_by_system"])
-          .not("lead_id", "is", null),
-      ]);
-
-      const cadenceIds = new Set<string>(((campaigns || []) as Array<{ lead_id: string | null }>).map((c) => c.lead_id).filter((leadId): leadId is string => Boolean(leadId)));
-      const scheduledIds = ((scheduledQueue || []) as Array<{ lead_id: string | null }>).map((item) => item.lead_id).filter((leadId): leadId is string => Boolean(leadId));
-      setCadenciaLeadIds(cadenceIds);
-      setActiveAutomationLeadIds(new Set<string>([...cadenceIds, ...scheduledIds]));
-      queryClient.invalidateQueries({ queryKey: ["kanban-active-flow-ids"] });
-      queryClient.invalidateQueries({ queryKey: ["kanban-column"] });
-      queryClient.invalidateQueries({ queryKey: ["kanban-count"] });
-    };
-
-    fetchAutomationLeadIds();
-
-    const channel = supabase
-      .channel("kanban-active-automation")
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_campaigns" }, fetchAutomationLeadIds)
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_message_queue" }, fetchAutomationLeadIds)
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
+  const { activeFlowLeadIds } = useActiveFlowLeads({
+    brokerId,
+    isAdmin,
+    selectedBroker,
+  });
 
   // Realtime subscription for lead changes → invalidate column queries
   useEffect(() => {
@@ -336,16 +305,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
   const handleCancelCadencia = async (leadId: string) => {
     await cancelCadenciaForLead(leadId);
-    setCadenciaLeadIds(prev => {
-      const next = new Set(prev);
-      next.delete(leadId);
-      return next;
-    });
-    setActiveAutomationLeadIds(prev => {
-      const next = new Set(prev);
-      next.delete(leadId);
-      return next;
-    });
     invalidateAll();
   };
 
@@ -505,8 +464,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
       } as any);
     }
 
-    setActiveAutomationLeadIds(prev => new Set(prev).add(leadId));
-
     toast.success("Mensagem programada");
     queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
     invalidateAll();
@@ -655,8 +612,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
                 status={status}
                 filters={columnFilters}
                 newLeadIds={newLeadIds}
-                activeAutomationLeadIds={activeAutomationLeadIds}
-                cadenciaLeadIds={cadenciaLeadIds}
+                activeFlowLeadIds={activeFlowLeadIds}
                 onCancelCadencia={handleCancelCadencia}
                 onCardClick={handleCardClick}
                 onUpdateOrigin={handleUpdateOrigin}
