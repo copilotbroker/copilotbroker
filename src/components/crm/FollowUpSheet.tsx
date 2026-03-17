@@ -30,6 +30,7 @@ interface FollowUpSheetProps {
   projectName?: string;
   brokerName?: string;
   brokerId: string;
+  leadStatus?: string;
   onCreated?: () => void;
 }
 
