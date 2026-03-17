@@ -67,6 +67,8 @@ export function KanbanColumn({
     onLeadsLoaded?.(leads);
   }, [leads, onLeadsLoaded]);
 
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   const virtualizer = useVirtualizer({
     count: leads.length,
     getScrollElement: () => scrollContainerRef.current,
@@ -74,13 +76,22 @@ export function KanbanColumn({
     overscan: 5,
   });
 
-  const handleScroll = useCallback(() => {
-    const el = scrollContainerRef.current;
-    if (!el || !hasNextPage || isFetchingNextPage) return;
-    const { scrollTop, scrollHeight, clientHeight } = el;
-    if (scrollHeight - scrollTop - clientHeight < 300) {
-      fetchNextPage();
-    }
+  // IntersectionObserver for reliable infinite scroll
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const container = scrollContainerRef.current;
+    if (!sentinel || !container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { root: container, rootMargin: "300px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const setRefs = useCallback((node: HTMLDivElement | null) => {
@@ -121,7 +132,6 @@ export function KanbanColumn({
 
       <div
         ref={setRefs}
-        onScroll={handleScroll}
         className={cn(
           "flex-1 min-h-0 p-2 rounded-xl overflow-y-auto scrollbar-subtle",
           "bg-[#18181b]/50"
@@ -181,6 +191,9 @@ export function KanbanColumn({
             })}
           </div>
         )}
+
+        {/* Sentinel for infinite scroll */}
+        {hasNextPage && <div ref={sentinelRef} className="h-1" />}
 
         {isFetchingNextPage && (
           <div className="space-y-2.5 pt-2">
