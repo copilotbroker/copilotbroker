@@ -57,6 +57,27 @@ function isCadenciaNote(notes?: string | null): boolean {
   return !!notes && notes.startsWith("📤 Cadência");
 }
 
+function extractScheduledMessageText(notes?: string | null): string | null {
+  if (!notes) return null;
+
+  const trimmed = notes.trim();
+  if (!trimmed.startsWith("{")) return null;
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed?.kind !== "scheduled_message") return null;
+    return typeof parsed.message === "string" ? parsed.message.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatInteractionNotes(notes?: string | null): string | null {
+  const scheduledMessageText = extractScheduledMessageText(notes);
+  if (scheduledMessageText) return scheduledMessageText;
+  return notes;
+}
+
 // Helper to extract broker name from "Atendimento iniciado por X" notes
 function extractBrokerFromNotes(notes?: string | null): string | null {
   if (!notes) return null;
@@ -108,6 +129,7 @@ export function LeadTimeline({ interactions, leadOrigin, leadOriginDetail, attri
 
       <div className="space-y-1">
         {interactions.map((interaction, index) => {
+          const formattedNotes = formatInteractionNotes(interaction.notes);
           const isCadencia = isCadenciaNote(interaction.notes);
           const brokerFromNotes = interaction.interaction_type === "atendimento_iniciado"
             ? extractBrokerFromNotes(interaction.notes)
@@ -129,7 +151,7 @@ export function LeadTimeline({ interactions, leadOrigin, leadOriginDetail, attri
           const Icon = meta.icon;
           const isAuto = AUTOMATION_TYPES.has(interaction.interaction_type);
           const isExpanded = expandedIds.has(interaction.id);
-          const hasDetails = !!interaction.notes || (interaction.old_status && interaction.new_status);
+          const hasDetails = !!formattedNotes || (interaction.old_status && interaction.new_status);
 
           // Time interval from next item (interactions are desc order)
           const nextInteraction = interactions[index + 1];
@@ -222,8 +244,8 @@ export function LeadTimeline({ interactions, leadOrigin, leadOriginDetail, attri
                         </span>
                       </div>
                     )}
-                    {interaction.notes && (
-                      <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-line break-words">{interaction.notes}</p>
+                    {formattedNotes && (
+                      <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-line break-words">{formattedNotes}</p>
                     )}
                     {interaction.channel && (
                       <p className="text-[10px] text-slate-600">Canal: {interaction.channel}</p>
