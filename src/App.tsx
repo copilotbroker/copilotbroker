@@ -105,6 +105,7 @@ const App = () => (
             <Route path="/corretor/copiloto" element={<BrokerCopilotConfig />} />
             <Route path="/corretor/lead/:leadId" element={<LeadPage />} />
             <Route path="/corretor/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />
+            <Route path="/:brokerSlug/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />
             <Route path="/caminhadaonovocondominioev" element={<CaminhadaEV />} />
             <Route path="/termos" element={<Termos />} />
             <Route path="/designsystem" element={<DesignSystem />} />

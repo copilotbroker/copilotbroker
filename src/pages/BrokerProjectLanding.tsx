@@ -8,10 +8,17 @@ import FloatingCTA from "@/components/FloatingCTA";
 import { RefreshCw } from "lucide-react";
 import { usePageTracking } from "@/hooks/use-page-tracking";
 
+interface BrokerOwner {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 const BrokerProjectLanding = () => {
-  const { citySlug, projectSlug } = useParams<{ citySlug: string; projectSlug: string }>();
+  const { brokerSlug, citySlug, projectSlug } = useParams<{ brokerSlug?: string; citySlug: string; projectSlug: string }>();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
+  const [brokerOwner, setBrokerOwner] = useState<BrokerOwner | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   usePageTracking(project?.id);
@@ -40,7 +47,31 @@ const BrokerProjectLanding = () => {
           return;
         }
 
-        setProject(data as unknown as Project);
+        const typedProject = data as unknown as Project;
+
+        if (typedProject.created_by_broker_id) {
+          const { data: owner, error: ownerError } = await supabase
+            .from("brokers")
+            .select("id, slug, name")
+            .eq("id", typedProject.created_by_broker_id)
+            .eq("is_active", true)
+            .maybeSingle();
+
+          if (ownerError) throw ownerError;
+          if (!owner) {
+            navigate("/");
+            return;
+          }
+
+          if (brokerSlug && owner.slug !== brokerSlug) {
+            navigate(`/${owner.slug}/${citySlug}/${projectSlug}`, { replace: true });
+            return;
+          }
+
+          setBrokerOwner(owner);
+        }
+
+        setProject(typedProject);
       } catch (error) {
         console.error("Erro ao buscar projeto:", error);
         navigate("/");
@@ -50,11 +81,11 @@ const BrokerProjectLanding = () => {
     };
 
     fetchProject();
-  }, [citySlug, projectSlug, navigate]);
+  }, [brokerSlug, citySlug, projectSlug, navigate]);
 
   useEffect(() => {
     if (project) {
-      document.title = `${project.name} | ${project.city}`;
+      document.title = `${project.name} | ${brokerOwner?.name || project.city}`;
       const metaDescription = document.querySelector('meta[name="description"]');
       if (metaDescription) {
         metaDescription.setAttribute(
@@ -64,7 +95,7 @@ const BrokerProjectLanding = () => {
         );
       }
     }
-  }, [project]);
+  }, [project, brokerOwner]);
 
   if (isLoading) {
     return (
@@ -80,10 +111,15 @@ const BrokerProjectLanding = () => {
   if (!project) return null;
 
   if (project.landing_content) {
-    return <DynamicLandingPage project={project} />;
+    return (
+      <DynamicLandingPage
+        project={project}
+        brokerId={brokerOwner?.id || project.created_by_broker_id}
+        brokerSlug={brokerOwner?.slug || brokerSlug || undefined}
+      />
+    );
   }
 
-  // Fallback minimal for broker projects without landing_content
   return (
     <div className="min-h-screen bg-background">
       <main>
@@ -95,7 +131,9 @@ const BrokerProjectLanding = () => {
         <FormSection
           projectId={project.id}
           projectSlug={project.slug}
-          brokerId={project.created_by_broker_id || undefined}
+          brokerId={brokerOwner?.id || project.created_by_broker_id || undefined}
+          brokerSlug={brokerOwner?.slug || brokerSlug || undefined}
+          allowBrokerSelection={false}
           webhookUrl={project.webhook_url}
         />
       </main>

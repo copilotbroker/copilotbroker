@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LandingContent } from "@/types/project";
 import { getIcon } from "./iconMap";
+import { getMutedTextColor, getReadableTextColor, getSoftBorder, getSoftSurface } from "@/lib/landing-theme";
 
 interface Props {
   content: LandingContent["about"];
@@ -11,6 +12,9 @@ export default function DynamicAbout({ content, theme }: Props) {
   const ref = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const isSerif = theme.fontFamily === "serif";
+  const sectionBg = `${theme.accentColor}0d`;
+  const headingColor = getReadableTextColor(sectionBg);
+  const bodyColor = getMutedTextColor(sectionBg);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -22,28 +26,27 @@ export default function DynamicAbout({ content, theme }: Props) {
   }, []);
 
   return (
-    <section ref={ref} id="sobre" className="py-14 md:py-28 px-4" style={{ backgroundColor: "#fafafa" }}>
+    <section ref={ref} id="sobre" className="py-14 md:py-28 px-4" style={{ backgroundColor: sectionBg }}>
       <div className="max-w-5xl mx-auto">
         <div
           className={`transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
         >
           <h2
             className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center ${isSerif ? "font-serif italic" : ""}`}
-            style={{ color: theme.accentColor }}
+            style={{ color: headingColor }}
           >
             {content.title}
           </h2>
 
           <div className="space-y-4 mb-12 max-w-3xl mx-auto">
             {content.paragraphs.map((p, i) => (
-              <p key={i} className="text-base md:text-lg leading-relaxed text-gray-600">
+              <p key={i} className="text-base md:text-lg leading-relaxed" style={{ color: bodyColor }}>
                 {p}
               </p>
             ))}
           </div>
         </div>
 
-        {/* Decorative divider */}
         <div className="flex items-center gap-4 mb-10">
           <div className="flex-1 h-px" style={{ backgroundColor: `${theme.primaryColor}20` }} />
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.primaryColor }} />
@@ -61,8 +64,8 @@ export default function DynamicAbout({ content, theme }: Props) {
                 }`}
                 style={{
                   transitionDelay: `${300 + i * 100}ms`,
-                  borderColor: `${theme.primaryColor}20`,
-                  backgroundColor: "#ffffff",
+                  borderColor: getSoftBorder(sectionBg),
+                  backgroundColor: getSoftSurface(sectionBg),
                 }}
               >
                 <div
@@ -71,7 +74,7 @@ export default function DynamicAbout({ content, theme }: Props) {
                 >
                   <Icon className="w-5 h-5" style={{ color: theme.primaryColor }} />
                 </div>
-                <p className="text-sm text-gray-700 font-medium">{h.text}</p>
+                <p className="text-sm font-medium" style={{ color: headingColor }}>{h.text}</p>
               </div>
             );
           })}
