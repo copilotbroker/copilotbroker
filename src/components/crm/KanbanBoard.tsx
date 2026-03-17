@@ -184,25 +184,34 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     fetchProjects();
   }, [isAdmin, brokerId]);
 
-  // Fetch cadencia-active lead IDs
+  // Fetch lead IDs with any active automation (cadência, follow-up, ou agendamento)
   useEffect(() => {
-    const fetchCadencias = async () => {
-      const { data } = await (supabase
-        .from("whatsapp_campaigns")
-        .select("lead_id") as any)
-        .eq("status", "running")
-        .not("lead_id", "is", null);
-      if (data) {
-        setCadenciaLeadIds(new Set(data.map((c: any) => c.lead_id).filter(Boolean)));
-      }
+    const fetchAutomationLeadIds = async () => {
+      const [{ data: campaigns }, { data: scheduledQueue }] = await Promise.all([
+        (supabase
+          .from("whatsapp_campaigns")
+          .select("lead_id") as any)
+          .eq("status", "running")
+          .not("lead_id", "is", null),
+        supabase
+          .from("whatsapp_message_queue")
+          .select("lead_id")
+          .in("status", ["queued", "scheduled", "sending", "paused_by_system"])
+          .not("lead_id", "is", null),
+      ]);
+
+      const cadenceIds = new Set((campaigns || []).map((c: any) => c.lead_id).filter(Boolean));
+      const scheduledIds = (scheduledQueue || []).map((item: any) => item.lead_id).filter(Boolean);
+      setCadenciaLeadIds(cadenceIds);
+      setActiveAutomationLeadIds(new Set([...cadenceIds, ...scheduledIds]));
     };
-    fetchCadencias();
+
+    fetchAutomationLeadIds();
 
     const channel = supabase
-      .channel("kanban-cadencias")
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_campaigns" }, () => {
-        fetchCadencias();
-      })
+      .channel("kanban-active-automation")
+      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_campaigns" }, fetchAutomationLeadIds)
+      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_message_queue" }, fetchAutomationLeadIds)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
