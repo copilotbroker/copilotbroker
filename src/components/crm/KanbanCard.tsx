@@ -28,7 +28,7 @@ import { OriginCombobox } from "./OriginCombobox";
 import { LeadLabelsPicker } from "./LeadLabelsPicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -66,12 +66,18 @@ interface KanbanCardProps {
   onCallClick?: (leadId: string) => void;
 }
 
-const ACTION_CONFIG: Record<string, { label: string; icon: React.ElementType; variant: "default" | "secondary" } | null> = {
-  new: { label: "Iniciar Atendimento", icon: Play, variant: "default" },
-  info_sent: { label: "Agendar", icon: Calendar, variant: "secondary" },
-  awaiting_docs: { label: "Agendar", icon: Calendar, variant: "secondary" },
-  scheduling: { label: "Comparecimento", icon: FileText, variant: "secondary" },
-  docs_received: { label: "Confirmar Venda", icon: Trophy, variant: "default" },
+type KanbanActionConfig = {
+  label: string;
+  icon: React.ElementType;
+  variant: NonNullable<ButtonProps["variant"]>;
+} | null;
+
+const ACTION_CONFIG: Record<string, KanbanActionConfig> = {
+  new: { label: "Iniciar Atendimento", icon: Play, variant: "success" },
+  info_sent: { label: "Agendar", icon: Calendar, variant: "neutral" },
+  awaiting_docs: { label: "Agendar", icon: Calendar, variant: "neutral" },
+  scheduling: { label: "Comparecimento", icon: FileText, variant: "neutral" },
+  docs_received: { label: "Confirmar Venda", icon: Trophy, variant: "success" },
   registered: null,
 };
 
@@ -81,7 +87,7 @@ const RING_PULSE_STYLE: React.CSSProperties = {
 
 const RING_PULSE_GLOW_STYLE: React.CSSProperties = {
   animation: "ring-pulse 3s ease-in-out infinite",
-  boxShadow: "0 0 24px hsl(var(--primary) / 0.2)",
+  boxShadow: "0 0 24px hsl(var(--crm-success) / 0.18)",
 };
 
 export function KanbanCard({
@@ -115,10 +121,10 @@ export function KanbanCard({
   const actionConfig = useMemo(() => {
     if (lead.status === "scheduling") {
       if (lead.comparecimento === true) {
-        return { label: "Fazer Proposta", icon: FileText, variant: "default" as const };
+        return { label: "Fazer Proposta", icon: FileText, variant: "warning" as const };
       }
       if (lead.comparecimento === false) {
-        return { label: "Reagendar", icon: Calendar, variant: "secondary" as const };
+        return { label: "Reagendar", icon: Calendar, variant: "warning" as const };
       }
     }
 
@@ -256,7 +262,7 @@ export function KanbanCard({
         "transition-[border-color,transform,opacity,box-shadow] duration-200 ease-out",
         "hover:border-primary/50 hover:shadow-[0_8px_30px_hsl(240_10%_3%_/_0.35)]",
         isStale && !hasAutomacaoAtiva && "opacity-60",
-        hasAutomacaoAtiva && "border-primary/40",
+        hasAutomacaoAtiva && "border-crm-success/40",
         isNew && "ring-1 ring-primary/40"
       )}
     >
@@ -275,7 +281,7 @@ export function KanbanCard({
               )}
 
               {isNew && (
-                <Badge className="bg-primary/15 text-primary hover:bg-primary/15 text-[10px] uppercase tracking-wide">
+                <Badge className="bg-crm-info/15 text-crm-info hover:bg-crm-info/15 text-[10px] uppercase tracking-wide">
                   Novo
                 </Badge>
               )}
@@ -306,7 +312,7 @@ export function KanbanCard({
             )}
 
             {lead.auto_first_message_sent && (
-              <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/10 text-[10px] text-primary">
+              <Badge variant="outline" className="gap-1 border-crm-success/30 bg-crm-success/10 text-[10px] text-crm-success">
                 <CheckCircle2 className="h-3 w-3" />
                 1ª msg
               </Badge>
@@ -329,15 +335,15 @@ export function KanbanCard({
               <TooltipProvider delayDuration={250}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5">
-                      <span className="h-2 w-2 rounded-full bg-primary animate-dot-pulse" />
-                      <span className="text-[10px] font-medium text-primary">Copiloto ativo</span>
+                    <div className="flex items-center gap-1 rounded-md border border-crm-success/30 bg-crm-success/10 px-1.5 py-0.5">
+                      <span className="h-2 w-2 rounded-full bg-crm-success animate-dot-pulse" />
+                      <span className="text-[10px] font-medium text-crm-success">Copiloto ativo</span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onCancelCadencia?.(lead.id);
                         }}
-                        className="rounded p-0.5 text-primary/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        className="rounded p-0.5 text-crm-success/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
                         title="Parar fluxo"
                       >
                         <Square className="h-2.5 w-2.5" />
@@ -379,7 +385,7 @@ export function KanbanCard({
               size="sm"
               variant={actionConfig.variant}
               onClick={handleAction}
-              className="h-8 gap-1.5 text-xs"
+              className="h-8 gap-1.5 rounded-lg px-3.5 text-xs font-semibold"
             >
               <actionConfig.icon className="h-3.5 w-3.5" />
               <span>{actionConfig.label}</span>
@@ -391,9 +397,9 @@ export function KanbanCard({
               <PopoverTrigger asChild>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="neutral"
                   onClick={(e) => e.stopPropagation()}
-                  className="h-8 px-2"
+                  className="h-8 w-8 rounded-lg px-0"
                   title="Enviar ou programar WhatsApp"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
@@ -415,7 +421,7 @@ export function KanbanCard({
                 <div className="flex items-end gap-2">
                   <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
                     <PopoverTrigger asChild>
-                      <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canSubmitMessage || isScheduling || isSendingNow}>
+                      <Button size="icon" variant="neutral" className="h-9 w-9 flex-shrink-0 rounded-lg" disabled={!canSubmitMessage || isScheduling || isSendingNow}>
                         <CalendarClock className="h-4 w-4" />
                       </Button>
                     </PopoverTrigger>
@@ -449,7 +455,7 @@ export function KanbanCard({
                     </PopoverContent>
                   </Popover>
 
-                  <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
+                  <Button size="icon" className="h-9 w-9 flex-shrink-0 rounded-lg" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
@@ -460,12 +466,12 @@ export function KanbanCard({
           {lead.status !== "new" && onCallClick && (
             <Button
               size="sm"
-              variant="outline"
+              variant="neutral"
               onClick={(e) => {
                 e.stopPropagation();
                 onCallClick(lead.id);
               }}
-              className="h-8 px-2"
+              className="h-8 w-8 rounded-lg px-0"
               title="Registrar ligação"
             >
               <Phone className="h-3.5 w-3.5" />
