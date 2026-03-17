@@ -129,7 +129,7 @@ export function AutoCadenciaRuleEditor({
   // Load steps when editing
   useEffect(() => {
     if (editingRule) {
-      setRuleName(editingRule.name || "Cadência 10D");
+      setRuleName(editingRule.name || "");
       setProjectId(editingRule.project_id || "all");
       setHasFirstMessageConflict(false);
       setLoadingSteps(true);
@@ -150,7 +150,7 @@ export function AutoCadenciaRuleEditor({
           setLoadingSteps(false);
         });
     } else {
-      setRuleName("Cadência 10D");
+      setRuleName("");
       setProjectId("all");
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
       if (isOpen && brokerId) checkConflict("all");
