@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LandingContent } from "@/types/project";
 import { getIcon } from "./iconMap";
+import { getMutedTextColor, getReadableTextColor, getSoftBorder, getSoftSurface } from "@/lib/landing-theme";
 
 interface Props {
   content: LandingContent["benefits"];
@@ -11,6 +12,9 @@ export default function DynamicBenefits({ content, theme }: Props) {
   const ref = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const isSerif = theme.fontFamily === "serif";
+  const sectionBg = "#ffffff";
+  const headingColor = getReadableTextColor(sectionBg);
+  const bodyColor = getMutedTextColor(sectionBg);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -22,13 +26,13 @@ export default function DynamicBenefits({ content, theme }: Props) {
   }, []);
 
   return (
-    <section ref={ref} className="py-14 md:py-28 px-4" style={{ backgroundColor: "#ffffff" }}>
+    <section ref={ref} className="py-14 md:py-28 px-4" style={{ backgroundColor: sectionBg }}>
       <div className="max-w-5xl mx-auto">
         <h2
           className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-8 md:mb-14 text-center transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           } ${isSerif ? "font-serif italic" : ""}`}
-          style={{ color: theme.accentColor }}
+          style={{ color: headingColor }}
         >
           {content.title}
         </h2>
@@ -44,8 +48,8 @@ export default function DynamicBenefits({ content, theme }: Props) {
                 }`}
                 style={{
                   transitionDelay: `${200 + i * 80}ms`,
-                  borderColor: `${theme.primaryColor}15`,
-                  backgroundColor: `${theme.primaryColor}05`,
+                  borderColor: getSoftBorder(sectionBg),
+                  backgroundColor: getSoftSurface(sectionBg),
                 }}
               >
                 <div
@@ -54,7 +58,7 @@ export default function DynamicBenefits({ content, theme }: Props) {
                 >
                   <Icon className="w-5 h-5" style={{ color: theme.primaryColor }} />
                 </div>
-                <p className="text-gray-700 font-medium text-sm leading-relaxed pt-2">{item.text}</p>
+                <p className="font-medium text-sm leading-relaxed pt-2" style={{ color: bodyColor }}>{item.text}</p>
               </div>
             );
           })}

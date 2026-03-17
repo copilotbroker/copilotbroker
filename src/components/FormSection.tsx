@@ -223,7 +223,7 @@ const FormSection = ({
 
   return (
     <section 
-      id="cadastro" 
+      id="formulario"
       ref={sectionRef} 
       className="py-16 sm:py-20 md:py-32 bg-background relative overflow-hidden"
       aria-labelledby="form-title"

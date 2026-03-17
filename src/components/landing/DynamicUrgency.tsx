@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { LandingContent } from "@/types/project";
 import { getIcon } from "./iconMap";
 import { AlertTriangle } from "lucide-react";
+import { getMutedTextColor, getReadableTextColor, getSoftBorder, getSoftSurface } from "@/lib/landing-theme";
 
 interface Props {
   content: LandingContent["urgency"];
@@ -21,7 +22,6 @@ export default function DynamicUrgency({ content, theme }: Props) {
     return () => observer.disconnect();
   }, []);
 
-  // Dynamic background based on theme style
   const bgColor = theme.style === "luxury"
     ? `${theme.accentColor}08`
     : theme.style === "nature"
@@ -30,6 +30,9 @@ export default function DynamicUrgency({ content, theme }: Props) {
     ? "#f5f5f5"
     : "#fff8f0";
 
+  const headingColor = getReadableTextColor(bgColor);
+  const bodyColor = getMutedTextColor(bgColor);
+
   return (
     <section ref={ref} className="py-14 md:py-28 px-4" style={{ backgroundColor: bgColor }}>
       <div className="max-w-4xl mx-auto text-center">
@@ -37,7 +40,7 @@ export default function DynamicUrgency({ content, theme }: Props) {
           className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-8 md:mb-12 transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           } ${theme.fontFamily === "serif" ? "font-serif italic" : ""}`}
-          style={{ color: theme.accentColor }}
+          style={{ color: headingColor }}
         >
           {content.title}
         </h2>
@@ -48,12 +51,13 @@ export default function DynamicUrgency({ content, theme }: Props) {
             return (
               <div
                 key={i}
-                className={`flex items-center gap-4 p-5 rounded-xl bg-white border shadow-sm transition-all duration-500 hover:shadow-md ${
+                className={`flex items-center gap-4 p-5 rounded-xl border shadow-sm transition-all duration-500 hover:shadow-md ${
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
                 style={{
                   transitionDelay: `${200 + i * 100}ms`,
-                  borderColor: `${theme.primaryColor}25`,
+                  borderColor: getSoftBorder(bgColor),
+                  backgroundColor: getSoftSurface(bgColor),
                 }}
               >
                 <div
@@ -62,7 +66,7 @@ export default function DynamicUrgency({ content, theme }: Props) {
                 >
                   <Icon className="w-5 h-5" style={{ color: theme.primaryColor }} />
                 </div>
-                <p className="text-sm text-gray-700 text-left font-medium">{item.text}</p>
+                <p className="text-sm text-left font-medium" style={{ color: bodyColor }}>{item.text}</p>
               </div>
             );
           })}
@@ -78,7 +82,7 @@ export default function DynamicUrgency({ content, theme }: Props) {
           }}
         >
           <AlertTriangle className="w-5 h-5 flex-shrink-0" style={{ color: theme.primaryColor }} />
-          <p className="text-sm font-semibold" style={{ color: theme.accentColor }}>
+          <p className="text-sm font-semibold" style={{ color: headingColor }}>
             {content.warning}
           </p>
         </div>

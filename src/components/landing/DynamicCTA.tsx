@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LandingContent } from "@/types/project";
 import { getIcon } from "./iconMap";
+import { getMutedTextColor, getReadableTextColor, getSoftSurface } from "@/lib/landing-theme";
 
 interface Props {
   content: LandingContent["cta"];
@@ -10,6 +11,9 @@ interface Props {
 export default function DynamicCTA({ content, theme }: Props) {
   const ref = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const headingColor = getReadableTextColor(theme.accentColor);
+  const bodyColor = getMutedTextColor(theme.accentColor);
+  const buttonTextColor = getReadableTextColor(theme.primaryColor, "#F8FAFC", "#0F172A");
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -37,7 +41,7 @@ export default function DynamicCTA({ content, theme }: Props) {
           className={`text-2xl sm:text-3xl md:text-5xl font-bold mb-6 md:mb-10 transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
-          style={{ color: "#ffffff" }}
+          style={{ color: headingColor }}
         >
           {content.title}
         </h2>
@@ -54,11 +58,11 @@ export default function DynamicCTA({ content, theme }: Props) {
                 style={{
                   transitionDelay: `${300 + i * 80}ms`,
                   borderColor: `${theme.primaryColor}40`,
-                  backgroundColor: `${theme.primaryColor}12`,
+                  backgroundColor: getSoftSurface(theme.accentColor),
                 }}
               >
                 <Icon className="w-4 h-4" style={{ color: theme.primaryColor }} />
-                <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.9)" }}>
+                <span className="text-sm font-medium" style={{ color: bodyColor }}>
                   {f.text}
                 </span>
               </div>
@@ -70,19 +74,19 @@ export default function DynamicCTA({ content, theme }: Props) {
           className={`text-lg md:text-xl italic mb-10 max-w-2xl mx-auto transition-all duration-700 delay-500 ${
             isVisible ? "opacity-100" : "opacity-0"
           }`}
-          style={{ color: `${theme.primaryColor}cc` }}
+          style={{ color: bodyColor }}
         >
           "{content.quote}"
         </blockquote>
 
-          <button
+        <button
           onClick={scrollToForm}
           className={`px-8 py-4 md:px-12 md:py-5 rounded-full text-base md:text-lg font-bold transition-all duration-500 delay-700 hover:scale-105 hover:shadow-2xl ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
           style={{
             backgroundColor: theme.primaryColor,
-            color: theme.accentColor,
+            color: buttonTextColor,
             boxShadow: `0 15px 50px ${theme.primaryColor}40`,
           }}
         >

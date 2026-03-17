@@ -40,7 +40,7 @@ export function useBrokerProjects(brokerId?: string | null) {
 
   const buildUrl = (project: Project, brokerSlug: string, forBrokerId?: string) => {
     if (project.created_by_broker_id && project.created_by_broker_id === forBrokerId) {
-      return `/corretor/${project.city_slug}/${project.slug}`;
+      return `/${brokerSlug}/${project.city_slug}/${project.slug}`;
     }
     if (project.slug === "estanciavelha") return `/estanciavelha/${brokerSlug}`;
     if (project.slug === "prontos") return `/prontos/${brokerSlug}`;
