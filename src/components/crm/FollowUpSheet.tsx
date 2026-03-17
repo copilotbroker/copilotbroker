@@ -64,6 +64,7 @@ export function FollowUpSheet({
   projectName,
   brokerName,
   brokerId,
+  leadStatus,
   onCreated,
 }: FollowUpSheetProps) {
   const [isCreating, setIsCreating] = useState(false);
