@@ -48,42 +48,18 @@ function formatDelay(minutes: number): string {
   return `${Math.floor(minutes / 1440)} dia(s)`;
 }
 
-const DEFAULT_STEPS = [
+const DEFAULT_STEPS: AutoCadenciaStep[] = [
   {
     messageContent: "Olá {nome}, tudo bem? Aqui é {corretor_nome}, da Enove Imobiliária! Recebi agora seu cadastro para saber mais sobre o {empreendimento}, já quis te chamar para te explicar como funciona! Foi você mesmo que se cadastrou?",
     delayMinutes: 0,
     sendIfReplied: true,
   },
-  {
-    messageContent: "Pode falar agora?",
-    delayMinutes: 60,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Tentei ligar para você, mas não consegui contato, qual melhor horário para falarmos?",
-    delayMinutes: 180,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Oi {nome}! Caso não esteja no momento certo, entenderei perfeitamente! Só acho que uma oportunidade dessas merece ser ouvida, caso queira fazer um bate papo sem compromisso, estarei aqui pra te ajudar.",
-    delayMinutes: 1440,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Percebi que você não está podendo falar comigo agora, em virtude disso, vou finalizar esse atendimento, mas fique a vontade de me chamar quando quiser!",
-    delayMinutes: 2880,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Ei! Não esqueci de ti! Lembrei de te chamar pois entrou uma condição que eu não poderia deixar de te mostrar, tem 20 minutos para uma video chamada? Prometo te apresentar algo que você nunca viu na vida!",
-    delayMinutes: 7200,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Oi {nome}! Voltei porque surgiu uma condição que muda totalmente o cenário desse projeto. Não estou enviando para todos, pois recebemos pouquíssimas unidades com uma condição realmente diferenciada, você tem 10 minutos hoje para entender?",
-    delayMinutes: 14400,
-    sendIfReplied: false,
-  },
+  { messageContent: "Pode falar agora?", delayMinutes: 60, sendIfReplied: false },
+  { messageContent: "Tentei ligar para você, mas não consegui contato, qual melhor horário para falarmos?", delayMinutes: 180, sendIfReplied: false },
+  { messageContent: "Oi {nome}! Caso não esteja no momento certo, entenderei perfeitamente! Só acho que uma oportunidade dessas merece ser ouvida, caso queira fazer um bate papo sem compromisso, estarei aqui pra te ajudar.", delayMinutes: 1440, sendIfReplied: false },
+  { messageContent: "Percebi que você não está podendo falar comigo agora, em virtude disso, vou finalizar esse atendimento, mas fique a vontade de me chamar quando quiser!", delayMinutes: 2880, sendIfReplied: false },
+  { messageContent: "Ei! Não esqueci de ti! Lembrei de te chamar pois entrou uma condição que eu não poderia deixar de te mostrar, tem 20 minutos para uma video chamada? Prometo te apresentar algo que você nunca viu na vida!", delayMinutes: 7200, sendIfReplied: false },
+  { messageContent: "Oi {nome}! Voltei porque surgiu uma condição que muda totalmente o cenário desse projeto. Não estou enviando para todos, pois recebemos pouquíssimas unidades com uma condição realmente diferenciada, você tem 10 minutos hoje para entender?", delayMinutes: 14400, sendIfReplied: false },
 ];
 
 export function CadenciaSheet({
