@@ -27,6 +27,7 @@ import {
 interface KanbanCardProps {
   lead: CRMLead;
   isNew?: boolean;
+  hasAutomacaoAtiva?: boolean;
   hasCadenciaAtiva?: boolean;
   onCancelCadencia?: (leadId: string) => void;
   onClick: () => void;
