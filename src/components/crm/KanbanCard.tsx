@@ -234,7 +234,7 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
         "hover:border-primary/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)]",
         "transition-[border-color,transform,opacity] duration-200 ease-out",
         "group overflow-hidden",
-        isStale && !hasCadenciaAtiva && "ring-2 ring-red-400/50",
+        isStale && !hasAutomacaoAtiva && "ring-2 ring-red-400/50",
         isNew && "shadow-[0_0_20px_rgba(52,211,153,0.3)]",
       )}
     >
