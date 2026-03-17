@@ -31,6 +31,7 @@ interface UseLeadWhatsAppLabelsOptions {
   leadId: string;
   brokerId?: string | null;
   phone?: string | null;
+  enabled?: boolean;
 }
 
 export function useLeadWhatsAppLabels({ leadId, brokerId, phone }: UseLeadWhatsAppLabelsOptions) {
