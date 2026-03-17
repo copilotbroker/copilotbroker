@@ -34,7 +34,8 @@ interface KanbanColumnProps {
   onOpenProposta?: (lead: CRMLead) => void;
   onOpenReagendamento?: (leadId: string) => void;
   onLeadsLoaded?: (leads: CRMLead[]) => void;
-  onWhatsAppClick?: (leadId: string) => void;
+  onSendWhatsAppNow?: (leadId: string, content: string) => Promise<void>;
+  onScheduleWhatsApp?: (leadId: string, content: string, scheduledAt: string) => Promise<void>;
   onCallClick?: (leadId: string) => void;
 }
 
