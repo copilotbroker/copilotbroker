@@ -47,6 +47,17 @@ export interface ConversationMessage {
   created_at: string;
 }
 
+export interface ScheduledConversationMessage {
+  id: string;
+  broker_id: string;
+  lead_id: string | null;
+  phone: string;
+  message: string;
+  scheduled_at: string;
+  created_at: string;
+  status: string;
+}
+
 export interface OutboundMessagePayload {
   content: string;
   sentBy?: string;
