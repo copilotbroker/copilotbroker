@@ -1,55 +1,60 @@
 
-Objetivo
 
-Restaurar somente as cores de ontem, sem reverter lógica nem estrutura: docs do Design System, tokens globais e aparência visual do Kanban/CRM.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-O que identifiquei
+### Problema 1: Nomes dos leads não aparecem
 
-- O `src/index.css` hoje contém uma paleta extra de CRM:
-  - `--crm-success`, `--crm-info`, `--crm-warning`, `--crm-accent`, `--crm-neutral`
-- O `src/components/ui/button.tsx` ganhou variantes semânticas novas:
-  - `success`, `warning`, `info`, `accent`, `neutral`
-- O `src/components/crm/KanbanCard.tsx` passou a depender dessas variantes para colorir ações do Kanban.
-- O `src/pages/DesignSystem.tsx` ainda documenta o sistema antigo de forma parcial/genérica e hoje está desalinhado com a intenção de “voltar as cores de ontem”.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-Plano de implementação
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-1. Restaurar os tokens globais do tema
-- Ajustar `src/index.css` para remover a paleta CRM adicionada depois, ou voltar esses tokens para o padrão anterior se ainda forem necessários por compatibilidade.
-- Garantir que o sistema volte a se apoiar na paleta base do tema:
-  - `primary`, `accent`, `secondary`, `muted`, `destructive`, `border`, `background`, `foreground`
-- Preservar tipografia, animações, sombras e demais estilos que não sejam cor.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-2. Reverter o design system visual para a versão de ontem
-- Atualizar `src/pages/DesignSystem.tsx` para documentar novamente a paleta padrão anterior, sem a camada de cores semânticas novas do CRM.
-- Alinhar a documentação com o que realmente estará implementado no tema, para evitar inconsistência futura.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-3. Restaurar os botões do Kanban para a lógica visual anterior
-- Revisar `src/components/crm/KanbanCard.tsx` para trocar variantes semânticas novas por variantes já existentes no design original.
-- Manter diferenciação visual entre ações, mas usando a linguagem anterior do sistema em vez da paleta CRM recém-introduzida.
-- Preservar toda a lógica dos botões, modais e fluxos.
+### Problema 2: Marcar como lida quando lida no celular
 
-4. Simplificar novamente o componente base de botão
-- Revisar `src/components/ui/button.tsx` e remover/neutralizar variantes adicionadas só para essa mudança de cor, se elas não existiam ontem.
-- Deixar o botão base coerente com o design system restaurado, evitando que a mudança continue vazando para outras telas.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-5. Validar consistência visual no CRM
-- Conferir se a restauração de cor não quebra:
-  - contraste dos botões
-  - estados hover/focus
-  - badges e contornos do Kanban
-- Se algum elemento ainda depender dos tokens removidos, ajustar só a camada visual para o tema anterior, sem tocar na lógica.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
 
-Arquivos a alterar
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
-- `src/index.css`
-- `src/pages/DesignSystem.tsx`
-- `src/components/ui/button.tsx`
-- `src/components/crm/KanbanCard.tsx`
+### Arquivos a editar
 
-Resultado esperado
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
 
-- As cores voltam ao padrão de ontem.
-- O Design System e a interface real ficam sincronizados.
-- O Kanban deixa de usar a paleta semântica nova, mas continua funcional.
-- Nenhuma regra de negócio, automação ou fluxo do CRM é revertido junto.
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+
