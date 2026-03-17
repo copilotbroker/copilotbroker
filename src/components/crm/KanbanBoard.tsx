@@ -7,7 +7,6 @@ import { useCustomOrigins } from "@/hooks/use-custom-origins";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
 import { useActiveFlowLeads } from "@/hooks/use-active-flow-reconciliation";
 import { KanbanColumn } from "./KanbanColumn";
-import { KanbanCard } from "./KanbanCard";
 import { LeadDetailSheet } from "./LeadDetailSheet";
 import { AgendamentoModal } from "./AgendamentoModal";
 import { ComparecimentoModal } from "./ComparecimentoModal";
