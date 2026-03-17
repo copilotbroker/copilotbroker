@@ -87,12 +87,10 @@ export function useAutoCadenciaRules() {
   };
 
   const saveSteps = async (ruleId: string, steps: AutoCadenciaStep[]) => {
-    // Delete existing steps
     await (supabase.from("auto_cadencia_steps") as any)
       .delete()
       .eq("rule_id", ruleId);
 
-    // Insert new steps
     const stepsToInsert = steps.map((step, i) => ({
       rule_id: ruleId,
       step_order: i + 1,
@@ -106,7 +104,22 @@ export function useAutoCadenciaRules() {
     if (error) throw error;
   };
 
-  const createRule = async (data: { project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => {
+  const fetchRuleSteps = async (ruleId: string): Promise<AutoCadenciaStep[]> => {
+    const { data, error } = await (supabase.from("auto_cadencia_steps") as any)
+      .select("message_content, delay_minutes, send_if_replied")
+      .eq("rule_id", ruleId)
+      .order("step_order", { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map((step: any) => ({
+      messageContent: step.message_content,
+      delayMinutes: step.delay_minutes,
+      sendIfReplied: step.send_if_replied,
+    }));
+  };
+
+  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => {
     if (!brokerId) return null;
     setIsSaving(true);
     try {
