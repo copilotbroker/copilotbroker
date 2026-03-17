@@ -159,8 +159,7 @@ export function KanbanColumn({
                     <KanbanCard
                       lead={lead}
                       isNew={newLeadIds?.has(lead.id)}
-                      hasAutomacaoAtiva={activeAutomationLeadIds?.has(lead.id)}
-                      hasCadenciaAtiva={cadenciaLeadIds?.has(lead.id)}
+                      hasAutomacaoAtiva={activeFlowLeadIds?.has(lead.id)}
                       onCancelCadencia={onCancelCadencia}
                       onClick={() => onCardClick(lead)}
                       onUpdateOrigin={onUpdateOrigin}
