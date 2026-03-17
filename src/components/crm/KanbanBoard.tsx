@@ -502,25 +502,13 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
       } as any);
     }
 
-    await supabase.from("lead_interactions").insert({
-      lead_id: leadId,
-      interaction_type: "whatsapp_manual" as any,
-      channel: "whatsapp",
-      broker_id: lead.broker_id,
-      notes: JSON.stringify({
-        kind: "scheduled_message",
-        action: "scheduled",
-        queueId: (queueItem as { id: string }).id,
-        previousStatus,
-        scheduledAt,
-        message: content.trim(),
-        conversationId,
-      }),
-    } as any);
+    setActiveAutomationLeadIds(prev => new Set(prev).add(leadId));
+    setCadenciaLeadIds(prev => new Set(prev).add(leadId));
 
     toast.success("Mensagem programada");
     queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
-  }, [ensureConversationForLead, queryClient]);
+    invalidateAll();
+  }, [ensureConversationForLead, queryClient, invalidateAll]);
 
   const handleCallClick = (leadId: string) => {
     setCallModal({ open: true, leadId });

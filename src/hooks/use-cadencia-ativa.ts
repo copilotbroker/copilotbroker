@@ -144,42 +144,68 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
   };
 }
 
-// Utility to cancel cadence for a lead (used by kanban hooks)
+// Utility to cancel all future flows for a lead (used by kanban hooks)
 export async function cancelCadenciaForLead(leadId: string): Promise<void> {
-  const { data: campaigns } = await (supabase
-    .from("whatsapp_campaigns")
-    .select("id, lead_previous_status") as any)
-    .eq("lead_id", leadId)
-    .eq("status", "running");
+  const nowIso = new Date().toISOString();
 
-  if (!campaigns || campaigns.length === 0) return;
-
-  for (const campaign of campaigns) {
-    const restoreStatus = campaign.lead_previous_status || "info_sent";
-
-    await supabase
+  const [{ data: campaigns }, { data: queuedMessages }, { data: lead }] = await Promise.all([
+    (supabase
       .from("whatsapp_campaigns")
-      .update({ status: "cancelled" })
-      .eq("id", campaign.id);
+      .select("id, lead_previous_status") as any)
+      .eq("lead_id", leadId)
+      .eq("status", "running"),
+    supabase
+      .from("whatsapp_message_queue")
+      .select("id")
+      .eq("lead_id", leadId)
+      .in("status", ["scheduled", "queued", "paused_by_system", "sending"]),
+    supabase
+      .from("leads")
+      .select("status, broker_id")
+      .eq("id", leadId)
+      .maybeSingle(),
+  ]);
 
+  const restoreStatus = campaigns?.find((campaign) => campaign.lead_previous_status && campaign.lead_previous_status !== "awaiting_docs")?.lead_previous_status || "info_sent";
+
+  if (campaigns && campaigns.length > 0) {
+    await Promise.all(campaigns.map((campaign) => (
+      Promise.all([
+        supabase.from("whatsapp_campaigns").update({ status: "cancelled", updated_at: nowIso }).eq("id", campaign.id),
+        supabase.from("whatsapp_message_queue").update({ status: "cancelled", updated_at: nowIso }).eq("campaign_id", campaign.id).in("status", ["scheduled", "queued", "paused_by_system", "sending"]),
+      ])
+    )));
+  }
+
+  if (queuedMessages && queuedMessages.length > 0) {
     await supabase
       .from("whatsapp_message_queue")
-      .update({ status: "cancelled" })
-      .eq("campaign_id", campaign.id)
-      .in("status", ["scheduled", "queued", "paused_by_system"]);
+      .update({ status: "cancelled", updated_at: nowIso })
+      .eq("lead_id", leadId)
+      .in("status", ["scheduled", "queued", "paused_by_system", "sending"]);
+  }
 
-    // Restore lead to previous status
-    const { data: lead } = await supabase
+  const { data: remainingScheduled } = await supabase
+    .from("whatsapp_message_queue")
+    .select("id")
+    .eq("lead_id", leadId)
+    .in("status", ["scheduled", "queued", "paused_by_system", "sending"])
+    .limit(1);
+
+  if (lead && (lead as any).status === "awaiting_docs" && (!remainingScheduled || remainingScheduled.length === 0)) {
+    await supabase
       .from("leads")
-      .select("status")
-      .eq("id", leadId)
-      .single();
+      .update({ status: restoreStatus, updated_at: nowIso })
+      .eq("id", leadId);
 
-    if (lead && (lead as any).status === "awaiting_docs") {
-      await supabase
-        .from("leads")
-        .update({ status: restoreStatus, updated_at: new Date().toISOString() })
-        .eq("id", leadId);
-    }
+    await supabase.from("lead_interactions").insert({
+      lead_id: leadId,
+      broker_id: (lead as any).broker_id,
+      interaction_type: "status_change" as any,
+      old_status: "awaiting_docs" as any,
+      new_status: restoreStatus as any,
+      channel: "whatsapp",
+      notes: `Fluxos futuros cancelados — lead voltou para ${restoreStatus}`,
+    });
   }
 }
