@@ -94,7 +94,7 @@ const RING_PULSE_GLOW_STYLE: React.CSSProperties = {
   boxShadow: "0 0 20px rgba(52,211,153,0.3)",
 };
 
-export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, onClick, onUpdateOrigin, onDelete, onIniciarAtendimento, onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda, onOpenProposta, onOpenReagendamento, onSendWhatsAppNow, onScheduleWhatsApp, onCallClick }: KanbanCardProps) {
+export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, onCancelCadencia, onClick, onUpdateOrigin, onDelete, onIniciarAtendimento, onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda, onOpenProposta, onOpenReagendamento, onSendWhatsAppNow, onScheduleWhatsApp, onCallClick }: KanbanCardProps) {
   const [composerOpen, setComposerOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -117,9 +117,9 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
 
   const animationStyle = useMemo(() => {
     if (isNew) return RING_PULSE_GLOW_STYLE;
-    if (hasCadenciaAtiva) return RING_PULSE_STYLE;
+    if (hasAutomacaoAtiva) return RING_PULSE_STYLE;
     return undefined;
-  }, [isNew, hasCadenciaAtiva]);
+  }, [isNew, hasAutomacaoAtiva]);
 
   const timeSinceInteraction = useMemo(() => {
     const date = lead.last_interaction_at ? new Date(lead.last_interaction_at) : new Date(lead.created_at);
