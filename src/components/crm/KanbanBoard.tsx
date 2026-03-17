@@ -204,6 +204,9 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
       const scheduledIds = ((scheduledQueue || []) as Array<{ lead_id: string | null }>).map((item) => item.lead_id).filter((leadId): leadId is string => Boolean(leadId));
       setCadenciaLeadIds(cadenceIds);
       setActiveAutomationLeadIds(new Set<string>([...cadenceIds, ...scheduledIds]));
+      queryClient.invalidateQueries({ queryKey: ["kanban-active-flow-ids"] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-column"] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-count"] });
     };
 
     fetchAutomationLeadIds();
@@ -215,7 +218,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [queryClient]);
 
   // Realtime subscription for lead changes → invalidate column queries
   useEffect(() => {

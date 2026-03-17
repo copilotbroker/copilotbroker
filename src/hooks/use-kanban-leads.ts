@@ -17,6 +17,7 @@ export function useKanbanLeads({ brokerId, isAdmin = false, projectId }: UseKanb
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["kanban-column"] });
     queryClient.invalidateQueries({ queryKey: ["kanban-count"] });
+    queryClient.invalidateQueries({ queryKey: ["kanban-active-flow-ids"] });
   }, [queryClient]);
 
   const invalidateStatuses = useCallback((...statuses: LeadStatus[]) => {
@@ -24,6 +25,7 @@ export function useKanbanLeads({ brokerId, isAdmin = false, projectId }: UseKanb
       queryClient.invalidateQueries({ queryKey: ["kanban-column", s] });
       queryClient.invalidateQueries({ queryKey: ["kanban-count", s] });
     });
+    queryClient.invalidateQueries({ queryKey: ["kanban-active-flow-ids"] });
   }, [queryClient]);
 
   const updateLeadStatus = useCallback(async (leadId: string, oldStatus: LeadStatus, newStatus: LeadStatus, userId?: string) => {
