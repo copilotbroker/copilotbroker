@@ -192,6 +192,9 @@ export function KanbanColumn({
           </div>
         )}
 
+        {/* Sentinel for infinite scroll */}
+        {hasNextPage && <div ref={sentinelRef} className="h-1" />}
+
         {isFetchingNextPage && (
           <div className="space-y-2.5 pt-2">
             {Array.from({ length: 2 }).map((_, i) => (
