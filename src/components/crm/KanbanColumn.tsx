@@ -19,8 +19,7 @@ interface KanbanColumnProps {
   status: LeadStatus;
   filters: KanbanColumnFilters;
   newLeadIds?: Set<string>;
-  activeAutomationLeadIds?: Set<string>;
-  cadenciaLeadIds?: Set<string>;
+  activeFlowLeadIds?: Set<string>;
   onCancelCadencia?: (leadId: string) => void;
   onCardClick: (lead: CRMLead) => void;
   onUpdateOrigin?: (leadId: string, origin: string) => Promise<void>;
