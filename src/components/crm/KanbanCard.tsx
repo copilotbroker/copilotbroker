@@ -292,7 +292,7 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
             {isStale && (
               <span className="flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-red-500 text-white rounded-full">!</span>
             )}
-            {hasCadenciaAtiva && (
+            {hasAutomacaoAtiva && (
               <TooltipProvider delayDuration={300}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -300,15 +300,17 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-dot-pulse" />
                       <button
                         onClick={(e) => { e.stopPropagation(); onCancelCadencia?.(lead.id); }}
-                        className="p-0.5 rounded hover:bg-red-500/20 text-red-400 transition-colors"
-                        title="Parar cadência"
+                        className="p-0.5 rounded hover:bg-destructive/15 text-destructive transition-colors"
+                        title="Parar fluxo"
                       >
                         <Square className="w-2.5 h-2.5" />
                       </button>
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-[#1e1e22] border-[#2a2a2e] text-xs">
-                    <span className="text-emerald-300">Cadência 10D™ ativa</span>
+                  <TooltipContent side="top" className="bg-popover border-border text-xs">
+                    <span className="text-foreground">
+                      {hasCadenciaAtiva ? "Cadência ativa — clique para parar tudo" : "Fluxo futuro ativo — clique para parar tudo"}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

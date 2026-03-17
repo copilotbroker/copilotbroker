@@ -333,7 +333,17 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
   const handleCancelCadencia = async (leadId: string) => {
     await cancelCadenciaForLead(leadId);
-    setCadenciaLeadIds(prev => { const next = new Set(prev); next.delete(leadId); return next; });
+    setCadenciaLeadIds(prev => {
+      const next = new Set(prev);
+      next.delete(leadId);
+      return next;
+    });
+    setActiveAutomationLeadIds(prev => {
+      const next = new Set(prev);
+      next.delete(leadId);
+      return next;
+    });
+    invalidateAll();
   };
 
   const ensureConversationForLead = useCallback(async (leadId: string) => {
