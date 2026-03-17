@@ -121,10 +121,10 @@ export function KanbanCard({
   const actionConfig = useMemo(() => {
     if (lead.status === "scheduling") {
       if (lead.comparecimento === true) {
-        return { label: "Fazer Proposta", icon: FileText, variant: "default" as const };
+        return { label: "Fazer Proposta", icon: FileText, variant: "warning" as const };
       }
       if (lead.comparecimento === false) {
-        return { label: "Reagendar", icon: Calendar, variant: "secondary" as const };
+        return { label: "Reagendar", icon: Calendar, variant: "warning" as const };
       }
     }
 
