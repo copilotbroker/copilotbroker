@@ -634,7 +634,8 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
                 }}
                 onOpenReagendamento={(leadId) => setAgendamentoModal({ open: true, leadId, isReagendamento: true })}
                 onLeadsLoaded={handleLeadsLoaded}
-                onWhatsAppClick={handleWhatsAppClick}
+                onSendWhatsAppNow={handleSendWhatsAppNow}
+                onScheduleWhatsApp={handleScheduleWhatsApp}
                 onCallClick={handleCallClick}
               />
             ))}
