@@ -72,18 +72,19 @@ export function CadenciaSheet({
   brokerName,
   brokerId,
   leadStatus,
+  cadenceName = "Cadência 10D",
+  initialSteps,
   onCreated,
 }: CadenciaSheetProps) {
   const [isCreating, setIsCreating] = useState(false);
-  const [steps, setSteps] = useState<Array<{ messageContent: string; delayMinutes: number; sendIfReplied: boolean }>>(
-    DEFAULT_STEPS.map(s => ({ ...s }))
-  );
+  const [steps, setSteps] = useState<AutoCadenciaStep[]>(DEFAULT_STEPS.map((s) => ({ ...s })));
 
   useEffect(() => {
     if (open) {
-      setSteps(DEFAULT_STEPS.map(s => ({ ...s })));
+      const sourceSteps = initialSteps?.length ? initialSteps : DEFAULT_STEPS;
+      setSteps(sourceSteps.map((s) => ({ ...s })));
     }
-  }, [open]);
+  }, [open, initialSteps]);
 
   const addStep = () => {
     setSteps(prev => [...prev, { messageContent: "", delayMinutes: 1440, sendIfReplied: false }]);
