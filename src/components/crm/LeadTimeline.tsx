@@ -57,6 +57,27 @@ function isCadenciaNote(notes?: string | null): boolean {
   return !!notes && notes.startsWith("📤 Cadência");
 }
 
+function extractScheduledMessageText(notes?: string | null): string | null {
+  if (!notes) return null;
+
+  const trimmed = notes.trim();
+  if (!trimmed.startsWith("{")) return null;
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed?.kind !== "scheduled_message") return null;
+    return typeof parsed.message === "string" ? parsed.message.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatInteractionNotes(notes?: string | null): string | null {
+  const scheduledMessageText = extractScheduledMessageText(notes);
+  if (scheduledMessageText) return scheduledMessageText;
+  return notes;
+}
+
 // Helper to extract broker name from "Atendimento iniciado por X" notes
 function extractBrokerFromNotes(notes?: string | null): string | null {
   if (!notes) return null;
