@@ -1,59 +1,60 @@
 
-Objetivo
 
-Adicionar cor aos botões do card do Kanban, restaurando a hierarquia visual “premium” sem quebrar a lógica atual.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-O que encontrei
+### Problema 1: Nomes dos leads não aparecem
 
-- O `KanbanCard.tsx` já usa variantes semânticas nos botões principais:
-  - `success` para “Iniciar Atendimento” e “Confirmar Venda”
-  - `warning` para proposta/reagendamento
-  - `neutral` para agendamento, WhatsApp e ligação
-- O componente `Button` já suporta variantes coloridas (`success`, `warning`, `info`, `accent`, `neutral`).
-- O problema é que hoje só parte dos botões usa essa paleta; ações secundárias e de risco continuam neutras ou `ghost`, o que deixa o card visualmente mais apagado do que antes.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-Plano de implementação
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-1. Reforçar a paleta dos botões principais no `KanbanCard`
-- Manter:
-  - verde para “Iniciar Atendimento”
-  - verde para “Confirmar Venda”
-  - amarelo para “Fazer Proposta” / “Reagendar”
-- Ajustar os neutros para continuarem elegantes sem parecer “sem cor”.
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-2. Colorir os botões secundários do card
-- WhatsApp:
-  - botão de abrir compositor com variante colorida, alinhada ao fluxo de conversa
-  - botão de enviar agora com destaque forte
-  - botão de agendar mensagem com cor distinta do envio imediato
-- Ligação:
-  - usar variante própria mais visível que o neutro atual
-- Isso devolve leitura rápida por tipo de ação.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-3. Dar tratamento visual às ações de risco
-- “Inativar lead” e “Excluir lead” hoje estão em `ghost`.
-- Vou aplicar cor de risco no hover e/ou variante destrutiva mais elegante, sem deixar o card pesado.
-- A ideia é manter segurança visual: ações destrutivas ficam claramente identificadas.
+### Problema 2: Marcar como lida quando lida no celular
 
-4. Se necessário, expandir o `Button` com uma ou duas variantes extras
-- Se as variantes existentes não forem suficientes para separar bem WhatsApp, agendamento e ligação, vou planejar:
-  - `info` para comunicação
-  - `accent` para ações auxiliares
-- Assim a cor fica padronizada no design system, e não hardcoded no card.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-5. Garantir consistência com o tema do CRM
-- Usar apenas tokens semânticos já existentes (`crm-success`, `crm-warning`, `crm-info`, `crm-accent`, `crm-neutral`, `destructive`).
-- Evitar hex solto e evitar voltar ao problema de “preto, branco e amarelo”.
-- Preservar contraste, glow e legibilidade em dark mode.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
 
-Arquivos a alterar
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
-- `src/components/crm/KanbanCard.tsx`
-- possivelmente `src/components/ui/button.tsx` se eu precisar de uma variante extra para separar melhor os tipos de ação
+### Arquivos a editar
 
-Resultado esperado
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
 
-- Todos os botões do Kanban ficam coloridos com função clara.
-- O card volta a ter leitura visual rica, não monocromática.
-- Ações principais, comunicação e risco ficam fáceis de distinguir num olhar.
-- A lógica atual do Kanban continua intacta.
+### Detalhes técnicos
+
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+
