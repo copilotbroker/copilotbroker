@@ -64,8 +64,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   
   const [whatsappCampaignOpen, setWhatsappCampaignOpen] = useState(false);
   const [whatsappPreselectedStatus, setWhatsappPreselectedStatus] = useState<LeadStatus | undefined>();
-  const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
-  const [activeAutomationLeadIds, setActiveAutomationLeadIds] = useState<Set<string>>(new Set());
   const [localBrokers, setLocalBrokers] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
