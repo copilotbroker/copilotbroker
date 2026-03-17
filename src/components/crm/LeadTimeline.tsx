@@ -244,8 +244,8 @@ export function LeadTimeline({ interactions, leadOrigin, leadOriginDetail, attri
                         </span>
                       </div>
                     )}
-                    {interaction.notes && (
-                      <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-line break-words">{interaction.notes}</p>
+                    {formattedNotes && (
+                      <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-line break-words">{formattedNotes}</p>
                     )}
                     {interaction.channel && (
                       <p className="text-[10px] text-slate-600">Canal: {interaction.channel}</p>
