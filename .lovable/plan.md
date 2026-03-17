@@ -1,89 +1,60 @@
 
-Objetivo
 
-Transformar a ação atual de “Cadência 10D” na página do lead em um fluxo mais flexível:
-- botão passa a se chamar “+ Cadência”;
-- o usuário pode escolher uma cadência já configurada pelo corretor;
-- ou criar uma nova cadência a partir dali;
-- “Cadência 10D” vira apenas o nome da cadência padrão pré-configurada.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-O que encontrei no código
+### Problema 1: Nomes dos leads não aparecem
 
-- A página do lead hoje abre diretamente `CadenciaSheet` por `cadenciaOpen`.
-- `CadenciaSheet` é um editor/ativador fixo da cadência padrão:
-  - usa `DEFAULT_STEPS`;
-  - cria campanha com nome `Cadência 10D - {leadName}`;
-  - título do sheet está hardcoded como `Cadência 10D™`.
-- Já existe uma estrutura de regras reutilizáveis do corretor:
-  - `broker_auto_cadencia_rules`
-  - `auto_cadencia_steps`
-  - hook `useAutoCadenciaRules()`
-- Porém essa estrutura hoje foi pensada para automação por empreendimento, não para “escolher e aplicar no lead” dentro da página do lead.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-Plano de implementação
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-1. Criar um novo seletor de cadências na página do lead
-- Substituir a ação atual por um novo fluxo:
-  - botão “+ Cadência”
-  - abre um sheet/modal de seleção
-- Esse seletor deve listar:
-  - “Cadência 10D” como opção padrão
-  - cadências já salvas do corretor
-  - ação “Criar nova cadência”
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-2. Adaptar o fluxo de ativação manual para aceitar cadências salvas
-- Evoluir `CadenciaSheet` para funcionar em dois modos:
-  - modo padrão: carrega `DEFAULT_STEPS`
-  - modo regra existente: carrega steps vindos de `auto_cadencia_steps`
-- A campanha criada deve usar o nome da cadência escolhida, não mais um texto fixo.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-3. Permitir criação rápida de nova cadência a partir da página do lead
-- Reaproveitar o editor existente de regras como base conceitual, mas em contexto do lead.
-- Fluxo esperado:
-  - usuário clica “Criar nova cadência”
-  - define etapas
-  - escolhe se quer salvar como cadência reutilizável
-  - já pode aplicar essa nova cadência no lead atual
-- Se o save reutilizável complicar demais a primeira iteração, dá para separar em:
-  - criar e aplicar agora
-  - opcionalmente salvar como regra do corretor
+### Problema 2: Marcar como lida quando lida no celular
 
-4. Ajustar nomenclatura para modelo/preset
-- “Cadência 10D” deixa de ser o nome do botão principal.
-- Ela passa a ser exibida como:
-  - preset padrão
-  - nome inicial sugerido em novas cadências
-- Revisar textos da UI dessa área para refletir isso.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-5. Preservar as regras atuais de negócio
-- Manter validações já existentes:
-  - não permitir se já houver fluxo ativo conflitante
-  - continuar salvando `lead_previous_status`
-  - continuar movendo o lead para “Copiloto Ativo”
-  - continuar registrando interação no timeline
-- Só muda a forma de escolher/criar a cadência, não a segurança do fluxo.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
 
-Arquivos que eu alteraria
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
-- `src/pages/LeadPage.tsx`
-- `src/components/crm/CadenciaSheet.tsx`
-- novo componente, algo como:
-  - `src/components/crm/CadenciaPickerSheet.tsx`
-- possivelmente reaproveitar lógica de:
-  - `src/hooks/use-auto-cadencia-rules.ts`
-  - `src/components/whatsapp/AutoCadenciaRuleEditor.tsx`
+### Arquivos a editar
 
-Detalhes técnicos
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
 
-- Hoje falta no tipo `BrokerAutoCadenciaRule` um campo de nome visível da cadência; preciso confirmar no schema real se a tabela já possui esse campo. Se não possuir, será necessária uma pequena evolução de banco para armazenar nome/label da cadência reutilizável.
-- A melhor arquitetura é separar:
-  - “cadências reutilizáveis do corretor”
-  - “ativar uma cadência em um lead”
-- Assim a página do lead apenas consome uma cadência escolhida, em vez de manter tudo hardcoded no `CadenciaSheet`.
+### Detalhes técnicos
 
-Resultado esperado
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
 
-- O botão vira “+ Cadência”.
-- Ao clicar, o corretor escolhe uma cadência pronta ou cria uma nova.
-- “Cadência 10D” continua existindo, mas como preset/cadência padrão.
-- A experiência fica extensível sem quebrar a lógica atual de ativação no lead.
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

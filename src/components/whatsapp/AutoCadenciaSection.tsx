@@ -39,9 +39,9 @@ export function AutoCadenciaSection() {
             <Zap className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Cadência 10D Automática</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Cadências automáticas</h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-              Ative a cadência automaticamente ao receber leads
+              Ative uma cadência automática ao receber leads
             </p>
           </div>
         </div>
@@ -83,7 +83,7 @@ export function AutoCadenciaSection() {
                     "px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide truncate max-w-[200px]",
                     rule.project_id ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-500/20 text-slate-300"
                   )}>
-                    {rule.project?.name || "🌐 Todos"}
+                    {rule.name || rule.project?.name || "Cadência"}
                   </span>
                   {rule.is_active ? (
                     <span className="flex items-center gap-1 text-xs text-emerald-400 shrink-0">

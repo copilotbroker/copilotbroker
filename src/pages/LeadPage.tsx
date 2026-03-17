@@ -12,12 +12,14 @@ import { VendaModal } from "@/components/crm/VendaModal";
 import { PerdaModal } from "@/components/crm/PerdaModal";
 import { FollowUpSheet } from "@/components/crm/FollowUpSheet";
 import { CadenciaSheet } from "@/components/crm/CadenciaSheet";
+import { CadenciaPickerSheet } from "@/components/crm/CadenciaPickerSheet";
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
 import { useLeadInteractions } from "@/hooks/use-lead-interactions";
 import { usePropostas } from "@/hooks/use-propostas";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useCadenciaAtiva } from "@/hooks/use-cadencia-ativa";
+import type { AutoCadenciaStep } from "@/hooks/use-auto-cadencia-rules";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, Phone, Mail, Building2, Clock, Calendar, DollarSign, Trophy,
@@ -65,7 +67,9 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
   const [perdaOpen, setPerdaOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [cadenciaPickerOpen, setCadenciaPickerOpen] = useState(false);
   const [cadenciaOpen, setCadenciaOpen] = useState(false);
+  const [selectedCadencia, setSelectedCadencia] = useState<{ name: string; steps: AutoCadenciaStep[] } | null>(null);
   const [whatsappMsgOpen, setWhatsappMsgOpen] = useState(false);
   const [whatsappMsg, setWhatsappMsg] = useState("");
   const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
@@ -569,8 +573,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
               <MessageCircle className="w-3.5 h-3.5 mr-1.5" />Follow-Up
             </Button>
             {!cadencia.isActive && (
-              <Button variant="outline" size="sm" onClick={() => setCadenciaOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10">
-                <Zap className="w-3.5 h-3.5 mr-1.5" />Cadência 10D
+              <Button variant="outline" size="sm" onClick={() => setCadenciaPickerOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10">
+                <Zap className="w-3.5 h-3.5 mr-1.5" />+ Cadência
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => setPerdaOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-[#2a2a2e] text-red-400/80 hover:bg-red-500/10 hover:border-red-500/20">
@@ -899,6 +903,14 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         leadStatus={lead.status}
         onCreated={refreshLead}
       />
+      <CadenciaPickerSheet
+        open={cadenciaPickerOpen}
+        onOpenChange={setCadenciaPickerOpen}
+        onSelectCadencia={(cadenciaConfig) => {
+          setSelectedCadencia(cadenciaConfig);
+          setCadenciaOpen(true);
+        }}
+      />
       <CadenciaSheet
         open={cadenciaOpen}
         onOpenChange={setCadenciaOpen}
@@ -909,6 +921,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         brokerName={lead.broker?.name}
         brokerId={lead.broker?.id || ""}
         leadStatus={lead.status}
+        cadenceName={selectedCadencia?.name || "Cadência 10D"}
+        initialSteps={selectedCadencia?.steps}
         onCreated={refreshLead}
       />
       <TransferLeadDialog

@@ -15,8 +15,8 @@ interface AutoCadenciaRuleEditorProps {
   isOpen: boolean;
   onClose: () => void;
   editingRule: BrokerAutoCadenciaRule | null;
-  createRule: (data: { project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => Promise<any>;
-  updateRule: (id: string, data: Partial<{ project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => Promise<any>;
+  createRule: (data: { name?: string; project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => Promise<any>;
+  updateRule: (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => Promise<any>;
   isSaving: boolean;
   rules: BrokerAutoCadenciaRule[];
 }
@@ -69,6 +69,7 @@ export function AutoCadenciaRuleEditor({
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectId, setProjectId] = useState<string>("all");
+  const [ruleName, setRuleName] = useState("Cadência 10D");
   const [checkingConflict, setCheckingConflict] = useState(false);
   const [hasFirstMessageConflict, setHasFirstMessageConflict] = useState(false);
   const [steps, setSteps] = useState<AutoCadenciaStep[]>(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
@@ -127,9 +128,9 @@ export function AutoCadenciaRuleEditor({
   // Load steps when editing
   useEffect(() => {
     if (editingRule) {
+      setRuleName(editingRule.name || "Cadência 10D");
       setProjectId(editingRule.project_id || "all");
       setHasFirstMessageConflict(false);
-      // Load saved steps
       setLoadingSteps(true);
       (supabase.from("auto_cadencia_steps") as any)
         .select("*")
@@ -148,11 +149,12 @@ export function AutoCadenciaRuleEditor({
           setLoadingSteps(false);
         });
     } else {
+      setRuleName("Cadência 10D");
       setProjectId("all");
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
       if (isOpen && brokerId) checkConflict("all");
     }
-  }, [editingRule, isOpen]);
+  }, [editingRule, isOpen, brokerId]);
 
   const projectHasRule = useMemo(() => {
     if (editingRule) return false;
@@ -176,6 +178,7 @@ export function AutoCadenciaRuleEditor({
 
   const handleSubmit = async () => {
     const data = {
+      name: ruleName.trim() || "Cadência 10D",
       project_id: projectId === "all" ? null : projectId,
       is_active: true,
     };
@@ -214,7 +217,16 @@ export function AutoCadenciaRuleEditor({
           <>
             <div className="flex-1 overflow-y-auto px-6 pb-2">
               <div className="space-y-5 mt-4">
-                {/* Project Selection */}
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Nome da cadência</Label>
+                  <Textarea
+                    value={ruleName}
+                    onChange={(e) => setRuleName(e.target.value)}
+                    placeholder="Ex.: Cadência 10D, Reengajamento, Pós-visita..."
+                    className="bg-[#141417] border-[#2a2a2e] text-white min-h-[44px]"
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label className="text-slate-300">Empreendimento</Label>
                   <Select value={projectId} onValueChange={handleProjectChange}>

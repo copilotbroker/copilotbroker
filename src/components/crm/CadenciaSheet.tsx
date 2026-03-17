@@ -6,15 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Send, Plus, Trash2, GripVertical, Zap } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  replaceTemplateVariables,
-  formatPhoneE164,
-  isValidPhone,
-  getRandomInterval,
-} from "@/types/whatsapp";
+import { replaceTemplateVariables, formatPhoneE164, isValidPhone, getRandomInterval } from "@/types/whatsapp";
+import type { AutoCadenciaStep } from "@/hooks/use-auto-cadencia-rules";
 
 interface CadenciaSheetProps {
   open: boolean;
@@ -26,6 +21,8 @@ interface CadenciaSheetProps {
   brokerName?: string;
   brokerId: string;
   leadStatus?: string;
+  cadenceName?: string;
+  initialSteps?: AutoCadenciaStep[];
   onCreated?: () => void;
 }
 
@@ -51,42 +48,18 @@ function formatDelay(minutes: number): string {
   return `${Math.floor(minutes / 1440)} dia(s)`;
 }
 
-const DEFAULT_STEPS = [
+const DEFAULT_STEPS: AutoCadenciaStep[] = [
   {
     messageContent: "Olá {nome}, tudo bem? Aqui é {corretor_nome}, da Enove Imobiliária! Recebi agora seu cadastro para saber mais sobre o {empreendimento}, já quis te chamar para te explicar como funciona! Foi você mesmo que se cadastrou?",
     delayMinutes: 0,
     sendIfReplied: true,
   },
-  {
-    messageContent: "Pode falar agora?",
-    delayMinutes: 60,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Tentei ligar para você, mas não consegui contato, qual melhor horário para falarmos?",
-    delayMinutes: 180,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Oi {nome}! Caso não esteja no momento certo, entenderei perfeitamente! Só acho que uma oportunidade dessas merece ser ouvida, caso queira fazer um bate papo sem compromisso, estarei aqui pra te ajudar.",
-    delayMinutes: 1440,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Percebi que você não está podendo falar comigo agora, em virtude disso, vou finalizar esse atendimento, mas fique a vontade de me chamar quando quiser!",
-    delayMinutes: 2880,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Ei! Não esqueci de ti! Lembrei de te chamar pois entrou uma condição que eu não poderia deixar de te mostrar, tem 20 minutos para uma video chamada? Prometo te apresentar algo que você nunca viu na vida!",
-    delayMinutes: 7200,
-    sendIfReplied: false,
-  },
-  {
-    messageContent: "Oi {nome}! Voltei porque surgiu uma condição que muda totalmente o cenário desse projeto. Não estou enviando para todos, pois recebemos pouquíssimas unidades com uma condição realmente diferenciada, você tem 10 minutos hoje para entender?",
-    delayMinutes: 14400,
-    sendIfReplied: false,
-  },
+  { messageContent: "Pode falar agora?", delayMinutes: 60, sendIfReplied: false },
+  { messageContent: "Tentei ligar para você, mas não consegui contato, qual melhor horário para falarmos?", delayMinutes: 180, sendIfReplied: false },
+  { messageContent: "Oi {nome}! Caso não esteja no momento certo, entenderei perfeitamente! Só acho que uma oportunidade dessas merece ser ouvida, caso queira fazer um bate papo sem compromisso, estarei aqui pra te ajudar.", delayMinutes: 1440, sendIfReplied: false },
+  { messageContent: "Percebi que você não está podendo falar comigo agora, em virtude disso, vou finalizar esse atendimento, mas fique a vontade de me chamar quando quiser!", delayMinutes: 2880, sendIfReplied: false },
+  { messageContent: "Ei! Não esqueci de ti! Lembrei de te chamar pois entrou uma condição que eu não poderia deixar de te mostrar, tem 20 minutos para uma video chamada? Prometo te apresentar algo que você nunca viu na vida!", delayMinutes: 7200, sendIfReplied: false },
+  { messageContent: "Oi {nome}! Voltei porque surgiu uma condição que muda totalmente o cenário desse projeto. Não estou enviando para todos, pois recebemos pouquíssimas unidades com uma condição realmente diferenciada, você tem 10 minutos hoje para entender?", delayMinutes: 14400, sendIfReplied: false },
 ];
 
 export function CadenciaSheet({
@@ -99,18 +72,19 @@ export function CadenciaSheet({
   brokerName,
   brokerId,
   leadStatus,
+  cadenceName = "Cadência 10D",
+  initialSteps,
   onCreated,
 }: CadenciaSheetProps) {
   const [isCreating, setIsCreating] = useState(false);
-  const [steps, setSteps] = useState<Array<{ messageContent: string; delayMinutes: number; sendIfReplied: boolean }>>(
-    DEFAULT_STEPS.map(s => ({ ...s }))
-  );
+  const [steps, setSteps] = useState<AutoCadenciaStep[]>(DEFAULT_STEPS.map((s) => ({ ...s })));
 
   useEffect(() => {
     if (open) {
-      setSteps(DEFAULT_STEPS.map(s => ({ ...s })));
+      const sourceSteps = initialSteps?.length ? initialSteps : DEFAULT_STEPS;
+      setSteps(sourceSteps.map((s) => ({ ...s })));
     }
-  }, [open]);
+  }, [open, initialSteps]);
 
   const addStep = () => {
     setSteps(prev => [...prev, { messageContent: "", delayMinutes: 1440, sendIfReplied: false }]);
@@ -206,7 +180,7 @@ export function CadenciaSheet({
         .from("whatsapp_campaigns") as any)
         .insert({
           broker_id: brokerId,
-          name: `Cadência 10D - ${leadName}`,
+          name: `${cadenceName} - ${leadName}`,
           status: "running",
           total_leads: steps.length,
           lead_id: leadId,
@@ -284,23 +258,22 @@ export function CadenciaSheet({
         old_status: leadStatus as any,
         new_status: "awaiting_docs" as any,
         broker_id: cadBroker?.id,
-        notes: `Lead movido para Copiloto Ativo ao ativar Cadência 10D por ${cadBroker?.name || "corretor"}`,
+        notes: `Lead movido para Copiloto Ativo ao ativar ${cadenceName} por ${cadBroker?.name || "corretor"}`,
         created_by: cadUser?.id,
       });
       if (statusInteractionErr) throw statusInteractionErr;
 
-      // Log interaction
       const stepsPreview = steps.map((s, i) => `Etapa ${i + 1} (${formatDelay(i === 0 ? 0 : s.delayMinutes)}): ${s.messageContent}`).join("\n");
       const { error: noteInteractionErr } = await supabase.from("lead_interactions").insert({
         lead_id: leadId,
         interaction_type: "note_added" as any,
         channel: "whatsapp",
-        notes: `⚡ Cadência 10D ativada (${steps.length} etapas):\n\n${stepsPreview}`,
+        notes: `⚡ ${cadenceName} ativada (${steps.length} etapas):\n\n${stepsPreview}`,
         created_by: cadUser?.id,
       });
       if (noteInteractionErr) throw noteInteractionErr;
 
-      toast.success("Cadência 10D ativada!");
+      toast.success(`${cadenceName} ativada!`);
       onCreated?.();
       onOpenChange(false);
     } catch (err: any) {
@@ -317,7 +290,7 @@ export function CadenciaSheet({
           <SheetHeader>
             <SheetTitle className="text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-emerald-400" />
-              Cadência 10D™
+              {cadenceName}
             </SheetTitle>
             <SheetDescription className="text-slate-400">
               Sequência automática para <span className="text-slate-200 font-medium">{leadName}</span>

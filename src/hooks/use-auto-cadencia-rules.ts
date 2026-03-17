@@ -12,6 +12,7 @@ export interface AutoCadenciaStep {
 export interface BrokerAutoCadenciaRule {
   id: string;
   broker_id: string;
+  name: string;
   project_id: string | null;
   is_active: boolean;
   created_at: string;
@@ -86,12 +87,10 @@ export function useAutoCadenciaRules() {
   };
 
   const saveSteps = async (ruleId: string, steps: AutoCadenciaStep[]) => {
-    // Delete existing steps
     await (supabase.from("auto_cadencia_steps") as any)
       .delete()
       .eq("rule_id", ruleId);
 
-    // Insert new steps
     const stepsToInsert = steps.map((step, i) => ({
       rule_id: ruleId,
       step_order: i + 1,
@@ -105,7 +104,22 @@ export function useAutoCadenciaRules() {
     if (error) throw error;
   };
 
-  const createRule = async (data: { project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => {
+  const fetchRuleSteps = async (ruleId: string): Promise<AutoCadenciaStep[]> => {
+    const { data, error } = await (supabase.from("auto_cadencia_steps") as any)
+      .select("message_content, delay_minutes, send_if_replied")
+      .eq("rule_id", ruleId)
+      .order("step_order", { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map((step: any) => ({
+      messageContent: step.message_content,
+      delayMinutes: step.delay_minutes,
+      sendIfReplied: step.send_if_replied,
+    }));
+  };
+
+  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => {
     if (!brokerId) return null;
     setIsSaving(true);
     try {
@@ -122,6 +136,7 @@ export function useAutoCadenciaRules() {
         .from("broker_auto_cadencia_rules") as any)
         .insert({
           broker_id: brokerId,
+          name: data.name || "Cadência 10D",
           project_id: data.project_id,
           is_active: data.is_active,
         })
@@ -150,7 +165,7 @@ export function useAutoCadenciaRules() {
     }
   };
 
-  const updateRule = async (id: string, data: Partial<{ project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => {
+  const updateRule = async (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => {
     setIsSaving(true);
     try {
       const { data: updated, error } = await (supabase
@@ -210,5 +225,5 @@ export function useAutoCadenciaRules() {
     return updateRule(id, { is_active });
   };
 
-  return { rules, isLoading, isSaving, fetchRules, createRule, updateRule, deleteRule, toggleRuleActive };
+  return { rules, isLoading, isSaving, fetchRules, fetchRuleSteps, createRule, updateRule, deleteRule, toggleRuleActive };
 }
