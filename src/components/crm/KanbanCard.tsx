@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Clock, MessageCircle, Send, CalendarClock, UserX, Trash2, Mail, Phone, CheckCircle2, Lock, RotateCw, AlertTriangle, Play, Calendar, FileText, Trophy, Square } from "lucide-react";
+import { Clock, MessageCircle, Send, CalendarClock, Plus, UserX, Trash2, Mail, Phone, CheckCircle2, Lock, RotateCw, AlertTriangle, Play, Calendar, FileText, Trophy, Square } from "lucide-react";
 import { CRMLead, LeadStatus, STATUS_CONFIG, getOriginDisplayLabel, getOriginType } from "@/types/crm";
 import { cn } from "@/lib/utils";
 

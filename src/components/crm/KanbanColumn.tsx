@@ -171,7 +171,8 @@ export function KanbanColumn({
                       onOpenPerda={onOpenPerda}
                       onOpenProposta={() => onOpenProposta?.(lead)}
                       onOpenReagendamento={onOpenReagendamento}
-                      onWhatsAppClick={onWhatsAppClick}
+                      onSendWhatsAppNow={onSendWhatsAppNow}
+                      onScheduleWhatsApp={onScheduleWhatsApp}
                       onCallClick={onCallClick}
                     />
                   </div>
