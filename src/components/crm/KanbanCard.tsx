@@ -501,14 +501,14 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
         </div>
 
         {/* Footer with avatar, time and origin */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-700/50">
+        <div className="flex items-center justify-between border-t border-border/60 pt-2">
           <div className="flex items-center gap-2">
-            <Avatar className="w-5 h-5 border border-[#2a2a2e]">
-              <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-700 text-white text-[9px] font-medium">
+            <Avatar className="h-5 w-5 border border-border/60">
+              <AvatarFallback className="bg-muted text-[9px] font-medium text-foreground">
                 {lead.broker?.name?.charAt(0) || (lead.source === "enove" ? "E" : "?")}
               </AvatarFallback>
             </Avatar>
-            <span className="text-[10px] text-slate-400 max-w-[70px] truncate" title={lead.broker?.name || "Enove"}>
+            <span className="max-w-[70px] truncate text-[10px] text-muted-foreground" title={lead.broker?.name || "Enove"}>
               {lead.broker?.name || "Enove"}
             </span>
             <span className="text-slate-600">•</span>
