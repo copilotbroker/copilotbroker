@@ -93,10 +93,15 @@ const RING_PULSE_GLOW_STYLE: React.CSSProperties = {
   boxShadow: "0 0 20px rgba(52,211,153,0.3)",
 };
 
-export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, onClick, onUpdateOrigin, onDelete, onIniciarAtendimento, onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda, onOpenProposta, onOpenReagendamento, onWhatsAppClick, onCallClick }: KanbanCardProps) {
-  
+export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, onClick, onUpdateOrigin, onDelete, onIniciarAtendimento, onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda, onOpenProposta, onOpenReagendamento, onSendWhatsAppNow, onScheduleWhatsApp, onCallClick }: KanbanCardProps) {
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [messageText, setMessageText] = useState("");
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>(new Date());
+  const [scheduleTime, setScheduleTime] = useState(() => format(new Date(Date.now() + 60 * 60 * 1000), "HH:mm"));
+  const [isSendingNow, setIsSendingNow] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
 
-  // Dynamic action config for scheduling status based on comparecimento
   const actionConfig = useMemo(() => {
     if (lead.status === "scheduling") {
       if (lead.comparecimento === true) {
@@ -150,6 +155,15 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
   const cleanPhone = lead.whatsapp.replace(/\D/g, "");
   const originType = getOriginType(lead.lead_origin);
   const progress = STATUS_PROGRESS[lead.status] || 0;
+  const canSubmitMessage = !!messageText.trim();
+
+  const buildScheduledDateTime = () => {
+    if (!scheduleDate || !scheduleTime) return null;
+    const [hours, minutes] = scheduleTime.split(":").map(Number);
+    const nextDate = new Date(scheduleDate);
+    nextDate.setHours(hours || 0, minutes || 0, 0, 0);
+    return nextDate;
+  };
 
   const handleOriginSelect = async (origin: string) => {
     if (onUpdateOrigin) await onUpdateOrigin(lead.id, origin);
@@ -177,6 +191,35 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
       case "docs_received":
         onOpenVenda?.(lead.id);
         break;
+    }
+  };
+
+  const handleSendNow = async () => {
+    const text = messageText.trim();
+    if (!text || !onSendWhatsAppNow || isSendingNow) return;
+    setIsSendingNow(true);
+    try {
+      await onSendWhatsAppNow(lead.id, text);
+      setMessageText("");
+      setComposerOpen(false);
+    } finally {
+      setIsSendingNow(false);
+    }
+  };
+
+  const handleScheduleMessage = async () => {
+    const text = messageText.trim();
+    const scheduledDate = buildScheduledDateTime();
+    if (!text || !scheduledDate || !onScheduleWhatsApp || isScheduling) return;
+    if (scheduledDate.getTime() <= Date.now()) return;
+    setIsScheduling(true);
+    try {
+      await onScheduleWhatsApp(lead.id, text, scheduledDate.toISOString());
+      setMessageText("");
+      setScheduleOpen(false);
+      setComposerOpen(false);
+    } finally {
+      setIsScheduling(false);
     }
   };
 
