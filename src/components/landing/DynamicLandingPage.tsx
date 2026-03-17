@@ -72,11 +72,14 @@ function DynamicCustomSection({ section, theme }: { section: CustomSection; them
 interface Props {
   project: Project;
   previewContent?: LandingContent;
+  brokerId?: string | null;
+  brokerSlug?: string | null;
 }
 
-export default function DynamicLandingPage({ project, previewContent }: Props) {
+export default function DynamicLandingPage({ project, previewContent, brokerId, brokerSlug }: Props) {
   const content = previewContent || project.landing_content;
   const isPreview = !!previewContent;
+  const isBrokerOwnedLanding = !!project.created_by_broker_id;
   if (!content) return null;
 
   return (
@@ -95,7 +98,9 @@ export default function DynamicLandingPage({ project, previewContent }: Props) {
           <FormSection
             projectId={project.id}
             projectSlug={project.slug}
-            allowBrokerSelection={true}
+            brokerId={brokerId || project.created_by_broker_id}
+            brokerSlug={brokerSlug}
+            allowBrokerSelection={!isBrokerOwnedLanding}
             webhookUrl={project.webhook_url}
           />
         )}
