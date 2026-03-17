@@ -361,21 +361,71 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
             </button>
           )}
 
-          {/* WhatsApp button (show when not in "new" status since "Iniciar Atendimento" already opens WA) */}
+          {/* WhatsApp composer */}
           {lead.status !== "new" && (
-            <a
-              href={`https://wa.me/55${cleanPhone}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => { e.stopPropagation(); onWhatsAppClick?.(lead.id); }}
-              className={cn(
-                "flex items-center justify-center p-2 min-h-[40px] md:min-h-0 md:p-1.5",
-                "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg",
-                "transition-all duration-150"
-              )}
-            >
-              <MessageCircle className="w-4 h-4 md:w-3.5 md:h-3.5" />
-            </a>
+            <Popover open={composerOpen} onOpenChange={setComposerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className={cn(
+                    "flex items-center justify-center p-2 min-h-[40px] md:min-h-0 md:p-1.5",
+                    "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg",
+                    "transition-all duration-150"
+                  )}
+                  title="Enviar ou programar WhatsApp"
+                >
+                  <MessageCircle className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-80 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Mensagem para {lead.name}</p>
+                  <p className="text-xs text-muted-foreground">Escreva aqui e escolha entre enviar agora ou programar.</p>
+                </div>
+                <Textarea
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Digite sua mensagem..."
+                  className="min-h-[96px] resize-none"
+                />
+                <div className="flex items-end gap-2">
+                  <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                    <PopoverTrigger asChild>
+                      <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canSubmitMessage || isScheduling || isSendingNow}>
+                        <CalendarClock className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-80 space-y-3 p-3">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Programar mensagem</p>
+                        <p className="text-xs text-muted-foreground">Use o mesmo padrão do Inbox para escolher dia e horário.</p>
+                      </div>
+                      <DatePickerCalendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="rounded-md border border-border" />
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground">Horário</label>
+                        <input
+                          type="time"
+                          value={scheduleTime}
+                          onChange={(e) => setScheduleTime(e.target.value)}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                        />
+                      </div>
+                      <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+                        {buildScheduledDateTime()
+                          ? `Envio para ${format(buildScheduledDateTime()!, "dd/MM 'às' HH:mm", { locale: ptBR })}`
+                          : "Selecione uma data e horário válidos."}
+                      </div>
+                      <Button className="w-full" onClick={handleScheduleMessage} disabled={!canSubmitMessage || isScheduling || !buildScheduledDateTime()}>
+                        {isScheduling ? "Programando..." : "Confirmar agendamento"}
+                      </Button>
+                    </PopoverContent>
+                  </Popover>
+                  <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
 
           {/* Call button */}
