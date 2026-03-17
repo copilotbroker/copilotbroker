@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -6,6 +6,7 @@ const CONVERSATION_FETCH_LIMIT = 100;
 const MESSAGE_FETCH_LIMIT = 200;
 const INBOX_POLL_INTERVAL_MS = 12000;
 const THREAD_POLL_INTERVAL_MS = 6000;
+const SCHEDULED_QUEUE_ACTIVE_STATUSES = ["queued", "scheduled", "sending", "paused_by_system"] as const;
 
 export interface Conversation {
   id: string;

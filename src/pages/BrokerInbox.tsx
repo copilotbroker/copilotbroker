@@ -295,8 +295,11 @@ export default function BrokerInbox() {
               <ConversationThread
                 conversation={selectedConversation!}
                 messages={messages}
+                scheduledMessages={scheduledMessages}
                 isLoading={messagesLoading}
                 onSendMessage={sendMessage}
+                onScheduleMessage={scheduleMessage}
+                onCancelScheduledMessage={cancelScheduledMessage}
                 onBack={handleBack}
                 onMarkAsRead={() => markAsRead(selectedConversation!.id)}
                 onArchive={() => {
