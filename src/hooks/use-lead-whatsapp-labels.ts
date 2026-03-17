@@ -39,7 +39,7 @@ export function useLeadWhatsAppLabels({ leadId, brokerId, phone, enabled = true 
 
   const labelsQuery = useQuery({
     queryKey: ["whatsapp-labels", brokerId],
-    enabled: !!brokerId,
+    enabled: !!brokerId && enabled,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("whatsapp_labels")
