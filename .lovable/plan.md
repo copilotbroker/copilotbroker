@@ -1,71 +1,60 @@
 
-Objetivo
 
-Restaurar o visual anterior do card do Kanban, mantendo a lógica nova de “Copiloto Ativo” como está.
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-O que houve
+### Problema 1: Nomes dos leads não aparecem
 
-O problema não parece estar na coluna nem na reconciliação dos leads, e sim no próprio `KanbanCard.tsx`.
-Pelo código atual, o card foi bastante redesenhado:
-- trocou a hierarquia visual;
-- mudou cores-base para `#1e1e22`, `slate-*`, badges novas e barra de progresso;
-- passou a condicionar alguns elementos a novas regras;
-- manteve props antigas (`hasCadenciaAtiva`) mas a coluna só envia `hasAutomacaoAtiva`, o que também afeta textos/indicadores.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-Ou seja: a lógica nova de automação entrou junto com um redesign visual do card. O efeito percebido de “mudaram as cores e sumiram coisas” bate exatamente com isso.
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-Plano de correção
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-1. Restaurar o layout visual do card no `KanbanCard.tsx`
-- Reverter a estrutura visual para o padrão anterior do CRM:
-  - cores,
-  - espaçamentos,
-  - badges,
-  - tipografia,
-  - ordem das informações,
-  - estados visuais de hover/stale/novo.
-- Manter apenas a nova fonte de verdade de automação (`hasAutomacaoAtiva`) por baixo.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-2. Preservar a lógica nova sem manter o redesign
-- Continuar usando:
-  - `hasAutomacaoAtiva` para destacar lead com fluxo ativo,
-  - botão “Parar”,
-  - exclusão do lead das outras colunas.
-- Ajustar o texto/tooltip para não depender de `hasCadenciaAtiva`, já que hoje essa prop não está sendo alimentada pela coluna.
+### Problema 2: Marcar como lida quando lida no celular
 
-3. Recolocar os elementos que sumiram
-Vou comparar o card atual com o que o CRM esperava visualmente e recolocar:
-- badges/contextos importantes;
-- informações secundárias que antes apareciam;
-- tratamento visual de stale/new;
-- footer com broker/origem/tempo no padrão anterior.
-Se algum item tiver sido removido de propósito pela lógica nova, eu mantenho a função e restauro só a apresentação.
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
 
-4. Revisar consistência com o Design System do CRM
-O próprio `DesignSystem.tsx` descreve o padrão esperado:
-- card com `text-foreground`, `text-muted-foreground`;
-- stale com perda visual mais sutil;
-- novo lead com glow;
-- ações contextuais consistentes.
-Vou alinhar o `KanbanCard` de volta a esse padrão, em vez do visual que hoje está mais “experimental”.
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
 
-5. Validar o acoplamento entre coluna e card
-- Conferir `KanbanColumn.tsx` para garantir que o card continue recebendo tudo que precisa.
-- Se necessário, acrescentar uma forma explícita de distinguir:
-  - “fluxo ativo”,
-  - “cadência ativa”,
-  - “mensagem futura ativa”,
-sem quebrar o visual restaurado.
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
 
-Arquivos a revisar/alterar
+### Arquivos a editar
 
-- `src/components/crm/KanbanCard.tsx`
-- `src/components/crm/KanbanColumn.tsx`
-- possivelmente `src/pages/DesignSystem.tsx` apenas como referência visual, não como mudança funcional
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
 
-Resultado esperado
+### Detalhes técnicos
 
-- O card volta a ter a aparência anterior do CRM.
-- As cores deixam de parecer “lavadas” ou diferentes do restante do Kanban.
-- Os elementos visuais que sumiram reaparecem.
-- A lógica nova de “Copiloto Ativo” continua funcionando sem duplicidade de estado.
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+```typescript
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
+
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
+```
+

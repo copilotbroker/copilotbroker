@@ -1,13 +1,33 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Clock, MessageCircle, Send, CalendarClock, Plus, UserX, Trash2, Mail, Phone, CheckCircle2, Lock, RotateCw, AlertTriangle, Play, Calendar, FileText, Trophy, Square } from "lucide-react";
-import { CRMLead, LeadStatus, STATUS_CONFIG, getOriginDisplayLabel, getOriginType } from "@/types/crm";
+import {
+  Clock,
+  MessageCircle,
+  Send,
+  CalendarClock,
+  Plus,
+  UserX,
+  Trash2,
+  Mail,
+  Phone,
+  CheckCircle2,
+  Lock,
+  RotateCw,
+  AlertTriangle,
+  Play,
+  Calendar,
+  FileText,
+  Trophy,
+  Square,
+} from "lucide-react";
+import { CRMLead, LeadStatus, getOriginDisplayLabel } from "@/types/crm";
 import { cn } from "@/lib/utils";
 
 import { OriginCombobox } from "./OriginCombobox";
 import { LeadLabelsPicker } from "./LeadLabelsPicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
@@ -46,56 +66,44 @@ interface KanbanCardProps {
   onCallClick?: (leadId: string) => void;
 }
 
-// Vibrant dark theme colors for origin types
-const ORIGIN_COLORS: Record<string, string> = {
-  paid: "bg-purple-500/20 text-purple-300 border-purple-500/40",
-  organic: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-  referral: "bg-blue-500/20 text-blue-300 border-blue-500/40",
-  manual: "bg-enove-yellow/20 text-enove-yellow border-enove-yellow/40",
-  unknown: "bg-slate-500/20 text-slate-400 border-slate-500/40",
-};
-
-// Progress percentage by status
-const STATUS_PROGRESS: Record<string, number> = {
-  new: 10,
-  info_sent: 25,
-  awaiting_docs: 35,
-  scheduling: 50,
-  docs_received: 75,
-  registered: 100,
-  inactive: 0
-};
-
-const PROGRESS_COLORS: Record<string, string> = {
-  new: "bg-blue-500",
-  info_sent: "bg-enove-yellow",
-  awaiting_docs: "bg-lime-500",
-  scheduling: "bg-orange-500",
-  docs_received: "bg-emerald-500",
-  registered: "bg-slate-400",
-  inactive: "bg-red-500"
-};
-
-// Contextual action button config per status
-const ACTION_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string } | null> = {
-  new: { label: "Iniciar Atendimento", icon: Play, color: "bg-primary text-primary-foreground hover:opacity-90" },
-  info_sent: { label: "Agendar", icon: Calendar, color: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground" },
-  awaiting_docs: { label: "Agendar", icon: Calendar, color: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground" },
-  scheduling: { label: "Comparecimento", icon: FileText, color: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground" },
-  docs_received: { label: "Confirmar Venda", icon: Trophy, color: "bg-primary text-primary-foreground hover:opacity-90" },
+const ACTION_CONFIG: Record<string, { label: string; icon: React.ElementType; variant: "default" | "secondary" } | null> = {
+  new: { label: "Iniciar Atendimento", icon: Play, variant: "default" },
+  info_sent: { label: "Agendar", icon: Calendar, variant: "secondary" },
+  awaiting_docs: { label: "Agendar", icon: Calendar, variant: "secondary" },
+  scheduling: { label: "Comparecimento", icon: FileText, variant: "secondary" },
+  docs_received: { label: "Confirmar Venda", icon: Trophy, variant: "default" },
   registered: null,
 };
 
-// Stable animation style to prevent re-render resets
 const RING_PULSE_STYLE: React.CSSProperties = {
   animation: "ring-pulse 3s ease-in-out infinite",
 };
+
 const RING_PULSE_GLOW_STYLE: React.CSSProperties = {
   animation: "ring-pulse 3s ease-in-out infinite",
-  boxShadow: "0 0 20px rgba(52,211,153,0.3)",
+  boxShadow: "0 0 24px hsl(var(--primary) / 0.2)",
 };
 
-export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, onCancelCadencia, onClick, onUpdateOrigin, onDelete, onIniciarAtendimento, onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda, onOpenProposta, onOpenReagendamento, onSendWhatsAppNow, onScheduleWhatsApp, onCallClick }: KanbanCardProps) {
+export function KanbanCard({
+  lead,
+  isNew,
+  hasAutomacaoAtiva,
+  hasCadenciaAtiva,
+  onCancelCadencia,
+  onClick,
+  onUpdateOrigin,
+  onDelete,
+  onIniciarAtendimento,
+  onOpenAgendamento,
+  onOpenComparecimento,
+  onOpenVenda,
+  onOpenPerda,
+  onOpenProposta,
+  onOpenReagendamento,
+  onSendWhatsAppNow,
+  onScheduleWhatsApp,
+  onCallClick,
+}: KanbanCardProps) {
   const [composerOpen, setComposerOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -107,12 +115,13 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
   const actionConfig = useMemo(() => {
     if (lead.status === "scheduling") {
       if (lead.comparecimento === true) {
-        return { label: "Fazer Proposta", icon: FileText, color: "bg-primary text-primary-foreground hover:opacity-90" };
+        return { label: "Fazer Proposta", icon: FileText, variant: "default" as const };
       }
       if (lead.comparecimento === false) {
-        return { label: "Reagendar", icon: Calendar, color: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground" };
+        return { label: "Reagendar", icon: Calendar, variant: "secondary" as const };
       }
     }
+
     return ACTION_CONFIG[lead.status];
   }, [lead.status, lead.comparecimento]);
 
@@ -126,11 +135,14 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
     const date = lead.last_interaction_at ? new Date(lead.last_interaction_at) : new Date(lead.created_at);
     const now = new Date();
     const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+
     if (diffHours < 1) return "Agora";
     if (diffHours < 24) return `${diffHours}h`;
+
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays === 1) return "1 dia";
     if (diffDays < 7) return `${diffDays} dias`;
+
     return new Date(lead.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
   }, [lead.last_interaction_at, lead.created_at]);
 
@@ -154,10 +166,16 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
     return (now.getTime() - date.getTime()) / (1000 * 60 * 60) > 48;
   }, [lead.last_interaction_at, lead.created_at]);
 
-  const cleanPhone = lead.whatsapp.replace(/\D/g, "");
-  const originType = getOriginType(lead.lead_origin);
-  const progress = STATUS_PROGRESS[lead.status] || 0;
   const canSubmitMessage = !!messageText.trim();
+  const brokerLabel = lead.broker?.name || "Enove";
+  const showMetaBadges = !!(
+    lead.roleta_id ||
+    lead.status_distribuicao === "fallback_lider" ||
+    lead.auto_first_message_sent ||
+    lead.attribution?.landing_page === "admin_manual" ||
+    isStale ||
+    hasAutomacaoAtiva
+  );
 
   const buildScheduledDateTime = () => {
     if (!scheduleDate || !scheduleTime) return null;
@@ -173,6 +191,7 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
 
   const handleAction = (e: React.MouseEvent) => {
     e.stopPropagation();
+
     switch (lead.status) {
       case "new":
         onIniciarAtendimento?.(lead.id);
@@ -199,6 +218,7 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
   const handleSendNow = async () => {
     const text = messageText.trim();
     if (!text || !onSendWhatsAppNow || isSendingNow) return;
+
     setIsSendingNow(true);
     try {
       await onSendWhatsAppNow(lead.id, text);
@@ -212,8 +232,10 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
   const handleScheduleMessage = async () => {
     const text = messageText.trim();
     const scheduledDate = buildScheduledDateTime();
+
     if (!text || !scheduledDate || !onScheduleWhatsApp || isScheduling) return;
     if (scheduledDate.getTime() <= Date.now()) return;
+
     setIsScheduling(true);
     try {
       await onScheduleWhatsApp(lead.id, text, scheduledDate.toISOString());
@@ -230,87 +252,100 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
       style={animationStyle}
       onClick={onClick}
       className={cn(
-        "relative rounded-xl cursor-pointer",
-        "bg-[#1e1e22] border border-[#2a2a2e]",
-        "hover:border-primary/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)]",
-        "transition-[border-color,transform,opacity] duration-200 ease-out",
-        "group overflow-hidden",
-        isStale && !hasAutomacaoAtiva && "ring-2 ring-red-400/50",
-        isNew && "shadow-[0_0_20px_rgba(52,211,153,0.3)]",
+        "group relative cursor-pointer overflow-hidden rounded-xl border bg-card text-card-foreground",
+        "transition-[border-color,transform,opacity,box-shadow] duration-200 ease-out",
+        "hover:border-primary/50 hover:shadow-[0_8px_30px_hsl(240_10%_3%_/_0.35)]",
+        isStale && !hasAutomacaoAtiva && "opacity-60",
+        hasAutomacaoAtiva && "border-primary/40",
+        isNew && "ring-1 ring-primary/40"
       )}
     >
       <div className="p-3">
-        {/* Row 1: Project Name + Date/Time */}
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          {lead.project ? (
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-primary/20 text-primary border border-primary/40">
-              {lead.project.name}
-            </span>
-          ) : (
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-medium text-slate-500 border border-dashed border-slate-600">
-              Sem projeto
-            </span>
-          )}
-          <span className="text-[10px] text-slate-500 shrink-0">{createdAtWithTime}</span>
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2">
+              {lead.project ? (
+                <Badge variant="secondary" className="max-w-[140px] truncate border border-border/70 bg-muted/60 text-[10px] font-semibold uppercase tracking-wide text-foreground">
+                  {lead.project.name}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-dashed text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Sem projeto
+                </Badge>
+              )}
+
+              {isNew && (
+                <Badge className="bg-primary/15 text-primary hover:bg-primary/15 text-[10px] uppercase tracking-wide">
+                  Novo
+                </Badge>
+              )}
+            </div>
+
+            <h4 className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+              {lead.name}
+            </h4>
+          </div>
+
+          <span className="shrink-0 text-[10px] text-muted-foreground">{createdAtWithTime}</span>
         </div>
 
-        {/* Row 2: Contextual badges */}
-        {(lead.roleta_id || lead.status_distribuicao === 'fallback_lider' || lead.auto_first_message_sent || lead.attribution?.landing_page === "admin_manual" || isStale) && (
-          <div className="flex flex-wrap items-center gap-1 mb-2">
+        {showMetaBadges && (
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
             {lead.roleta_id && (
-              <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                <RotateCw className="w-2.5 h-2.5" />Roleta
-              </span>
+              <Badge variant="outline" className="gap-1 border-border bg-muted/40 text-[10px] text-muted-foreground">
+                <RotateCw className="h-3 w-3" />
+                Roleta
+              </Badge>
             )}
-            {lead.status_distribuicao === 'fallback_lider' && (
-              <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                <AlertTriangle className="w-2.5 h-2.5" />Fallback
-              </span>
+
+            {lead.status_distribuicao === "fallback_lider" && (
+              <Badge variant="outline" className="gap-1 border-destructive/30 bg-destructive/10 text-[10px] text-destructive">
+                <AlertTriangle className="h-3 w-3" />
+                Fallback
+              </Badge>
             )}
-            <TooltipProvider delayDuration={300}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  {lead.auto_first_message_sent ? (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-medium">
-                      <CheckCircle2 className="w-3 h-3" />1ª msg
-                    </span>
-                  ) : lead.attribution?.landing_page === "admin_manual" ? (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-400 text-[9px] font-medium">
-                      <Lock className="w-3 h-3" />Manual
-                    </span>
-                  ) : null}
-                </TooltipTrigger>
-                <TooltipContent side="top" className="bg-[#1e1e22] border-[#2a2a2e] text-xs">
-                  {lead.auto_first_message_sent ? (
-                    <span className="text-emerald-300">Primeira mensagem automática enviada</span>
-                  ) : lead.attribution?.landing_page === "admin_manual" ? (
-                    <span className="text-slate-300">Origem manual - sem automação</span>
-                  ) : null}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            {isStale && (
-              <span className="flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-red-500 text-white rounded-full">!</span>
+
+            {lead.auto_first_message_sent && (
+              <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/10 text-[10px] text-primary">
+                <CheckCircle2 className="h-3 w-3" />
+                1ª msg
+              </Badge>
             )}
+
+            {lead.attribution?.landing_page === "admin_manual" && !lead.auto_first_message_sent && (
+              <Badge variant="outline" className="gap-1 border-border bg-muted/40 text-[10px] text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                Manual
+              </Badge>
+            )}
+
+            {isStale && !hasAutomacaoAtiva && (
+              <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-[10px] text-destructive">
+                Sem interação
+              </Badge>
+            )}
+
             {hasAutomacaoAtiva && (
-              <TooltipProvider delayDuration={300}>
+              <TooltipProvider delayDuration={250}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-dot-pulse" />
+                    <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5">
+                      <span className="h-2 w-2 rounded-full bg-primary animate-dot-pulse" />
+                      <span className="text-[10px] font-medium text-primary">Copiloto ativo</span>
                       <button
-                        onClick={(e) => { e.stopPropagation(); onCancelCadencia?.(lead.id); }}
-                        className="p-0.5 rounded hover:bg-destructive/15 text-destructive transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCancelCadencia?.(lead.id);
+                        }}
+                        className="rounded p-0.5 text-primary/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
                         title="Parar fluxo"
                       >
-                        <Square className="w-2.5 h-2.5" />
+                        <Square className="h-2.5 w-2.5" />
                       </button>
-                    </span>
+                    </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-popover border-border text-xs">
-                    <span className="text-foreground">
-                      {hasCadenciaAtiva ? "Cadência ativa — clique para parar tudo" : "Fluxo futuro ativo — clique para parar tudo"}
-                    </span>
+                  <TooltipContent side="top" className="text-xs">
+                    {hasCadenciaAtiva ? "Cadência ativa — clique para parar tudo" : "Fluxo futuro ativo — clique para parar tudo"}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -318,85 +353,65 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
           </div>
         )}
 
-        {/* Lead Name */}
-        <h4 className="font-semibold text-white text-sm leading-snug line-clamp-1 mb-2 group-hover:text-primary transition-colors">
-          {lead.name}
-        </h4>
-
-        {/* Contact Info */}
-        <div className="space-y-2 mb-3">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Phone className="w-3 h-3 text-muted-foreground/70" />
+            <Phone className="h-3 w-3" />
             <span>{formatPhone(lead.whatsapp)}</span>
           </div>
+
           {lead.email && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Mail className="w-3 h-3 text-muted-foreground/70" />
+              <Mail className="h-3 w-3" />
               <span className="truncate">{lead.email}</span>
             </div>
           )}
-          {lead.broker_id && (
-            <div className="pt-1">
-              <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
-            </div>
-          )}
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-3">
-          <div className="h-1 w-full bg-slate-700/50 rounded-full overflow-hidden">
-            <div
-              className={cn("h-full rounded-full transition-all duration-500", PROGRESS_COLORS[lead.status])}
-              style={{ width: `${progress}%` }}
-            />
+        {lead.broker_id && (
+          <div className="mt-2">
+            <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
           </div>
-        </div>
+        )}
 
-        {/* Action buttons row */}
-        <div className="flex items-center gap-2 mb-3">
-          {/* Contextual action button */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {actionConfig && (
-            <button
+            <Button
+              size="sm"
+              variant={actionConfig.variant}
               onClick={handleAction}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 min-h-[40px] md:min-h-0 md:py-1.5",
-                "rounded-lg font-medium text-xs transition-all duration-150",
-                "hover:scale-[1.02] active:scale-[0.98] shadow-sm",
-                actionConfig.color
-              )}
+              className="h-8 gap-1.5 text-xs"
             >
-              <actionConfig.icon className="w-4 h-4 md:w-3.5 md:h-3.5" />
+              <actionConfig.icon className="h-3.5 w-3.5" />
               <span>{actionConfig.label}</span>
-            </button>
+            </Button>
           )}
 
-          {/* WhatsApp composer */}
           {lead.status !== "new" && (
             <Popover open={composerOpen} onOpenChange={setComposerOpen}>
               <PopoverTrigger asChild>
-                <button
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={(e) => e.stopPropagation()}
-                  className={cn(
-                    "flex items-center justify-center p-2 min-h-[40px] md:min-h-0 md:p-1.5",
-                    "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg",
-                    "transition-all duration-150"
-                  )}
+                  className="h-8 px-2"
                   title="Enviar ou programar WhatsApp"
                 >
-                  <MessageCircle className="w-4 h-4 md:w-3.5 md:h-3.5" />
-                </button>
+                  <MessageCircle className="h-3.5 w-3.5" />
+                </Button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-80 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
                 <div>
                   <p className="text-sm font-medium text-foreground">Mensagem para {lead.name}</p>
                   <p className="text-xs text-muted-foreground">Escreva aqui e escolha entre enviar agora ou programar.</p>
                 </div>
+
                 <Textarea
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   placeholder="Digite sua mensagem..."
                   className="min-h-[96px] resize-none"
                 />
+
                 <div className="flex items-end gap-2">
                   <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
                     <PopoverTrigger asChild>
@@ -409,7 +424,9 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
                         <p className="text-sm font-medium text-foreground">Programar mensagem</p>
                         <p className="text-xs text-muted-foreground">Use o mesmo padrão do Inbox para escolher dia e horário.</p>
                       </div>
+
                       <DatePickerCalendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="rounded-md border border-border" />
+
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground">Horário</label>
                         <input
@@ -419,16 +436,19 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
                           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                         />
                       </div>
+
                       <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
                         {buildScheduledDateTime()
                           ? `Envio para ${format(buildScheduledDateTime()!, "dd/MM 'às' HH:mm", { locale: ptBR })}`
                           : "Selecione uma data e horário válidos."}
                       </div>
+
                       <Button className="w-full" onClick={handleScheduleMessage} disabled={!canSubmitMessage || isScheduling || !buildScheduledDateTime()}>
                         {isScheduling ? "Programando..." : "Confirmar agendamento"}
                       </Button>
                     </PopoverContent>
                   </Popover>
+
                   <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
                     <Send className="h-4 w-4" />
                   </Button>
@@ -437,51 +457,49 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
             </Popover>
           )}
 
-          {/* Call button */}
           {lead.status !== "new" && onCallClick && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onCallClick(lead.id); }}
-              className={cn(
-                "flex items-center justify-center p-2 min-h-[40px] md:min-h-0 md:p-1.5",
-                "bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg",
-                "transition-all duration-150"
-              )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCallClick(lead.id);
+              }}
+              className="h-8 px-2"
               title="Registrar ligação"
             >
-              <Phone className="w-4 h-4 md:w-3.5 md:h-3.5" />
-            </button>
+              <Phone className="h-3.5 w-3.5" />
+            </Button>
           )}
 
-          {/* Perda + Delete buttons */}
-          <div className="flex items-center gap-1 ml-auto">
+          <div className="ml-auto flex items-center gap-1">
             {lead.status !== "registered" && onOpenPerda && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onOpenPerda(lead.id, lead.status); }}
-                className={cn(
-                  "p-2 md:p-1.5 rounded-md min-w-[40px] min-h-[40px] md:min-w-0 md:min-h-0",
-                  "flex items-center justify-center",
-                  "text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenPerda(lead.id, lead.status);
+                }}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                 title="Inativar lead"
               >
-                <UserX className="w-4 h-4 md:w-3.5 md:h-3.5" />
-              </button>
+                <UserX className="h-4 w-4" />
+              </Button>
             )}
 
             {onDelete && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <button
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     onClick={(e) => e.stopPropagation()}
-                    className={cn(
-                      "p-2 md:p-1.5 rounded-md min-w-[40px] min-h-[40px] md:min-w-0 md:min-h-0",
-                      "flex items-center justify-center",
-                      "text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                    )}
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                     title="Excluir lead"
                   >
-                    <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
-                  </button>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                   <AlertDialogHeader>
@@ -502,20 +520,22 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
           </div>
         </div>
 
-        {/* Footer with avatar, time and origin */}
-        <div className="flex items-center justify-between border-t border-border/60 pt-2">
-          <div className="flex items-center gap-2">
+        <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Avatar className="h-5 w-5 border border-border/60">
               <AvatarFallback className="bg-muted text-[9px] font-medium text-foreground">
                 {lead.broker?.name?.charAt(0) || (lead.source === "enove" ? "E" : "?")}
               </AvatarFallback>
             </Avatar>
-            <span className="max-w-[70px] truncate text-[10px] text-muted-foreground" title={lead.broker?.name || "Enove"}>
-              {lead.broker?.name || "Enove"}
+
+            <span className="max-w-[84px] truncate text-[10px] text-muted-foreground" title={brokerLabel}>
+              {brokerLabel}
             </span>
-            <span className="text-slate-600">•</span>
-            <div className="flex items-center gap-1 text-[10px] text-slate-500" title="Última interação">
-              <Clock className="w-3 h-3" />
+
+            <span className="text-muted-foreground/50">•</span>
+
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground" title="Última interação">
+              <Clock className="h-3 w-3" />
               <span>{timeSinceInteraction}</span>
             </div>
           </div>
@@ -529,21 +549,25 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
                     onSelect={handleOriginSelect}
                     trigger={
                       lead.lead_origin ? (
-                        <button className={cn("flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide hover:opacity-80 transition-opacity border", ORIGIN_COLORS[originType])}>
+                        <button className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary">
                           {getOriginDisplayLabel(lead.lead_origin)}
                         </button>
                       ) : (
-                        <button className={cn("flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium text-slate-500 hover:text-slate-300 border border-dashed border-slate-600 hover:border-slate-400 transition-colors")}>
-                          <Plus className="w-2.5 h-2.5" />Origem
+                        <button className="rounded-md border border-dashed border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+                          <span className="flex items-center gap-1">
+                            <Plus className="h-2.5 w-2.5" />
+                            Origem
+                          </span>
                         </button>
                       )
                     }
                   />
                 </div>
               </TooltipTrigger>
+
               {(lead as any).lead_origin_detail && (
-                <TooltipContent side="top" className="bg-[#1e1e22] border-[#2a2a2e] text-xs max-w-[250px]">
-                  <span className="text-slate-300">{(lead as any).lead_origin_detail}</span>
+                <TooltipContent side="top" className="max-w-[250px] text-xs">
+                  <span>{(lead as any).lead_origin_detail}</span>
                 </TooltipContent>
               )}
             </Tooltip>
