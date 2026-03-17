@@ -6,6 +6,7 @@ import { CRMLead, LeadStatus, STATUS_CONFIG, getOriginDisplayLabel, getOriginTyp
 import { cn } from "@/lib/utils";
 
 import { OriginCombobox } from "./OriginCombobox";
+import { LeadLabelsPicker } from "./LeadLabelsPicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,11 +78,11 @@ const PROGRESS_COLORS: Record<string, string> = {
 
 // Contextual action button config per status
 const ACTION_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string } | null> = {
-  new: { label: "Iniciar Atendimento", icon: Play, color: "bg-emerald-500/90 hover:bg-emerald-500 text-white" },
-  info_sent: { label: "Agendar", icon: Calendar, color: "bg-orange-500/90 hover:bg-orange-500 text-white" },
-  awaiting_docs: { label: "Agendar", icon: Calendar, color: "bg-orange-500/90 hover:bg-orange-500 text-white" },
-  scheduling: { label: "Comparecimento", icon: FileText, color: "bg-blue-500/90 hover:bg-blue-500 text-white" },
-  docs_received: { label: "Confirmar Venda", icon: Trophy, color: "bg-emerald-600/90 hover:bg-emerald-600 text-white" },
+  new: { label: "Iniciar Atendimento", icon: Play, color: "bg-primary text-primary-foreground hover:opacity-90" },
+  info_sent: { label: "Agendar", icon: Calendar, color: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground" },
+  awaiting_docs: { label: "Agendar", icon: Calendar, color: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground" },
+  scheduling: { label: "Comparecimento", icon: FileText, color: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground" },
+  docs_received: { label: "Confirmar Venda", icon: Trophy, color: "bg-primary text-primary-foreground hover:opacity-90" },
   registered: null,
 };
 
@@ -321,7 +322,7 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
         </h4>
 
         {/* Contact Info */}
-        <div className="space-y-1 mb-3">
+        <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Phone className="w-3 h-3 text-slate-500" />
             <span>{formatPhone(lead.whatsapp)}</span>
@@ -332,6 +333,7 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
               <span className="truncate">{lead.email}</span>
             </div>
           )}
+          <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
         </div>
 
         {/* Progress Bar */}

@@ -1,0 +1,102 @@
+import { Check, RefreshCw, Tags } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { useLeadWhatsAppLabels } from "@/hooks/use-lead-whatsapp-labels";
+
+interface LeadLabelsPickerProps {
+  leadId: string;
+  brokerId?: string | null;
+  phone?: string | null;
+  compact?: boolean;
+}
+
+const chipClassName = "inline-flex items-center rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground";
+
+export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: LeadLabelsPickerProps) {
+  const { labels, leadLabels, appliedLabelIds, isLoading, isSyncing, isToggling, syncLabels, toggleLabel } = useLeadWhatsAppLabels({
+    leadId,
+    brokerId,
+    phone,
+  });
+
+  const visibleLeadLabels = leadLabels
+    .map((item) => item.label)
+    .filter((label): label is NonNullable<typeof label> => Boolean(label));
+
+  return (
+    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-wrap items-center gap-1">
+        {visibleLeadLabels.slice(0, compact ? 2 : 3).map((label) => (
+          <span key={label.id} className={chipClassName} title={label.name}>
+            {label.name}
+          </span>
+        ))}
+        {visibleLeadLabels.length > (compact ? 2 : 3) && (
+          <span className={chipClassName}>+{visibleLeadLabels.length - (compact ? 2 : 3)}</span>
+        )}
+      </div>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            className={cn(
+              "inline-flex items-center justify-center rounded-md border border-border bg-secondary text-secondary-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+              compact ? "h-7 w-7" : "h-8 w-8",
+            )}
+            title="Etiquetas do WhatsApp"
+          >
+            <Tags className="h-3.5 w-3.5" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-72 border-border bg-popover p-3 text-popover-foreground">
+          <div className="mb-3 flex items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium">Etiquetas</p>
+              <p className="text-xs text-muted-foreground">Vinculadas ao WhatsApp do corretor.</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => void syncLabels()}
+              disabled={isSyncing}
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", isSyncing && "animate-spin")} />
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <p className="text-xs text-muted-foreground">Carregando etiquetas...</p>
+          ) : labels.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Nenhuma etiqueta disponível para este corretor ainda.</p>
+          ) : (
+            <div className="space-y-1">
+              {labels.map((label) => {
+                const selected = appliedLabelIds.has(label.id);
+                return (
+                  <button
+                    key={label.id}
+                    type="button"
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                      selected
+                        ? "border-primary bg-accent text-accent-foreground"
+                        : "border-border bg-background text-foreground hover:bg-secondary",
+                    )}
+                    onClick={() => void toggleLabel(label.id, !selected)}
+                    disabled={isToggling}
+                  >
+                    <span className="truncate">{label.name}</span>
+                    {selected && <Check className="h-4 w-4 text-primary" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
