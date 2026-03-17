@@ -287,20 +287,36 @@ async function restoreLeadStatusAfterScheduledMessage(
     .order("created_at", { ascending: false })
     .limit(100);
 
-  const scheduledEvent = (interactions || []).find((interaction) => {
+  const matchingEvents = (interactions || []).filter((interaction) => {
     try {
       const parsed = JSON.parse(interaction.notes || "{}");
-      return parsed?.kind === "scheduled_message" && parsed?.queueId === queueMsg.id;
+      return parsed?.kind === "scheduled_message" && typeof parsed?.previousStatus === "string";
     } catch {
       return false;
     }
   });
 
-  if (!scheduledEvent) return;
+  const preferredEvent = matchingEvents.find((interaction) => {
+    try {
+      const parsed = JSON.parse(interaction.notes || "{}");
+      return parsed?.queueId === queueMsg.id && parsed?.previousStatus !== "awaiting_docs";
+    } catch {
+      return false;
+    }
+  }) || matchingEvents.find((interaction) => {
+    try {
+      const parsed = JSON.parse(interaction.notes || "{}");
+      return parsed?.previousStatus !== "awaiting_docs";
+    } catch {
+      return false;
+    }
+  });
+
+  if (!preferredEvent) return;
 
   let restoreStatus: string | null = null;
   try {
-    const parsed = JSON.parse(scheduledEvent.notes || "{}");
+    const parsed = JSON.parse(preferredEvent.notes || "{}");
     restoreStatus = typeof parsed?.previousStatus === "string" ? parsed.previousStatus : null;
   } catch {
     restoreStatus = null;

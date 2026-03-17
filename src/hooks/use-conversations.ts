@@ -675,9 +675,37 @@ export function useConversationMessages(
     }
 
     if (conversation.lead_id) {
-      const previousStatus = conversation.lead?.status || "info_sent";
+      let previousStatus = conversation.lead?.status || "info_sent";
 
-      if (previousStatus !== "awaiting_docs") {
+      if (previousStatus === "awaiting_docs") {
+        const { data: interactions } = await supabase
+          .from("lead_interactions")
+          .select("notes, created_at")
+          .eq("lead_id", conversation.lead_id)
+          .eq("interaction_type", "whatsapp_manual")
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        const preservedStatus = (interactions || []).find((interaction) => {
+          try {
+            const parsed = JSON.parse(interaction.notes || "{}");
+            return parsed?.kind === "scheduled_message" && typeof parsed?.previousStatus === "string" && parsed.previousStatus !== "awaiting_docs";
+          } catch {
+            return false;
+          }
+        });
+
+        if (preservedStatus) {
+          try {
+            const parsed = JSON.parse(preservedStatus.notes || "{}");
+            previousStatus = parsed.previousStatus;
+          } catch {
+            previousStatus = conversation.lead?.status || "info_sent";
+          }
+        }
+      }
+
+      if ((conversation.lead?.status || "info_sent") !== "awaiting_docs") {
         const { error: leadUpdateError } = await supabase
           .from("leads")
           .update({
