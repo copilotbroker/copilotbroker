@@ -335,15 +335,15 @@ export function KanbanCard({
               <TooltipProvider delayDuration={250}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1 rounded-md border border-crm-success/30 bg-crm-success/10 px-1.5 py-0.5">
-                      <span className="h-2 w-2 rounded-full bg-crm-success animate-dot-pulse" />
-                      <span className="text-[10px] font-medium text-crm-success">Copiloto ativo</span>
+                    <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5">
+                      <span className="h-2 w-2 rounded-full bg-primary animate-dot-pulse" />
+                      <span className="text-[10px] font-medium text-primary">Copiloto ativo</span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onCancelCadencia?.(lead.id);
                         }}
-                        className="rounded p-0.5 text-crm-success/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        className="rounded p-0.5 text-primary/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
                         title="Parar fluxo"
                       >
                         <Square className="h-2.5 w-2.5" />
