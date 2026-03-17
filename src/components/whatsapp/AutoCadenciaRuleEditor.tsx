@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -69,7 +70,7 @@ export function AutoCadenciaRuleEditor({
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectId, setProjectId] = useState<string>("all");
-  const [ruleName, setRuleName] = useState("Cadência 10D");
+  const [ruleName, setRuleName] = useState("");
   const [checkingConflict, setCheckingConflict] = useState(false);
   const [hasFirstMessageConflict, setHasFirstMessageConflict] = useState(false);
   const [steps, setSteps] = useState<AutoCadenciaStep[]>(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
@@ -128,7 +129,7 @@ export function AutoCadenciaRuleEditor({
   // Load steps when editing
   useEffect(() => {
     if (editingRule) {
-      setRuleName(editingRule.name || "Cadência 10D");
+      setRuleName(editingRule.name || "");
       setProjectId(editingRule.project_id || "all");
       setHasFirstMessageConflict(false);
       setLoadingSteps(true);
@@ -149,7 +150,7 @@ export function AutoCadenciaRuleEditor({
           setLoadingSteps(false);
         });
     } else {
-      setRuleName("Cadência 10D");
+      setRuleName("");
       setProjectId("all");
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
       if (isOpen && brokerId) checkConflict("all");
@@ -175,10 +176,13 @@ export function AutoCadenciaRuleEditor({
   };
 
   const stepsValid = steps.length > 0 && steps.every(s => s.messageContent.trim().length > 0);
+  const nameValid = ruleName.trim().length > 0;
 
   const handleSubmit = async () => {
+    if (!nameValid) return;
+
     const data = {
-      name: ruleName.trim() || "Cadência 10D",
+      name: ruleName.trim(),
       project_id: projectId === "all" ? null : projectId,
       is_active: true,
     };
@@ -218,13 +222,16 @@ export function AutoCadenciaRuleEditor({
             <div className="flex-1 overflow-y-auto px-6 pb-2">
               <div className="space-y-5 mt-4">
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Nome da cadência</Label>
-                  <Textarea
+                  <Label className="text-slate-300">Nome da cadência *</Label>
+                  <Input
                     value={ruleName}
                     onChange={(e) => setRuleName(e.target.value)}
-                    placeholder="Ex.: Cadência 10D, Reengajamento, Pós-visita..."
-                    className="bg-[#141417] border-[#2a2a2e] text-white min-h-[44px]"
+                    placeholder="Ex.: Reengajamento, Pós-visita..."
+                    className="bg-[#141417] border-[#2a2a2e] text-white"
                   />
+                  {!nameValid && (
+                    <p className="text-xs text-red-400">O nome da cadência é obrigatório.</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -373,7 +380,7 @@ export function AutoCadenciaRuleEditor({
                 className="flex-1 border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e] min-h-[44px] sm:min-h-0">
                 Cancelar
               </Button>
-              <Button onClick={handleSubmit} disabled={isSaving || projectHasRule || hasFirstMessageConflict || checkingConflict || !stepsValid}
+              <Button onClick={handleSubmit} disabled={isSaving || projectHasRule || hasFirstMessageConflict || checkingConflict || !stepsValid || !nameValid}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700 min-h-[44px] sm:min-h-0">
                 {isSaving ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>

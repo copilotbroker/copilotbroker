@@ -15,7 +15,7 @@ export function CadenciaPickerSheet({ open, onOpenChange, onSelectCadencia }: Ca
   const { rules, isLoading, isSaving, createRule, updateRule, fetchRuleSteps, fetchRules } = useAutoCadenciaRules();
   const [editorOpen, setEditorOpen] = useState(false);
 
-  const activeRules = useMemo(() => rules.filter((rule) => rule.is_active), [rules]);
+  const activeRules = useMemo(() => rules.filter((rule) => rule.is_active && rule.name.trim().toLowerCase() !== "cadência 10d"), [rules]);
 
   const handleSelectDefault = () => {
     onSelectCadencia({
