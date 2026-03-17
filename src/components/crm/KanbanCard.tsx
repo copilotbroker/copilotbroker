@@ -322,7 +322,7 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
         </h4>
 
         {/* Contact Info */}
-        <div className="space-y-1 mb-3">
+        <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Phone className="w-3 h-3 text-slate-500" />
             <span>{formatPhone(lead.whatsapp)}</span>
@@ -333,6 +333,7 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
               <span className="truncate">{lead.email}</span>
             </div>
           )}
+          <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
         </div>
 
         {/* Progress Bar */}
