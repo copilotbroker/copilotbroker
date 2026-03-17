@@ -107,10 +107,10 @@ export function KanbanCard({ lead, isNew, hasAutomacaoAtiva, hasCadenciaAtiva, o
   const actionConfig = useMemo(() => {
     if (lead.status === "scheduling") {
       if (lead.comparecimento === true) {
-        return { label: "Fazer Proposta", icon: FileText, color: "bg-violet-500/90 hover:bg-violet-500 text-white" };
+        return { label: "Fazer Proposta", icon: FileText, color: "bg-primary text-primary-foreground hover:opacity-90" };
       }
       if (lead.comparecimento === false) {
-        return { label: "Reagendar", icon: Calendar, color: "bg-orange-500/90 hover:bg-orange-500 text-white" };
+        return { label: "Reagendar", icon: Calendar, color: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground" };
       }
     }
     return ACTION_CONFIG[lead.status];
