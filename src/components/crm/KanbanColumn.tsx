@@ -132,7 +132,6 @@ export function KanbanColumn({
 
       <div
         ref={setRefs}
-        onScroll={handleScroll}
         className={cn(
           "flex-1 min-h-0 p-2 rounded-xl overflow-y-auto scrollbar-subtle",
           "bg-[#18181b]/50"
