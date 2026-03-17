@@ -183,41 +183,11 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     fetchProjects();
   }, [isAdmin, brokerId]);
 
-  // Fetch lead IDs with any active automation (cadência, follow-up, ou agendamento)
-  useEffect(() => {
-    const fetchAutomationLeadIds = async () => {
-      const [{ data: campaigns }, { data: scheduledQueue }] = await Promise.all([
-        (supabase
-          .from("whatsapp_campaigns")
-          .select("lead_id") as any)
-          .eq("status", "running")
-          .not("lead_id", "is", null),
-        supabase
-          .from("whatsapp_message_queue")
-          .select("lead_id")
-          .in("status", ["queued", "scheduled", "sending", "paused_by_system"])
-          .not("lead_id", "is", null),
-      ]);
-
-      const cadenceIds = new Set<string>(((campaigns || []) as Array<{ lead_id: string | null }>).map((c) => c.lead_id).filter((leadId): leadId is string => Boolean(leadId)));
-      const scheduledIds = ((scheduledQueue || []) as Array<{ lead_id: string | null }>).map((item) => item.lead_id).filter((leadId): leadId is string => Boolean(leadId));
-      setCadenciaLeadIds(cadenceIds);
-      setActiveAutomationLeadIds(new Set<string>([...cadenceIds, ...scheduledIds]));
-      queryClient.invalidateQueries({ queryKey: ["kanban-active-flow-ids"] });
-      queryClient.invalidateQueries({ queryKey: ["kanban-column"] });
-      queryClient.invalidateQueries({ queryKey: ["kanban-count"] });
-    };
-
-    fetchAutomationLeadIds();
-
-    const channel = supabase
-      .channel("kanban-active-automation")
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_campaigns" }, fetchAutomationLeadIds)
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_message_queue" }, fetchAutomationLeadIds)
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
+  const { activeFlowLeadIds } = useActiveFlowLeads({
+    brokerId,
+    isAdmin,
+    selectedBroker,
+  });
 
   // Realtime subscription for lead changes → invalidate column queries
   useEffect(() => {
