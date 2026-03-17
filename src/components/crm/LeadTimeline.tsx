@@ -129,6 +129,7 @@ export function LeadTimeline({ interactions, leadOrigin, leadOriginDetail, attri
 
       <div className="space-y-1">
         {interactions.map((interaction, index) => {
+          const formattedNotes = formatInteractionNotes(interaction.notes);
           const isCadencia = isCadenciaNote(interaction.notes);
           const brokerFromNotes = interaction.interaction_type === "atendimento_iniciado"
             ? extractBrokerFromNotes(interaction.notes)
@@ -150,7 +151,7 @@ export function LeadTimeline({ interactions, leadOrigin, leadOriginDetail, attri
           const Icon = meta.icon;
           const isAuto = AUTOMATION_TYPES.has(interaction.interaction_type);
           const isExpanded = expandedIds.has(interaction.id);
-          const hasDetails = !!interaction.notes || (interaction.old_status && interaction.new_status);
+          const hasDetails = !!formattedNotes || (interaction.old_status && interaction.new_status);
 
           // Time interval from next item (interactions are desc order)
           const nextInteraction = interactions[index + 1];
