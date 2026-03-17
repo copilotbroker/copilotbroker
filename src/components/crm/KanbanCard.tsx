@@ -312,7 +312,7 @@ export function KanbanCard({
             )}
 
             {lead.auto_first_message_sent && (
-              <Badge variant="outline" className="gap-1 border-crm-success/30 bg-crm-success/10 text-[10px] text-crm-success">
+              <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/10 text-[10px] text-primary">
                 <CheckCircle2 className="h-3 w-3" />
                 1ª msg
               </Badge>
