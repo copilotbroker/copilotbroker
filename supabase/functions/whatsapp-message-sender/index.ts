@@ -262,6 +262,78 @@ async function rescheduleNextStep(
   }
 }
 
+async function restoreLeadStatusAfterScheduledMessage(
+  supabase: ReturnType<typeof createClient>,
+  queueMsg: QueueMessage,
+  brokerId: string,
+) {
+  if (!queueMsg.lead_id || queueMsg.campaign_id) return;
+
+  const { data: remainingScheduled } = await supabase
+    .from("whatsapp_message_queue")
+    .select("id")
+    .eq("lead_id", queueMsg.lead_id)
+    .in("status", ["queued", "scheduled", "sending", "paused_by_system"])
+    .neq("id", queueMsg.id)
+    .limit(1);
+
+  if (remainingScheduled && remainingScheduled.length > 0) return;
+
+  const { data: interactions } = await supabase
+    .from("lead_interactions")
+    .select("notes, created_at")
+    .eq("lead_id", queueMsg.lead_id)
+    .eq("interaction_type", "whatsapp_manual")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const scheduledEvent = (interactions || []).find((interaction) => {
+    try {
+      const parsed = JSON.parse(interaction.notes || "{}");
+      return parsed?.kind === "scheduled_message" && parsed?.queueId === queueMsg.id;
+    } catch {
+      return false;
+    }
+  });
+
+  if (!scheduledEvent) return;
+
+  let restoreStatus: string | null = null;
+  try {
+    const parsed = JSON.parse(scheduledEvent.notes || "{}");
+    restoreStatus = typeof parsed?.previousStatus === "string" ? parsed.previousStatus : null;
+  } catch {
+    restoreStatus = null;
+  }
+
+  if (!restoreStatus || restoreStatus === "awaiting_docs") return;
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("status")
+    .eq("id", queueMsg.lead_id)
+    .maybeSingle();
+
+  if (!lead || (lead as { status: string }).status !== "awaiting_docs") return;
+
+  await supabase
+    .from("leads")
+    .update({ status: restoreStatus as any, updated_at: new Date().toISOString() })
+    .eq("id", queueMsg.lead_id);
+
+  await supabase
+    .from("lead_interactions")
+    .insert({
+      lead_id: queueMsg.lead_id,
+      broker_id: brokerId,
+      interaction_type: "status_change",
+      old_status: "awaiting_docs",
+      new_status: restoreStatus as any,
+      channel: "whatsapp",
+      notes: `Mensagem programada enviada — lead voltou para ${restoreStatus}`,
+    });
+}
+
 // Interface for instance data
 interface BrokerInstance {
   id: string;
@@ -641,6 +713,8 @@ app.post("/process", async (c) => {
         } catch (syncErr) {
           console.warn("Falha ao sincronizar com inbox:", syncErr);
         }
+
+        await restoreLeadStatusAfterScheduledMessage(supabase, queueMsg, instance.broker_id);
 
         // Move lead to "Atendimento" if still in "new" status (step 1 of campaign)
         if (queueMsg.lead_id && queueMsg.campaign_id && (!queueMsg.step_number || queueMsg.step_number === 1)) {
