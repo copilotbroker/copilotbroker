@@ -397,7 +397,7 @@ export function KanbanCard({
               <PopoverTrigger asChild>
                 <Button
                   size="sm"
-                  variant="info"
+                  variant="secondary"
                   onClick={(e) => e.stopPropagation()}
                   className="h-8 w-8 rounded-lg px-0"
                   title="Enviar ou programar WhatsApp"
