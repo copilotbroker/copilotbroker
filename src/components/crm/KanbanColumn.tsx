@@ -19,6 +19,7 @@ interface KanbanColumnProps {
   status: LeadStatus;
   filters: KanbanColumnFilters;
   newLeadIds?: Set<string>;
+  activeAutomationLeadIds?: Set<string>;
   cadenciaLeadIds?: Set<string>;
   onCancelCadencia?: (leadId: string) => void;
   onCardClick: (lead: CRMLead) => void;
@@ -50,7 +51,7 @@ const STATUS_SQUARE_COLORS: Record<LeadStatus, string> = {
 };
 
 export function KanbanColumn({
-  status, filters, newLeadIds, cadenciaLeadIds, onCancelCadencia,
+  status, filters, newLeadIds, activeAutomationLeadIds, cadenciaLeadIds, onCancelCadencia,
   onCardClick, onUpdateOrigin, onDelete, onIniciarAtendimento,
   onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda,
   onDispatchWhatsApp, onAddLead, onOpenProposta, onOpenReagendamento,
@@ -159,6 +160,7 @@ export function KanbanColumn({
                     <KanbanCard
                       lead={lead}
                       isNew={newLeadIds?.has(lead.id)}
+                      hasAutomacaoAtiva={activeAutomationLeadIds?.has(lead.id)}
                       hasCadenciaAtiva={cadenciaLeadIds?.has(lead.id)}
                       onCancelCadencia={onCancelCadencia}
                       onClick={() => onCardClick(lead)}
