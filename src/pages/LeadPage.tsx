@@ -903,6 +903,14 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         leadStatus={lead.status}
         onCreated={refreshLead}
       />
+      <CadenciaPickerSheet
+        open={cadenciaPickerOpen}
+        onOpenChange={setCadenciaPickerOpen}
+        onSelectCadencia={(cadenciaConfig) => {
+          setSelectedCadencia(cadenciaConfig);
+          setCadenciaOpen(true);
+        }}
+      />
       <CadenciaSheet
         open={cadenciaOpen}
         onOpenChange={setCadenciaOpen}
@@ -913,6 +921,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         brokerName={lead.broker?.name}
         brokerId={lead.broker?.id || ""}
         leadStatus={lead.status}
+        cadenceName={selectedCadencia?.name || "Cadência 10D"}
+        initialSteps={selectedCadencia?.steps}
         onCreated={refreshLead}
       />
       <TransferLeadDialog

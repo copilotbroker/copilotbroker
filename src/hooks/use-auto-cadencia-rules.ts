@@ -225,5 +225,5 @@ export function useAutoCadenciaRules() {
     return updateRule(id, { is_active });
   };
 
-  return { rules, isLoading, isSaving, fetchRules, createRule, updateRule, deleteRule, toggleRuleActive };
+  return { rules, isLoading, isSaving, fetchRules, fetchRuleSteps, createRule, updateRule, deleteRule, toggleRuleActive };
 }

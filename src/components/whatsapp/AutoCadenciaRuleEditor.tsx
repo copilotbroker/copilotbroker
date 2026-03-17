@@ -217,7 +217,16 @@ export function AutoCadenciaRuleEditor({
           <>
             <div className="flex-1 overflow-y-auto px-6 pb-2">
               <div className="space-y-5 mt-4">
-                {/* Project Selection */}
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Nome da cadência</Label>
+                  <Textarea
+                    value={ruleName}
+                    onChange={(e) => setRuleName(e.target.value)}
+                    placeholder="Ex.: Cadência 10D, Reengajamento, Pós-visita..."
+                    className="bg-[#141417] border-[#2a2a2e] text-white min-h-[44px]"
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label className="text-slate-300">Empreendimento</Label>
                   <Select value={projectId} onValueChange={handleProjectChange}>

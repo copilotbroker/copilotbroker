@@ -290,7 +290,7 @@ export function CadenciaSheet({
           <SheetHeader>
             <SheetTitle className="text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-emerald-400" />
-              Cadência 10D™
+              {cadenceName}
             </SheetTitle>
             <SheetDescription className="text-slate-400">
               Sequência automática para <span className="text-slate-200 font-medium">{leadName}</span>

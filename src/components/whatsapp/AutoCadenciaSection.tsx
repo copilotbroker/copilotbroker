@@ -83,7 +83,7 @@ export function AutoCadenciaSection() {
                     "px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide truncate max-w-[200px]",
                     rule.project_id ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-500/20 text-slate-300"
                   )}>
-                    {rule.project?.name || "🌐 Todos"}
+                    {rule.name || rule.project?.name || "Cadência"}
                   </span>
                   {rule.is_active ? (
                     <span className="flex items-center gap-1 text-xs text-emerald-400 shrink-0">
