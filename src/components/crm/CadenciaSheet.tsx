@@ -180,7 +180,7 @@ export function CadenciaSheet({
         .from("whatsapp_campaigns") as any)
         .insert({
           broker_id: brokerId,
-          name: `Cadência 10D - ${leadName}`,
+          name: `${cadenceName} - ${leadName}`,
           status: "running",
           total_leads: steps.length,
           lead_id: leadId,
