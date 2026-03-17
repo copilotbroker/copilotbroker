@@ -115,16 +115,25 @@ async function fetchActiveFlowLeadIds(filters: KanbanColumnFilters) {
   );
 }
 
+function applyEffectiveStatusFilter(query: any, status: LeadStatus, activeFlowLeadIds: string[]) {
+  if (activeFlowLeadIds.length === 0) {
+    return query.eq("status", status);
+  }
+
+  if (status === "awaiting_docs") {
+    return query.or(`status.eq.awaiting_docs,id.in.(${activeFlowLeadIds.join(",")})`);
+  }
+
+  return query
+    .eq("status", status)
+    .not("id", "in", `(${activeFlowLeadIds.join(",")})`);
+}
+
 function reconcileLeadStatus<T extends CRMLead>(lead: T, activeFlowLeadIds: Set<string>): T {
   if (lead.status !== "awaiting_docs" && activeFlowLeadIds.has(lead.id)) {
     return { ...lead, status: "awaiting_docs" };
   }
   return lead;
-}
-
-function filterLeadForColumn(lead: CRMLead, columnStatus: LeadStatus, activeFlowLeadIds: Set<string>) {
-  const effectiveStatus = activeFlowLeadIds.has(lead.id) ? "awaiting_docs" : lead.status;
-  return effectiveStatus === columnStatus;
 }
 
 export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters) {
@@ -135,9 +144,7 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     filters.searchTerm || "",
   ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm]);
 
-  const activeFlowKey = ["kanban-active-flow-ids", ...filtersKey];
-  const queryKey = ["kanban-column", status, ...filtersKey];
-  const countKey = ["kanban-count", status, ...filtersKey];
+  const activeFlowKey = ["kanban-active-flow-ids", filters.brokerId, filters.isAdmin, filters.selectedBroker];
 
   const { data: activeFlowLeadIds = new Set<string>() } = useQuery({
     queryKey: activeFlowKey,
@@ -146,20 +153,21 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     refetchInterval: 15_000,
   });
 
+  const activeFlowIdList = useMemo(() => Array.from(activeFlowLeadIds), [activeFlowLeadIds]);
+  const activeFlowSignature = useMemo(() => activeFlowIdList.slice().sort().join(","), [activeFlowIdList]);
+
+  const queryKey = ["kanban-column", status, ...filtersKey, activeFlowSignature];
+  const countKey = ["kanban-count", status, ...filtersKey, activeFlowSignature];
+
   const { data: totalCount = 0 } = useQuery({
     queryKey: countKey,
     queryFn: async () => {
-      let query = supabase.from("leads").select(KANBAN_SELECT).order("last_interaction_at", { ascending: false }).limit(1000);
+      let query = supabase.from("leads").select("id", { count: "exact", head: true });
       query = applyFilters(query, filters);
-      const { data, error } = await query;
+      query = applyEffectiveStatusFilter(query, status, activeFlowIdList);
+      const { count, error } = await query;
       if (error) throw error;
-      const leads = ((data || []) as any[]).map((lead: any) => ({
-        ...lead,
-        attribution: Array.isArray(lead.attribution) && lead.attribution.length > 0
-          ? lead.attribution[0]
-          : lead.attribution,
-      })) as CRMLead[];
-      return leads.filter((lead) => filterLeadForColumn(lead, status, activeFlowLeadIds)).length;
+      return count || 0;
     },
     staleTime: 10_000,
     refetchInterval: 15_000,
@@ -181,17 +189,16 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
         .range(pageParam, pageParam + PAGE_SIZE - 1);
 
       query = applyFilters(query, filters);
+      query = applyEffectiveStatusFilter(query, status, activeFlowIdList);
+
       const { data, error } = await query;
       if (error) throw error;
-      return ((data || []) as any[])
-        .map((lead: any) => ({
-          ...lead,
-          attribution: Array.isArray(lead.attribution) && lead.attribution.length > 0
-            ? lead.attribution[0]
-            : lead.attribution,
-        }))
-        .filter((lead) => filterLeadForColumn(lead as CRMLead, status, activeFlowLeadIds))
-        .map((lead) => reconcileLeadStatus(lead as CRMLead, activeFlowLeadIds)) as CRMLead[];
+      return ((data || []) as any[]).map((lead: any) => reconcileLeadStatus({
+        ...lead,
+        attribution: Array.isArray(lead.attribution) && lead.attribution.length > 0
+          ? lead.attribution[0]
+          : lead.attribution,
+      } as CRMLead, activeFlowLeadIds));
     },
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < PAGE_SIZE) return undefined;
