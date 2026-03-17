@@ -570,36 +570,33 @@ app.post("/process", async (c) => {
         }
       }
 
-      // DEDUP for campaign messages: same phone + step already sent (CROSS-CAMPAIGN)
-      // Checks across ALL campaigns, not just the current one, to prevent duplicates from concurrent campaign creation
-      if (queueMsg.campaign_id && stepNumber) {
+      // DEDUP for campaign messages: same lead + phone + step already sent (CROSS-CAMPAIGN)
+      // Only dedup when the same LEAD already received the same step — different leads with
+      // the same phone number (e.g. re-registrations or test entries) should NOT be deduped.
+      if (queueMsg.campaign_id && stepNumber && queueMsg.lead_id) {
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const { data: alreadySent } = await supabase
           .from("whatsapp_message_queue")
           .select("id")
-          .eq("phone", queueMsg.phone)
+          .eq("lead_id", queueMsg.lead_id)
           .eq("step_number", stepNumber)
           .eq("status", "sent")
           .neq("id", queueMsg.id)
           .gte("sent_at", oneDayAgo);
 
         if (alreadySent && alreadySent.length > 0) {
-          // Also check with lead_id for extra precision
-          const isLeadMatch = !queueMsg.lead_id || alreadySent.some(() => true);
-          if (isLeadMatch) {
-            await supabase
-              .from("whatsapp_message_queue")
-              .update({
-                status: "cancelled",
-                error_message: "Deduplicação cross-campaign: mesmo telefone já recebeu este step nas últimas 24h",
-                updated_at: new Date().toISOString()
-              })
-              .eq("id", queueMsg.id);
+          await supabase
+            .from("whatsapp_message_queue")
+            .update({
+              status: "cancelled",
+              error_message: "Deduplicação cross-campaign: mesmo lead já recebeu este step nas últimas 24h",
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", queueMsg.id);
 
-            console.log(`Dedup cross-campaign: phone ${queueMsg.phone} already received step ${stepNumber} in last 24h`);
-            results.push({ brokerId: instance.broker_id, sent: false, error: "deduplicated_cross_campaign" });
-            continue;
-          }
+          console.log(`Dedup cross-campaign: lead ${queueMsg.lead_id} already received step ${stepNumber} in last 24h`);
+          results.push({ brokerId: instance.broker_id, sent: false, error: "deduplicated_cross_campaign" });
+          continue;
         }
       }
 
