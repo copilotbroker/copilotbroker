@@ -14,10 +14,12 @@ interface LeadLabelsPickerProps {
 const chipClassName = "inline-flex items-center rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground";
 
 export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: LeadLabelsPickerProps) {
+  const [open, setOpen] = useState(false);
   const { labels, leadLabels, appliedLabelIds, isLoading, isSyncing, isToggling, syncLabels, toggleLabel } = useLeadWhatsAppLabels({
     leadId,
     brokerId,
     phone,
+    enabled: compact ? open : true,
   });
 
   const visibleLeadLabels = leadLabels

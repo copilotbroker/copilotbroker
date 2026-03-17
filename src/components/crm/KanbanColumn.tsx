@@ -206,5 +206,6 @@ export function KanbanColumn({
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
