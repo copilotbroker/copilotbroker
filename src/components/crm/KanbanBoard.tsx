@@ -464,8 +464,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
       } as any);
     }
 
-    setActiveAutomationLeadIds(prev => new Set(prev).add(leadId));
-
     toast.success("Mensagem programada");
     queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
     invalidateAll();
