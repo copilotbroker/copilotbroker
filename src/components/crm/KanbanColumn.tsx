@@ -34,7 +34,8 @@ interface KanbanColumnProps {
   onOpenProposta?: (lead: CRMLead) => void;
   onOpenReagendamento?: (leadId: string) => void;
   onLeadsLoaded?: (leads: CRMLead[]) => void;
-  onWhatsAppClick?: (leadId: string) => void;
+  onSendWhatsAppNow?: (leadId: string, content: string) => Promise<void>;
+  onScheduleWhatsApp?: (leadId: string, content: string, scheduledAt: string) => Promise<void>;
   onCallClick?: (leadId: string) => void;
 }
 
@@ -53,7 +54,7 @@ export function KanbanColumn({
   onCardClick, onUpdateOrigin, onDelete, onIniciarAtendimento,
   onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda,
   onDispatchWhatsApp, onAddLead, onOpenProposta, onOpenReagendamento,
-  onLeadsLoaded, onWhatsAppClick, onCallClick,
+  onLeadsLoaded, onSendWhatsAppNow, onScheduleWhatsApp, onCallClick,
 }: KanbanColumnProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const config = STATUS_CONFIG[status];
@@ -170,7 +171,8 @@ export function KanbanColumn({
                       onOpenPerda={onOpenPerda}
                       onOpenProposta={() => onOpenProposta?.(lead)}
                       onOpenReagendamento={onOpenReagendamento}
-                      onWhatsAppClick={onWhatsAppClick}
+                      onSendWhatsAppNow={onSendWhatsAppNow}
+                      onScheduleWhatsApp={onScheduleWhatsApp}
                       onCallClick={onCallClick}
                     />
                   </div>

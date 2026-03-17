@@ -1,10 +1,16 @@
-import { useMemo } from "react";
-import { Clock, MessageCircle, Plus, UserX, Trash2, Mail, Phone, CheckCircle2, Lock, RotateCw, AlertTriangle, Play, Calendar, FileText, Trophy, Square } from "lucide-react";
+import { useMemo, useState } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Clock, MessageCircle, Send, CalendarClock, Plus, UserX, Trash2, Mail, Phone, CheckCircle2, Lock, RotateCw, AlertTriangle, Play, Calendar, FileText, Trophy, Square } from "lucide-react";
 import { CRMLead, LeadStatus, STATUS_CONFIG, getOriginDisplayLabel, getOriginType } from "@/types/crm";
 import { cn } from "@/lib/utils";
 
 import { OriginCombobox } from "./OriginCombobox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog,
@@ -33,7 +39,8 @@ interface KanbanCardProps {
   onOpenPerda?: (leadId: string, currentStatus: LeadStatus) => void;
   onOpenProposta?: (leadId: string) => void;
   onOpenReagendamento?: (leadId: string) => void;
-  onWhatsAppClick?: (leadId: string) => void;
+  onSendWhatsAppNow?: (leadId: string, content: string) => Promise<void>;
+  onScheduleWhatsApp?: (leadId: string, content: string, scheduledAt: string) => Promise<void>;
   onCallClick?: (leadId: string) => void;
 }
 
@@ -86,10 +93,15 @@ const RING_PULSE_GLOW_STYLE: React.CSSProperties = {
   boxShadow: "0 0 20px rgba(52,211,153,0.3)",
 };
 
-export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, onClick, onUpdateOrigin, onDelete, onIniciarAtendimento, onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda, onOpenProposta, onOpenReagendamento, onWhatsAppClick, onCallClick }: KanbanCardProps) {
-  
+export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, onClick, onUpdateOrigin, onDelete, onIniciarAtendimento, onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda, onOpenProposta, onOpenReagendamento, onSendWhatsAppNow, onScheduleWhatsApp, onCallClick }: KanbanCardProps) {
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [messageText, setMessageText] = useState("");
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>(new Date());
+  const [scheduleTime, setScheduleTime] = useState(() => format(new Date(Date.now() + 60 * 60 * 1000), "HH:mm"));
+  const [isSendingNow, setIsSendingNow] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
 
-  // Dynamic action config for scheduling status based on comparecimento
   const actionConfig = useMemo(() => {
     if (lead.status === "scheduling") {
       if (lead.comparecimento === true) {
@@ -143,6 +155,15 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
   const cleanPhone = lead.whatsapp.replace(/\D/g, "");
   const originType = getOriginType(lead.lead_origin);
   const progress = STATUS_PROGRESS[lead.status] || 0;
+  const canSubmitMessage = !!messageText.trim();
+
+  const buildScheduledDateTime = () => {
+    if (!scheduleDate || !scheduleTime) return null;
+    const [hours, minutes] = scheduleTime.split(":").map(Number);
+    const nextDate = new Date(scheduleDate);
+    nextDate.setHours(hours || 0, minutes || 0, 0, 0);
+    return nextDate;
+  };
 
   const handleOriginSelect = async (origin: string) => {
     if (onUpdateOrigin) await onUpdateOrigin(lead.id, origin);
@@ -170,6 +191,35 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
       case "docs_received":
         onOpenVenda?.(lead.id);
         break;
+    }
+  };
+
+  const handleSendNow = async () => {
+    const text = messageText.trim();
+    if (!text || !onSendWhatsAppNow || isSendingNow) return;
+    setIsSendingNow(true);
+    try {
+      await onSendWhatsAppNow(lead.id, text);
+      setMessageText("");
+      setComposerOpen(false);
+    } finally {
+      setIsSendingNow(false);
+    }
+  };
+
+  const handleScheduleMessage = async () => {
+    const text = messageText.trim();
+    const scheduledDate = buildScheduledDateTime();
+    if (!text || !scheduledDate || !onScheduleWhatsApp || isScheduling) return;
+    if (scheduledDate.getTime() <= Date.now()) return;
+    setIsScheduling(true);
+    try {
+      await onScheduleWhatsApp(lead.id, text, scheduledDate.toISOString());
+      setMessageText("");
+      setScheduleOpen(false);
+      setComposerOpen(false);
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -311,21 +361,71 @@ export function KanbanCard({ lead, isNew, hasCadenciaAtiva, onCancelCadencia, on
             </button>
           )}
 
-          {/* WhatsApp button (show when not in "new" status since "Iniciar Atendimento" already opens WA) */}
+          {/* WhatsApp composer */}
           {lead.status !== "new" && (
-            <a
-              href={`https://wa.me/55${cleanPhone}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => { e.stopPropagation(); onWhatsAppClick?.(lead.id); }}
-              className={cn(
-                "flex items-center justify-center p-2 min-h-[40px] md:min-h-0 md:p-1.5",
-                "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg",
-                "transition-all duration-150"
-              )}
-            >
-              <MessageCircle className="w-4 h-4 md:w-3.5 md:h-3.5" />
-            </a>
+            <Popover open={composerOpen} onOpenChange={setComposerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className={cn(
+                    "flex items-center justify-center p-2 min-h-[40px] md:min-h-0 md:p-1.5",
+                    "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg",
+                    "transition-all duration-150"
+                  )}
+                  title="Enviar ou programar WhatsApp"
+                >
+                  <MessageCircle className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-80 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Mensagem para {lead.name}</p>
+                  <p className="text-xs text-muted-foreground">Escreva aqui e escolha entre enviar agora ou programar.</p>
+                </div>
+                <Textarea
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Digite sua mensagem..."
+                  className="min-h-[96px] resize-none"
+                />
+                <div className="flex items-end gap-2">
+                  <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                    <PopoverTrigger asChild>
+                      <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canSubmitMessage || isScheduling || isSendingNow}>
+                        <CalendarClock className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-80 space-y-3 p-3">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Programar mensagem</p>
+                        <p className="text-xs text-muted-foreground">Use o mesmo padrão do Inbox para escolher dia e horário.</p>
+                      </div>
+                      <DatePickerCalendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="rounded-md border border-border" />
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground">Horário</label>
+                        <input
+                          type="time"
+                          value={scheduleTime}
+                          onChange={(e) => setScheduleTime(e.target.value)}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                        />
+                      </div>
+                      <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+                        {buildScheduledDateTime()
+                          ? `Envio para ${format(buildScheduledDateTime()!, "dd/MM 'às' HH:mm", { locale: ptBR })}`
+                          : "Selecione uma data e horário válidos."}
+                      </div>
+                      <Button className="w-full" onClick={handleScheduleMessage} disabled={!canSubmitMessage || isScheduling || !buildScheduledDateTime()}>
+                        {isScheduling ? "Programando..." : "Confirmar agendamento"}
+                      </Button>
+                    </PopoverContent>
+                  </Popover>
+                  <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={(e) => { e.stopPropagation(); void handleSendNow(); }} disabled={!canSubmitMessage || isSendingNow || isScheduling}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
 
           {/* Call button */}
