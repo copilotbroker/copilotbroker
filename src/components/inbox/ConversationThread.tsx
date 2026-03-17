@@ -19,13 +19,16 @@ import {
   Check,
   CheckCheck,
   Clock3,
+  CalendarClock,
 } from "lucide-react";
 import { CadenceCountdown } from "./CadenceCountdown";
 import { MessageMedia } from "./MessageMedia";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Conversation, ConversationMessage, OutboundMessagePayload } from "@/hooks/use-conversations";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Conversation, ConversationMessage, OutboundMessagePayload, ScheduledConversationMessage } from "@/hooks/use-conversations";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -35,8 +38,11 @@ import { toast } from "sonner";
 interface ConversationThreadProps {
   conversation: Conversation;
   messages: ConversationMessage[];
+  scheduledMessages: ScheduledConversationMessage[];
   isLoading: boolean;
   onSendMessage: (payload: string | OutboundMessagePayload, sentBy?: string) => Promise<unknown>;
+  onScheduleMessage: (content: string, scheduledAt: string) => Promise<unknown>;
+  onCancelScheduledMessage: (queueId: string) => Promise<unknown>;
   onBack: () => void;
   onMarkAsRead: () => void;
   onArchive: () => void;
@@ -68,12 +74,16 @@ const getMessageStatusIcon = (status?: string) => {
 };
 
 const formatMessageDay = (date: string) => format(new Date(date), "d 'de' MMMM", { locale: ptBR });
+const formatScheduledAt = (date: string) => format(new Date(date), "dd/MM 'às' HH:mm", { locale: ptBR });
 
 export function ConversationThread({
   conversation,
   messages,
+  scheduledMessages,
   isLoading,
   onSendMessage,
+  onScheduleMessage,
+  onCancelScheduledMessage,
   onBack,
   onMarkAsRead,
   onArchive,
@@ -90,6 +100,10 @@ export function ConversationThread({
 }: ConversationThreadProps) {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>(new Date());
+  const [scheduleTime, setScheduleTime] = useState(() => format(new Date(Date.now() + 60 * 60 * 1000), "HH:mm"));
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -102,6 +116,7 @@ export function ConversationThread({
   const isAiActive = conversation.ai_mode === "ai_active";
   const isCopilot = conversation.ai_mode === "copilot";
   const hasResolvedName = !!conversation.display_name && conversation.display_name !== conversation.phone;
+  const canScheduleText = !!inputValue.trim() && !pendingFile;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -122,6 +137,14 @@ export function ConversationThread({
     if (pendingFile.type.startsWith("video/")) return "video" as const;
     return "document" as const;
   }, [pendingFile]);
+
+  const buildScheduledDateTime = () => {
+    if (!scheduleDate || !scheduleTime) return null;
+    const [hours, minutes] = scheduleTime.split(":").map(Number);
+    const nextDate = new Date(scheduleDate);
+    nextDate.setHours(hours || 0, minutes || 0, 0, 0);
+    return nextDate;
+  };
 
   const handleSend = async () => {
     const text = inputValue.trim();
@@ -168,6 +191,27 @@ export function ConversationThread({
       toast.error("Não foi possível enviar o anexo");
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleSchedule = async () => {
+    const text = inputValue.trim();
+    const scheduledDate = buildScheduledDateTime();
+
+    if (!text || !scheduledDate) return;
+    if (scheduledDate.getTime() <= Date.now()) {
+      toast.error("Escolha uma data e horário no futuro");
+      return;
+    }
+
+    setIsScheduling(true);
+    try {
+      await onScheduleMessage(text, scheduledDate.toISOString());
+      setInputValue("");
+      setScheduleOpen(false);
+      inputRef.current?.focus();
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -289,6 +333,30 @@ export function ConversationThread({
 
       {conversation.lead_id && <CadenceCountdown leadId={conversation.lead_id} brokerId={conversation.broker_id} />}
 
+      {scheduledMessages.length > 0 && (
+        <div className="border-b border-border bg-card/60 px-3 py-2">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium text-foreground">
+            <CalendarClock className="h-3.5 w-3.5 text-primary" /> Mensagens programadas desta conversa
+          </div>
+          <div className="space-y-2">
+            {scheduledMessages.map((item) => (
+              <div key={item.id} className="flex items-start justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2">
+                <div className="min-w-0">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="text-[10px]">{item.status}</Badge>
+                    <span className="text-[10px] text-muted-foreground">{formatScheduledAt(item.scheduled_at)}</span>
+                  </div>
+                  <p className="text-sm text-foreground whitespace-pre-wrap break-words">{item.message}</p>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => onCancelScheduledMessage(item.id)}>
+                  Cancelar
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3">
         {isLoading ? (
           <div className="flex justify-center py-8"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
@@ -353,7 +421,7 @@ export function ConversationThread({
         </div>
       )}
 
-      <div className="space-y-2 border-t border-border px-3 pb-3 pt-2 pb-safe">
+      <div className="space-y-2 border-t border-border px-3 pt-2 pb-3 pb-safe">
         {pendingFile && pendingType && (
           <div className="flex items-center justify-between rounded-xl border border-border bg-card/90 px-3 py-2 text-sm text-foreground">
             <div className="min-w-0">
@@ -398,6 +466,35 @@ export function ConversationThread({
             className="max-h-[120px] min-h-[36px] resize-none py-2 text-sm"
             rows={1}
           />
+          <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
+            <PopoverTrigger asChild>
+              <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canScheduleText || isScheduling || isSending} title="Programar envio">
+                <CalendarClock className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 space-y-3 p-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">Programar mensagem</p>
+                <p className="text-xs text-muted-foreground">Use o texto digitado no campo e escolha dia e horário.</p>
+              </div>
+              <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="rounded-md border border-border" />
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Horário</label>
+                <input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </div>
+              <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+                {buildScheduledDateTime() ? `Envio para ${formatScheduledAt(buildScheduledDateTime()!.toISOString())}` : "Selecione uma data e horário válidos."}
+              </div>
+              <Button className="w-full" onClick={handleSchedule} disabled={!canScheduleText || isScheduling}>
+                {isScheduling ? "Programando..." : "Confirmar agendamento"}
+              </Button>
+            </PopoverContent>
+          </Popover>
           <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
             <Send className="h-4 w-4" />
           </Button>
