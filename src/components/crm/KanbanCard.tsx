@@ -1,10 +1,16 @@
-import { useMemo } from "react";
-import { Clock, MessageCircle, Plus, UserX, Trash2, Mail, Phone, CheckCircle2, Lock, RotateCw, AlertTriangle, Play, Calendar, FileText, Trophy, Square } from "lucide-react";
+import { useMemo, useState } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Clock, MessageCircle, Send, CalendarClock, UserX, Trash2, Mail, Phone, CheckCircle2, Lock, RotateCw, AlertTriangle, Play, Calendar, FileText, Trophy, Square } from "lucide-react";
 import { CRMLead, LeadStatus, STATUS_CONFIG, getOriginDisplayLabel, getOriginType } from "@/types/crm";
 import { cn } from "@/lib/utils";
 
 import { OriginCombobox } from "./OriginCombobox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog,
@@ -33,7 +39,8 @@ interface KanbanCardProps {
   onOpenPerda?: (leadId: string, currentStatus: LeadStatus) => void;
   onOpenProposta?: (leadId: string) => void;
   onOpenReagendamento?: (leadId: string) => void;
-  onWhatsAppClick?: (leadId: string) => void;
+  onSendWhatsAppNow?: (leadId: string, content: string) => Promise<void>;
+  onScheduleWhatsApp?: (leadId: string, content: string, scheduledAt: string) => Promise<void>;
   onCallClick?: (leadId: string) => void;
 }
 
