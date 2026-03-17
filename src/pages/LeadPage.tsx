@@ -19,6 +19,7 @@ import { useLeadInteractions } from "@/hooks/use-lead-interactions";
 import { usePropostas } from "@/hooks/use-propostas";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useCadenciaAtiva } from "@/hooks/use-cadencia-ativa";
+import type { AutoCadenciaStep } from "@/hooks/use-auto-cadencia-rules";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, Phone, Mail, Building2, Clock, Calendar, DollarSign, Trophy,
