@@ -503,7 +503,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     }
 
     setActiveAutomationLeadIds(prev => new Set(prev).add(leadId));
-    setCadenciaLeadIds(prev => new Set(prev).add(leadId));
 
     toast.success("Mensagem programada");
     queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
