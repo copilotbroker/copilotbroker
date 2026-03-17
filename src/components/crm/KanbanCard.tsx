@@ -281,7 +281,7 @@ export function KanbanCard({
               )}
 
               {isNew && (
-                <Badge className="bg-primary/15 text-primary hover:bg-primary/15 text-[10px] uppercase tracking-wide">
+                <Badge className="bg-crm-info/15 text-crm-info hover:bg-crm-info/15 text-[10px] uppercase tracking-wide">
                   Novo
                 </Badge>
               )}
