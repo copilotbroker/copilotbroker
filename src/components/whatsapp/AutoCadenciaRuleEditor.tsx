@@ -380,7 +380,7 @@ export function AutoCadenciaRuleEditor({
                 className="flex-1 border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e] min-h-[44px] sm:min-h-0">
                 Cancelar
               </Button>
-              <Button onClick={handleSubmit} disabled={isSaving || projectHasRule || hasFirstMessageConflict || checkingConflict || !stepsValid}
+              <Button onClick={handleSubmit} disabled={isSaving || projectHasRule || hasFirstMessageConflict || checkingConflict || !stepsValid || !nameValid}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700 min-h-[44px] sm:min-h-0">
                 {isSaving ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>
