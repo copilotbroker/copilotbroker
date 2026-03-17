@@ -226,7 +226,8 @@ export function CadenciaSheet({
         send_if_replied: i === 0 ? true : step.sendIfReplied,
       }));
 
-      await supabase.from("campaign_steps").insert(stepsToInsert);
+      const { error: stepsErr } = await supabase.from("campaign_steps").insert(stepsToInsert);
+      if (stepsErr) throw stepsErr;
 
       // Schedule messages with working hours adjustment
       const phone = formatPhoneE164(leadPhone);
@@ -264,18 +265,20 @@ export function CadenciaSheet({
 
       // Move lead to Copiloto Ativo (awaiting_docs)
       const now = new Date().toISOString();
-      await supabase.from("leads").update({
+      const { error: leadUpdateErr } = await supabase.from("leads").update({
         status: "awaiting_docs" as any,
         atendimento_iniciado_em: now,
         status_distribuicao: "atendimento_iniciado" as any,
         reserva_expira_em: null,
+        updated_at: now,
       }).eq("id", leadId);
+      if (leadUpdateErr) throw leadUpdateErr;
 
       const cadUser = (await supabase.auth.getUser()).data.user;
       const { data: cadBroker } = await supabase
         .from("brokers").select("id, name").eq("user_id", cadUser?.id ?? "").single();
 
-      await supabase.from("lead_interactions").insert({
+      const { error: statusInteractionErr } = await supabase.from("lead_interactions").insert({
         lead_id: leadId,
         interaction_type: "atendimento_iniciado" as any,
         old_status: leadStatus as any,
@@ -284,16 +287,18 @@ export function CadenciaSheet({
         notes: `Lead movido para Copiloto Ativo ao ativar Cadência 10D por ${cadBroker?.name || "corretor"}`,
         created_by: cadUser?.id,
       });
+      if (statusInteractionErr) throw statusInteractionErr;
 
       // Log interaction
       const stepsPreview = steps.map((s, i) => `Etapa ${i + 1} (${formatDelay(i === 0 ? 0 : s.delayMinutes)}): ${s.messageContent}`).join("\n");
-      await supabase.from("lead_interactions").insert({
+      const { error: noteInteractionErr } = await supabase.from("lead_interactions").insert({
         lead_id: leadId,
         interaction_type: "note_added" as any,
         channel: "whatsapp",
         notes: `⚡ Cadência 10D ativada (${steps.length} etapas):\n\n${stepsPreview}`,
-        created_by: (await supabase.auth.getUser()).data.user?.id,
+        created_by: cadUser?.id,
       });
+      if (noteInteractionErr) throw noteInteractionErr;
 
       toast.success("Cadência 10D ativada!");
       onCreated?.();
