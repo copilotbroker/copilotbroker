@@ -262,8 +262,8 @@ export function KanbanCard({
         "transition-[border-color,transform,opacity,box-shadow] duration-200 ease-out",
         "hover:border-primary/50 hover:shadow-[0_8px_30px_hsl(240_10%_3%_/_0.35)]",
         isStale && !hasAutomacaoAtiva && "opacity-60",
-        hasAutomacaoAtiva && "border-primary/40",
-        isNew && "ring-1 ring-primary/40"
+        hasAutomacaoAtiva && "border-crm-success/40",
+        isNew && "ring-1 ring-crm-info/40"
       )}
     >
       <div className="p-3">
