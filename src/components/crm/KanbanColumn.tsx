@@ -50,7 +50,7 @@ const STATUS_SQUARE_COLORS: Record<LeadStatus, string> = {
 };
 
 export function KanbanColumn({
-  status, filters, newLeadIds, activeAutomationLeadIds, cadenciaLeadIds, onCancelCadencia,
+  status, filters, newLeadIds, activeFlowLeadIds, onCancelCadencia,
   onCardClick, onUpdateOrigin, onDelete, onIniciarAtendimento,
   onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda,
   onDispatchWhatsApp, onAddLead, onOpenProposta, onOpenReagendamento,
