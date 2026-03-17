@@ -675,12 +675,48 @@ export function useConversationMessages(
     }
 
     if (conversation.lead_id) {
+      const previousStatus = conversation.lead?.status || "info_sent";
+
+      if (previousStatus !== "awaiting_docs") {
+        const { error: leadUpdateError } = await supabase
+          .from("leads")
+          .update({
+            status: "awaiting_docs",
+            atendimento_iniciado_em: nowIso,
+            status_distribuicao: "atendimento_iniciado",
+            reserva_expira_em: null,
+            updated_at: nowIso,
+          } as any)
+          .eq("id", conversation.lead_id);
+
+        if (leadUpdateError) {
+          console.error("Erro ao mover lead para Copiloto Ativo:", leadUpdateError);
+        } else {
+          await supabase.from("lead_interactions").insert({
+            lead_id: conversation.lead_id,
+            interaction_type: "status_change" as any,
+            old_status: previousStatus as any,
+            new_status: "awaiting_docs" as any,
+            channel: "whatsapp",
+            broker_id: conversation.broker_id,
+            notes: `Lead movido para Copiloto Ativo por mensagem programada (${new Date(scheduledAt).toLocaleString("pt-BR")})`,
+          } as any);
+        }
+      }
+
       await supabase.from("lead_interactions").insert({
         lead_id: conversation.lead_id,
         interaction_type: "whatsapp_manual" as any,
         channel: "whatsapp",
         broker_id: conversation.broker_id,
-        notes: `Mensagem WhatsApp programada para ${new Date(scheduledAt).toLocaleString("pt-BR")}:\n\n${trimmedContent}`,
+        notes: JSON.stringify({
+          kind: "scheduled_message",
+          action: "scheduled",
+          queueId: (queueItem as ScheduledConversationMessage).id,
+          previousStatus,
+          scheduledAt,
+          message: trimmedContent,
+        }),
       } as any);
     }
 
@@ -714,6 +750,58 @@ export function useConversationMessages(
     }
 
     if (conversation?.lead_id && target) {
+      const { data: interactions } = await supabase
+        .from("lead_interactions")
+        .select("notes, created_at")
+        .eq("lead_id", conversation.lead_id)
+        .eq("interaction_type", "whatsapp_manual")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      const scheduledEvent = (interactions || []).find((interaction) => {
+        try {
+          const parsed = JSON.parse(interaction.notes || "{}");
+          return parsed?.kind === "scheduled_message" && parsed?.queueId === queueId;
+        } catch {
+          return false;
+        }
+      });
+
+      let restoreStatus: string | null = null;
+      try {
+        const parsed = JSON.parse(scheduledEvent?.notes || "{}");
+        restoreStatus = typeof parsed?.previousStatus === "string" ? parsed.previousStatus : null;
+      } catch {
+        restoreStatus = null;
+      }
+
+      if (restoreStatus && restoreStatus !== "awaiting_docs") {
+        const { data: remainingScheduled } = await supabase
+          .from("whatsapp_message_queue")
+          .select("id")
+          .eq("lead_id", conversation.lead_id)
+          .in("status", [...SCHEDULED_QUEUE_ACTIVE_STATUSES])
+          .neq("id", queueId)
+          .limit(1);
+
+        if (!remainingScheduled?.length) {
+          await supabase
+            .from("leads")
+            .update({ status: restoreStatus as any, updated_at: new Date().toISOString() } as any)
+            .eq("id", conversation.lead_id);
+
+          await supabase.from("lead_interactions").insert({
+            lead_id: conversation.lead_id,
+            interaction_type: "status_change" as any,
+            old_status: "awaiting_docs" as any,
+            new_status: restoreStatus as any,
+            channel: "whatsapp",
+            broker_id: conversation.broker_id,
+            notes: `Lead voltou para ${restoreStatus} após cancelamento da mensagem programada`,
+          } as any);
+        }
+      }
+
       await supabase.from("lead_interactions").insert({
         lead_id: conversation.lead_id,
         interaction_type: "note_added" as any,

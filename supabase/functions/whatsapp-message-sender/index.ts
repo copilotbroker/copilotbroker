@@ -714,6 +714,8 @@ app.post("/process", async (c) => {
           console.warn("Falha ao sincronizar com inbox:", syncErr);
         }
 
+        await restoreLeadStatusAfterScheduledMessage(supabase, queueMsg, instance.broker_id);
+
         // Move lead to "Atendimento" if still in "new" status (step 1 of campaign)
         if (queueMsg.lead_id && queueMsg.campaign_id && (!queueMsg.step_number || queueMsg.step_number === 1)) {
           const { data: currentLead } = await supabase
