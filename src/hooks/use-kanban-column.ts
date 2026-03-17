@@ -4,6 +4,7 @@ import { CRMLead, LeadStatus } from "@/types/crm";
 import { useMemo } from "react";
 
 const PAGE_SIZE = 30;
+const ACTIVE_FLOW_STATUSES = ["queued", "scheduled", "sending", "paused_by_system"] as const;
 
 const KANBAN_SELECT = `
   id, name, whatsapp, email, created_at, source, status,
@@ -71,6 +72,70 @@ function applyFilters(query: any, filters: KanbanColumnFilters) {
   return query;
 }
 
+async function fetchActiveFlowLeadIds(filters: KanbanColumnFilters) {
+  let campaignsQuery = supabase
+    .from("whatsapp_campaigns")
+    .select("lead_id")
+    .eq("status", "running")
+    .not("lead_id", "is", null);
+
+  let queueQuery = supabase
+    .from("whatsapp_message_queue")
+    .select("lead_id")
+    .in("status", [...ACTIVE_FLOW_STATUSES])
+    .not("lead_id", "is", null);
+
+  if (!filters.isAdmin && filters.brokerId) {
+    campaignsQuery = campaignsQuery.eq("broker_id", filters.brokerId);
+    queueQuery = queueQuery.eq("broker_id", filters.brokerId);
+  }
+
+  if (filters.selectedBroker && filters.selectedBroker !== "all") {
+    if (filters.selectedBroker === "enove") {
+      campaignsQuery = campaignsQuery.is("broker_id", null);
+      queueQuery = queueQuery.is("broker_id", null);
+    } else {
+      campaignsQuery = campaignsQuery.eq("broker_id", filters.selectedBroker);
+      queueQuery = queueQuery.eq("broker_id", filters.selectedBroker);
+    }
+  }
+
+  const [{ data: campaigns, error: campaignsError }, { data: queueItems, error: queueError }] = await Promise.all([
+    campaignsQuery,
+    queueQuery,
+  ]);
+
+  if (campaignsError) throw campaignsError;
+  if (queueError) throw queueError;
+
+  return new Set<string>(
+    [...(campaigns || []), ...(queueItems || [])]
+      .map((row: { lead_id: string | null }) => row.lead_id)
+      .filter((leadId): leadId is string => Boolean(leadId))
+  );
+}
+
+function applyEffectiveStatusFilter(query: any, status: LeadStatus, activeFlowLeadIds: string[]) {
+  if (activeFlowLeadIds.length === 0) {
+    return query.eq("status", status);
+  }
+
+  if (status === "awaiting_docs") {
+    return query.or(`status.eq.awaiting_docs,id.in.(${activeFlowLeadIds.join(",")})`);
+  }
+
+  return query
+    .eq("status", status)
+    .not("id", "in", `(${activeFlowLeadIds.join(",")})`);
+}
+
+function reconcileLeadStatus<T extends CRMLead>(lead: T, activeFlowLeadIds: Set<string>): T {
+  if (lead.status !== "awaiting_docs" && activeFlowLeadIds.has(lead.id)) {
+    return { ...lead, status: "awaiting_docs" };
+  }
+  return lead;
+}
+
 export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters) {
   const filtersKey = useMemo(() => [
     filters.brokerId, filters.isAdmin, filters.projectId,
@@ -79,19 +144,33 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     filters.searchTerm || "",
   ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm]);
 
-  const queryKey = ["kanban-column", status, ...filtersKey];
-  const countKey = ["kanban-count", status, ...filtersKey];
+  const activeFlowKey = ["kanban-active-flow-ids", filters.brokerId, filters.isAdmin, filters.selectedBroker];
+
+  const { data: activeFlowLeadIds = new Set<string>() } = useQuery({
+    queryKey: activeFlowKey,
+    queryFn: () => fetchActiveFlowLeadIds(filters),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+  });
+
+  const activeFlowIdList = useMemo(() => Array.from(activeFlowLeadIds), [activeFlowLeadIds]);
+  const activeFlowSignature = useMemo(() => activeFlowIdList.slice().sort().join(","), [activeFlowIdList]);
+
+  const queryKey = ["kanban-column", status, ...filtersKey, activeFlowSignature];
+  const countKey = ["kanban-count", status, ...filtersKey, activeFlowSignature];
 
   const { data: totalCount = 0 } = useQuery({
     queryKey: countKey,
     queryFn: async () => {
-      let query = supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", status);
+      let query = supabase.from("leads").select("id", { count: "exact", head: true });
       query = applyFilters(query, filters);
+      query = applyEffectiveStatusFilter(query, status, activeFlowIdList);
       const { count, error } = await query;
       if (error) throw error;
       return count || 0;
     },
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchInterval: 15_000,
   });
 
   const {
@@ -106,26 +185,28 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
       let query = supabase
         .from("leads")
         .select(KANBAN_SELECT)
-        .eq("status", status)
         .order("last_interaction_at", { ascending: false })
         .range(pageParam, pageParam + PAGE_SIZE - 1);
 
       query = applyFilters(query, filters);
+      query = applyEffectiveStatusFilter(query, status, activeFlowIdList);
+
       const { data, error } = await query;
       if (error) throw error;
-      return ((data || []) as any[]).map((lead: any) => ({
+      return ((data || []) as any[]).map((lead: any) => reconcileLeadStatus({
         ...lead,
         attribution: Array.isArray(lead.attribution) && lead.attribution.length > 0
           ? lead.attribution[0]
           : lead.attribution,
-      })) as unknown as CRMLead[];
+      } as CRMLead, activeFlowLeadIds));
     },
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < PAGE_SIZE) return undefined;
       return allPages.reduce((acc, page) => acc + page.length, 0);
     },
     initialPageParam: 0,
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchInterval: 15_000,
   });
 
   const leads = useMemo(() => data?.pages.flat() ?? [], [data]);
@@ -139,3 +220,4 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     fetchNextPage,
   };
 }
+

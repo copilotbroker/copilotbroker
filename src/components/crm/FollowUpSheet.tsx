@@ -147,7 +147,8 @@ export function FollowUpSheet({
         send_if_replied: i === 0 ? true : step.sendIfReplied || false,
       }));
 
-      await supabase.from("campaign_steps").insert(stepsToInsert);
+      const { error: stepsErr } = await supabase.from("campaign_steps").insert(stepsToInsert);
+      if (stepsErr) throw stepsErr;
 
       // Schedule messages
       const phone = formatPhoneE164(leadPhone);
@@ -183,16 +184,17 @@ export function FollowUpSheet({
       const { error: qErr } = await supabase.from("whatsapp_message_queue").insert(queueItems);
       if (qErr) throw qErr;
 
-      await supabase.from("leads").update({
+      const { error: leadUpdateErr } = await supabase.from("leads").update({
         status: "awaiting_docs" as any,
         atendimento_iniciado_em: nowIso,
         status_distribuicao: "atendimento_iniciado" as any,
         reserva_expira_em: null,
         updated_at: nowIso,
       }).eq("id", leadId);
+      if (leadUpdateErr) throw leadUpdateErr;
 
       const currentUser = (await supabase.auth.getUser()).data.user;
-      await supabase.from("lead_interactions").insert([
+      const { error: interactionsErr } = await supabase.from("lead_interactions").insert([
         {
           lead_id: leadId,
           interaction_type: "status_change" as any,
@@ -211,6 +213,11 @@ export function FollowUpSheet({
           created_by: currentUser?.id,
         }
       ]);
+      if (interactionsErr) throw interactionsErr;
+
+      toast.success("Follow-up agendado!");
+      onCreated?.();
+      onOpenChange(false);
     } catch (err: any) {
       toast.error(err.message || "Erro ao agendar follow-up");
     } finally {
