@@ -73,11 +73,11 @@ type KanbanActionConfig = {
 } | null;
 
 const ACTION_CONFIG: Record<string, KanbanActionConfig> = {
-  new: { label: "Iniciar Atendimento", icon: Play, variant: "success" },
-  info_sent: { label: "Agendar", icon: Calendar, variant: "neutral" },
-  awaiting_docs: { label: "Agendar", icon: Calendar, variant: "neutral" },
-  scheduling: { label: "Comparecimento", icon: FileText, variant: "neutral" },
-  docs_received: { label: "Confirmar Venda", icon: Trophy, variant: "success" },
+  new: { label: "Iniciar Atendimento", icon: Play, variant: "default" },
+  info_sent: { label: "Agendar", icon: Calendar, variant: "secondary" },
+  awaiting_docs: { label: "Agendar", icon: Calendar, variant: "secondary" },
+  scheduling: { label: "Comparecimento", icon: FileText, variant: "secondary" },
+  docs_received: { label: "Confirmar Venda", icon: Trophy, variant: "default" },
   registered: null,
 };
 
@@ -87,7 +87,7 @@ const RING_PULSE_STYLE: React.CSSProperties = {
 
 const RING_PULSE_GLOW_STYLE: React.CSSProperties = {
   animation: "ring-pulse 3s ease-in-out infinite",
-  boxShadow: "0 0 24px hsl(var(--crm-success) / 0.18)",
+  boxShadow: "0 0 24px hsl(var(--primary) / 0.18)",
 };
 
 export function KanbanCard({
