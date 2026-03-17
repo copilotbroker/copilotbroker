@@ -909,6 +909,39 @@ export type Database = {
           },
         ]
       }
+      lead_whatsapp_labels: {
+        Row: {
+          applied_via: string
+          broker_id: string
+          created_at: string
+          external_chat_id: string | null
+          id: string
+          label_id: string
+          lead_id: string
+          updated_at: string
+        }
+        Insert: {
+          applied_via?: string
+          broker_id: string
+          created_at?: string
+          external_chat_id?: string | null
+          id?: string
+          label_id: string
+          lead_id: string
+          updated_at?: string
+        }
+        Update: {
+          applied_via?: string
+          broker_id?: string
+          created_at?: string
+          external_chat_id?: string | null
+          id?: string
+          label_id?: string
+          lead_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           atendimento_iniciado_em: string | null
@@ -1733,6 +1766,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_labels: {
+        Row: {
+          broker_id: string
+          color: string | null
+          created_at: string
+          external_id: string | null
+          id: string
+          last_synced_at: string | null
+          name: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          broker_id: string
+          color?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          broker_id?: string
+          color?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       whatsapp_lead_replies: {
         Row: {
