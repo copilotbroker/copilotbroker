@@ -482,12 +482,12 @@ export function KanbanCard({
             {lead.status !== "registered" && onOpenPerda && (
               <Button
                 size="sm"
-                variant="destructive"
+                variant="outline"
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenPerda(lead.id, lead.status);
                 }}
-                className="h-8 w-8 rounded-lg p-0"
+                className="h-8 w-8 rounded-lg border-border bg-transparent p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 title="Inativar lead"
               >
                 <UserX className="h-4 w-4" />
