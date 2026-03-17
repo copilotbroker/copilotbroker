@@ -6,6 +6,7 @@ import { CRMLead, LeadStatus, STATUS_CONFIG, getOriginDisplayLabel, getOriginTyp
 import { cn } from "@/lib/utils";
 
 import { OriginCombobox } from "./OriginCombobox";
+import { LeadLabelsPicker } from "./LeadLabelsPicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
