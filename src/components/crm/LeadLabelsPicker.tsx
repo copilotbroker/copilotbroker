@@ -42,7 +42,7 @@ export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: L
         </div>
       )}
 
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
