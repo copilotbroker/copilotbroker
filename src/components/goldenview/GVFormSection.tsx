@@ -155,14 +155,18 @@ const GVFormSection = ({
       // Track lead attribution - marca como landing_page
       await trackLeadAttribution(leadId, projectId, "landing_page");
       
-      // Trigger auto first message (non-blocking)
+      // Trigger automations (non-blocking)
       supabase.functions.invoke("auto-first-message", {
         body: { leadId },
       }).catch((err) => {
         console.warn("Auto first message trigger failed:", err);
       });
 
-      // Auto cadencia 10D is triggered by roleta-distribuir (backend only) — removed from frontend to prevent duplicates
+      supabase.functions.invoke("auto-cadencia-10d", {
+        body: { leadId },
+      }).catch((err) => {
+        console.warn("Auto cadencia 10D trigger failed:", err);
+      });
 
       // GA4 conversion event
       if (typeof window.gtag === "function") {
