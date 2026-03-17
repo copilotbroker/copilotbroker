@@ -281,7 +281,7 @@ export function KanbanCard({
               )}
 
               {isNew && (
-                <Badge className="bg-primary/15 text-primary hover:bg-primary/15 text-[10px] uppercase tracking-wide">
+                <Badge className="bg-crm-info/15 text-crm-info hover:bg-crm-info/15 text-[10px] uppercase tracking-wide">
                   Novo
                 </Badge>
               )}
@@ -312,7 +312,7 @@ export function KanbanCard({
             )}
 
             {lead.auto_first_message_sent && (
-              <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/10 text-[10px] text-primary">
+              <Badge variant="outline" className="gap-1 border-crm-success/30 bg-crm-success/10 text-[10px] text-crm-success">
                 <CheckCircle2 className="h-3 w-3" />
                 1ª msg
               </Badge>
@@ -335,15 +335,15 @@ export function KanbanCard({
               <TooltipProvider delayDuration={250}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5">
-                      <span className="h-2 w-2 rounded-full bg-primary animate-dot-pulse" />
-                      <span className="text-[10px] font-medium text-primary">Copiloto ativo</span>
+                    <div className="flex items-center gap-1 rounded-md border border-crm-success/30 bg-crm-success/10 px-1.5 py-0.5">
+                      <span className="h-2 w-2 rounded-full bg-crm-success animate-dot-pulse" />
+                      <span className="text-[10px] font-medium text-crm-success">Copiloto ativo</span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onCancelCadencia?.(lead.id);
                         }}
-                        className="rounded p-0.5 text-primary/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        className="rounded p-0.5 text-crm-success/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
                         title="Parar fluxo"
                       >
                         <Square className="h-2.5 w-2.5" />
