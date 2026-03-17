@@ -449,7 +449,7 @@ export function KanbanCard({
                           : "Selecione uma data e horário válidos."}
                       </div>
 
-                      <Button variant="outline" className="w-full" onClick={handleScheduleMessage} disabled={!canSubmitMessage || isScheduling || !buildScheduledDateTime()}>
+                      <Button variant="accent" className="w-full" onClick={handleScheduleMessage} disabled={!canSubmitMessage || isScheduling || !buildScheduledDateTime()}>
                         {isScheduling ? "Programando..." : "Confirmar agendamento"}
                       </Button>
                     </PopoverContent>
