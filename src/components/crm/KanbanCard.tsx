@@ -466,7 +466,7 @@ export function KanbanCard({
           {lead.status !== "new" && onCallClick && (
             <Button
               size="sm"
-              variant="neutral"
+              variant="accent"
               onClick={(e) => {
                 e.stopPropagation();
                 onCallClick(lead.id);
@@ -482,12 +482,12 @@ export function KanbanCard({
             {lead.status !== "registered" && onOpenPerda && (
               <Button
                 size="sm"
-                variant="ghost"
+                variant="destructive"
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenPerda(lead.id, lead.status);
                 }}
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                className="h-8 w-8 rounded-lg p-0"
                 title="Inativar lead"
               >
                 <UserX className="h-4 w-4" />
@@ -499,9 +499,9 @@ export function KanbanCard({
                 <AlertDialogTrigger asChild>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="destructive"
                     onClick={(e) => e.stopPropagation()}
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                    className="h-8 w-8 rounded-lg p-0"
                     title="Excluir lead"
                   >
                     <Trash2 className="h-4 w-4" />
