@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { Plus, MoreHorizontal, MessageSquare } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { CRMLead, LeadStatus, STATUS_CONFIG } from "@/types/crm";
 import { useKanbanColumn, KanbanColumnFilters } from "@/hooks/use-kanban-column";
 import { KanbanCard } from "./KanbanCard";
