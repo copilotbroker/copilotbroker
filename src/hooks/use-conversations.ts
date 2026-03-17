@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -6,6 +6,7 @@ const CONVERSATION_FETCH_LIMIT = 100;
 const MESSAGE_FETCH_LIMIT = 200;
 const INBOX_POLL_INTERVAL_MS = 12000;
 const THREAD_POLL_INTERVAL_MS = 6000;
+const SCHEDULED_QUEUE_ACTIVE_STATUSES = ["queued", "scheduled", "sending", "paused_by_system"] as const;
 
 export interface Conversation {
   id: string;
@@ -44,6 +45,17 @@ export interface ConversationMessage {
   uazapi_message_id: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
+}
+
+export interface ScheduledConversationMessage {
+  id: string;
+  broker_id: string;
+  lead_id: string | null;
+  phone: string;
+  message: string;
+  scheduled_at: string;
+  created_at: string;
+  status: string;
 }
 
 export interface OutboundMessagePayload {
@@ -418,10 +430,12 @@ export function useConversations(options: UseConversationsOptions = {}) {
 }
 
 export function useConversationMessages(
-  conversationId: string | null,
+  conversation: Conversation | null,
   onConversationPreviewUpdate?: (update: { preview: string; messageType: string; timestamp: string }) => void,
 ) {
+  const conversationId = conversation?.id || null;
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [scheduledMessages, setScheduledMessages] = useState<ScheduledConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchMessages = useCallback(async () => {
@@ -447,6 +461,35 @@ export function useConversationMessages(
       setIsLoading(false);
     }
   }, [conversationId]);
+
+  const fetchScheduledMessages = useCallback(async () => {
+    if (!conversation) {
+      setScheduledMessages([]);
+      return;
+    }
+
+    try {
+      let query = supabase
+        .from("whatsapp_message_queue")
+        .select("id, broker_id, lead_id, phone, message, scheduled_at, created_at, status")
+        .eq("broker_id", conversation.broker_id)
+        .in("status", [...SCHEDULED_QUEUE_ACTIVE_STATUSES])
+        .order("scheduled_at", { ascending: true })
+        .limit(50);
+
+      if (conversation.lead_id) {
+        query = query.eq("lead_id", conversation.lead_id);
+      } else {
+        query = query.eq("phone", conversation.phone);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setScheduledMessages((data || []) as ScheduledConversationMessage[]);
+    } catch (error) {
+      console.error("Erro ao buscar mensagens programadas:", error);
+    }
+  }, [conversation]);
 
   const fetchNewMessages = useCallback(async () => {
     if (!conversationId) return;
@@ -477,7 +520,8 @@ export function useConversationMessages(
 
   useEffect(() => {
     fetchMessages();
-  }, [fetchMessages]);
+    fetchScheduledMessages();
+  }, [fetchMessages, fetchScheduledMessages]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -502,20 +546,28 @@ export function useConversationMessages(
         const updatedMsg = payload.new as unknown as ConversationMessage;
         setMessages((prev) => mergeMessages(prev, [updatedMsg]));
       })
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "whatsapp_message_queue",
+      }, () => {
+        void fetchScheduledMessages();
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [conversationId]);
+  }, [conversationId, fetchScheduledMessages]);
 
   useEffect(() => {
     if (!conversationId) return;
 
     const intervalId = window.setInterval(() => {
       fetchNewMessages();
+      void fetchScheduledMessages();
     }, THREAD_POLL_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [conversationId, fetchNewMessages]);
+  }, [conversationId, fetchNewMessages, fetchScheduledMessages]);
 
   const sendMessage = useCallback(async (payload: string | OutboundMessagePayload, sentBy = "human") => {
     if (!conversationId) return null;
@@ -593,5 +645,87 @@ export function useConversationMessages(
     return optimisticMessage;
   }, [conversationId, onConversationPreviewUpdate]);
 
-  return { messages, isLoading, fetchMessages, sendMessage };
+  const scheduleMessage = useCallback(async (content: string, scheduledAt: string) => {
+    if (!conversation) return null;
+
+    const trimmedContent = content.trim();
+    if (!trimmedContent) {
+      toast.error("Digite uma mensagem antes de programar");
+      return null;
+    }
+
+    const nowIso = new Date().toISOString();
+    const { data: queueItem, error } = await supabase
+      .from("whatsapp_message_queue")
+      .insert({
+        broker_id: conversation.broker_id,
+        lead_id: conversation.lead_id,
+        phone: conversation.phone,
+        message: trimmedContent,
+        scheduled_at: scheduledAt,
+        status: "scheduled",
+      } as any)
+      .select("id, broker_id, lead_id, phone, message, scheduled_at, created_at, status")
+      .single();
+
+    if (error) {
+      console.error("Erro ao programar mensagem:", error);
+      toast.error("Não foi possível programar a mensagem");
+      throw error;
+    }
+
+    if (conversation.lead_id) {
+      await supabase.from("lead_interactions").insert({
+        lead_id: conversation.lead_id,
+        interaction_type: "whatsapp_manual" as any,
+        channel: "whatsapp",
+        broker_id: conversation.broker_id,
+        notes: `Mensagem WhatsApp programada para ${new Date(scheduledAt).toLocaleString("pt-BR")}:\n\n${trimmedContent}`,
+      } as any);
+    }
+
+    setScheduledMessages((prev) => {
+      const next = [queueItem as ScheduledConversationMessage, ...prev];
+      return next.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+    });
+
+    onConversationPreviewUpdate?.({
+      preview: trimmedContent,
+      messageType: "text",
+      timestamp: nowIso,
+    });
+
+    toast.success("Mensagem programada");
+    return queueItem as ScheduledConversationMessage;
+  }, [conversation, onConversationPreviewUpdate]);
+
+  const cancelScheduledMessage = useCallback(async (queueId: string) => {
+    const target = scheduledMessages.find((item) => item.id === queueId);
+
+    const { error } = await supabase
+      .from("whatsapp_message_queue")
+      .update({ status: "cancelled", updated_at: new Date().toISOString() } as any)
+      .eq("id", queueId);
+
+    if (error) {
+      console.error("Erro ao cancelar mensagem programada:", error);
+      toast.error("Não foi possível cancelar a mensagem");
+      throw error;
+    }
+
+    if (conversation?.lead_id && target) {
+      await supabase.from("lead_interactions").insert({
+        lead_id: conversation.lead_id,
+        interaction_type: "note_added" as any,
+        channel: "whatsapp",
+        broker_id: conversation.broker_id,
+        notes: `Mensagem programada cancelada (${new Date(target.scheduled_at).toLocaleString("pt-BR")}):\n\n${target.message}`,
+      } as any);
+    }
+
+    setScheduledMessages((prev) => prev.filter((item) => item.id !== queueId));
+    toast.success("Mensagem programada cancelada");
+  }, [conversation, scheduledMessages]);
+
+  return { messages, scheduledMessages, isLoading, fetchMessages, sendMessage, scheduleMessage, cancelScheduledMessage };
 }

@@ -60,8 +60,8 @@ export default function BrokerInbox() {
     updateConversationState,
   } = useConversations({ brokerId: brokerId || undefined, search, statusFilter: isArchived ? "all" : statusFilter, isArchived });
 
-  const { messages, isLoading: messagesLoading, sendMessage } =
-    useConversationMessages(selectedConversation?.id || null, (update) => {
+  const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
+    useConversationMessages(selectedConversation, (update) => {
       if (!selectedConversation) return;
 
       updateConversationState(selectedConversation.id, (current) => ({
@@ -295,8 +295,11 @@ export default function BrokerInbox() {
               <ConversationThread
                 conversation={selectedConversation!}
                 messages={messages}
+                scheduledMessages={scheduledMessages}
                 isLoading={messagesLoading}
                 onSendMessage={sendMessage}
+                onScheduleMessage={scheduleMessage}
+                onCancelScheduledMessage={cancelScheduledMessage}
                 onBack={handleBack}
                 onMarkAsRead={() => markAsRead(selectedConversation!.id)}
                 onArchive={() => {
