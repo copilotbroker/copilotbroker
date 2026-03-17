@@ -326,16 +326,153 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     setCadenciaLeadIds(prev => { const next = new Set(prev); next.delete(leadId); return next; });
   };
 
-  const handleWhatsAppClick = async (leadId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    supabase.from("lead_interactions").insert({
+  const ensureConversationForLead = useCallback(async (leadId: string) => {
+    const lead = allLeadsRef.current.get(leadId);
+    if (!lead?.broker_id) throw new Error("Lead sem corretor vinculado");
+
+    const digits = lead.whatsapp.replace(/\D/g, "");
+    const canonicalPhone = digits.startsWith("55") ? digits : `55${digits}`;
+    const canonicalNormalized = canonicalPhone.replace(/\D/g, "");
+    const basePhone = canonicalNormalized.startsWith("55") ? canonicalNormalized.slice(2) : canonicalNormalized;
+    const phoneVariants = [...new Set([
+      canonicalNormalized,
+      basePhone,
+      basePhone.length === 10 ? `${basePhone.slice(0, 2)}9${basePhone.slice(2)}` : null,
+      basePhone.length === 11 && basePhone[2] === "9" ? `${basePhone.slice(0, 2)}${basePhone.slice(3)}` : null,
+    ].filter(Boolean) as string[])];
+
+    const { data: existingConversations, error: findError } = await supabase
+      .from("conversations")
+      .select("id, broker_id, lead_id, phone, phone_normalized, status, ai_mode, is_archived, last_message_at, last_message_preview, last_message_direction, last_message_type, display_name, display_name_source, unread_count, opportunity_score, temperature, copilot_suggestions_count, created_at, updated_at")
+      .eq("broker_id", lead.broker_id)
+      .in("phone_normalized", phoneVariants)
+      .order("created_at", { ascending: true });
+
+    if (findError) throw findError;
+
+    const primary = existingConversations?.[0];
+    if (primary) {
+      await supabase
+        .from("conversations")
+        .update({
+          phone: canonicalPhone,
+          phone_normalized: canonicalNormalized,
+          lead_id: primary.lead_id || leadId,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("id", primary.id);
+      return primary.id;
+    }
+
+    const { data: created, error: createError } = await supabase
+      .from("conversations")
+      .insert({
+        broker_id: lead.broker_id,
+        lead_id: leadId,
+        phone: canonicalPhone,
+        phone_normalized: canonicalNormalized,
+        status: "active",
+        ai_mode: "copilot",
+        display_name: lead.name,
+        display_name_source: "lead",
+        is_archived: false,
+      } as any)
+      .select("id")
+      .single();
+
+    if (createError) throw createError;
+    return created.id as string;
+  }, []);
+
+  const handleSendWhatsAppNow = useCallback(async (leadId: string, content: string) => {
+    const conversationId = await ensureConversationForLead(leadId);
+    const { error } = await supabase.functions.invoke("inbox-send-message", {
+      body: {
+        conversation_id: conversationId,
+        content,
+        sent_by: "human",
+        message_type: "text",
+      },
+    });
+
+    if (error) {
+      console.error("Erro ao enviar mensagem do Kanban:", error);
+      toast.error("Não foi possível enviar a mensagem");
+      throw error;
+    }
+
+    toast.success("Mensagem enviada");
+    queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
+  }, [ensureConversationForLead, queryClient]);
+
+  const handleScheduleWhatsApp = useCallback(async (leadId: string, content: string, scheduledAt: string) => {
+    const conversationId = await ensureConversationForLead(leadId);
+    const lead = allLeadsRef.current.get(leadId);
+    if (!lead?.broker_id) throw new Error("Lead sem corretor vinculado");
+
+    const nowIso = new Date().toISOString();
+    const { data: queueItem, error } = await supabase
+      .from("whatsapp_message_queue")
+      .insert({
+        broker_id: lead.broker_id,
+        lead_id: leadId,
+        phone: lead.whatsapp,
+        message: content.trim(),
+        scheduled_at: scheduledAt,
+        status: "scheduled",
+      } as any)
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Erro ao programar mensagem do Kanban:", error);
+      toast.error("Não foi possível programar a mensagem");
+      throw error;
+    }
+
+    const previousStatus = lead.status || "info_sent";
+    if (previousStatus !== "awaiting_docs") {
+      await supabase
+        .from("leads")
+        .update({
+          status: "awaiting_docs",
+          atendimento_iniciado_em: nowIso,
+          status_distribuicao: "atendimento_iniciado",
+          reserva_expira_em: null,
+          updated_at: nowIso,
+        } as any)
+        .eq("id", leadId);
+
+      await supabase.from("lead_interactions").insert({
+        lead_id: leadId,
+        interaction_type: "status_change" as any,
+        old_status: previousStatus as any,
+        new_status: "awaiting_docs" as any,
+        channel: "whatsapp",
+        broker_id: lead.broker_id,
+        notes: `Lead movido para Copiloto Ativo por mensagem programada (${new Date(scheduledAt).toLocaleString("pt-BR")})`,
+      } as any);
+    }
+
+    await supabase.from("lead_interactions").insert({
       lead_id: leadId,
       interaction_type: "whatsapp_manual" as any,
-      notes: "Atendimento via WhatsApp",
       channel: "whatsapp",
-      created_by: user?.id,
-    }).then(({ error }) => { if (error) console.error("Erro ao registrar clique WhatsApp:", error); });
-  };
+      broker_id: lead.broker_id,
+      notes: JSON.stringify({
+        kind: "scheduled_message",
+        action: "scheduled",
+        queueId: (queueItem as { id: string }).id,
+        previousStatus,
+        scheduledAt,
+        message: content.trim(),
+        conversationId,
+      }),
+    } as any);
+
+    toast.success("Mensagem programada");
+    queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
+  }, [ensureConversationForLead, queryClient]);
 
   const handleCallClick = (leadId: string) => {
     setCallModal({ open: true, leadId });
