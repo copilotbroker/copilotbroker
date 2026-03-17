@@ -142,40 +142,32 @@ w-20 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent
 7. **Safe areas** — \`pt-safe\`, \`pb-safe\` para PWA/mobile`;
 
 const CRM_PROMPT = `### Filosofia Visual
-**"Dark Professional"** — Interface funcional de alta densidade, dark mode padrão. Foco em produtividade, clareza de informação e ações rápidas. Sem elementos decorativos desnecessários.
+**"Dark Luxury Corporate"** — Interface funcional premium, dark mode como padrão, alto contraste com amarelo institucional (#FFFF00) usado de forma estratégica. Prioridade em clareza, velocidade e consistência visual.
 
 ---
 
 ### 🎨 Paleta de Cores (HSL)
 
-#### Dark Mode (Padrão Dashboard)
+#### Dashboard / Admin / Auth
 | Token | HSL | Hex aprox. | Uso |
 |---|---|---|---|
-| Background | \`240 6% 4%\` | \`#0a0a0f\` | Fundo da aplicação |
-| Layout bg | \`240 5% 7%\` | \`#0f0f12\` | Background do layout |
-| Surfaces | \`240 4% 12%\` | \`#1e1e22\` | Cards, modais, painéis |
-| Borders | \`220 8% 18%\` | \`#2a2a2e\` | Bordas e separadores |
-| Muted | \`220 10% 55%\` | \`#838a96\` | Texto secundário |
-| Foreground | \`45 30% 96%\` | \`#f7f4ed\` | Texto principal |
+| \`--background\` | \`240 6% 4%\` | \`#0a0a0f\` | Fundo principal |
+| \`--card\` | \`240 6% 9%\` | \`#15151a\` | Cards, sheets, modais |
+| \`--foreground\` | \`45 30% 96%\` | \`#f7f4ed\` | Texto principal |
+| \`--secondary\` | \`220 8% 15%\` | \`#23252a\` | Superfícies secundárias |
+| \`--muted\` | \`220 8% 18%\` | \`#2a2d33\` | Fundos neutros |
+| \`--muted-foreground\` | \`220 10% 55%\` | \`#838a96\` | Texto auxiliar |
+| \`--border\` | \`220 8% 18%\` | \`#2a2d33\` | Bordas e divisórias |
+| \`--primary\` | \`60 100% 50%\` | \`#ffff00\` | CTA, foco, destaque |
+| \`--primary-foreground\` | \`240 6% 4%\` | \`#0a0a0f\` | Texto sobre primary |
+| \`--destructive\` | \`0 62.8% 30.6%\` | \`#7f1d1d\` | Perdas, exclusões |
 
-#### Cores Funcionais
-| Contexto | Cor | Uso |
-|---|---|---|
-| Sucesso | \`bg-emerald-500\` | Ações positivas, confirmações |
-| Alerta | \`bg-orange-500\` | Avisos, pendências |
-| Info | \`bg-blue-500\` | Informações, estados neutros |
-| Perigo | \`bg-red-500\` | Erros, exclusões, alertas |
-| Neutro | \`bg-slate-400\` | Estados inativos, finalizados |
-| Primary | \`hsl(var(--primary))\` | CTAs, seleção, foco |
-
-#### Badges / Tags (Dark Theme)
-| Variante | Padrão de Classes |
-|---|---|
-| Tipo A | \`bg-purple-500/20 text-purple-300 border-purple-500/40\` |
-| Tipo B | \`bg-emerald-500/20 text-emerald-300 border-emerald-500/40\` |
-| Tipo C | \`bg-blue-500/20 text-blue-300 border-blue-500/40\` |
-| Tipo D | \`bg-yellow-500/20 text-yellow-300 border-yellow-500/40\` |
-| Default | \`bg-slate-500/20 text-slate-400 border-slate-500/40\` |
+#### Regras de Cor
+- ✅ Usar apenas tokens semânticos do tema
+- ✅ \`primary\` é o destaque principal do CRM/Admin
+- ✅ \`secondary\` e \`muted\` organizam densidade e hierarquia
+- ❌ Não criar paletas paralelas por feature
+- ❌ Não usar classes hardcoded como azul/verde/roxo por ação
 
 ---
 
@@ -183,96 +175,69 @@ const CRM_PROMPT = `### Filosofia Visual
 
 | Contexto | Fonte | Classe |
 |---|---|---|
-| **Toda a UI** | Sans-serif do projeto | \`font-sans\` |
-| Card Title | \`font-sans text-lg font-semibold\` | Headers de cards |
-| Body | \`font-sans text-sm\` | Textos gerais |
-| Label/Meta | \`font-sans text-xs text-muted-foreground\` | Labels, timestamps |
-| Heading | \`font-sans text-xl font-bold\` | Títulos de seção |
+| Toda a UI | Sans-serif do projeto | \`font-sans\` |
+| Heading | Sans-serif | \`text-xl font-bold\` |
+| Card Title | Sans-serif | \`text-lg font-semibold\` |
+| Body | Sans-serif | \`text-sm\` |
+| Meta / Labels | Sans-serif | \`text-xs text-muted-foreground\` |
 
-⚠️ **Sans-serif only** — Nunca usar \`font-serif\` no dashboard (exceção: tela de login).
+⚠️ **Sans-serif only** no dashboard. Serif apenas em contextos editoriais/landing ou, se necessário, no branding da auth.
 
 ---
 
 ### 🔐 Tela de Login / Auth
 
 #### Layout
-- Desktop: Split \`3/5\` painel visual + \`2/5\` formulário
-- Mobile: Formulário-only com header compacto
-
-#### Painel Visual (Desktop)
-\`\`\`
-bg-gradient-to-br from-[background] via-[layout-bg] to-[surface]
-Pattern sutil com linhas de primary em baixa opacidade
-Central glow: bg-primary/5 rounded-full blur-3xl
-\`\`\`
+- Desktop: split layout com painel visual + formulário
+- Mobile: formulário-first com branding compacto
 
 #### Card de Auth
 \`\`\`
-bg-[surface] border border-[border] rounded-2xl p-8
+bg-card border border-border rounded-2xl p-8
 shadow-2xl shadow-black/50
 \`\`\`
 
 #### Inputs
 \`\`\`
-bg-[background-darker] border border-[border] rounded-lg
+bg-background border border-input rounded-lg
 text-foreground placeholder:text-muted-foreground
 focus:border-primary focus:ring-1 focus:ring-primary/20
-pl-10 (com ícone à esquerda)
 \`\`\`
 
-#### Botão de Auth
+#### Botão principal
 \`\`\`
-w-full py-3 bg-primary text-primary-foreground rounded-lg
-font-semibold uppercase tracking-wider text-sm
-hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:scale-[1.02]
-disabled:opacity-50
+bg-primary text-primary-foreground
+hover:bg-primary/90
+hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)]
 \`\`\`
-
-#### Loading Spinner
-\`\`\`
-border-2 border-primary border-t-transparent rounded-full animate-spin
-\`\`\`
-
-#### Animações Auth
-| Elemento | Animação | Delay |
-|---|---|---|
-| Logo | \`animate-fade-in-down\` | 0ms |
-| Título | \`animate-fade-in-left\` | 200ms |
-| Divider | \`animate-expand-width\` | 400ms |
-| Descrição | \`animate-fade-up\` | 500ms |
-| Card | \`animate-scale-in\` | 300ms (mobile) / 500ms (desktop) |
-| Inputs | \`animate-fade-up\` | 400-600ms escalonado |
 
 ---
 
-### 📋 Boards / Listas (Kanban, Tabelas)
+### 📋 Boards / Listas
 
-#### Cards de Item
+#### Cards de item
 \`\`\`
-bg-[surface] border border-[border] rounded-xl
-hover:border-primary/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)]
+bg-card border border-border rounded-xl
+hover:border-primary/50
 transition-[border-color,transform,opacity] duration-200 ease-out
 \`\`\`
 
-#### Elementos do Card
+#### Elementos do card
 | Elemento | Estilo |
 |---|---|
-| Avatar | \`bg-slate-700/50 text-slate-400\` com iniciais |
-| Título | \`text-sm font-medium text-foreground truncate\` |
+| Avatar | \`bg-muted text-foreground\` |
+| Título | \`text-sm font-medium text-foreground\` |
 | Subtítulo | \`text-xs text-muted-foreground\` |
-| Badge | Usar padrão de badges (ver tabela acima) |
-| Progress Bar | \`h-0.5\` com cor contextual |
-| Item "stale" | \`opacity-60\` para itens sem interação >48h |
-| Item novo | \`ring-pulse\` animation com glow |
+| Badge destaque | \`bg-primary/10 text-primary border-primary/30\` |
+| Badge neutra | \`bg-muted/40 text-muted-foreground border-border\` |
+| Item stale | \`opacity-60\` |
+| Item novo / automação | destaque com \`primary\` |
 
-#### Botões de Ação Contextual
+#### Botões de ação
 \`\`\`
-Cores variam por contexto/status:
-- Positivo: bg-emerald-500/90 hover:bg-emerald-500
-- Neutro: bg-blue-500/90 hover:bg-blue-500
-- Alerta: bg-orange-500/90 hover:bg-orange-500
-- Destaque: bg-violet-500/90 hover:bg-violet-500
-Todos com text-white, text-xs, rounded-md, px-2 py-1
+Ações principais: variant default
+Ações secundárias: variant secondary ou outline
+Ações destrutivas: variant destructive
 \`\`\`
 
 ---
@@ -281,23 +246,16 @@ Todos com text-white, text-xs, rounded-md, px-2 py-1
 
 #### Estrutura
 \`\`\`
-Sidebar fixa à esquerda (hidden mobile)
-Bottom Nav no mobile (5 itens máximo)
-bg-[layout-bg] com classe admin-scrollbar
+Sidebar fixa à esquerda (desktop)
+Bottom nav no mobile
+bg-background com classe admin-scrollbar
 \`\`\`
 
 #### Sidebar
 \`\`\`
-bg-[layout-bg] border-r border-[border]
-Items: hover:bg-[surface] rounded-lg
-Item ativo: bg-[surface] text-primary
-\`\`\`
-
-#### Scrollbar Admin
-\`\`\`
-width: 4px
-thumb: rgba(100, 116, 139, 0.3) → hover: 0.5
-track: transparent
+bg-card border-r border-border
+item hover:bg-secondary
+item ativo text-primary
 \`\`\`
 
 ---
@@ -305,33 +263,23 @@ track: transparent
 ### 🗂️ Sheets / Modais / Drawers
 
 \`\`\`
-Background: bg-[surface] border-[border]
+bg-card border-border
 ScrollArea interna com scrollbar-subtle
-Seções separadas por border-b border-[border]
-Header sticky com backdrop-blur
-\`\`\`
-
-#### Categorias de Tags/Chips
-\`\`\`
-Padrão: bg-[cor]/20 text-[cor]-300 border-[cor]/40
-Selecionado: ring-2 ring-primary ring-offset-1 ring-offset-[surface]
-Hover: opacity aumentada
+Seções separadas com border-border
+Header com backdrop-blur
 \`\`\`
 
 ---
 
 ### ⛔ Regras Dashboard
-
-1. **Sans-serif only** — Nunca \`font-serif\` no dashboard (exceção: auth hero)
-2. **Tokens semânticos** — Usar variáveis CSS, não hex direto
-3. **Dark mode fixo** — Dashboard sempre dark, sem toggle
-4. **Densidade alta** — Padding compacto (\`p-2\` a \`p-4\`), text-sm como base
-5. **Scrollbars finas** — 4px em todo o admin
-6. **Feedback visual** — Hover states em todos os elementos interativos
-7. **Status = Cor** — Cada status tem cor fixa e consistente
-8. **Mobile-first** — Bottom nav no mobile, sidebar no desktop
-9. **Safe areas** — \`pt-safe\`, \`pb-safe\` para PWA/mobile
-10. **Loading states** — Skeleton com \`animate-shimmer\`, spinners com primary color`;
+1. **Tokens semânticos sempre**
+2. **HSL sempre**
+3. **Dashboard dark fixo**
+4. **Primary amarelo usado com intenção, não em excesso**
+5. **Sem paleta semântica paralela por ação**
+6. **Hover/focus consistentes**
+7. **Mobile-first**
+8. **Safe areas** com \`pt-safe\` e \`pb-safe\``;
 
 const FULL_PROMPT = `${LANDING_PROMPT}\n\n---\n\n${CRM_PROMPT}`;
 
