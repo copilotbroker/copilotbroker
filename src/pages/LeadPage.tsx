@@ -573,8 +573,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
               <MessageCircle className="w-3.5 h-3.5 mr-1.5" />Follow-Up
             </Button>
             {!cadencia.isActive && (
-              <Button variant="outline" size="sm" onClick={() => setCadenciaOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10">
-                <Zap className="w-3.5 h-3.5 mr-1.5" />Cadência 10D
+              <Button variant="outline" size="sm" onClick={() => setCadenciaPickerOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10">
+                <Zap className="w-3.5 h-3.5 mr-1.5" />+ Cadência
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => setPerdaOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-[#2a2a2e] text-red-400/80 hover:bg-red-500/10 hover:border-red-500/20">
