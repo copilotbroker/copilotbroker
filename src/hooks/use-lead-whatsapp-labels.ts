@@ -34,7 +34,7 @@ interface UseLeadWhatsAppLabelsOptions {
   enabled?: boolean;
 }
 
-export function useLeadWhatsAppLabels({ leadId, brokerId, phone }: UseLeadWhatsAppLabelsOptions) {
+export function useLeadWhatsAppLabels({ leadId, brokerId, phone, enabled = true }: UseLeadWhatsAppLabelsOptions) {
   const queryClient = useQueryClient();
 
   const labelsQuery = useQuery({
