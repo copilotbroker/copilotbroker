@@ -627,6 +627,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
                 status={status}
                 filters={columnFilters}
                 newLeadIds={newLeadIds}
+                activeAutomationLeadIds={activeAutomationLeadIds}
                 cadenciaLeadIds={cadenciaLeadIds}
                 onCancelCadencia={handleCancelCadencia}
                 onCardClick={handleCardClick}
