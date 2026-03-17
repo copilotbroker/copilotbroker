@@ -70,7 +70,7 @@ export default function AdminInbox() {
 
   const isArchived = statusFilter === "archived";
   const effectiveBrokerId = selectedBrokerId === "_loading" ? "__skip__" : (selectedBrokerId !== "all" ? selectedBrokerId : undefined);
-  const { conversations, isLoading, totalUnread, markAsRead, archiveConversation, unarchiveConversation, updateAiMode } =
+  const { conversations, isLoading, totalUnread, markAsRead, archiveConversation, unarchiveConversation, updateAiMode, updateConversationState } =
     useConversations({
       brokerId: effectiveBrokerId === "__skip__" ? "00000000-0000-0000-0000-000000000000" : effectiveBrokerId,
       search,
@@ -78,8 +78,30 @@ export default function AdminInbox() {
       isArchived,
     });
 
-  const { messages, isLoading: messagesLoading, sendMessage } =
-    useConversationMessages(selectedConversation?.id || null);
+  const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
+    useConversationMessages(selectedConversation, (update) => {
+      if (!selectedConversation) return;
+
+      updateConversationState(selectedConversation.id, (current) => ({
+        ...current,
+        status: "attending",
+        last_message_at: update.timestamp,
+        last_message_preview: update.preview,
+        last_message_direction: "outbound",
+        last_message_type: update.messageType,
+        updated_at: update.timestamp,
+      }));
+
+      setSelectedConversation((prev) => prev ? {
+        ...prev,
+        status: "attending",
+        last_message_at: update.timestamp,
+        last_message_preview: update.preview,
+        last_message_direction: "outbound",
+        last_message_type: update.messageType,
+        updated_at: update.timestamp,
+      } : prev);
+    });
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
 
