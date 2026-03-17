@@ -54,7 +54,7 @@ export function KanbanColumn({
   onCardClick, onUpdateOrigin, onDelete, onIniciarAtendimento,
   onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda,
   onDispatchWhatsApp, onAddLead, onOpenProposta, onOpenReagendamento,
-  onLeadsLoaded, onWhatsAppClick, onCallClick,
+  onLeadsLoaded, onSendWhatsAppNow, onScheduleWhatsApp, onCallClick,
 }: KanbanColumnProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const config = STATUS_CONFIG[status];
