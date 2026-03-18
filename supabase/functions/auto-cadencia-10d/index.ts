@@ -372,7 +372,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log("Auto cadencia 10D activated for lead:", leadId, "broker:", lead.broker_id, "adjustments:", adjustmentLogs.length);
+    console.log("Auto cadencia 10D activated for lead:", effectiveLeadId, "broker:", lead.broker_id, "adjustments:", adjustmentLogs.length);
 
     return new Response(JSON.stringify({ status: "activated", campaign_id: campaign.id, adjustments: adjustmentLogs.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

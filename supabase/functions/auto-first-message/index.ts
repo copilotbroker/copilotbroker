@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
       notes: `1ª mensagem automática agendada para ${scheduledAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}\n\n${personalizedMessage}`,
     });
 
-    console.log(`[auto-first-message] Message queued for lead ${leadId} at ${scheduledAt.toISOString()}`);
+    console.log(`[auto-first-message] Message queued for lead ${effectiveLeadId} at ${scheduledAt.toISOString()}`);
 
     return new Response(
       JSON.stringify({ 
