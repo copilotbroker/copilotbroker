@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
       return {
         broker_id: lead.broker_id,
         campaign_id: campaign.id,
-        lead_id: leadId,
+        lead_id: effectiveLeadId,
         phone,
         message: replaceVars(step.messageContent, vars),
         status: "scheduled",
