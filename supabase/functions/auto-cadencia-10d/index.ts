@@ -272,7 +272,7 @@ Deno.serve(async (req) => {
         name: `Cadência 10D Auto - ${lead.name}`,
         status: "running",
         total_leads: stepsToUse.length,
-        lead_id: leadId,
+        lead_id: effectiveLeadId,
         project_id: lead.project_id,
         lead_previous_status: restoreStatus,
       })
