@@ -527,9 +527,10 @@ const Admin = () => {
           {/* Filters + Search */}
           <LeadsAdvancedFilters
             filters={filters}
-            onFiltersChange={setFilters}
+            onFiltersChange={handleFiltersChange}
             brokers={brokers}
             projects={projects}
+            labels={brokerLabels}
             activeFiltersCount={activeFiltersCount}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
