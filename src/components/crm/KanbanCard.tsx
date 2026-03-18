@@ -173,7 +173,8 @@ export const KanbanCard = memo(function KanbanCard({
 
     switch (lead.status) {
       case "new":
-        onIniciarAtendimento?.(lead.id);
+        // Open WhatsApp composer (same as message button on other cards)
+        setComposerOpen(true);
         break;
       case "info_sent":
       case "awaiting_docs":
