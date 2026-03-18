@@ -103,7 +103,8 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     filters.selectedBroker,
     JSON.stringify(filters.selectedOrigins || []),
     filters.searchTerm || "",
-  ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm]);
+    JSON.stringify(filters.selectedLabelIds || []),
+  ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm, filters.selectedLabelIds]);
 
   const { activeFlowLeadIds, activeFlowIdList, activeFlowSignature } = useActiveFlowLeads({
     brokerId: filters.brokerId,
