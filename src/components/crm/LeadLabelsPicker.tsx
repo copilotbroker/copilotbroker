@@ -46,15 +46,41 @@ export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: L
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="warning"
-            size="icon"
-            className={cn(compact ? "h-7 w-7 rounded-md" : "h-8 w-8 rounded-md")}
-            title="Etiquetas do WhatsApp"
-          >
-            <Tags className="h-3.5 w-3.5" />
-          </Button>
+          {compact && firstLabel ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-7 gap-1 rounded-md px-2 text-[10px] font-medium border-border",
+                firstLabel.color
+                  ? "border-opacity-60"
+                  : "bg-crm-warning/10 border-crm-warning/30 text-crm-warning hover:bg-crm-warning/20"
+              )}
+              style={firstLabel.color ? {
+                backgroundColor: `${firstLabel.color}18`,
+                borderColor: `${firstLabel.color}50`,
+                color: firstLabel.color,
+              } : undefined}
+              title="Etiquetas do WhatsApp"
+            >
+              <Tags className="h-3 w-3" />
+              <span className="max-w-[60px] truncate">{firstLabel.name}</span>
+              {visibleLeadLabels.length > 1 && (
+                <span className="text-[9px] opacity-70">+{visibleLeadLabels.length - 1}</span>
+              )}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="warning"
+              size="icon"
+              className={cn(compact ? "h-7 w-7 rounded-md" : "h-8 w-8 rounded-md")}
+              title="Etiquetas do WhatsApp"
+            >
+              <Tags className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </PopoverTrigger>
         <PopoverContent align="end" className="w-72 border-border bg-popover p-3 text-popover-foreground">
           <div className="mb-3 flex items-start justify-between gap-2">
