@@ -349,7 +349,7 @@ Deno.serve(async (req) => {
 
     // 12. Log interaction
     await supabase.from("lead_interactions").insert({
-      lead_id: leadId,
+      lead_id: effectiveLeadId,
       broker_id: lead.broker_id,
       interaction_type: "notification",
       channel: "whatsapp",
