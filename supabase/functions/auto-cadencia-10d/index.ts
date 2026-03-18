@@ -96,15 +96,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 1. Fetch lead
+    // 0. Unify duplicate leads (same phone + same broker)
+    const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
+    const effectiveLeadId = unifiedId || leadId;
+    if (effectiveLeadId !== leadId) {
+      console.log(`Lead ${leadId} unified into ${effectiveLeadId}`);
+    }
+
+    // 1. Fetch lead (using effective ID after unification)
     const { data: lead, error: leadError } = await supabase
       .from("leads")
       .select("id, broker_id, project_id, status, whatsapp, name")
-      .eq("id", leadId)
+      .eq("id", effectiveLeadId)
       .single();
 
     if (leadError || !lead || !lead.broker_id) {
-      console.log("Lead not found or no broker:", leadId);
+      console.log("Lead not found or no broker:", effectiveLeadId);
       return new Response(JSON.stringify({ status: "skipped", reason: "lead_not_found_or_no_broker" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
