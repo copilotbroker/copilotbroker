@@ -1,4 +1,4 @@
-import { X, ChevronDown, CalendarIcon, MapPin, Search, Building2 } from "lucide-react";
+import { X, ChevronDown, CalendarIcon, MapPin, Search, Building2, Tags } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
