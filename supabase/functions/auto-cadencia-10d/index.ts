@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
     const { data: existing } = await supabase
       .from("whatsapp_campaigns")
       .select("id")
-      .eq("lead_id", leadId)
+      .eq("lead_id", effectiveLeadId)
       .eq("status", "running")
       .limit(1);
 
