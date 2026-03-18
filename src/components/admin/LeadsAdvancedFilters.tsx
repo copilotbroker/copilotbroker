@@ -68,6 +68,7 @@ const LeadsAdvancedFilters = ({
   onFiltersChange,
   brokers,
   projects = [],
+  labels = [],
   activeFiltersCount,
   searchTerm,
   onSearchChange,
