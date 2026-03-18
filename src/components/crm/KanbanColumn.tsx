@@ -200,6 +200,7 @@ export function KanbanColumn({
                       lead={lead}
                       isNew={newLeadIds?.has(lead.id)}
                       hasAutomacaoAtiva={activeFlowLeadIds?.has(lead.id)}
+                      preloadedLabels={labelsByLead.get(lead.id)}
                       onCancelCadencia={onCancelCadencia}
                       onClick={() => onCardClick(lead)}
                       onUpdateOrigin={onUpdateOrigin}

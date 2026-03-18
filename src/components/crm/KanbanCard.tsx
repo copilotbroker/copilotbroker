@@ -315,7 +315,7 @@ export const KanbanCard = memo(function KanbanCard({
             </div>
 
             {lead.broker_id && (
-              <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
+              <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact preloadedLabels={preloadedLabels} />
             )}
           </div>
 

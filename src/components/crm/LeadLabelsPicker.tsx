@@ -31,9 +31,12 @@ export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false, pre
     enabled: open,
   });
 
-  const visibleLeadLabels = leadLabels
-    .map((item) => item.label)
-    .filter((label): label is NonNullable<typeof label> => Boolean(label));
+  // Use preloaded data when popover is closed; use live data when open
+  const visibleLeadLabels = open
+    ? leadLabels
+        .map((item) => item.label)
+        .filter((label): label is NonNullable<typeof label> => Boolean(label))
+    : (preloadedLabels || []);
 
   const firstLabel = visibleLeadLabels[0];
 
