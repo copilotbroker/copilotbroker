@@ -70,6 +70,32 @@ export function KanbanColumn({
     onLeadsLoaded?.(leads);
   }, [leads, onLeadsLoaded]);
 
+  // Batch fetch labels for all leads in this column (1 query instead of 2×N)
+  const leadIds = useMemo(() => leads.map((l) => l.id), [leads]);
+  const leadIdsKey = useMemo(() => leadIds.join(","), [leadIds]);
+
+  const { data: rawLeadLabels } = useQuery({
+    queryKey: ["column-lead-labels", status, leadIdsKey],
+    enabled: leadIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("lead_whatsapp_labels")
+        .select("lead_id, label:whatsapp_labels(id, name, color)")
+        .in("lead_id", leadIds);
+      return data || [];
+    },
+    staleTime: 30_000,
+  });
+
+  const labelsByLead = useMemo(() => {
+    const map = new Map<string, Array<{ id: string; name: string; color: string | null }>>();
+    for (const row of rawLeadLabels || []) {
+      if (!map.has(row.lead_id)) map.set(row.lead_id, []);
+      if (row.label) map.get(row.lead_id)!.push(row.label as any);
+    }
+    return map;
+  }, [rawLeadLabels]);
+
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const virtualizer = useVirtualizer({
