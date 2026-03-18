@@ -1,60 +1,51 @@
 
 
-## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
+## Plano: Filtro de Etiquetas condicionado ao Corretor selecionado
 
-### Problema 1: Nomes dos leads não aparecem
+### Problema
+No admin, o filtro de etiquetas aparece sempre (se houver labels), mas etiquetas são pessoais de cada corretor. Faz sentido só mostrar o filtro após selecionar um corretor específico.
 
-A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
+### Mudanças
 
-```
-lead:leads!conversations_lead_id_fkey(id, name, status, ...)
-```
-
-E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
-
-**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
-
-### Problema 2: Marcar como lida quando lida no celular
-
-O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
-
-UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
-
-**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
-1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
-2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
-
-### Arquivos a editar
-
-| Ação | Arquivo |
-|------|---------|
-| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
-| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+| Arquivo | O que muda |
+|---------|-----------|
+| `src/pages/Admin.tsx` | Adicionar query para buscar `whatsapp_labels` filtrado pelo `brokerFilter` selecionado. Passar resultado como prop `labels` ao `LeadsAdvancedFilters`. Limpar `labelFilter` quando o corretor mudar. |
+| `src/components/admin/LeadsAdvancedFilters.tsx` | O componente já suporta a prop `labels` e já esconde o filtro quando `labels.length === 0`. Nenhuma mudança necessária neste arquivo. |
 
 ### Detalhes técnicos
 
-**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
-
-**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+**Admin.tsx** - adicionar:
 ```typescript
-// Update conversation_messages status
-await supabase
-  .from("conversation_messages")
-  .update({ status: "read" })
-  .eq("uazapi_message_id", messageId);
+// Query de labels condicionada ao corretor selecionado
+const selectedBrokerId = filters.brokerFilter !== "all" && filters.brokerFilter !== "enove" 
+  ? filters.brokerFilter : null;
 
-// Find conversation and reset unread
-const { data: msg } = await supabase
-  .from("conversation_messages")
-  .select("conversation_id")
-  .eq("uazapi_message_id", messageId)
-  .maybeSingle();
+const { data: brokerLabels = [] } = useQuery({
+  queryKey: ["admin-broker-labels", selectedBrokerId],
+  enabled: !!selectedBrokerId,
+  queryFn: async () => {
+    const { data } = await supabase
+      .from("whatsapp_labels")
+      .select("id, name, color")
+      .eq("broker_id", selectedBrokerId)
+      .order("name");
+    return data || [];
+  },
+});
 
-if (msg) {
-  await supabase
-    .from("conversations")
-    .update({ unread_count: 0, status: "attending" })
-    .eq("id", msg.conversation_id);
-}
+// Limpar labelFilter quando trocar de corretor
+const handleFiltersChange = (newFilters: LeadFilters) => {
+  if (newFilters.brokerFilter !== filters.brokerFilter) {
+    newFilters.labelFilter = [];
+  }
+  setFilters(newFilters);
+};
 ```
+
+Passar `labels={brokerLabels}` e `onFiltersChange={handleFiltersChange}` ao componente.
+
+### Resultado
+- Sem corretor selecionado → filtro de etiqueta não aparece
+- Corretor selecionado → busca etiquetas daquele corretor e exibe o filtro
+- Trocar de corretor → limpa filtro de etiqueta automaticamente
 
