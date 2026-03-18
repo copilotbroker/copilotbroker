@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
     }).join("\n");
 
     await supabase.from("lead_interactions").insert({
-      lead_id: leadId,
+      lead_id: effectiveLeadId,
       interaction_type: "atendimento_iniciado",
       old_status: lead.status,
       new_status: "awaiting_docs",
