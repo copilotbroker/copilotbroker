@@ -1,5 +1,6 @@
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useQuery } from "@tanstack/react-query";
 
 import { Plus, MoreHorizontal, MessageSquare } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,7 @@ import { CRMLead, LeadStatus, STATUS_CONFIG } from "@/types/crm";
 import { useKanbanColumn, KanbanColumnFilters } from "@/hooks/use-kanban-column";
 import { KanbanCard } from "./KanbanCard";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
