@@ -20,12 +20,14 @@ export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: L
     leadId,
     brokerId,
     phone,
-    enabled: compact ? open : true,
+    enabled: compact ? open || appliedLabelIds.size > 0 : true,
   });
 
   const visibleLeadLabels = leadLabels
     .map((item) => item.label)
     .filter((label): label is NonNullable<typeof label> => Boolean(label));
+
+  const firstLabel = visibleLeadLabels[0];
 
   return (
     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
