@@ -152,11 +152,11 @@ const Admin = () => {
     queryKey: ["admin-broker-labels", selectedBrokerId],
     enabled: !!selectedBrokerId && role === "admin",
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("whatsapp_labels" as any)
         .select("id, name, color")
         .eq("broker_id", selectedBrokerId!)
-        .order("name");
+        .order("name") as any);
       return (data || []) as { id: string; name: string; color: string | null }[];
     },
     staleTime: 30_000,
