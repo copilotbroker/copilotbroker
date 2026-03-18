@@ -99,6 +99,7 @@ const LeadsAdvancedFilters = ({
       dateTo: undefined,
       includeInactive: false,
       projectFilter: "all",
+      labelFilter: [],
     });
   };
 
