@@ -638,6 +638,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
           </Popover>
         )}
 
+        {isAdmin && brokers.length > 0 && (
           <Select value={selectedBroker} onValueChange={setSelectedBroker}>
             <SelectTrigger className="w-auto h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-2 px-2">
               <Users className="w-4 h-4 text-slate-500" />
