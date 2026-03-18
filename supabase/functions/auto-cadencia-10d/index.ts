@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
       .limit(1);
 
     if (existing && existing.length > 0) {
-      console.log("Lead already has active cadence:", leadId);
+      console.log("Lead already has active cadence:", effectiveLeadId);
       return new Response(JSON.stringify({ status: "skipped", reason: "already_active" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
