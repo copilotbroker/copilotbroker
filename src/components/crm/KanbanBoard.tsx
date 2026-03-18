@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Users, Search, MapPin, X } from "lucide-react";
+import { Building2, Users, Search, MapPin, X, Tags } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { CRMLead, LeadStatus, STATUS_CONFIG, LEAD_ORIGINS } from "@/types/crm";
 import { useCustomOrigins } from "@/hooks/use-custom-origins";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
