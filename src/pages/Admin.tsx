@@ -144,6 +144,31 @@ const Admin = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // === REACT QUERY: Broker labels (conditional on selected broker) ===
+  const selectedBrokerId = filters.brokerFilter !== "all" && filters.brokerFilter !== "enove"
+    ? filters.brokerFilter : null;
+
+  const { data: brokerLabels = [] } = useQuery({
+    queryKey: ["admin-broker-labels", selectedBrokerId],
+    enabled: !!selectedBrokerId && role === "admin",
+    queryFn: async () => {
+      const { data } = await (supabase
+        .from("whatsapp_labels" as any)
+        .select("id, name, color")
+        .eq("broker_id", selectedBrokerId!)
+        .order("name") as any);
+      return (data || []) as { id: string; name: string; color: string | null }[];
+    },
+    staleTime: 30_000,
+  });
+
+  const handleFiltersChange = useCallback((newFilters: LeadFilters) => {
+    if (newFilters.brokerFilter !== filters.brokerFilter) {
+      newFilters.labelFilter = [];
+    }
+    setFilters(newFilters);
+  }, [filters.brokerFilter]);
+
   // === REACT QUERY: Leads count (for stats, only on leads tab) ===
   const { data: totalLeadsCount = 0 } = useQuery<number>({
     queryKey: ["admin-leads-count"],
@@ -502,9 +527,10 @@ const Admin = () => {
           {/* Filters + Search */}
           <LeadsAdvancedFilters
             filters={filters}
-            onFiltersChange={setFilters}
+            onFiltersChange={handleFiltersChange}
             brokers={brokers}
             projects={projects}
+            labels={brokerLabels}
             activeFiltersCount={activeFiltersCount}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
