@@ -41,6 +41,13 @@ export interface LeadFilters {
   dateTo: Date | undefined;
   includeInactive: boolean;
   projectFilter: string;
+  labelFilter: string[];
+}
+
+interface WhatsAppLabelOption {
+  id: string;
+  name: string;
+  color: string | null;
 }
 
 interface LeadsAdvancedFiltersProps {
