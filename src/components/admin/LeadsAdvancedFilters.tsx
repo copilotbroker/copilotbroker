@@ -318,6 +318,52 @@ const LeadsAdvancedFilters = ({
               </Popover>
             </div>
           </div>
+
+          {/* Label Filter */}
+          {labels.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white">Etiqueta</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-left font-normal bg-[#0f0f12] border-[#2a2a2e] text-white hover:bg-[#1e1e22]"
+                  >
+                    <span className="flex items-center gap-1 truncate">
+                      <Tags className="w-3 h-3 shrink-0" />
+                      {filters.labelFilter.length === 0
+                        ? "Todas as etiquetas"
+                        : `${filters.labelFilter.length} selecionada(s)`}
+                    </span>
+                    <ChevronDown className="w-4 h-4 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[240px] p-2" align="start">
+                  <ScrollArea className="h-[280px]">
+                    <div className="space-y-1">
+                      {labels.map((label) => (
+                        <label
+                          key={label.id}
+                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#2a2a2e] cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={filters.labelFilter.includes(label.id)}
+                            onCheckedChange={() => toggleLabel(label.id)}
+                          />
+                          <span className="flex items-center gap-1.5 text-sm">
+                            {label.color && (
+                              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: label.color }} />
+                            )}
+                            {label.name}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
         </div>
 
         {/* Include Inactive Toggle + Clear Button */}
