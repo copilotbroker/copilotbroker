@@ -58,6 +58,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [selectedBroker, setSelectedBroker] = useState<string>("all");
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
+  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const { data: customOrigins = [] } = useCustomOrigins();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedLead, setSelectedLead] = useState<CRMLead | null>(null);
@@ -66,6 +67,36 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [whatsappPreselectedStatus, setWhatsappPreselectedStatus] = useState<LeadStatus | undefined>();
   const [localBrokers, setLocalBrokers] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Fetch available WhatsApp labels for filter
+  const { data: availableLabels = [] } = useQuery({
+    queryKey: ["whatsapp-labels-for-filter", brokerId, isAdmin],
+    queryFn: async () => {
+      let query = supabase.from("whatsapp_labels").select("id, name, color, broker_id").order("name");
+      if (!isAdmin && brokerId) {
+        query = query.eq("broker_id", brokerId);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 60_000,
+  });
+
+  // Fetch lead IDs matching selected labels
+  const { data: labelFilteredLeadIds } = useQuery({
+    queryKey: ["label-filtered-lead-ids", selectedLabelIds],
+    enabled: selectedLabelIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_whatsapp_labels")
+        .select("lead_id")
+        .in("label_id", selectedLabelIds);
+      if (error) throw error;
+      return [...new Set((data || []).map(d => d.lead_id))];
+    },
+    staleTime: 10_000,
+  });
 
   // Lead lookup map populated by columns
   const allLeadsRef = useRef<Map<string, CRMLead>>(new Map());
