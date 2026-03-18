@@ -55,6 +55,7 @@ interface LeadsAdvancedFiltersProps {
   onFiltersChange: (filters: LeadFilters) => void;
   brokers: Broker[];
   projects?: Project[];
+  labels?: WhatsAppLabelOption[];
   activeFiltersCount: number;
   searchTerm: string;
   onSearchChange: (value: string) => void;
