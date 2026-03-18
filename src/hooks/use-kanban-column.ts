@@ -70,6 +70,9 @@ function applyFilters(query: any, filters: KanbanColumnFilters) {
       query = query.or(orFilters.join(","));
     }
   }
+  if (filters.selectedLabelIds && filters.selectedLabelIds.length > 0) {
+    query = query.in("id", filters.selectedLabelIds);
+  }
   return query;
 }
 
