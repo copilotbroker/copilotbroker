@@ -255,7 +255,9 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     selectedBroker,
     selectedOrigins,
     searchTerm: debouncedSearch,
-    selectedLabelIds: selectedLabelIds.length > 0 ? (labelFilteredLeadIds || []) : undefined,
+    selectedLabelIds: selectedLabelIds.length > 0
+      ? (labelFilteredLeadIds && labelFilteredLeadIds.length > 0 ? labelFilteredLeadIds : ["00000000-0000-0000-0000-000000000000"])
+      : undefined,
   }), [brokerId, isAdmin, selectedProject, selectedBroker, selectedOrigins, debouncedSearch, selectedLabelIds, labelFilteredLeadIds]);
 
   // Lead lookup callback
