@@ -75,6 +75,9 @@ const MCFormSection = ({ projectId, brokerId, submitted }: MCFormSectionProps) =
         utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign"),
       });
 
+      // Unify duplicate leads (non-blocking fallback — edge functions also unify)
+      supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
+
       supabase.functions.invoke("auto-first-message", { body: { leadId } }).catch(console.warn);
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
 

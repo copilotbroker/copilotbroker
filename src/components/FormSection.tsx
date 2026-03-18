@@ -155,6 +155,9 @@ const FormSection = ({
 
       // Track lead attribution com o ID pré-gerado - marca como landing_page
       await trackLeadAttribution(leadId, projectId || undefined, "landing_page");
+
+      // Unify duplicate leads (non-blocking fallback — edge functions also unify)
+      supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
       
       // Trigger automations (non-blocking)
       supabase.functions.invoke("auto-first-message", {

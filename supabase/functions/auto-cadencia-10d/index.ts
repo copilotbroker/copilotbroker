@@ -96,15 +96,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 1. Fetch lead
+    // 0. Unify duplicate leads (same phone + same broker)
+    const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
+    const effectiveLeadId = unifiedId || leadId;
+    if (effectiveLeadId !== leadId) {
+      console.log(`Lead ${leadId} unified into ${effectiveLeadId}`);
+    }
+
+    // 1. Fetch lead (using effective ID after unification)
     const { data: lead, error: leadError } = await supabase
       .from("leads")
       .select("id, broker_id, project_id, status, whatsapp, name")
-      .eq("id", leadId)
+      .eq("id", effectiveLeadId)
       .single();
 
     if (leadError || !lead || !lead.broker_id) {
-      console.log("Lead not found or no broker:", leadId);
+      console.log("Lead not found or no broker:", effectiveLeadId);
       return new Response(JSON.stringify({ status: "skipped", reason: "lead_not_found_or_no_broker" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -114,7 +121,7 @@ Deno.serve(async (req) => {
     const { data: attribution } = await supabase
       .from("lead_attribution")
       .select("landing_page")
-      .eq("lead_id", leadId)
+      .eq("lead_id", effectiveLeadId)
       .maybeSingle();
 
     const landingPage = attribution?.landing_page || "";
@@ -189,12 +196,12 @@ Deno.serve(async (req) => {
     const { data: existing } = await supabase
       .from("whatsapp_campaigns")
       .select("id")
-      .eq("lead_id", leadId)
+      .eq("lead_id", effectiveLeadId)
       .eq("status", "running")
       .limit(1);
 
     if (existing && existing.length > 0) {
-      console.log("Lead already has active cadence:", leadId);
+      console.log("Lead already has active cadence:", effectiveLeadId);
       return new Response(JSON.stringify({ status: "skipped", reason: "already_active" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -265,7 +272,7 @@ Deno.serve(async (req) => {
         name: `Cadência 10D Auto - ${lead.name}`,
         status: "running",
         total_leads: stepsToUse.length,
-        lead_id: leadId,
+        lead_id: effectiveLeadId,
         project_id: lead.project_id,
         lead_previous_status: restoreStatus,
       })
@@ -321,7 +328,7 @@ Deno.serve(async (req) => {
       return {
         broker_id: lead.broker_id,
         campaign_id: campaign.id,
-        lead_id: leadId,
+        lead_id: effectiveLeadId,
         phone,
         message: replaceVars(step.messageContent, vars),
         status: "scheduled",
@@ -340,7 +347,7 @@ Deno.serve(async (req) => {
       atendimento_iniciado_em: now,
       status_distribuicao: "atendimento_iniciado",
       reserva_expira_em: null,
-    }).eq("id", leadId);
+    }).eq("id", effectiveLeadId);
 
     // 13. Register in timeline
     const stepsPreview = stepsToUse.map((s, i) => {
@@ -349,7 +356,7 @@ Deno.serve(async (req) => {
     }).join("\n");
 
     await supabase.from("lead_interactions").insert({
-      lead_id: leadId,
+      lead_id: effectiveLeadId,
       interaction_type: "atendimento_iniciado",
       old_status: lead.status,
       new_status: "awaiting_docs",
@@ -359,13 +366,13 @@ Deno.serve(async (req) => {
     // 14. Log working hours adjustments if any
     if (adjustmentLogs.length > 0) {
       await supabase.from("lead_interactions").insert({
-        lead_id: leadId,
+        lead_id: effectiveLeadId,
         interaction_type: "note_added",
         notes: adjustmentLogs.join("\n"),
       });
     }
 
-    console.log("Auto cadencia 10D activated for lead:", leadId, "broker:", lead.broker_id, "adjustments:", adjustmentLogs.length);
+    console.log("Auto cadencia 10D activated for lead:", effectiveLeadId, "broker:", lead.broker_id, "adjustments:", adjustmentLogs.length);
 
     return new Response(JSON.stringify({ status: "activated", campaign_id: campaign.id, adjustments: adjustmentLogs.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
