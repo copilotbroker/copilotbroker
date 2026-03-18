@@ -347,7 +347,7 @@ Deno.serve(async (req) => {
       atendimento_iniciado_em: now,
       status_distribuicao: "atendimento_iniciado",
       reserva_expira_em: null,
-    }).eq("id", leadId);
+    }).eq("id", effectiveLeadId);
 
     // 13. Register in timeline
     const stepsPreview = stepsToUse.map((s, i) => {
