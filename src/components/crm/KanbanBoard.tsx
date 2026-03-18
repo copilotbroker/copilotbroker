@@ -255,7 +255,8 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     selectedBroker,
     selectedOrigins,
     searchTerm: debouncedSearch,
-  }), [brokerId, isAdmin, selectedProject, selectedBroker, selectedOrigins, debouncedSearch]);
+    selectedLabelIds: selectedLabelIds.length > 0 ? (labelFilteredLeadIds || []) : undefined,
+  }), [brokerId, isAdmin, selectedProject, selectedBroker, selectedOrigins, debouncedSearch, selectedLabelIds, labelFilteredLeadIds]);
 
   // Lead lookup callback
   const handleLeadsLoaded = useCallback((leads: CRMLead[]) => {
