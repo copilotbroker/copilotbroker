@@ -423,6 +423,22 @@ const LeadsAdvancedFilters = ({
               <X className="w-3 h-3" />
             </span>
           ))}
+          {filters.labelFilter.map((labelId) => {
+            const label = labels.find(l => l.id === labelId);
+            return (
+              <span
+                key={labelId}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#2a2a2e] text-slate-300 cursor-pointer hover:bg-red-500/20 hover:text-red-400 transition-colors"
+                onClick={() => removeLabelFilter(labelId)}
+              >
+                {label?.color && (
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} />
+                )}
+                {label?.name || labelId}
+                <X className="w-3 h-3" />
+              </span>
+            );
+          })}
           {filters.dateFrom && (
             <span
               className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#2a2a2e] text-slate-300 cursor-pointer hover:bg-red-500/20 hover:text-red-400 transition-colors"
