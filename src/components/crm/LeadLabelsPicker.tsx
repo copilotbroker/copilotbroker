@@ -5,27 +5,38 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { useLeadWhatsAppLabels } from "@/hooks/use-lead-whatsapp-labels";
 
+interface PreloadedLabel {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 interface LeadLabelsPickerProps {
   leadId: string;
   brokerId?: string | null;
   phone?: string | null;
   compact?: boolean;
+  preloadedLabels?: PreloadedLabel[];
 }
 
 const chipClassName = "inline-flex items-center rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground";
 
-export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: LeadLabelsPickerProps) {
+export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false, preloadedLabels }: LeadLabelsPickerProps) {
   const [open, setOpen] = useState(false);
+  // Only fire queries when popover is open (lazy loading)
   const { labels, leadLabels, appliedLabelIds, isLoading, isSyncing, isToggling, syncLabels, toggleLabel } = useLeadWhatsAppLabels({
     leadId,
     brokerId,
     phone,
-    enabled: true,
+    enabled: open,
   });
 
-  const visibleLeadLabels = leadLabels
-    .map((item) => item.label)
-    .filter((label): label is NonNullable<typeof label> => Boolean(label));
+  // Use preloaded data when popover is closed; use live data when open
+  const visibleLeadLabels = open
+    ? leadLabels
+        .map((item) => item.label)
+        .filter((label): label is NonNullable<typeof label> => Boolean(label))
+    : (preloadedLabels || []);
 
   const firstLabel = visibleLeadLabels[0];
 

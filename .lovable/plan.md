@@ -1,60 +1,60 @@
 
 
-## Diagnóstico de Lentidão do Kanban
+## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
 
-### Causa raiz
+### Problema 1: Nomes dos leads não aparecem
 
-Cada `KanbanCard` renderiza um `LeadLabelsPicker` que chama `useLeadWhatsAppLabels` com `enabled: true`. Isso dispara **2 queries por card** (catálogo de labels + labels do lead) **imediatamente na renderização**, mesmo sem o usuário interagir.
+A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
 
-Com ~30 cards por coluna × 6 colunas = **até 360 queries simultâneas** ao Supabase no carregamento do Kanban. Isso satura a rede e trava a UI.
+```
+lead:leads!conversations_lead_id_fkey(id, name, status, ...)
+```
 
-### Solução
+E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
 
-Tornar as queries **lazy** — só buscar dados quando o popover for aberto.
+**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
 
-### Mudanças
+### Problema 2: Marcar como lida quando lida no celular
 
-| Arquivo | O que muda |
-|---------|-----------|
-| `src/components/crm/LeadLabelsPicker.tsx` | Passar `enabled: open` ao hook (queries só disparam ao abrir o popover). Aceitar prop opcional `preloadedLabels` para exibir o nome/cor da etiqueta no botão sem query. |
-| `src/hooks/use-lead-whatsapp-labels.ts` | Nenhuma mudança no hook em si — já aceita `enabled`. |
-| `src/components/crm/KanbanCard.tsx` | Buscar labels do lead via uma query única e leve no nível da **coluna** (batch), e passar os dados já carregados como prop ao `LeadLabelsPicker`. |
-| `src/components/crm/KanbanColumn.tsx` | Adicionar uma query batch que busca `lead_whatsapp_labels` + `whatsapp_labels` para todos os lead_ids da coluna de uma vez, e repassa um mapa `leadId → labels[]` aos cards. |
+O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
+
+UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
+
+**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
+1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
+2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
+
+### Arquivos a editar
+
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
+| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
 
 ### Detalhes técnicos
 
-**1. Query batch na coluna (KanbanColumn)**
+**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
+
+**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
 ```typescript
-// Uma única query para todos os leads da coluna
-const leadIds = leads.map(l => l.id);
-const { data: allLeadLabels } = useQuery({
-  queryKey: ["column-lead-labels", status, leadIds.join(",")],
-  enabled: leadIds.length > 0,
-  queryFn: async () => {
-    const { data } = await supabase
-      .from("lead_whatsapp_labels")
-      .select("lead_id, label:whatsapp_labels(id, name, color)")
-      .in("lead_id", leadIds);
-    return data || [];
-  },
-  staleTime: 30_000,
-});
+// Update conversation_messages status
+await supabase
+  .from("conversation_messages")
+  .update({ status: "read" })
+  .eq("uazapi_message_id", messageId);
 
-// Agrupar por lead_id em um Map
-const labelsByLead = useMemo(() => {
-  const map = new Map();
-  for (const row of allLeadLabels || []) {
-    if (!map.has(row.lead_id)) map.set(row.lead_id, []);
-    if (row.label) map.get(row.lead_id).push(row.label);
-  }
-  return map;
-}, [allLeadLabels]);
+// Find conversation and reset unread
+const { data: msg } = await supabase
+  .from("conversation_messages")
+  .select("conversation_id")
+  .eq("uazapi_message_id", messageId)
+  .maybeSingle();
+
+if (msg) {
+  await supabase
+    .from("conversations")
+    .update({ unread_count: 0, status: "attending" })
+    .eq("id", msg.conversation_id);
+}
 ```
-
-**2. LeadLabelsPicker lazy**
-- `enabled` passa de `true` para `open` (estado do Popover)
-- Recebe `preloadedLabels` para renderizar o botão com nome/cor sem query
-- Quando o popover abre, aí sim carrega o catálogo completo para toggle
-
-**Resultado**: De ~360 queries → 6 queries (uma por coluna) + queries sob demanda ao abrir o popover. Redução de ~98% nas chamadas ao banco.
 

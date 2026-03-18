@@ -32,11 +32,18 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 const LazyWhatsAppComposer = lazy(() => import("./KanbanCardComposer"));
 const LazyDeleteDialog = lazy(() => import("./KanbanCardDeleteDialog"));
 
+export interface PreloadedLabel {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 interface KanbanCardProps {
   lead: CRMLead;
   isNew?: boolean;
   hasAutomacaoAtiva?: boolean;
   hasCadenciaAtiva?: boolean;
+  preloadedLabels?: PreloadedLabel[];
   onCancelCadencia?: (leadId: string) => void;
   onClick: () => void;
   onUpdateOrigin?: (leadId: string, origin: string) => Promise<void>;
@@ -82,6 +89,7 @@ export const KanbanCard = memo(function KanbanCard({
   isNew,
   hasAutomacaoAtiva,
   hasCadenciaAtiva,
+  preloadedLabels,
   onCancelCadencia,
   onClick,
   onUpdateOrigin,
@@ -307,7 +315,7 @@ export const KanbanCard = memo(function KanbanCard({
             </div>
 
             {lead.broker_id && (
-              <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact />
+              <LeadLabelsPicker leadId={lead.id} brokerId={lead.broker_id} phone={lead.whatsapp} compact preloadedLabels={preloadedLabels} />
             )}
           </div>
 
