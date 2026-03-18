@@ -176,8 +176,8 @@ Deno.serve(async (req) => {
     const { data: attribution } = await supabase
       .from("lead_attribution")
       .select("landing_page")
-      .eq("lead_id", leadId)
-      .single();
+      .eq("lead_id", effectiveLeadId)
+      .maybeSingle();
 
     const landingPage = attribution?.landing_page || "";
     
