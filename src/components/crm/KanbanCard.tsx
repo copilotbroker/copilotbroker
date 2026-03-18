@@ -63,7 +63,7 @@ const ACTION_CONFIG: Record<string, KanbanActionConfig> = {
   new: { label: "Iniciar Atendimento", icon: Play, variant: "success" },
   info_sent: { label: "Agendar", icon: Calendar, variant: "info" },
   awaiting_docs: { label: "Agendar", icon: Calendar, variant: "info" },
-  scheduling: { label: "Comparecimento", icon: FileText, variant: "info" },
+  scheduling: { label: "Compareceu", icon: FileText, variant: "info" },
   docs_received: { label: "Confirmar Venda", icon: Trophy, variant: "success" },
   registered: null,
 };
