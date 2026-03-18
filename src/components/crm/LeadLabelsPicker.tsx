@@ -16,11 +16,16 @@ const chipClassName = "inline-flex items-center rounded-full border border-borde
 
 export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false }: LeadLabelsPickerProps) {
   const [open, setOpen] = useState(false);
+  const [hasEverOpened, setHasEverOpened] = useState(false);
+  const handleOpenChange = (v: boolean) => {
+    setOpen(v);
+    if (v) setHasEverOpened(true);
+  };
   const { labels, leadLabels, appliedLabelIds, isLoading, isSyncing, isToggling, syncLabels, toggleLabel } = useLeadWhatsAppLabels({
     leadId,
     brokerId,
     phone,
-    enabled: compact ? open || appliedLabelIds.size > 0 : true,
+    enabled: compact ? (open || hasEverOpened) : true,
   });
 
   const visibleLeadLabels = leadLabels
