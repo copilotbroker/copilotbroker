@@ -345,7 +345,7 @@ Deno.serve(async (req) => {
         auto_first_message_sent: true,
         auto_first_message_at: new Date().toISOString(),
       })
-      .eq("id", leadId);
+      .eq("id", effectiveLeadId);
 
     // 12. Log interaction
     await supabase.from("lead_interactions").insert({
