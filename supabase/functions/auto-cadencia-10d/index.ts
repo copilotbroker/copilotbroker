@@ -366,7 +366,7 @@ Deno.serve(async (req) => {
     // 14. Log working hours adjustments if any
     if (adjustmentLogs.length > 0) {
       await supabase.from("lead_interactions").insert({
-        lead_id: leadId,
+        lead_id: effectiveLeadId,
         interaction_type: "note_added",
         notes: adjustmentLogs.join("\n"),
       });
