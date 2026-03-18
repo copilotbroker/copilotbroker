@@ -599,7 +599,45 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
           </PopoverContent>
         </Popover>
 
-        {isAdmin && brokers.length > 0 && (
+        {/* Label filter */}
+        {availableLabels.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-1 md:gap-2 h-9 px-2 text-sm text-slate-400 hover:text-slate-200 transition-colors rounded-lg hover:bg-[#2a2a2e]">
+                <Tags className="w-4 h-4 shrink-0" />
+                <span className="truncate max-w-[100px] md:max-w-none">
+                  {selectedLabelIds.length === 0 ? "Etiquetas" : `${selectedLabelIds.length} etiqueta${selectedLabelIds.length > 1 ? "s" : ""}`}
+                </span>
+                {selectedLabelIds.length > 0 && (
+                  <X className="w-3.5 h-3.5 ml-0.5 hover:text-destructive" onClick={(e) => { e.stopPropagation(); setSelectedLabelIds([]); }} />
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2 bg-[#1e1e22] border-[#2a2a2e]" align="start">
+              <ScrollArea className="h-[256px]">
+                <div className="flex flex-col gap-1">
+                  {availableLabels.map(label => (
+                    <label key={label.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#2a2a2e] cursor-pointer text-sm">
+                      <Checkbox
+                        checked={selectedLabelIds.includes(label.id)}
+                        onCheckedChange={() => setSelectedLabelIds(prev =>
+                          prev.includes(label.id) ? prev.filter(id => id !== label.id) : [...prev, label.id]
+                        )}
+                      />
+                      <span className="flex items-center gap-1.5 truncate">
+                        {label.color && (
+                          <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: label.color }} />
+                        )}
+                        {label.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+        )}
+
           <Select value={selectedBroker} onValueChange={setSelectedBroker}>
             <SelectTrigger className="w-auto h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-2 px-2">
               <Users className="w-4 h-4 text-slate-500" />
