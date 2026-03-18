@@ -89,6 +89,7 @@ export const KanbanCard = memo(function KanbanCard({
   isNew,
   hasAutomacaoAtiva,
   hasCadenciaAtiva,
+  preloadedLabels,
   onCancelCadencia,
   onClick,
   onUpdateOrigin,
