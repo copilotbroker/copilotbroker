@@ -132,11 +132,18 @@ Deno.serve(async (req) => {
 
     console.log(`[auto-first-message] Processing lead: ${leadId}`);
 
-    // 1. Fetch lead details
+    // 0. Unify duplicate leads (same phone + same broker)
+    const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
+    const effectiveLeadId = unifiedId || leadId;
+    if (effectiveLeadId !== leadId) {
+      console.log(`[auto-first-message] Lead ${leadId} unified into ${effectiveLeadId}`);
+    }
+
+    // 1. Fetch lead details (using effective ID after unification)
     const { data: lead, error: leadError } = await supabase
       .from("leads")
       .select("id, name, whatsapp, broker_id, project_id, auto_first_message_sent")
-      .eq("id", leadId)
+      .eq("id", effectiveLeadId)
       .single();
 
     if (leadError || !lead) {
