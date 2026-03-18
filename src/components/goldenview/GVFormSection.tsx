@@ -156,7 +156,7 @@ const GVFormSection = ({
       await trackLeadAttribution(leadId, projectId, "landing_page");
 
       // Unify duplicate leads (non-blocking fallback — edge functions also unify)
-      supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(() => {}).catch(() => {});
+      supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
       
       // Trigger automations (non-blocking)
       supabase.functions.invoke("auto-first-message", {
