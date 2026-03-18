@@ -23,6 +23,7 @@ export interface KanbanColumnFilters {
   selectedBroker?: string;
   selectedOrigins?: string[];
   searchTerm?: string;
+  selectedLabelIds?: string[];
 }
 
 function applyFilters(query: any, filters: KanbanColumnFilters) {
