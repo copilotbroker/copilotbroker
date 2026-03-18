@@ -530,7 +530,7 @@ const Admin = () => {
             onFiltersChange={handleFiltersChange}
             brokers={brokers}
             projects={projects}
-            labels={brokerLabels}
+            labels={selectedBrokerId ? brokerLabels : []}
             activeFiltersCount={activeFiltersCount}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
