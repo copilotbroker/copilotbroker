@@ -173,7 +173,8 @@ export const KanbanCard = memo(function KanbanCard({
 
     switch (lead.status) {
       case "new":
-        onIniciarAtendimento?.(lead.id);
+        // Open WhatsApp composer (same as message button on other cards)
+        setComposerOpen(true);
         break;
       case "info_sent":
       case "awaiting_docs":
@@ -319,29 +320,17 @@ export const KanbanCard = memo(function KanbanCard({
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {actionConfig && (
-            <Button
-              size="sm"
-              variant={actionConfig.variant}
-              onClick={handleAction}
-              className="h-8 gap-1.5 rounded-lg px-3.5 text-xs font-semibold"
-            >
-              <actionConfig.icon className="h-3.5 w-3.5" />
-              <span>{actionConfig.label}</span>
-            </Button>
-          )}
-
-          {lead.status !== "new" && (
+          {lead.status === "new" && actionConfig ? (
             <Popover open={composerOpen} onOpenChange={setComposerOpen}>
               <PopoverTrigger asChild>
                 <Button
                   size="sm"
-                  variant="success"
+                  variant={actionConfig.variant}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-8 w-8 rounded-lg px-0"
-                  title="Enviar ou programar WhatsApp"
+                  className="h-8 gap-1.5 rounded-lg px-3.5 text-xs font-semibold"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" />
+                  <actionConfig.icon className="h-3.5 w-3.5" />
+                  <span>{actionConfig.label}</span>
                 </Button>
               </PopoverTrigger>
               {composerOpen && (
@@ -358,9 +347,50 @@ export const KanbanCard = memo(function KanbanCard({
                 </PopoverContent>
               )}
             </Popover>
+          ) : (
+            <>
+              {actionConfig && (
+                <Button
+                  size="sm"
+                  variant={actionConfig.variant}
+                  onClick={handleAction}
+                  className="h-8 gap-1.5 rounded-lg px-3.5 text-xs font-semibold"
+                >
+                  <actionConfig.icon className="h-3.5 w-3.5" />
+                  <span>{actionConfig.label}</span>
+                </Button>
+              )}
+
+              <Popover open={composerOpen} onOpenChange={setComposerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="success"
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-8 w-8 rounded-lg px-0"
+                    title="Enviar ou programar WhatsApp"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                {composerOpen && (
+                  <PopoverContent align="start" className="w-80 space-y-3 p-3" onClick={(e) => e.stopPropagation()}>
+                    <Suspense fallback={<div className="h-40 flex items-center justify-center text-xs text-muted-foreground">Carregando...</div>}>
+                      <LazyWhatsAppComposer
+                        leadId={lead.id}
+                        leadName={lead.name}
+                        onSendWhatsAppNow={onSendWhatsAppNow}
+                        onScheduleWhatsApp={onScheduleWhatsApp}
+                        onClose={() => setComposerOpen(false)}
+                      />
+                    </Suspense>
+                  </PopoverContent>
+                )}
+              </Popover>
+            </>
           )}
 
-          {lead.status !== "new" && onCallClick && (
+          {onCallClick && (
             <Button
               size="sm"
               variant="accent"
