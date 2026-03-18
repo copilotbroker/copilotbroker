@@ -23,6 +23,7 @@ export interface KanbanColumnFilters {
   selectedBroker?: string;
   selectedOrigins?: string[];
   searchTerm?: string;
+  selectedLabelIds?: string[];
 }
 
 function applyFilters(query: any, filters: KanbanColumnFilters) {
@@ -69,6 +70,9 @@ function applyFilters(query: any, filters: KanbanColumnFilters) {
       query = query.or(orFilters.join(","));
     }
   }
+  if (filters.selectedLabelIds && filters.selectedLabelIds.length > 0) {
+    query = query.in("id", filters.selectedLabelIds);
+  }
   return query;
 }
 
@@ -99,7 +103,8 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     filters.selectedBroker,
     JSON.stringify(filters.selectedOrigins || []),
     filters.searchTerm || "",
-  ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm]);
+    JSON.stringify(filters.selectedLabelIds || []),
+  ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm, filters.selectedLabelIds]);
 
   const { activeFlowLeadIds, activeFlowIdList, activeFlowSignature } = useActiveFlowLeads({
     brokerId: filters.brokerId,

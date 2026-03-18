@@ -1,4 +1,4 @@
-import { X, ChevronDown, CalendarIcon, MapPin, Search, Building2 } from "lucide-react";
+import { X, ChevronDown, CalendarIcon, MapPin, Search, Building2, Tags } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,13 @@ export interface LeadFilters {
   dateTo: Date | undefined;
   includeInactive: boolean;
   projectFilter: string;
+  labelFilter: string[];
+}
+
+interface WhatsAppLabelOption {
+  id: string;
+  name: string;
+  color: string | null;
 }
 
 interface LeadsAdvancedFiltersProps {
@@ -48,6 +55,7 @@ interface LeadsAdvancedFiltersProps {
   onFiltersChange: (filters: LeadFilters) => void;
   brokers: Broker[];
   projects?: Project[];
+  labels?: WhatsAppLabelOption[];
   activeFiltersCount: number;
   searchTerm: string;
   onSearchChange: (value: string) => void;
@@ -60,6 +68,7 @@ const LeadsAdvancedFilters = ({
   onFiltersChange,
   brokers,
   projects = [],
+  labels = [],
   activeFiltersCount,
   searchTerm,
   onSearchChange,
@@ -91,6 +100,7 @@ const LeadsAdvancedFilters = ({
       dateTo: undefined,
       includeInactive: false,
       projectFilter: "all",
+      labelFilter: [],
     });
   };
 
@@ -100,6 +110,17 @@ const LeadsAdvancedFilters = ({
 
   const removeOriginFilter = (origin: string) => {
     updateFilter("originFilter", filters.originFilter.filter((o) => o !== origin));
+  };
+
+  const toggleLabel = (labelId: string) => {
+    const newLabels = filters.labelFilter.includes(labelId)
+      ? filters.labelFilter.filter((l) => l !== labelId)
+      : [...filters.labelFilter, labelId];
+    updateFilter("labelFilter", newLabels);
+  };
+
+  const removeLabelFilter = (labelId: string) => {
+    updateFilter("labelFilter", filters.labelFilter.filter((l) => l !== labelId));
   };
 
   return (
@@ -297,6 +318,52 @@ const LeadsAdvancedFilters = ({
               </Popover>
             </div>
           </div>
+
+          {/* Label Filter */}
+          {labels.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white">Etiqueta</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-left font-normal bg-[#0f0f12] border-[#2a2a2e] text-white hover:bg-[#1e1e22]"
+                  >
+                    <span className="flex items-center gap-1 truncate">
+                      <Tags className="w-3 h-3 shrink-0" />
+                      {filters.labelFilter.length === 0
+                        ? "Todas as etiquetas"
+                        : `${filters.labelFilter.length} selecionada(s)`}
+                    </span>
+                    <ChevronDown className="w-4 h-4 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[240px] p-2" align="start">
+                  <ScrollArea className="h-[280px]">
+                    <div className="space-y-1">
+                      {labels.map((label) => (
+                        <label
+                          key={label.id}
+                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#2a2a2e] cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={filters.labelFilter.includes(label.id)}
+                            onCheckedChange={() => toggleLabel(label.id)}
+                          />
+                          <span className="flex items-center gap-1.5 text-sm">
+                            {label.color && (
+                              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: label.color }} />
+                            )}
+                            {label.name}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
         </div>
 
         {/* Include Inactive Toggle + Clear Button */}
@@ -356,6 +423,22 @@ const LeadsAdvancedFilters = ({
               <X className="w-3 h-3" />
             </span>
           ))}
+          {filters.labelFilter.map((labelId) => {
+            const label = labels.find(l => l.id === labelId);
+            return (
+              <span
+                key={labelId}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#2a2a2e] text-slate-300 cursor-pointer hover:bg-red-500/20 hover:text-red-400 transition-colors"
+                onClick={() => removeLabelFilter(labelId)}
+              >
+                {label?.color && (
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} />
+                )}
+                {label?.name || labelId}
+                <X className="w-3 h-3" />
+              </span>
+            );
+          })}
           {filters.dateFrom && (
             <span
               className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#2a2a2e] text-slate-300 cursor-pointer hover:bg-red-500/20 hover:text-red-400 transition-colors"

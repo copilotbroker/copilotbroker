@@ -61,6 +61,7 @@ const initialFilters: LeadFilters = {
   dateTo: undefined,
   includeInactive: false,
   projectFilter: "all",
+  labelFilter: [],
 };
 
 const Admin = () => {

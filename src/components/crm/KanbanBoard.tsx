@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Users, Search, MapPin, X } from "lucide-react";
+import { Building2, Users, Search, MapPin, X, Tags } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { CRMLead, LeadStatus, STATUS_CONFIG, LEAD_ORIGINS } from "@/types/crm";
 import { useCustomOrigins } from "@/hooks/use-custom-origins";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
@@ -57,6 +58,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [selectedBroker, setSelectedBroker] = useState<string>("all");
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
+  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const { data: customOrigins = [] } = useCustomOrigins();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedLead, setSelectedLead] = useState<CRMLead | null>(null);
@@ -65,6 +67,36 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [whatsappPreselectedStatus, setWhatsappPreselectedStatus] = useState<LeadStatus | undefined>();
   const [localBrokers, setLocalBrokers] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Fetch available WhatsApp labels for filter
+  const { data: availableLabels = [] } = useQuery({
+    queryKey: ["whatsapp-labels-for-filter", brokerId, isAdmin],
+    queryFn: async () => {
+      let query = supabase.from("whatsapp_labels").select("id, name, color, broker_id").order("name");
+      if (!isAdmin && brokerId) {
+        query = query.eq("broker_id", brokerId);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 60_000,
+  });
+
+  // Fetch lead IDs matching selected labels
+  const { data: labelFilteredLeadIds } = useQuery({
+    queryKey: ["label-filtered-lead-ids", selectedLabelIds],
+    enabled: selectedLabelIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_whatsapp_labels")
+        .select("lead_id")
+        .in("label_id", selectedLabelIds);
+      if (error) throw error;
+      return [...new Set((data || []).map(d => d.lead_id))];
+    },
+    staleTime: 10_000,
+  });
 
   // Lead lookup map populated by columns
   const allLeadsRef = useRef<Map<string, CRMLead>>(new Map());
@@ -223,7 +255,10 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     selectedBroker,
     selectedOrigins,
     searchTerm: debouncedSearch,
-  }), [brokerId, isAdmin, selectedProject, selectedBroker, selectedOrigins, debouncedSearch]);
+    selectedLabelIds: selectedLabelIds.length > 0
+      ? (labelFilteredLeadIds && labelFilteredLeadIds.length > 0 ? labelFilteredLeadIds : ["00000000-0000-0000-0000-000000000000"])
+      : undefined,
+  }), [brokerId, isAdmin, selectedProject, selectedBroker, selectedOrigins, debouncedSearch, selectedLabelIds, labelFilteredLeadIds]);
 
   // Lead lookup callback
   const handleLeadsLoaded = useCallback((leads: CRMLead[]) => {
@@ -565,6 +600,45 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
             </ScrollArea>
           </PopoverContent>
         </Popover>
+
+        {/* Label filter */}
+        {availableLabels.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-1 md:gap-2 h-9 px-2 text-sm text-slate-400 hover:text-slate-200 transition-colors rounded-lg hover:bg-[#2a2a2e]">
+                <Tags className="w-4 h-4 shrink-0" />
+                <span className="truncate max-w-[100px] md:max-w-none">
+                  {selectedLabelIds.length === 0 ? "Etiquetas" : `${selectedLabelIds.length} etiqueta${selectedLabelIds.length > 1 ? "s" : ""}`}
+                </span>
+                {selectedLabelIds.length > 0 && (
+                  <X className="w-3.5 h-3.5 ml-0.5 hover:text-destructive" onClick={(e) => { e.stopPropagation(); setSelectedLabelIds([]); }} />
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2 bg-[#1e1e22] border-[#2a2a2e]" align="start">
+              <ScrollArea className="h-[256px]">
+                <div className="flex flex-col gap-1">
+                  {availableLabels.map(label => (
+                    <label key={label.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#2a2a2e] cursor-pointer text-sm">
+                      <Checkbox
+                        checked={selectedLabelIds.includes(label.id)}
+                        onCheckedChange={() => setSelectedLabelIds(prev =>
+                          prev.includes(label.id) ? prev.filter(id => id !== label.id) : [...prev, label.id]
+                        )}
+                      />
+                      <span className="flex items-center gap-1.5 truncate">
+                        {label.color && (
+                          <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: label.color }} />
+                        )}
+                        {label.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+        )}
 
         {isAdmin && brokers.length > 0 && (
           <Select value={selectedBroker} onValueChange={setSelectedBroker}>
