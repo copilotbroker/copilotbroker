@@ -112,6 +112,17 @@ const LeadsAdvancedFilters = ({
     updateFilter("originFilter", filters.originFilter.filter((o) => o !== origin));
   };
 
+  const toggleLabel = (labelId: string) => {
+    const newLabels = filters.labelFilter.includes(labelId)
+      ? filters.labelFilter.filter((l) => l !== labelId)
+      : [...filters.labelFilter, labelId];
+    updateFilter("labelFilter", newLabels);
+  };
+
+  const removeLabelFilter = (labelId: string) => {
+    updateFilter("labelFilter", filters.labelFilter.filter((l) => l !== labelId));
+  };
+
   return (
     <div className="space-y-4 mb-6">
       {/* Search Input */}
