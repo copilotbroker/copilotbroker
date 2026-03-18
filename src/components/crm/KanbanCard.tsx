@@ -319,7 +319,7 @@ export const KanbanCard = memo(function KanbanCard({
           )}
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex items-center gap-1.5">
           {lead.status === "new" && actionConfig ? (
             <Popover open={composerOpen} onOpenChange={setComposerOpen}>
               <PopoverTrigger asChild>
@@ -327,10 +327,10 @@ export const KanbanCard = memo(function KanbanCard({
                   size="sm"
                   variant={actionConfig.variant}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-8 gap-1.5 rounded-lg px-3.5 text-xs font-semibold"
+                  className="h-8 gap-1 rounded-lg px-2.5 text-[11px] font-semibold"
                 >
                   <actionConfig.icon className="h-3.5 w-3.5" />
-                  <span>{actionConfig.label}</span>
+                  <span>Atender</span>
                 </Button>
               </PopoverTrigger>
               {composerOpen && (
