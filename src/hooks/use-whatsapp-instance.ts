@@ -7,6 +7,7 @@ const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp
 
 interface UseWhatsAppInstanceReturn {
   instance: BrokerWhatsAppInstance | null;
+  pairingCode: string | null;
   isLoading: boolean;
   qrCode: string | null;
   isLoadingQR: boolean;
@@ -25,6 +26,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
   const [instance, setInstance] = useState<BrokerWhatsAppInstance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [qrCode, setQRCode] = useState<string | null>(null);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [isLoadingQR, setIsLoadingQR] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -62,6 +64,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
       // Clear QR code when connected
       if (data.instance?.status === "connected") {
         setQRCode(null);
+        setPairingCode(null);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
@@ -128,6 +131,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
       }
 
       setQRCode(data.qrcode);
+      setPairingCode(data.pairingCode || null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       console.error("QR Code error:", err);
@@ -158,6 +162,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
       }
 
       setQRCode(null);
+      setPairingCode(null);
       await refreshStatus();
       
       toast({
@@ -229,6 +234,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
       // Clear local state
       setInstance(null);
       setQRCode(null);
+      setPairingCode(null);
       
       toast({
         title: "Instância deletada",
@@ -342,6 +348,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
     instance,
     isLoading,
     qrCode,
+    pairingCode,
     isLoadingQR,
     error,
     initInstance,

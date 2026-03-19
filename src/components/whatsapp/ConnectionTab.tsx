@@ -24,6 +24,7 @@ export function ConnectionTab() {
   const {
     instance,
     isLoading,
+    pairingCode,
     qrCode,
     isLoadingQR,
     error,
@@ -223,6 +224,7 @@ export function ConnectionTab() {
         {needsQR ? (
           <QRCodeDisplay 
             qrCode={qrCode} 
+            pairingCode={pairingCode}
             isLoading={isLoadingQR} 
             onRefresh={fetchQRCode} 
           />
