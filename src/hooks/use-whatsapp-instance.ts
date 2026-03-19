@@ -131,6 +131,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
       }
 
       setQRCode(data.qrcode);
+      setPairingCode(data.pairingCode || null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       console.error("QR Code error:", err);
