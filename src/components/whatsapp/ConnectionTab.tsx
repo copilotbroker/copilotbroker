@@ -24,6 +24,7 @@ export function ConnectionTab() {
   const {
     instance,
     isLoading,
+    pairingCode,
     qrCode,
     isLoadingQR,
     error,
