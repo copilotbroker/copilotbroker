@@ -1,60 +1,47 @@
 
 
-## Plano: Melhorias no Inbox — Nomes dos Leads e Sincronização de Leitura
+## Plano: Adicionar Pareamento por Código (alternativa ao QR Code)
 
-### Problema 1: Nomes dos leads não aparecem
+### Problema
+Corretores que acessam o CRM pelo celular (via QR Code) não conseguem escanear outro QR Code na mesma tela para conectar o WhatsApp.
 
-A query atual já faz JOIN com `leads` e busca o `name`. Se o nome não aparece, significa que a conversa **não tem `lead_id` vinculado** — quando isso acontece, o fallback é exibir o telefone. A query está correta:
+### Solução
+WhatsApp oferece **pareamento por código numérico** (8 dígitos) como alternativa ao QR. O backend já retorna o `pairingCode` da UAZAPI — basta exibi-lo no frontend.
 
-```
-lead:leads!conversations_lead_id_fkey(id, name, status, ...)
-```
+### Mudanças
 
-E o display em `ConversationList.tsx` linha 296 já faz: `const leadName = (conv.lead as any)?.name || conv.phone;`
+| Arquivo | O que muda |
+|---------|-----------|
+| `src/hooks/use-whatsapp-instance.ts` | Armazenar `pairingCode` no estado (já vem na resposta do `/qrcode`). |
+| `src/components/whatsapp/QRCodeDisplay.tsx` | Exibir o pairing code abaixo ou como alternativa ao QR. Botão "Usar código numérico" para alternar. |
+| `src/components/whatsapp/ConnectionTab.tsx` | Passar `pairingCode` ao `QRCodeDisplay`. |
 
-**Solução**: Para conversas sem lead vinculado, buscar o nome do contato pelo `phone` na tabela `leads` (match por WhatsApp). Alterar o `fetchConversations` para, após o query principal, fazer um segundo pass nas conversas sem `lead_id` e tentar encontrar o nome via `leads.whatsapp`.
-
-### Problema 2: Marcar como lida quando lida no celular
-
-O webhook já recebe eventos `messages.update` (status do message), mas o `handleMessageStatusUpdate` atual **não atualiza** o `conversation_messages.status` nem zera o `unread_count` da conversa quando o status é `read`.
-
-UAZAPI envia status updates com valores como `"read"`, `"delivered"`, `"played"`. Quando uma mensagem inbound é marcada como `read` no celular do corretor, a UAZAPI envia um webhook com esse status.
-
-**Solução**: No `handleMessageStatusUpdate`, quando o status for `"read"`:
-1. Atualizar o `conversation_messages.status` para `"read"` pelo `uazapi_message_id`
-2. Buscar a conversa associada e zerar o `unread_count` + mudar status para `"attending"`
-
-### Arquivos a editar
-
-| Ação | Arquivo |
-|------|---------|
-| Editar | `src/hooks/use-conversations.ts` — enriquecer conversas sem lead com nome do lead via phone match |
-| Editar | `supabase/functions/whatsapp-webhook/index.ts` — no `handleMessageStatusUpdate`, sincronizar read status com `conversations.unread_count` |
+### UX proposta
+- Manter o QR Code como padrão (funciona bem no desktop)
+- Abaixo do QR, adicionar link "No celular? Use um código numérico"
+- Ao clicar, exibe o código de 8 dígitos em destaque com instruções: "Abra o WhatsApp → Aparelhos conectados → Conectar um aparelho → Vincular com número de telefone → Digite o código abaixo"
+- Se `pairingCode` não estiver disponível (nem toda UAZAPI retorna), manter apenas o QR
 
 ### Detalhes técnicos
 
-**use-conversations.ts**: Após o fetch principal, para conversas onde `lead` é null mas `phone_normalized` existe, fazer uma query batch em `leads` filtrando por whatsapp similar. Mapear os nomes encontrados de volta nas conversas.
-
-**whatsapp-webhook**: Em `handleMessageStatusUpdate`, quando `status === "read"`:
+**Hook** — adicionar estado `pairingCode`:
 ```typescript
-// Update conversation_messages status
-await supabase
-  .from("conversation_messages")
-  .update({ status: "read" })
-  .eq("uazapi_message_id", messageId);
+const [pairingCode, setPairingCode] = useState<string | null>(null);
 
-// Find conversation and reset unread
-const { data: msg } = await supabase
-  .from("conversation_messages")
-  .select("conversation_id")
-  .eq("uazapi_message_id", messageId)
-  .maybeSingle();
+// No fetchQRCode:
+setPairingCode(data.pairingCode || null);
+```
 
-if (msg) {
-  await supabase
-    .from("conversations")
-    .update({ unread_count: 0, status: "attending" })
-    .eq("id", msg.conversation_id);
+**QRCodeDisplay** — aceitar `pairingCode` prop e renderizar alternativa:
+```typescript
+interface QRCodeDisplayProps {
+  qrCode: string | null;
+  pairingCode: string | null;
+  isLoading: boolean;
+  onRefresh: () => void;
 }
 ```
+- Estado local `showCode` para alternar entre QR e código
+- Código exibido com fonte mono grande, espaçado (ex: `1234-5678`)
+- Instruções adaptadas para o fluxo de pareamento por código
 
