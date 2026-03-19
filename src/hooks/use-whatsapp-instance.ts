@@ -64,6 +64,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
       // Clear QR code when connected
       if (data.instance?.status === "connected") {
         setQRCode(null);
+        setPairingCode(null);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
