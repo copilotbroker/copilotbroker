@@ -234,6 +234,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
       // Clear local state
       setInstance(null);
       setQRCode(null);
+      setPairingCode(null);
       
       toast({
         title: "Instância deletada",
