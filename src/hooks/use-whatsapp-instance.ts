@@ -26,6 +26,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
   const [instance, setInstance] = useState<BrokerWhatsAppInstance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [qrCode, setQRCode] = useState<string | null>(null);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [isLoadingQR, setIsLoadingQR] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
