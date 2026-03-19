@@ -348,6 +348,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
     instance,
     isLoading,
     qrCode,
+    pairingCode,
     isLoadingQR,
     error,
     initInstance,

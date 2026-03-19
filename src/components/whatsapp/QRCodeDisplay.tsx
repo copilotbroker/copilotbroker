@@ -1,20 +1,28 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, QrCode } from "lucide-react";
+import { Loader2, RefreshCw, QrCode, Smartphone } from "lucide-react";
 
 interface QRCodeDisplayProps {
   qrCode: string | null;
+  pairingCode: string | null;
   isLoading: boolean;
   onRefresh: () => void;
 }
 
-export function QRCodeDisplay({ qrCode, isLoading, onRefresh }: QRCodeDisplayProps) {
+export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRCodeDisplayProps) {
+  const [showCode, setShowCode] = useState(false);
+
+  const formattedCode = pairingCode
+    ? pairingCode.replace(/(\w{4})(\w{4})/, "$1-$2")
+    : null;
+
   return (
     <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
-          <QrCode className="w-5 h-5" />
-          QR Code
+          {showCode ? <Smartphone className="w-5 h-5" /> : <QrCode className="w-5 h-5" />}
+          {showCode ? "Código de Pareamento" : "QR Code"}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center">
@@ -22,14 +30,77 @@ export function QRCodeDisplay({ qrCode, isLoading, onRefresh }: QRCodeDisplayPro
           <div className="w-64 h-64 flex items-center justify-center bg-[#0d0d0f] rounded-lg">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-        ) : qrCode ? (
-          <div className="p-4 bg-white rounded-lg">
-            <img 
-              src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
-              alt="WhatsApp QR Code"
-              className="w-56 h-56 object-contain"
-            />
-          </div>
+        ) : qrCode || pairingCode ? (
+          <>
+            {showCode && formattedCode ? (
+              <div className="w-64 h-64 flex flex-col items-center justify-center bg-[#0d0d0f] rounded-lg gap-4">
+                <p className="text-xs text-slate-500 text-center px-4">
+                  Abra o WhatsApp → Aparelhos conectados → Conectar um aparelho → <strong className="text-slate-300">Vincular com número de telefone</strong>
+                </p>
+                <div className="text-3xl font-mono font-bold text-white tracking-[0.3em] select-all">
+                  {formattedCode}
+                </div>
+                <p className="text-xs text-slate-500">Digite este código no WhatsApp</p>
+              </div>
+            ) : qrCode ? (
+              <div className="p-4 bg-white rounded-lg">
+                <img
+                  src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
+                  alt="WhatsApp QR Code"
+                  className="w-56 h-56 object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-64 h-64 flex flex-col items-center justify-center bg-[#0d0d0f] rounded-lg gap-4">
+                <Smartphone className="w-12 h-12 text-slate-600" />
+                <p className="text-sm text-slate-500 text-center px-4">
+                  Código numérico não disponível. Use o QR Code.
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCode(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  Voltar ao QR Code
+                </Button>
+              </div>
+            )}
+
+            {/* Toggle + refresh controls */}
+            <div className="mt-4 text-center space-y-2">
+              {!showCode && (
+                <p className="text-xs text-slate-500">
+                  Abra o WhatsApp no seu celular → Menu → Aparelhos conectados → Conectar um aparelho
+                </p>
+              )}
+
+              <div className="flex flex-col items-center gap-2">
+                {pairingCode && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCode(!showCode)}
+                    className="text-primary hover:text-primary/80"
+                  >
+                    <Smartphone className="w-4 h-4 mr-2" />
+                    {showCode ? "Usar QR Code" : "No celular? Use um código numérico"}
+                  </Button>
+                )}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onRefresh}
+                  disabled={isLoading}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+              </div>
+            </div>
+          </>
         ) : (
           <div className="w-64 h-64 flex flex-col items-center justify-center bg-[#0d0d0f] rounded-lg gap-4">
             <QrCode className="w-12 h-12 text-slate-600" />
@@ -44,24 +115,6 @@ export function QRCodeDisplay({ qrCode, isLoading, onRefresh }: QRCodeDisplayPro
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Gerar QR Code
-            </Button>
-          </div>
-        )}
-
-        {qrCode && (
-          <div className="mt-4 text-center space-y-2">
-            <p className="text-xs text-slate-500">
-              Abra o WhatsApp no seu celular → Menu → Aparelhos conectados → Conectar um aparelho
-            </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRefresh}
-              disabled={isLoading}
-              className="text-slate-400 hover:text-white"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Atualizar QR Code
             </Button>
           </div>
         )}

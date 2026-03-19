@@ -224,6 +224,7 @@ export function ConnectionTab() {
         {needsQR ? (
           <QRCodeDisplay 
             qrCode={qrCode} 
+            pairingCode={pairingCode}
             isLoading={isLoadingQR} 
             onRefresh={fetchQRCode} 
           />
