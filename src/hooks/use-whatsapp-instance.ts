@@ -7,6 +7,7 @@ const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp
 
 interface UseWhatsAppInstanceReturn {
   instance: BrokerWhatsAppInstance | null;
+  pairingCode: string | null;
   isLoading: boolean;
   qrCode: string | null;
   isLoadingQR: boolean;
