@@ -41,6 +41,9 @@ import Termos from "./pages/Termos";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import NotFound from "./pages/NotFound";
+import NAULandingPage from "./pages/nau/NAULandingPage";
+import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
+import TermosNAU from "./pages/nau/TermosNAU";
 
 const queryClient = new QueryClient();
 
