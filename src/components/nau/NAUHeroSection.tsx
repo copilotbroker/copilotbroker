@@ -48,16 +48,6 @@ const NAUHeroSection = () => {
             Últimos lotes no Nau, o condomínio náutico em Osório para quem quer morar com exclusividade, liberdade e conexão real com a natureza.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <div className="px-6 py-3 border border-[hsl(200,60%,40%)]/30 rounded-lg bg-[hsl(200,60%,40%)]/10 backdrop-blur-sm">
-              <p className="text-xs text-[hsl(200,60%,60%)] uppercase tracking-wider mb-1">A partir de</p>
-              <p className="text-white font-semibold text-lg">R$ 229.000 <span className="text-sm font-normal text-white/60">já com desconto</span></p>
-            </div>
-            <div className="px-6 py-3 border border-[hsl(200,60%,40%)]/30 rounded-lg bg-[hsl(200,60%,40%)]/10 backdrop-blur-sm">
-              <p className="text-xs text-[hsl(200,60%,60%)] uppercase tracking-wider mb-1">Condição Curta</p>
-              <p className="text-white font-semibold">25% de desconto · 30x sem juros</p>
-            </div>
-          </div>
 
           <button
             onClick={scrollToForm}
