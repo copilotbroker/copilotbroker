@@ -62,13 +62,13 @@ const NAUGallerySection = () => {
         </div>
 
         <div className={`relative max-w-5xl mx-auto transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-          <div className="relative aspect-[16/9] rounded-lg overflow-hidden">
+          <div className="relative rounded-lg overflow-hidden bg-[hsl(210,35%,6%)]">
             {slides.map((slide, i) => (
               <img
                 key={i}
                 src={slide.src}
                 alt={slide.alt}
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === current ? "opacity-100" : "opacity-0"}`}
+                className={`w-full max-h-[80vh] object-contain transition-opacity duration-700 ${i === current ? "opacity-100 relative" : "opacity-0 absolute inset-0"}`}
                 loading={i === 0 ? "eager" : "lazy"}
               />
             ))}
