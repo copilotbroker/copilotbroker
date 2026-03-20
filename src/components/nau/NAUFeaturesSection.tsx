@@ -22,7 +22,7 @@ const NAUFeaturesSection = () => {
         if (entry.isIntersecting) {
           const img = new Image();
           img.onload = () => setImageLoaded(true);
-          img.src = marinaRender;
+          img.src = nauAerial;
           imageObserver.disconnect();
         }
       },
