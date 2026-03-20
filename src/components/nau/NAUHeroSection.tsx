@@ -27,7 +27,7 @@ const NAUHeroSection = () => {
         className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
         style={{ backgroundImage: `url(${heroEntrada})`, backgroundSize: "cover", backgroundPosition: "center" }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(210,35%,8%)]/80 via-[hsl(210,35%,8%)]/50 to-[hsl(210,35%,8%)]/85" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(210,35%,8%)]/90 via-[hsl(210,35%,8%)]/65 to-[hsl(210,35%,8%)]/90" />
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[hsl(200,60%,40%)] to-transparent opacity-50" />
 
       <div className="relative z-10 container px-4 pt-24 pb-16 text-center">
