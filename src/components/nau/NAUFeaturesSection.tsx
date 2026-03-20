@@ -73,19 +73,18 @@ const NAUFeaturesSection = () => {
             className={`relative transition-all duration-1000 delay-400 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`}
           >
             <div className="relative rounded-lg overflow-hidden shadow-2xl">
-              <div className={`aspect-[4/3] bg-[hsl(210,35%,12%)] transition-opacity duration-500 ${imageLoaded ? "opacity-0" : "opacity-100"}`}>
-                <div className="absolute inset-0 flex items-center justify-center">
+              {!imageLoaded && (
+                <div className="aspect-[4/3] bg-[hsl(210,35%,12%)] flex items-center justify-center">
                   <div className="w-12 h-12 border-2 border-[hsl(24,70%,42%)] border-t-transparent rounded-full animate-spin" />
                 </div>
-              </div>
+              )}
               {imageLoaded && (
                 <img
                   src={nauAerial}
                   alt="Vista aérea do NAU com canal navegável e lotes"
-                  className="absolute inset-0 w-full h-full object-cover animate-fade-in"
+                  className="w-full h-auto object-contain animate-fade-in"
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[hsl(210,35%,8%)]/40 to-transparent" />
             </div>
             <div className="absolute -inset-2 border border-[hsl(24,70%,42%)]/20 rounded-lg -z-10" />
           </div>
