@@ -32,7 +32,7 @@ const NAUConditionsSection = () => {
               Esse é o tipo de empreendimento que chama atenção de quem sabe reconhecer uma oportunidade antes da maioria. E, justamente por isso, os melhores momentos de compra costumam acontecer quando ainda existem condições realmente vantajosas.
             </p>
 
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white">
               ÚLTIMOS LOTES COM{" "}
               <span className="text-[hsl(24,70%,50%)]">CONDIÇÃO EXCLUSIVA</span>
             </h2>

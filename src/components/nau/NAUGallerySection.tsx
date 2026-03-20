@@ -53,7 +53,7 @@ const NAUGallerySection = () => {
     >
       <div className="container px-4 relative z-10">
         <div className={`text-center mb-12 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white">
             Conheça o <span className="text-[hsl(24,70%,50%)]">NAU</span>
           </h2>
           <p className="text-white/60 max-w-2xl mx-auto">
