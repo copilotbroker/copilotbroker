@@ -33,7 +33,7 @@ const MonacoHeroSection = () => {
         role="img"
         aria-label="Vista do Mônaco Grand Marina com piscina e lagoa"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-background" />
 
       <div className="relative z-10 container px-4 pt-32 sm:pt-40 md:pt-48 pb-16 text-center">
         <div className={`max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
