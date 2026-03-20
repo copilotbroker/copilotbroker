@@ -50,7 +50,7 @@ const MonacoAboutSection = () => {
           <div className="divider-gold mx-auto my-8" />
 
           <p className="font-serif text-xl md:text-2xl font-semibold text-foreground">
-52:             O verdadeiro privilégio está em viver onde o horizonte deixa de ser limite
+            O verdadeiro privilégio está em viver onde o horizonte deixa de ser limite
           </p>
           <p className="font-serif text-xl md:text-2xl font-semibold text-primary">
             e passa a ser convite.
@@ -59,7 +59,6 @@ const MonacoAboutSection = () => {
           <div className="mt-12 rounded-lg overflow-hidden shadow-2xl">
             <img src={masterplanImg} alt="Vista aérea do masterplan do Mônaco Grand Marina ao pôr do sol" className="w-full h-auto" loading="lazy" />
           </div>
-        </div>
         </div>
       </div>
     </section>
