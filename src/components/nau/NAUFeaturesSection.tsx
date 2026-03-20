@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import marinaRender from "@/assets/nau/marina-render.jpg";
+import nauAerial from "@/assets/nau/nau-aerial.png";
 
 const NAUFeaturesSection = () => {
   const [isVisible, setIsVisible] = useState(false);
