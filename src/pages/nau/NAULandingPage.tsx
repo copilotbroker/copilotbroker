@@ -103,7 +103,7 @@ const NAULandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(210,35%,8%)] text-white pb-14 sm:pb-0">
+    <div className="min-h-screen bg-[hsl(210,35%,8%)] text-white">
       <Helmet>
         <title>NAU | Condomínio Náutico em Osório - Lagoa do Peixoto</title>
         <meta name="title" content="NAU | Condomínio Náutico em Osório" />
