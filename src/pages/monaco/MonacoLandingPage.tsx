@@ -105,7 +105,7 @@ const MonacoLandingPage = () => {
         Pular para o cadastro
       </a>
 
-      <div className="min-h-screen bg-background text-foreground pb-14 sm:pb-0">
+      <div className="monaco-theme min-h-screen bg-background text-foreground pb-14 sm:pb-0">
         <MonacoHeader />
         <main id="main-content" role="main">
           <MonacoHeroSection />
