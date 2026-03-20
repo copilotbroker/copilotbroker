@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Anchor, Waves, MapPin } from "lucide-react";
+import piscinaImg from "@/assets/monaco/monaco-piscina-noturna.png";
 
 const features = [
   { icon: Anchor, text: "Condomínio náutico" },

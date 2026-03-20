@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import aviaoImg from "@/assets/monaco/monaco-aviao.jpg";
+import masterplanImg from "@/assets/monaco/monaco-masterplan.png";
 
 const MonacoAboutSection = () => {
   const [isVisible, setIsVisible] = useState(false);

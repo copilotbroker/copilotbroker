@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Anchor, Waves, Home, Maximize, Layers } from "lucide-react";
+import lotesAereoImg from "@/assets/monaco/monaco-lotes-aereo.png";
 
 const highlights = [
   { icon: Anchor, text: "Canais navegáveis conectando lagos, marina e residências" },

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dumbbell, UtensilsCrossed, Sailboat, Waves, PartyPopper, Users } from "lucide-react";
+import marinaClubImg from "@/assets/monaco/monaco-marina-club.png";
+import academiaImg from "@/assets/monaco/monaco-academia.png";
 
 const clubMarina = [
   { icon: Dumbbell, label: "Academia de 558 m²" },
