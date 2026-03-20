@@ -48,10 +48,10 @@ const MonacoHeroSection = () => {
 
           <h1
             id="hero-heading"
-            className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white leading-tight"
+            className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 text-white leading-[1.05]"
           >
-            LIBERDADE PARA IR{" "}
-            <span className="text-gold-gradient">ALÉM.</span>
+            LIBERDADE<br />
+            PARA IR <span className="text-gold-gradient">ALÉM.</span>
           </h1>
 
           <div className="w-16 h-px bg-primary/50 mx-auto mb-8" />
