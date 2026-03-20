@@ -42,13 +42,13 @@ const NAUHeroSection = () => {
             </span>
           </div>
 
-          <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 text-white leading-[0.95]">
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 text-white leading-[0.95]">
             O MARINA CLUB MAIS BELO<br />
             E <span className="text-[hsl(24,70%,50%)]">EXCLUSIVO</span> DO ESTADO.
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl text-white/70 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Últimos lotes no Nau, o condomínio náutico em Osório para quem quer morar com exclusividade, liberdade e conexão real com a natureza.
+            Últimos lotes no NAU, o marina club mais exclusivo de Osório — vida náutica, lazer à beira da lagoa e um estilo de vida que poucos vão conhecer.
           </p>
 
 
