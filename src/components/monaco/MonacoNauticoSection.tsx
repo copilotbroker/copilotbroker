@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Anchor, Waves, Home, Maximize, Layers } from "lucide-react";
+import lotesAereoImg from "@/assets/monaco/monaco-lotes-aereo.png";
 
 const highlights = [
   { icon: Anchor, text: "Canais navegáveis conectando lagos, marina e residências" },
@@ -58,6 +59,10 @@ const MonacoNauticoSection = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className={`mt-12 max-w-5xl mx-auto rounded-lg overflow-hidden shadow-2xl transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <img src={lotesAereoImg} alt="Vista aérea dos lotes e canais navegáveis do Mônaco Grand Marina" className="w-full h-auto" loading="lazy" />
         </div>
 
         <div className={`text-center mt-12 transition-all duration-1000 delay-500 ${isVisible ? "opacity-100" : "opacity-0"}`}>

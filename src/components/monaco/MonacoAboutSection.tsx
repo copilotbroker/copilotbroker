@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import aviaoImg from "@/assets/monaco/monaco-aviao.jpg";
+import masterplanImg from "@/assets/monaco/monaco-masterplan.png";
 
 const MonacoAboutSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -54,6 +55,10 @@ const MonacoAboutSection = () => {
           <p className="font-serif text-xl md:text-2xl font-semibold text-primary">
             e passa a ser convite.
           </p>
+
+          <div className="mt-12 rounded-lg overflow-hidden shadow-2xl">
+            <img src={masterplanImg} alt="Vista aérea do masterplan do Mônaco Grand Marina ao pôr do sol" className="w-full h-auto" loading="lazy" />
+          </div>
         </div>
       </div>
     </section>
