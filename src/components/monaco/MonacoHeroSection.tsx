@@ -48,15 +48,15 @@ const MonacoHeroSection = () => {
 
           <h1
             id="hero-heading"
-            className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 text-white leading-[1.05]"
+            className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-3 text-white leading-[0.95]"
           >
             LIBERDADE<br />
             PARA IR <span className="text-gold-gradient">ALÉM.</span>
           </h1>
 
-          <div className="w-16 h-px bg-primary/50 mx-auto mb-8" />
+          <div className="w-16 h-px bg-primary/50 mx-auto mb-4" />
 
-          <p className="text-sm sm:text-base text-white/70 mb-10 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-white/70 mb-6 max-w-2xl mx-auto">
             Conheça o Mônaco Grand Marina, um condomínio náutico de alto padrão na Lagoa dos Quadros, pensado para quem quer transformar moradia em estilo de vida.
           </p>
 
