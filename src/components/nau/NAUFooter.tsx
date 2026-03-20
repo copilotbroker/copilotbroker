@@ -3,7 +3,7 @@ import logoEnove from "@/assets/logo-enove.png";
 
 const NAUFooter = () => {
   return (
-    <footer className="py-12 bg-[hsl(210,35%,5%)] border-t border-[hsl(200,60%,40%)]/10">
+    <footer className="py-12 bg-[hsl(210,35%,5%)] border-t border-[hsl(24,70%,42%)]/10">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
           <p className="text-sm text-white/50 italic leading-relaxed">
@@ -25,7 +25,7 @@ const NAUFooter = () => {
             </p>
           </div>
 
-          <div className="w-20 h-px bg-[hsl(200,60%,40%)]/20" />
+          <div className="w-20 h-px bg-[hsl(24,70%,42%)]/20" />
 
           <div className="text-center">
             <p className="text-sm text-white/50 mb-3">Comercialização</p>

@@ -36,7 +36,7 @@ const NAUFloatingCTA = () => {
         onClick={scrollToForm}
         className={`fixed bottom-4 sm:bottom-6 left-4 sm:left-1/2 sm:-translate-x-1/2 z-50
           px-4 py-2.5 sm:px-6 sm:py-4
-          bg-[hsl(200,60%,40%)] text-white
+          bg-[hsl(24,70%,42%)] text-white
           font-semibold uppercase tracking-wider text-[11px] sm:text-sm
           rounded-full shadow-[0_10px_40px_hsl(200,60%,40%,0.4)]
           transition-all duration-500
@@ -54,7 +54,7 @@ const NAUFloatingCTA = () => {
 
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[hsl(210,35%,12%)] border border-[hsl(200,60%,40%)]/20 flex items-center justify-center text-white/70 hover:text-[hsl(200,60%,55%)] hover:border-[hsl(200,60%,40%)]/50 transition-all duration-300 ${
+        className={`fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[hsl(210,35%,12%)] border border-[hsl(24,70%,42%)]/20 flex items-center justify-center text-white/70 hover:text-[hsl(24,70%,50%)] hover:border-[hsl(24,70%,42%)]/50 transition-all duration-300 ${
           showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
         }`}
         aria-label="Voltar ao topo da página"

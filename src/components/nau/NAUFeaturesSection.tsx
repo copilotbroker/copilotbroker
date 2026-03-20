@@ -38,13 +38,13 @@ const NAUFeaturesSection = () => {
       ref={sectionRef}
       className="py-20 md:py-32 bg-[hsl(210,35%,8%)] relative overflow-hidden"
     >
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 w-96 h-96 bg-[hsl(200,60%,40%)]/5 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 w-96 h-96 bg-[hsl(24,70%,42%)]/5 rounded-full blur-3xl" />
 
       <div className="container px-4 relative z-10">
         <div className={`text-center mb-16 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-white">
             Mais do que um lote.{" "}
-            <span className="text-[hsl(200,60%,55%)]">Um estilo de vida.</span>
+            <span className="text-[hsl(24,70%,50%)]">Um estilo de vida.</span>
           </h2>
         </div>
 
@@ -62,8 +62,8 @@ const NAUFeaturesSection = () => {
               É sobre o tipo de vida que você quer construir a partir de agora.
             </p>
 
-            <div className="pt-4 px-6 py-4 border border-[hsl(200,60%,40%)]/20 rounded-lg bg-[hsl(200,60%,40%)]/5">
-              <p className="text-sm text-[hsl(200,60%,60%)] uppercase tracking-wider mb-1">Previsão de entrega</p>
+            <div className="pt-4 px-6 py-4 border border-[hsl(24,70%,42%)]/20 rounded-lg bg-[hsl(24,70%,42%)]/5">
+              <p className="text-sm text-[hsl(24,70%,55%)] uppercase tracking-wider mb-1">Previsão de entrega</p>
               <p className="text-xl font-semibold text-white">Outubro de 2026</p>
             </div>
           </div>
@@ -75,7 +75,7 @@ const NAUFeaturesSection = () => {
             <div className="relative rounded-lg overflow-hidden shadow-2xl">
               <div className={`aspect-[4/3] bg-[hsl(210,35%,12%)] transition-opacity duration-500 ${imageLoaded ? "opacity-0" : "opacity-100"}`}>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 border-2 border-[hsl(200,60%,40%)] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-12 h-12 border-2 border-[hsl(24,70%,42%)] border-t-transparent rounded-full animate-spin" />
                 </div>
               </div>
               {imageLoaded && (
@@ -87,7 +87,7 @@ const NAUFeaturesSection = () => {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[hsl(210,35%,8%)]/40 to-transparent" />
             </div>
-            <div className="absolute -inset-2 border border-[hsl(200,60%,40%)]/20 rounded-lg -z-10" />
+            <div className="absolute -inset-2 border border-[hsl(24,70%,42%)]/20 rounded-lg -z-10" />
           </div>
         </div>
       </div>
