@@ -26,7 +26,7 @@ const NAUHeader = () => {
         <img
           src={logoNau}
           alt="NAU Condomínio Náutico"
-          className="h-10 sm:h-12 md:h-14 w-auto"
+          className={`h-10 sm:h-12 md:h-14 w-auto transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0"}`}
         />
         <button
           onClick={scrollToForm}
