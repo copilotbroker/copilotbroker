@@ -10,6 +10,7 @@ import {
   NAUAboutSection,
   NAUFeaturesSection,
   NAUConditionsSection,
+  NAUGallerySection,
   NAUTargetSection,
   NAUUrgencySection,
   NAUBenefitsSection,
@@ -134,6 +135,7 @@ const NAULandingPage = () => {
         <NAUHeroSection />
         <NAUAboutSection />
         <NAUFeaturesSection />
+        <NAUGallerySection />
         <NAUConditionsSection />
         <NAUTargetSection />
         <NAUUrgencySection />

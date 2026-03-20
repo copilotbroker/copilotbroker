@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import marinaRender from "@/assets/nau/marina-render.jpg";
+import nauAerial from "@/assets/nau/nau-aerial.png";
 
 const NAUFeaturesSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -22,7 +22,7 @@ const NAUFeaturesSection = () => {
         if (entry.isIntersecting) {
           const img = new Image();
           img.onload = () => setImageLoaded(true);
-          img.src = marinaRender;
+          img.src = nauAerial;
           imageObserver.disconnect();
         }
       },
@@ -80,8 +80,8 @@ const NAUFeaturesSection = () => {
               </div>
               {imageLoaded && (
                 <img
-                  src={marinaRender}
-                  alt="Vista do NAU Condomínio Náutico"
+                  src={nauAerial}
+                  alt="Vista aérea do NAU com canal navegável e lotes"
                   className="absolute inset-0 w-full h-full object-cover animate-fade-in"
                 />
               )}

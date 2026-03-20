@@ -3,6 +3,7 @@ export { default as NAUHeroSection } from "./NAUHeroSection";
 export { default as NAUAboutSection } from "./NAUAboutSection";
 export { default as NAUFeaturesSection } from "./NAUFeaturesSection";
 export { default as NAUConditionsSection } from "./NAUConditionsSection";
+export { default as NAUGallerySection } from "./NAUGallerySection";
 export { default as NAUTargetSection } from "./NAUTargetSection";
 export { default as NAUUrgencySection } from "./NAUUrgencySection";
 export { default as NAUBenefitsSection } from "./NAUBenefitsSection";
