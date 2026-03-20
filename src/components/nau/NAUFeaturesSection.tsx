@@ -62,8 +62,8 @@ const NAUFeaturesSection = () => {
               É sobre o tipo de vida que você quer construir a partir de agora.
             </p>
 
-            <div className="pt-4 px-6 py-4 border border-[hsl(24,70%,42%)]/20 rounded-lg bg-[hsl(24,70%,42%)]/5">
-              <p className="text-sm text-[hsl(200,60%,60%)] uppercase tracking-wider mb-1">Previsão de entrega</p>
+            <div className="pt-4 px-6 py-4 border border-[hsl(24,70%,42%)]/20 rounded-lg bg-[hsl(24,70%,42%)]/5 text-center">
+              <p className="text-sm text-[hsl(24,70%,50%)] uppercase tracking-wider mb-1">Previsão de entrega</p>
               <p className="text-xl font-semibold text-white">Outubro de 2026</p>
             </div>
           </div>
