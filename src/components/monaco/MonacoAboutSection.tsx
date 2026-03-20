@@ -22,7 +22,7 @@ const MonacoAboutSection = () => {
     >
       {/* Background image */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="absolute inset-0 bg-cover bg-[70%_center] sm:bg-center"
         style={{ backgroundImage: `url(${aviaoImg})` }}
       />
       <div className="absolute inset-0 bg-background/85" />
