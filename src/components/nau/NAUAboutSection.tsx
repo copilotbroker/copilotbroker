@@ -31,13 +31,18 @@ const NAUAboutSection = () => {
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[hsl(200,60%,40%)]/30 to-transparent" />
 
       <div className="container px-4 relative z-10">
-        <div className={`text-center mb-16 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
-            O ÚNICO CONDOMÍNIO NÁUTICO{" "}
-            <span className="text-[hsl(200,60%,55%)]">COM ACESSO À LAGOA DO PEIXOTO</span>
-          </h2>
-          <p className="text-lg text-white/60 max-w-3xl mx-auto">
-            Localizado em Osório - RS, o NAU oferece uma experiência de moradia incomparável: sua casa com píer privativo, barco na porta e a lagoa como quintal.
+        <div className={`max-w-3xl mx-auto text-center mb-16 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <p className="font-serif text-xl sm:text-2xl italic text-[hsl(200,60%,55%)] mb-6">
+            Existem lugares que não servem apenas para construir uma casa.<br />
+            Servem para construir um novo ritmo de vida.
+          </p>
+
+          <p className="text-base sm:text-lg text-white/70 leading-relaxed mb-6">
+            O Nau é um condomínio náutico localizado em Osório, com acesso à Lagoa do Peixoto, criado para quem deseja morar em um lugar onde espaço, água e tranquilidade fazem parte da rotina. Um projeto pensado para transformar moradia em experiência, com o equilíbrio raro entre natureza, sofisticação e potencial de valorização.
+          </p>
+
+          <p className="text-base sm:text-lg text-white/70 leading-relaxed">
+            São 390.000 m² de empreendimento, com opções de lotes navegáveis, lotes secos e lotes beira lago, para diferentes estilos de vida dentro de um mesmo conceito: <strong className="text-white">viver melhor</strong>.
           </p>
         </div>
 
