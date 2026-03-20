@@ -42,7 +42,7 @@ const NAUHeroSection = () => {
             </span>
           </div>
 
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 text-white leading-[0.95]">
+          <h1 className="font-serif text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[5rem] font-black mb-6 text-white leading-[0.95]">
             O MARINA CLUB MAIS BELO<br />
             E <span className="text-[hsl(24,70%,50%)]">EXCLUSIVO</span> DO ESTADO.
           </h1>
