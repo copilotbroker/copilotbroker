@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Anchor, Waves, TreePine, Home, Maximize } from "lucide-react";
 
 const highlights = [
-  { icon: Anchor, text: "Lotes navegáveis com acesso direto à lagoa" },
+  { icon: Anchor, text: "Lotes navegáveis com acesso direto à Lagoa do Peixoto e da Pinguela" },
   { icon: Waves, text: "Lotes beira lago com vista permanente" },
   { icon: TreePine, text: "Lotes secos em meio à natureza preservada" },
   { icon: Home, text: "Projetado para moradia, não apenas lazer" },
