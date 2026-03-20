@@ -27,9 +27,12 @@ const NAUMapSection = () => {
             <MapPin className="w-5 h-5 text-[hsl(24,70%,50%)]" />
             <span className="text-sm font-medium tracking-widest uppercase text-[hsl(24,70%,55%)]">Localização</span>
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3">
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2">
             Onde fica o <span className="text-[hsl(24,70%,50%)]">NAU</span>
           </h2>
+          <p className="text-base sm:text-lg font-semibold tracking-wide uppercase text-[hsl(24,70%,55%)] mb-2">
+            A apenas 1h de Porto Alegre, RS.
+          </p>
           <p className="text-white/60 text-base sm:text-lg">
             Linha Peixoto, 1405 – Centro, Osório – RS
           </p>
