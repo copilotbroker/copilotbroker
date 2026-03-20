@@ -27,19 +27,19 @@ const NAUHeroSection = () => {
         className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
         style={{ backgroundImage: `url(${heroEntrada})`, backgroundSize: "cover", backgroundPosition: "center" }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(210,35%,8%)]/80 via-[hsl(210,35%,8%)]/50 to-[hsl(210,35%,8%)]/85" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(210,35%,8%)]/90 via-[hsl(210,35%,8%)]/65 to-[hsl(210,35%,8%)]/90" />
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[hsl(200,60%,40%)] to-transparent opacity-50" />
 
       <div className="relative z-10 container px-4 pt-24 pb-16 text-center">
         <div className={`max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 border border-[hsl(200,60%,40%)]/40 rounded-full bg-[hsl(200,60%,40%)]/10 backdrop-blur-sm">
             <span className="w-2 h-2 rounded-full bg-[hsl(200,60%,40%)] animate-pulse" />
-            <span className="text-xs sm:text-sm font-medium tracking-widest uppercase text-[hsl(200,60%,60%)]">
+            <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-[hsl(200,60%,60%)]">
               Últimos Lotes com Condição Exclusiva
             </span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white leading-[1.1]">
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white leading-[1.1]">
             Seu lugar entre a água, a natureza e uma{" "}
             <span className="text-[hsl(200,60%,55%)]">nova forma de viver.</span>
           </h1>
