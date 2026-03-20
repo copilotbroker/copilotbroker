@@ -85,6 +85,12 @@ const App = () => (
             <Route path="/prontos" element={<Prontos />} />
             <Route path="/prontos/:brokerSlug" element={<ProntosBrokerPage />} />
             
+            {/* NAU - Condomínio Náutico em Osório */}
+            <Route path="/osorio/nau" element={<NAULandingPage />} />
+            <Route path="/osorio/nau/obrigado" element={<NAULandingPage />} />
+            <Route path="/osorio/nau/termos" element={<TermosNAU />} />
+            <Route path="/osorio/nau/:brokerSlug" element={<NAUBrokerLandingPage />} />
+            
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
