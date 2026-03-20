@@ -44,6 +44,8 @@ import NotFound from "./pages/NotFound";
 import NAULandingPage from "./pages/nau/NAULandingPage";
 import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
 import TermosNAU from "./pages/nau/TermosNAU";
+import MonacoLandingPage from "./pages/monaco/MonacoLandingPage";
+import TermosMonaco from "./pages/monaco/TermosMonaco";
 
 const queryClient = new QueryClient();
 
