@@ -115,7 +115,27 @@ const NAUFormSection = ({
 
       await trackLeadAttribution(leadId, projectId, "landing_page");
       supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
-      
+
+      // Meta Pixel - Lead event (client-side)
+      const eventId = crypto.randomUUID();
+      if (typeof window !== "undefined" && window.fbq) {
+        (window.fbq as Function)("track", "Lead", {}, { eventID: eventId });
+      }
+
+      // Meta Conversions API (server-side)
+      supabase.functions.invoke("meta-conversions-api", {
+        body: {
+          pixel_id: "9101130196666799",
+          event_name: "Lead",
+          event_id: eventId,
+          event_source_url: window.location.href,
+          user_data: {
+            ph: formData.whatsapp.trim(),
+            fn: formData.name.trim(),
+          },
+        },
+      }).catch(console.warn);
+
       supabase.functions.invoke("auto-first-message", { body: { leadId } }).catch(console.warn);
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
 
