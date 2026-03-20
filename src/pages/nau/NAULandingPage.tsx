@@ -8,6 +8,7 @@ import {
   NAUHeader,
   NAUHeroSection,
   NAUAboutSection,
+  NAUMapSection,
   NAUFeaturesSection,
   NAUConditionsSection,
   NAUGallerySection,
