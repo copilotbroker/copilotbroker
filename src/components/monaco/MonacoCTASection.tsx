@@ -31,8 +31,8 @@ const MonacoCTASection = () => {
       className="py-20 md:py-32 bg-background relative overflow-hidden"
     >
       <div className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <img src={piscinaImg} alt="" className="w-full h-full object-cover" loading="lazy" />
+        <div className="absolute inset-0 bg-background/85" />
       </div>
 
       <div className="container px-4 relative z-10">

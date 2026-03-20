@@ -61,6 +61,10 @@ const MonacoNauticoSection = () => {
           ))}
         </div>
 
+        <div className={`mt-12 max-w-5xl mx-auto rounded-lg overflow-hidden shadow-2xl transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <img src={lotesAereoImg} alt="Vista aérea dos lotes e canais navegáveis do Mônaco Grand Marina" className="w-full h-auto" loading="lazy" />
+        </div>
+
         <div className={`text-center mt-12 transition-all duration-1000 delay-500 ${isVisible ? "opacity-100" : "opacity-0"}`}>
           <p className="font-serif text-lg md:text-xl italic text-muted-foreground">
             Um cenário pensado para quem quer espaço, imponência e{" "}

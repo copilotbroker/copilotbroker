@@ -55,6 +55,11 @@ const MonacoClubSection = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {/* Marina Club Image */}
+          <div className={`rounded-lg overflow-hidden shadow-2xl transition-all duration-1000 delay-100 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+            <img src={marinaClubImg} alt="Clube da Marina com barcos atracados no Mônaco Grand Marina" className="w-full h-auto" loading="lazy" />
+          </div>
+
           {/* Clube da Marina */}
           <div className={`card-luxury transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
             <h3 className="font-serif text-xl font-semibold mb-6 text-foreground">
@@ -86,6 +91,11 @@ const MonacoClubSection = () => {
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* Academia Image */}
+          <div className={`rounded-lg overflow-hidden shadow-2xl transition-all duration-1000 delay-400 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+            <img src={academiaImg} alt="Academia de alto padrão com vista panorâmica no Mônaco Grand Marina" className="w-full h-auto" loading="lazy" />
           </div>
         </div>
 
