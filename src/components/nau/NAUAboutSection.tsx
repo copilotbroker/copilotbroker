@@ -38,11 +38,11 @@ const NAUAboutSection = () => {
           </p>
 
           <p className="text-base sm:text-lg text-white/70 leading-relaxed mb-6">
-            O Nau é um condomínio náutico localizado em Osório, com acesso à Lagoa do Peixoto, criado para quem deseja morar em um lugar onde espaço, água e tranquilidade fazem parte da rotina. Um projeto pensado para transformar moradia em experiência, com o equilíbrio raro entre natureza, sofisticação e potencial de valorização.
+            Osório é uma das poucas cidades do Brasil privilegiada por montanhas, lagoas e mar. O NAU nasce nesse cenário único — um marina club com acesso direto à Lagoa do Peixoto, pensado para quem busca sofisticação e vida náutica.
           </p>
 
           <p className="text-base sm:text-lg text-white/70 leading-relaxed">
-            São 390.000 m² de empreendimento, com opções de lotes navegáveis, lotes secos e lotes beira lago, para diferentes estilos de vida dentro de um mesmo conceito: <strong className="text-white">viver melhor</strong>.
+            São 390.000 m² com lotes navegáveis, beira lago e secos — diferentes formas de viver um mesmo conceito: <strong className="text-white">exclusividade à beira d'água</strong>.
           </p>
         </div>
 
