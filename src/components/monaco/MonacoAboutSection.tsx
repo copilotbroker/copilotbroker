@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import aviaoImg from "@/assets/monaco/monaco-aviao.jpg";
 
 const MonacoAboutSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -17,8 +18,15 @@ const MonacoAboutSection = () => {
     <section
       id="sobre"
       ref={sectionRef}
-      className="py-20 md:py-32 bg-background relative overflow-hidden"
+      className="py-20 md:py-32 relative overflow-hidden"
     >
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${aviaoImg})` }}
+      />
+      <div className="absolute inset-0 bg-background/85" />
+
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
