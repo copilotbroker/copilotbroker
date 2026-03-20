@@ -3,11 +3,13 @@ import logoEnove from "@/assets/logo-enove.png";
 
 const MonacoFooter = () => {
   return (
-    <footer className="py-12 bg-[hsl(215,45%,4%)] border-t border-[hsl(35,35%,50%)]/10">
+    <footer className="py-12 bg-card border-t border-border/50">
       <div className="container px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
-          <p className="text-sm text-white/50 italic leading-relaxed">
-            <strong className="text-white/70">Observação importante:</strong> O material apresentado é meramente ilustrativo e não representa o projeto oficial, que será divulgado exclusivamente aos cadastrados no momento oportuno.
+          <p className="text-sm text-muted-foreground italic leading-relaxed">
+            <strong>Observação importante:</strong> As imagens e informações contidas neste material são meramente ilustrativas,
+            podendo haver alterações sem aviso prévio. O projeto está sujeito a aprovação
+            dos órgãos competentes. Consulte o memorial descritivo e as condições comerciais.
           </p>
         </div>
 
@@ -15,20 +17,20 @@ const MonacoFooter = () => {
           <img
             src={logoMonaco}
             alt="Mônaco Grand Marina"
-            className="h-16 w-auto brightness-0 invert"
+            className="h-14 w-auto brightness-0 invert opacity-80"
           />
 
           <div className="text-center">
-            <p className="text-sm text-white/50 mb-2">Condomínio Náutico de Alto Padrão</p>
-            <p className="font-serif text-lg font-semibold text-white">
+            <p className="text-sm text-muted-foreground mb-2">Condomínio Náutico de Alto Padrão</p>
+            <p className="font-serif text-lg font-semibold text-foreground">
               Xangri-lá — Lagoa dos Quadros
             </p>
           </div>
 
-          <div className="w-20 h-px bg-[hsl(35,35%,50%)]/20" />
+          <div className="divider-gold" />
 
           <div className="text-center">
-            <p className="text-sm text-white/50 mb-3">Comercialização</p>
+            <p className="text-sm text-muted-foreground mb-3">Comercialização</p>
             <img
               src={logoEnove}
               alt="Enove Imobiliária"
@@ -38,7 +40,9 @@ const MonacoFooter = () => {
         </div>
 
         <div className="text-center">
-          <p className="text-xs text-white/40">© 2026 Todos os direitos reservados</p>
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Enove Imobiliária. Todos os direitos reservados.
+          </p>
         </div>
       </div>
     </footer>

@@ -6,6 +6,7 @@ export { default as MonacoClubSection } from "./MonacoClubSection";
 export { default as MonacoParqueSection } from "./MonacoParqueSection";
 export { default as MonacoLocationSection } from "./MonacoLocationSection";
 export { default as MonacoTargetSection } from "./MonacoTargetSection";
+export { default as MonacoCTASection } from "./MonacoCTASection";
 export { default as MonacoFormSection } from "./MonacoFormSection";
 export { default as MonacoFooter } from "./MonacoFooter";
 export { default as MonacoFloatingCTA } from "./MonacoFloatingCTA";

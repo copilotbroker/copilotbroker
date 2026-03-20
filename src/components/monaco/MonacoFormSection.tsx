@@ -1,47 +1,27 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { WhatsAppInput, isValidBrazilianWhatsApp } from "@/components/ui/whatsapp-input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { WhatsAppInput, isValidWhatsApp } from "@/components/ui/whatsapp-input";
-import { trackLeadAttribution, getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-page-tracking";
+import { toast } from "@/hooks/use-toast";
+import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-page-tracking";
 
 interface MonacoFormSectionProps {
-  projectId: string;
-  brokerId?: string | null;
-  brokerSlug?: string | null;
-  webhookUrl?: string | null;
-  allowBrokerSelection?: boolean;
+  projectId?: string;
+  brokerId?: string;
   submitted?: boolean;
 }
 
-const MonacoFormSection = ({
-  projectId,
-  brokerId,
-  brokerSlug,
-  webhookUrl,
-  allowBrokerSelection = true,
-  submitted = false,
-}: MonacoFormSectionProps) => {
+const MonacoFormSection = ({ projectId, brokerId, submitted }: MonacoFormSectionProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ name: "", whatsapp: "" });
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-
-  const [showBrokerSelect, setShowBrokerSelect] = useState(false);
-  const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
-  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
-  const [loadingBrokers, setLoadingBrokers] = useState(false);
+  const [name, setName] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -52,107 +32,67 @@ const MonacoFormSection = ({
     return () => observer.disconnect();
   }, []);
 
-  const fetchBrokers = async () => {
-    if (brokers.length > 0) return;
-    setLoadingBrokers(true);
-    try {
-      const { data, error } = await supabase
-        .from("broker_projects")
-        .select("broker:brokers(id, name)")
-        .eq("project_id", projectId)
-        .eq("is_active", true);
-      if (error) throw error;
-      const activeBrokers = data
-        ?.map((bp) => bp.broker)
-        .filter((b): b is { id: string; name: string } => b !== null)
-        .sort((a, b) => a.name.localeCompare(b.name)) || [];
-      setBrokers(activeBrokers);
-    } catch (error) {
-      console.error("Erro ao buscar corretores:", error);
-    } finally {
-      setLoadingBrokers(false);
-    }
-  };
-
-  const handleToggleBrokerSelect = () => {
-    if (!showBrokerSelect) fetchBrokers();
-    setShowBrokerSelect(!showBrokerSelect);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.whatsapp.trim()) {
-      toast.error("Por favor, preencha todos os campos.");
+
+    if (!name.trim()) {
+      toast({ title: "Nome obrigatório", description: "Por favor, informe seu nome.", variant: "destructive" });
       return;
     }
-    if (!isValidWhatsApp(formData.whatsapp)) {
-      toast.error("Por favor, insira um número de WhatsApp válido.");
+    if (!isValidBrazilianWhatsApp(whatsapp)) {
+      toast({ title: "WhatsApp inválido", description: "Por favor, informe um número válido com DDD.", variant: "destructive" });
       return;
     }
     if (!acceptedTerms) {
-      toast.error("Você precisa aceitar os Termos de Uso e a Política de Privacidade.");
+      toast({ title: "Termos não aceitos", description: "Você precisa aceitar os termos para continuar.", variant: "destructive" });
       return;
     }
 
     setIsSubmitting(true);
     try {
       const leadId = crypto.randomUUID();
-      const leadData: any = {
+      const { error } = await supabase.from("leads").insert({
         id: leadId,
-        name: formData.name.trim(),
-        whatsapp: formData.whatsapp.trim(),
-        project_id: projectId,
-        source: brokerSlug ? `monaco/${brokerSlug}` : "monaco",
+        name: name.trim(),
+        whatsapp,
+        project_id: projectId || null,
+        broker_id: brokerId || null,
+        source: brokerId ? "broker_landing" : "landing_page",
         lead_origin: getLeadOriginFromUTM(),
         lead_origin_detail: getLeadOriginDetailFromUTM(),
-      };
-
-      if (brokerId) leadData.broker_id = brokerId;
-      else if (selectedBrokerId) leadData.broker_id = selectedBrokerId;
-
-      const { error } = await supabase.from("leads").insert(leadData);
+      });
       if (error) throw error;
 
-      await trackLeadAttribution(leadId, projectId, "landing_page");
-      supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
+      await supabase.from("lead_attribution").insert({
+        lead_id: leadId,
+        project_id: projectId || null,
+        landing_page: "landing_page",
+        referrer: document.referrer || null,
+        utm_source: new URLSearchParams(window.location.search).get("utm_source"),
+        utm_medium: new URLSearchParams(window.location.search).get("utm_medium"),
+        utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign"),
+      });
 
+      supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
       supabase.functions.invoke("auto-first-message", { body: { leadId } }).catch(console.warn);
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
-
-      if (webhookUrl) {
-        fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nome_completo: formData.name.trim(),
-            whatsapp: formData.whatsapp.trim(),
-            broker_id: brokerId || selectedBrokerId || null,
-            project_id: projectId,
-            source: brokerSlug ? `monaco/${brokerSlug}` : "monaco",
-          }),
-        }).catch(console.error);
-      }
 
       supabase.functions.invoke("notify-new-lead", {
         body: {
           leadId,
-          leadName: formData.name.trim(),
-          leadWhatsapp: formData.whatsapp.trim(),
-          brokerId: brokerId || selectedBrokerId || null,
+          leadName: name.trim(),
+          leadWhatsapp: whatsapp,
+          brokerId: brokerId || null,
           projectId,
-          source: brokerSlug ? `Monaco/${brokerSlug}` : "Monaco",
+          source: "Monaco",
         },
       }).catch(console.error);
 
-      toast.success("Cadastro realizado com sucesso! Em breve entraremos em contato.");
-      setFormData({ name: "", whatsapp: "" });
-      setAcceptedTerms(false);
-      setSelectedBrokerId("");
-      setShowBrokerSelect(false);
-      navigate("/xangrila/monaco/obrigado");
+      const basePath = location.pathname.replace(/\/obrigado$/, "").replace(/\/+$/, "");
+      navigate(`${basePath}/obrigado`, { replace: true });
     } catch (error) {
-      console.error("Erro ao salvar lead:", error);
-      toast.error("Ocorreu um erro ao salvar. Tente novamente.");
+      console.error("Error submitting lead:", error);
+      toast({ title: "Erro ao cadastrar", description: "Por favor, tente novamente em alguns instantes.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -162,37 +102,37 @@ const MonacoFormSection = ({
     <section
       id="cadastro"
       ref={sectionRef}
-      className="py-20 md:py-32 bg-[hsl(215,45%,8%)] relative overflow-hidden"
+      className="py-20 md:py-32 bg-background relative overflow-hidden"
     >
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[hsl(35,35%,50%)]/5 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
 
       <div className="container px-4 relative z-10">
         <div className={`max-w-xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <div className="text-center mb-10">
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-white">
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
               QUERO CONHECER O{" "}
-              <span className="text-[hsl(35,35%,55%)]">MÔNACO</span>
+              <span className="text-gold-gradient">MÔNACO</span>
             </h2>
-            <p className="text-white/60">
-              Cadastre-se para receber informações exclusivas sobre o empreendimento.
+            <p className="text-muted-foreground">
+              Cadastro gratuito. Acesso limitado. Prioridade real.
             </p>
           </div>
 
           {submitted ? (
-            <div className="p-8 md:p-10 flex flex-col items-center justify-center text-center space-y-4 min-h-[200px] rounded-lg bg-[hsl(215,45%,10%)] border border-[hsl(35,35%,50%)]/20">
-              <h3 className="font-serif text-2xl md:text-3xl font-bold text-white">
-                Parabéns! Você está na{" "}
-                <span className="text-[hsl(35,35%,55%)]">lista prioritária!</span>
+            <div className="card-luxury p-8 md:p-10 flex flex-col items-center justify-center text-center space-y-4 min-h-[200px]">
+              <CheckCircle2 className="w-12 h-12 md:w-16 md:h-16 text-primary" />
+              <h3 className="font-serif text-2xl md:text-3xl font-bold text-foreground">
+                Parabéns, agora você faz parte da nossa{" "}
+                <span className="text-gold-gradient">lista VIP!</span>
               </h3>
-              <p className="text-white/60">Em breve entraremos em contato pelo WhatsApp.</p>
+              <p className="text-muted-foreground">
+                Em breve entraremos em contato pelo WhatsApp.
+              </p>
             </div>
           ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="p-8 md:p-10 space-y-6 rounded-lg bg-[hsl(215,45%,10%)] border border-[hsl(35,35%,50%)]/20"
-            >
+            <form onSubmit={handleSubmit} className="card-luxury p-8 md:p-10 space-y-6">
               <div>
-                <label htmlFor="monaco-name" className="block text-sm font-medium text-white/80 mb-2">
+                <label htmlFor="monaco-name" className="block text-sm font-medium text-foreground/80 mb-2">
                   Nome Completo
                 </label>
                 <input
@@ -200,61 +140,28 @@ const MonacoFormSection = ({
                   id="monaco-name"
                   name="name"
                   autoComplete="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3.5 bg-[hsl(215,45%,6%)] border border-[hsl(35,35%,50%)]/20 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[hsl(35,35%,50%)]/50 focus:border-[hsl(35,35%,50%)] transition-all"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   placeholder="Digite seu nome completo"
+                  disabled={isSubmitting}
                 />
               </div>
 
               <div>
-                <label htmlFor="monaco-whatsapp" className="block text-sm font-medium text-white/80 mb-2">
+                <label htmlFor="monaco-whatsapp" className="block text-sm font-medium text-foreground/80 mb-2">
                   WhatsApp
                 </label>
                 <WhatsAppInput
                   id="monaco-whatsapp"
                   name="whatsapp"
                   autoComplete="tel"
-                  value={formData.whatsapp}
-                  onChange={(val) => setFormData({ ...formData, whatsapp: val })}
-                  className="py-3.5 bg-[hsl(215,45%,6%)] border-[hsl(35,35%,50%)]/20 text-white placeholder:text-white/40 focus:ring-2 focus:ring-[hsl(35,35%,50%)]/50 focus:border-[hsl(35,35%,50%)]"
+                  value={whatsapp}
+                  onChange={setWhatsapp}
+                  className="py-3.5 bg-background border-border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  disabled={isSubmitting}
                 />
               </div>
-
-              {allowBrokerSelection && !brokerId && (
-                <div className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={handleToggleBrokerSelect}
-                    className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors whitespace-nowrap"
-                  >
-                    {showBrokerSelect ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    Já sou atendido por um corretor
-                  </button>
-                  {showBrokerSelect && (
-                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <Select
-                        value={selectedBrokerId || "none"}
-                        onValueChange={(value) => setSelectedBrokerId(value === "none" ? "" : value)}
-                      >
-                        <SelectTrigger className="w-full bg-[hsl(215,45%,6%)] border-[hsl(35,35%,50%)]/20 text-white/60">
-                          <SelectValue placeholder="Nenhum / Não encontrei meu corretor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum / Não encontrei meu corretor</SelectItem>
-                          {loadingBrokers ? (
-                            <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                          ) : (
-                            brokers.map((broker) => (
-                              <SelectItem key={broker.id} value={broker.id}>{broker.name}</SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <div className="flex items-start gap-3">
                 <Checkbox
@@ -262,13 +169,14 @@ const MonacoFormSection = ({
                   checked={acceptedTerms}
                   onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
                   className="mt-0.5"
+                  disabled={isSubmitting}
                 />
-                <label htmlFor="monaco-terms" className="text-sm text-white/70 leading-relaxed cursor-pointer">
+                <label htmlFor="monaco-terms" className="text-sm text-foreground/80 leading-relaxed cursor-pointer">
                   Li e aceito os{" "}
                   <Link
                     to="/xangrila/monaco/termos#termos-de-uso"
                     target="_blank"
-                    className="text-[hsl(35,35%,55%)] hover:text-[hsl(35,35%,45%)] underline underline-offset-2"
+                    className="text-primary hover:text-primary/80 underline underline-offset-2"
                   >
                     Termos de Uso
                   </Link>{" "}
@@ -276,7 +184,7 @@ const MonacoFormSection = ({
                   <Link
                     to="/xangrila/monaco/termos#politica-de-privacidade"
                     target="_blank"
-                    className="text-[hsl(35,35%,55%)] hover:text-[hsl(35,35%,45%)] underline underline-offset-2"
+                    className="text-primary hover:text-primary/80 underline underline-offset-2"
                   >
                     Política de Privacidade
                   </Link>
@@ -286,14 +194,11 @@ const MonacoFormSection = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full px-6 py-4 bg-[hsl(35,35%,45%)] hover:bg-[hsl(35,35%,38%)] text-white font-semibold uppercase tracking-[0.15em] text-sm transition-all duration-300 rounded disabled:opacity-50 disabled:cursor-not-allowed min-h-[52px]"
+                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed min-h-[52px]"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                     Enviando...
                   </span>
                 ) : (
@@ -301,7 +206,9 @@ const MonacoFormSection = ({
                 )}
               </button>
 
-              <p className="text-center text-sm text-white/50">Cadastro gratuito e sem compromisso</p>
+              <p className="text-center text-sm text-muted-foreground">
+                Cadastro gratuito e sem compromisso
+              </p>
             </form>
           )}
         </div>
