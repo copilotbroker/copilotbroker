@@ -43,7 +43,7 @@ const MonacoAboutSection = () => {
           </p>
 
           <p className="text-base sm:text-lg text-muted-foreground mb-6 leading-relaxed">
-            O Mônaco Grand Marina nasce com essa proposta: unir natureza, sofisticação, mobilidade e experiência náutica em um endereço raro, estrategicamente posicionado na <strong className="text-foreground">Lagoa dos Quadros</strong>, ao lado do aeródromo privado D1 Fly e a apenas 5 minutos da Estrada do Mar e do Centro de Atlântida.
+            O Mônaco Grand Marina nasce com essa proposta: unir natureza, sofisticação, mobilidade e experiência náutica em um endereço raro, estrategicamente posicionado na <strong className="text-foreground">Lagoa dos Quadros</strong> — o primeiro condomínio do litoral com aeródromo privativo, o <strong className="text-foreground">D1 Fly</strong>, e a apenas 5 minutos da Estrada do Mar e do Centro de Atlântida.
           </p>
 
           <div className="divider-gold mx-auto my-8" />
