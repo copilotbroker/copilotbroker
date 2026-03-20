@@ -106,7 +106,7 @@ const MonacoLandingPage = () => {
       </a>
 
       <div className="monaco-theme min-h-screen bg-background text-foreground pb-14 sm:pb-0">
-        <MonacoHeader />
+        
         <main id="main-content" role="main">
           <MonacoHeroSection />
           <MonacoAboutSection />
