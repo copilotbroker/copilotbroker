@@ -134,6 +134,7 @@ const NAULandingPage = () => {
       <main id="main-content" role="main">
         <NAUHeroSection />
         <NAUAboutSection />
+        <NAUMapSection />
         <NAUFeaturesSection />
         <NAUGallerySection />
         <NAUConditionsSection />
