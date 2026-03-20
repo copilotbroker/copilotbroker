@@ -10,6 +10,7 @@ import {
   NAUAboutSection,
   NAUFeaturesSection,
   NAUConditionsSection,
+  NAUGallerySection,
   NAUTargetSection,
   NAUUrgencySection,
   NAUBenefitsSection,
