@@ -5,7 +5,7 @@ const highlights = [
   { icon: Anchor, text: "Lotes navegáveis com acesso direto à lagoa" },
   { icon: Waves, text: "Lotes beira lago com vista permanente" },
   { icon: TreePine, text: "Lotes secos em meio à natureza preservada" },
-  { icon Home, text: "Projetado para moradia, não apenas lazer" },
+  { icon: Home, text: "Projetado para moradia, não apenas lazer" },
   { icon: Maximize, text: "390.000 m² de área total" },
 ];
 
