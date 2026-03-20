@@ -32,7 +32,7 @@ const MonacoCTASection = () => {
     >
       <div className="absolute inset-0">
         <img src={piscinaImg} alt="" className="w-full h-full object-cover" loading="lazy" />
-        <div className="absolute inset-0 bg-background/85" />
+        <div className="absolute inset-0 bg-background/60" />
       </div>
 
       <div className="container px-4 relative z-10">
