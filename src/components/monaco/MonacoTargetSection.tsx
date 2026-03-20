@@ -1,4 +1,26 @@
 import { useEffect, useRef, useState } from "react";
+import { Users, TrendingUp, Briefcase } from "lucide-react";
+
+const profiles = [
+  {
+    icon: Users,
+    title: "Para quem busca morar com significado:",
+    benefit: "Água, natureza, arquitetura e conveniência em um endereço que entrega mais do que metragem.",
+    color: "from-blue-500/20 to-blue-600/20"
+  },
+  {
+    icon: TrendingUp,
+    title: "Para quem investe com visão:",
+    benefit: "Ativo escasso em região de forte valorização, com proposta náutica e lifestyle real.",
+    color: "from-green-500/20 to-green-600/20"
+  },
+  {
+    icon: Briefcase,
+    title: "Para quem quer sair do óbvio:",
+    benefit: "Presença, exclusividade e um lugar com significado para construir os próximos capítulos da vida.",
+    color: "from-purple-500/20 to-purple-600/20"
+  }
+];
 
 const MonacoTargetSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -13,46 +35,46 @@ const MonacoTargetSection = () => {
     return () => observer.disconnect();
   }, []);
 
-  const scrollToForm = () => {
-    document.getElementById("cadastro")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <section
       ref={sectionRef}
-      className="py-20 md:py-32 bg-[hsl(215,45%,6%)] relative overflow-hidden"
+      className="py-20 md:py-32 bg-card relative overflow-hidden"
     >
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[hsl(35,35%,50%)]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[hsl(35,35%,50%)]/5 rounded-full blur-3xl" />
-      </div>
+      <div className="absolute top-1/4 left-0 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 right-0 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
 
       <div className="container px-4 relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className={`mb-10 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-8 text-white leading-tight">
-              Para quem o Mônaco foi{" "}
-              <span className="text-[hsl(35,35%,55%)]">pensado</span>
-            </h2>
+        <div className={`text-center mb-16 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+            PARA QUEM O MÔNACO FOI{" "}
+            <span className="text-gold-gradient">PENSADO.</span>
+          </h2>
+        </div>
 
-            <div className="space-y-4 text-base sm:text-lg text-white/70 leading-relaxed">
-              <p>Para quem deseja morar em um endereço que entrega mais do que metragem.</p>
-              <p>Para quem valoriza água, natureza, arquitetura e conveniência.</p>
-              <p className="font-serif text-xl md:text-2xl font-semibold text-white pt-2">
-                Para quem quer sair do óbvio e construir em um lugar com <span className="text-[hsl(35,35%,55%)]">presença, exclusividade e significado</span>.
-              </p>
-            </div>
-          </div>
-
-          <div className={`transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}`}>
-            <div className="w-20 h-px bg-[hsl(35,35%,50%)]/30 mx-auto mb-8" />
-            <button
-              onClick={scrollToForm}
-              className="px-10 py-5 bg-[hsl(35,35%,45%)] hover:bg-[hsl(35,35%,38%)] text-white font-semibold uppercase tracking-[0.15em] text-base transition-all duration-300 rounded hover:shadow-[0_10px_40px_hsl(35,35%,45%,0.25)]"
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {profiles.map((profile, index) => (
+            <div
+              key={profile.title}
+              className={`relative group transition-all duration-700 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              }`}
+              style={{ transitionDelay: `${index * 150}ms` }}
             >
-              Quero Saber Mais
-            </button>
-          </div>
+              <div className="card-luxury h-full flex flex-col items-center text-center p-8">
+                <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${profile.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <profile.icon className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="font-serif text-xl font-semibold mb-4 text-foreground">
+                  {profile.title}
+                </h3>
+                <p className="text-muted-foreground leading-relaxed flex-1 flex items-center">
+                  <span className="text-primary mr-2">👉</span>
+                  {profile.benefit}
+                </p>
+              </div>
+              <div className="absolute inset-0 rounded-lg bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10 blur-xl" />
+            </div>
+          ))}
         </div>
       </div>
     </section>

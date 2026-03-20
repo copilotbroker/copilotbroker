@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Menu, X } from "lucide-react";
 import logoMonaco from "@/assets/monaco/logo-monaco.png";
 
 const MonacoHeader = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -10,32 +12,103 @@ const MonacoHeader = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToForm = () => {
-    document.getElementById("cadastro")?.scrollIntoView({ behavior: "smooth" });
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [isMobileMenuOpen]);
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setIsMobileMenuOpen(false);
   };
 
+  const navItems = [
+    { id: "sobre", label: "O Projeto" },
+    { id: "nautico", label: "Náutico" },
+    { id: "estrutura", label: "Estrutura" },
+    { id: "localizacao", label: "Localização" },
+  ];
+
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 pt-safe ${
-        isScrolled
-          ? "bg-[hsl(215,45%,8%)]/95 backdrop-blur-md border-b border-[hsl(35,35%,50%)]/20 py-3"
-          : "bg-transparent py-5"
-      }`}
-    >
-      <div className="container flex items-center justify-between px-4">
-        <img
-          src={logoMonaco}
-          alt="Mônaco Grand Marina"
-          className={`h-10 sm:h-12 md:h-14 w-auto transition-opacity duration-300 brightness-0 invert ${isScrolled ? "opacity-100" : "opacity-0"}`}
-        />
-        <button
-          onClick={scrollToForm}
-          className="hidden sm:inline-flex px-6 py-3 bg-[hsl(35,35%,45%)] hover:bg-[hsl(35,35%,38%)] text-white font-semibold uppercase tracking-[0.15em] text-xs transition-all duration-300 rounded"
-        >
-          Quero Saber Mais
-        </button>
-      </div>
-    </header>
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 pt-safe ${
+          isScrolled
+            ? "bg-charcoal/95 backdrop-blur-md border-b border-primary/20 py-3"
+            : "bg-transparent py-5"
+        }`}
+      >
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex items-center justify-between">
+            <img
+              src={logoMonaco}
+              alt="Mônaco Grand Marina"
+              className="h-8 md:h-10 w-auto brightness-0 invert opacity-80"
+            />
+
+            <nav className="hidden md:flex items-center gap-8 lg:gap-10">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => scrollToSection(item.id)}
+                  className="text-xs uppercase tracking-[0.15em] font-medium text-white/70 hover:text-primary transition-colors duration-300"
+                >
+                  {item.label}
+                </button>
+              ))}
+              <button
+                onClick={() => scrollToSection("cadastro")}
+                className="btn-primary text-xs px-4 py-2.5 sm:px-6 sm:py-3"
+              >
+                Quero Saber Mais
+              </button>
+            </nav>
+
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-white"
+              aria-label="Menu"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <nav className="absolute top-16 left-4 right-4 bg-card rounded-lg shadow-2xl p-6 border border-border/50 animate-fade-up">
+            <div className="space-y-2">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => scrollToSection(item.id)}
+                  className="block w-full text-left py-4 px-4 text-sm uppercase tracking-[0.1em] text-foreground hover:bg-muted rounded-md transition-colors min-h-[48px]"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <button
+                onClick={() => scrollToSection("cadastro")}
+                className="w-full btn-primary min-h-[48px]"
+              >
+                Quero Saber Mais
+              </button>
+            </div>
+          </nav>
+        </div>
+      )}
+    </>
   );
 };
 
