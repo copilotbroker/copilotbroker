@@ -8,6 +8,7 @@ import {
   NAUHeader,
   NAUHeroSection,
   NAUAboutSection,
+  NAUMapSection,
   NAUFeaturesSection,
   NAUConditionsSection,
   NAUGallerySection,
@@ -134,6 +135,7 @@ const NAULandingPage = () => {
       <main id="main-content" role="main">
         <NAUHeroSection />
         <NAUAboutSection />
+        <NAUMapSection />
         <NAUFeaturesSection />
         <NAUGallerySection />
         <NAUConditionsSection />
