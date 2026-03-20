@@ -42,7 +42,7 @@ const NAUHeroSection = () => {
             </span>
           </div>
 
-          <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 text-white leading-[1.05]">
+          <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 text-white leading-[0.95]">
             Seu lugar entre a água, a natureza e uma{" "}
             <span className="text-[hsl(200,60%,55%)]">nova forma de viver.</span>
           </h1>
