@@ -47,7 +47,7 @@ const NAUAboutSection = () => {
         </div>
         {/* Mapa interativo de lotes */}
         <div className={`max-w-6xl mx-auto mb-16 transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-          <div className="rounded-xl overflow-hidden border border-[hsl(24,70%,42%)]/20" style={{ aspectRatio: '16/9' }}>
+          <div className="rounded-xl overflow-hidden border border-[hsl(24,70%,42%)]/20 min-h-[70vh] md:min-h-0" style={{ aspectRatio: '16/9' }}>
             <iframe
               src="https://avivaurbanismo.com.br/mapa-nau/"
               width="100%"
