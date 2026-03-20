@@ -38,11 +38,11 @@ const NAUAboutSection = () => {
           </p>
 
           <p className="text-base sm:text-lg text-white/70 leading-relaxed mb-6">
-            Osório é uma das poucas cidades do Brasil privilegiada por montanhas, lagoas e mar. O NAU nasce nesse cenário único — um marina club com acesso direto à Lagoa do Peixoto, pensado para quem busca sofisticação e vida náutica.
+            Osório é uma das poucas cidades do Brasil privilegiada por montanhas, lagoas e mar. O NAU nasce nesse cenário único, um marina club com acesso direto à Lagoa do Peixoto, pensado para quem busca sofisticação e vida náutica.
           </p>
 
           <p className="text-base sm:text-lg text-white/70 leading-relaxed">
-            São 390.000 m² com lotes navegáveis, beira lago e secos — diferentes formas de viver um mesmo conceito: <strong className="text-white">exclusividade à beira d'água</strong>.
+            São 390.000 m² com lotes navegáveis, beira lago e secos. Diferentes formas de viver um mesmo conceito: <strong className="text-white">exclusividade à beira d'água</strong>.
           </p>
         </div>
 
