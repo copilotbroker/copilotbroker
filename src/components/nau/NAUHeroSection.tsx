@@ -9,7 +9,7 @@ const NAUHeroSection = () => {
   useEffect(() => {
     const img = new Image();
     img.onload = () => setImageLoaded(true);
-    img.src = heroAerial;
+    img.src = heroEntrada;
     setIsVisible(true);
   }, []);
 
