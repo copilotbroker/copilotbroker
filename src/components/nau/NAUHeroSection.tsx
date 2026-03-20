@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import heroAerial from "@/assets/nau/hero-aerial.jpg";
+import heroEntrada from "@/assets/nau/nau-entrada.png";
 
 const NAUHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
