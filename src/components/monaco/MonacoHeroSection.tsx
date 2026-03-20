@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import logoMonaco from "@/assets/monaco/logo-monaco.png";
+import heroBg from "@/assets/monaco/hero-monaco.jpg";
 
 const MonacoHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
+    const img = new Image();
+    img.onload = () => setImageLoaded(true);
+    img.src = heroBg;
     setIsVisible(true);
   }, []);
 
