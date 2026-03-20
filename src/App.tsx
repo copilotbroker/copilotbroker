@@ -41,6 +41,9 @@ import Termos from "./pages/Termos";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import NotFound from "./pages/NotFound";
+import NAULandingPage from "./pages/nau/NAULandingPage";
+import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
+import TermosNAU from "./pages/nau/TermosNAU";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +84,12 @@ const App = () => (
             {/* Imóveis Prontos - lead capture for ready-to-move-in properties */}
             <Route path="/prontos" element={<Prontos />} />
             <Route path="/prontos/:brokerSlug" element={<ProntosBrokerPage />} />
+            
+            {/* NAU - Condomínio Náutico em Osório */}
+            <Route path="/osorio/nau" element={<NAULandingPage />} />
+            <Route path="/osorio/nau/obrigado" element={<NAULandingPage />} />
+            <Route path="/osorio/nau/termos" element={<TermosNAU />} />
+            <Route path="/osorio/nau/:brokerSlug" element={<NAUBrokerLandingPage />} />
             
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
