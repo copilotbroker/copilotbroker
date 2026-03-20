@@ -25,7 +25,7 @@ const NAUHeroSection = () => {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div
         className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-        style={{ backgroundImage: `url(${heroAerial})`, backgroundSize: "cover", backgroundPosition: "center" }}
+        style={{ backgroundImage: `url(${heroEntrada})`, backgroundSize: "cover", backgroundPosition: "center" }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-[hsl(210,35%,8%)]/80 via-[hsl(210,35%,8%)]/50 to-[hsl(210,35%,8%)]/85" />
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[hsl(200,60%,40%)] to-transparent opacity-50" />

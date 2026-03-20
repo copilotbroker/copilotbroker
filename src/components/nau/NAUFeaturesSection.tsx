@@ -80,8 +80,8 @@ const NAUFeaturesSection = () => {
               </div>
               {imageLoaded && (
                 <img
-                  src={marinaRender}
-                  alt="Vista do NAU Condomínio Náutico"
+                  src={nauAerial}
+                  alt="Vista aérea do NAU com canal navegável e lotes"
                   className="absolute inset-0 w-full h-full object-cover animate-fade-in"
                 />
               )}
