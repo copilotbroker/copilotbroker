@@ -45,6 +45,24 @@ const NAUAboutSection = () => {
             São 390.000 m² com lotes navegáveis, beira lago e secos. Diferentes formas de viver um mesmo conceito: <strong className="text-white">exclusividade à beira d'água</strong>.
           </p>
         </div>
+        {/* Mapa interativo de lotes */}
+        <div className={`max-w-6xl mx-auto mb-16 transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <div className="rounded-xl overflow-hidden border border-[hsl(24,70%,42%)]/20" style={{ aspectRatio: '16/9' }}>
+            <iframe
+              src="https://avivaurbanismo.com.br/mapa-nau/"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              title="Mapa interativo de lotes do NAU"
+              className="w-full h-full"
+            />
+          </div>
+          <p className="text-center text-white/50 text-sm mt-3">
+            Clique nos lotes para ver detalhes de disponibilidade
+          </p>
+        </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
           {highlights.map((item, index) => (
