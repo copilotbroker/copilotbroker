@@ -39,22 +39,20 @@ const NAUHeroSection = () => {
             </span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white leading-[1.1]">
-            VIVA À BEIRA DA{" "}
-            <span className="text-[hsl(200,60%,55%)]">LAGOA</span>.{" "}
-            COM LOTE NAVEGÁVEL A PARTIR DE{" "}
-            <span className="text-[hsl(200,60%,55%)]">R$ 229 MIL</span>
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white leading-[1.1]">
+            Seu lugar entre a água, a natureza e uma{" "}
+            <span className="text-[hsl(200,60%,55%)]">nova forma de viver.</span>
           </h1>
 
-          <p className="text-xl sm:text-2xl md:text-3xl font-serif italic text-[hsl(200,60%,55%)] mb-6">
-            Entrega em Outubro de 2026.
-          </p>
-
-          <p className="text-sm sm:text-base text-white/70 mb-8 max-w-2xl mx-auto">
-            O NAU é um condomínio náutico em Osório com acesso direto à Lagoa do Peixoto. 390.000 m² de área total com lotes navegáveis, secos e beira lago.
+          <p className="text-base sm:text-lg md:text-xl text-white/70 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Últimos lotes no Nau, o condomínio náutico em Osório para quem quer morar com exclusividade, liberdade e conexão real com a natureza.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+            <div className="px-6 py-3 border border-[hsl(200,60%,40%)]/30 rounded-lg bg-[hsl(200,60%,40%)]/10 backdrop-blur-sm">
+              <p className="text-xs text-[hsl(200,60%,60%)] uppercase tracking-wider mb-1">A partir de</p>
+              <p className="text-white font-semibold text-lg">R$ 229.000 <span className="text-sm font-normal text-white/60">já com desconto</span></p>
+            </div>
             <div className="px-6 py-3 border border-[hsl(200,60%,40%)]/30 rounded-lg bg-[hsl(200,60%,40%)]/10 backdrop-blur-sm">
               <p className="text-xs text-[hsl(200,60%,60%)] uppercase tracking-wider mb-1">Condição Curta</p>
               <p className="text-white font-semibold">25% de desconto · 30x sem juros</p>

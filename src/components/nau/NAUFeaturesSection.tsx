@@ -1,14 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Ship, ShieldCheck, Sailboat, Fish, MapPin } from "lucide-react";
 import marinaRender from "@/assets/nau/marina-render.jpg";
-
-const features = [
-  { icon: Ship, text: "Marina privativa com atracadouro" },
-  { icon: Sailboat, text: "Lotes navegáveis com saída direta à lagoa" },
-  { icon: Fish, text: "Pesca, esportes náuticos e lazer aquático" },
-  { icon: ShieldCheck, text: "Condomínio fechado com segurança 24h" },
-  { icon: MapPin, text: "Osório — a 1h de Porto Alegre e da Serra" },
-];
 
 const NAUFeaturesSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -51,31 +42,30 @@ const NAUFeaturesSection = () => {
 
       <div className="container px-4 relative z-10">
         <div className={`text-center mb-16 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
-            UM CONDOMÍNIO FEITO PARA{" "}
-            <span className="text-[hsl(200,60%,55%)]">QUEM VIVE A ÁGUA</span>
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-white">
+            Mais do que um lote.{" "}
+            <span className="text-[hsl(200,60%,55%)]">Um estilo de vida.</span>
           </h2>
-          <p className="text-lg text-white/60">
-            Cada detalhe do NAU foi pensado para integrar sua vida à lagoa.
-          </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className={`space-y-6 transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"}`}>
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-4 p-4 rounded-lg bg-[hsl(210,35%,10%)]/50 border border-[hsl(200,60%,40%)]/10 hover:border-[hsl(200,60%,40%)]/30 transition-all duration-300"
-                style={{ transitionDelay: `${index * 100}ms` }}
-              >
-                <div className="w-12 h-12 shrink-0 rounded-full bg-[hsl(200,60%,40%)]/10 flex items-center justify-center">
-                  <feature.icon className="w-6 h-6 text-[hsl(200,60%,55%)]" />
-                </div>
-                <div className="flex items-center pt-3">
-                  <p className="text-base sm:text-lg text-white/90">{feature.text}</p>
-                </div>
-              </div>
-            ))}
+            <p className="text-base sm:text-lg text-white/70 leading-relaxed">
+              No Nau, cada detalhe do projeto convida você a imaginar uma vida com mais respiro, mais beleza e mais sentido. Um lugar para morar, desacelerar do caos e viver próximo à água, cercado por uma paisagem que muda a forma como você começa e termina o dia.
+            </p>
+
+            <p className="text-base sm:text-lg text-white/70 leading-relaxed">
+              Aqui, a escolha não é apenas sobre metragem ou localização.
+            </p>
+
+            <p className="font-serif text-xl md:text-2xl font-semibold text-white">
+              É sobre o tipo de vida que você quer construir a partir de agora.
+            </p>
+
+            <div className="pt-4 px-6 py-4 border border-[hsl(200,60%,40%)]/20 rounded-lg bg-[hsl(200,60%,40%)]/5">
+              <p className="text-sm text-[hsl(200,60%,60%)] uppercase tracking-wider mb-1">Previsão de entrega</p>
+              <p className="text-xl font-semibold text-white">Outubro de 2026</p>
+            </div>
           </div>
 
           <div
@@ -91,7 +81,7 @@ const NAUFeaturesSection = () => {
               {imageLoaded && (
                 <img
                   src={marinaRender}
-                  alt="Marina do NAU Condomínio Náutico"
+                  alt="Vista do NAU Condomínio Náutico"
                   className="absolute inset-0 w-full h-full object-cover animate-fade-in"
                 />
               )}

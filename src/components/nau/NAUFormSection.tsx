@@ -173,7 +173,9 @@ const NAUFormSection = ({
               GARANTA SEU{" "}
               <span className="text-[hsl(200,60%,55%)]">LOTE AGORA</span>
             </h2>
-            <p className="text-white/60">Cadastro gratuito. Últimos lotes com condição exclusiva.</p>
+            <p className="text-white/60">
+              Cadastre-se para receber mais informações e consultar os últimos lotes disponíveis.
+            </p>
           </div>
 
           {submitted ? (
