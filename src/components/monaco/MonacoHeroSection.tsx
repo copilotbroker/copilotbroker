@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import logoMonaco from "@/assets/monaco/logo-monaco.png";
+import heroBg from "@/assets/monaco/hero-monaco.jpg";
 
 const MonacoHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
+    const img = new Image();
+    img.onload = () => setImageLoaded(true);
+    img.src = heroBg;
     setIsVisible(true);
   }, []);
 
@@ -22,8 +27,13 @@ const MonacoHeroSection = () => {
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
       aria-labelledby="hero-heading"
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-background/80 to-background" />
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+      <div
+        className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+        style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
+        role="img"
+        aria-label="Vista do Mônaco Grand Marina com piscina e lagoa"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
 
       <div className="relative z-10 container px-4 pt-24 pb-16 text-center">
         <div className={`max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
