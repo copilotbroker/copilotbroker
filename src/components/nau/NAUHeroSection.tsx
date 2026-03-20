@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import heroEntrada from "@/assets/nau/nau-entrada.png";
+import logoNau from "@/assets/nau/logo-nau.png";
 
 const NAUHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -32,6 +33,8 @@ const NAUHeroSection = () => {
 
       <div className="relative z-10 container px-4 pt-24 pb-16 text-center">
         <div className={`max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <img src={logoNau} alt="NAU Marina & Moradas" className="h-16 sm:h-20 md:h-24 w-auto mx-auto mb-6" />
+
           <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 border border-[hsl(200,60%,40%)]/40 rounded-full bg-[hsl(200,60%,40%)]/10 backdrop-blur-sm">
             <span className="w-2 h-2 rounded-full bg-[hsl(200,60%,40%)] animate-pulse" />
             <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-[hsl(200,60%,60%)]">
