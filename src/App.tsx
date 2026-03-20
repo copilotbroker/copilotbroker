@@ -93,6 +93,11 @@ const App = () => (
             <Route path="/osorio/nau/termos" element={<TermosNAU />} />
             <Route path="/osorio/nau/:brokerSlug" element={<NAUBrokerLandingPage />} />
             
+            {/* Mônaco Grand Marina - Condomínio Náutico em Xangri-lá */}
+            <Route path="/xangrila/monaco" element={<MonacoLandingPage />} />
+            <Route path="/xangrila/monaco/obrigado" element={<MonacoLandingPage />} />
+            <Route path="/xangrila/monaco/termos" element={<TermosMonaco />} />
+            
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
