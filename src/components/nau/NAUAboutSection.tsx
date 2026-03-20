@@ -32,7 +32,7 @@ const NAUAboutSection = () => {
 
       <div className="container px-4 relative z-10">
         <div className={`max-w-3xl mx-auto text-center mb-16 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-          <p className="font-serif text-xl sm:text-2xl italic text-[hsl(24,70%,50%)] mb-6">
+          <p className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl italic text-[hsl(24,70%,50%)] mb-6">
             Existem lugares que não servem apenas para construir uma casa.<br />
             Servem para construir um novo ritmo de vida.
           </p>
