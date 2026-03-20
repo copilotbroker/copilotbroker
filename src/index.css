@@ -169,6 +169,41 @@
     --sidebar-ring: 60 100% 50%;
   }
 
+  /* Mônaco Grand Marina — Navy & Warm Gold */
+  .monaco-theme {
+    --background: 215 45% 8%;
+    --foreground: 40 25% 95%;
+
+    --card: 215 35% 12%;
+    --card-foreground: 40 25% 95%;
+
+    --popover: 215 35% 12%;
+    --popover-foreground: 40 25% 95%;
+
+    --primary: 35 55% 55%;
+    --primary-foreground: 215 45% 6%;
+
+    --secondary: 215 30% 14%;
+    --secondary-foreground: 40 25% 95%;
+
+    --muted: 215 20% 20%;
+    --muted-foreground: 215 15% 60%;
+
+    --accent: 35 55% 55%;
+    --accent-foreground: 215 45% 6%;
+
+    --border: 215 20% 22%;
+    --input: 215 20% 22%;
+    --ring: 35 55% 55%;
+
+    --gold: 35 55% 55%;
+    --gold-light: 38 50% 65%;
+    --gold-dark: 32 60% 40%;
+
+    --gradient-gold: linear-gradient(135deg, hsl(35, 55%, 55%) 0%, hsl(38, 50%, 65%) 50%, hsl(35, 55%, 55%) 100%);
+    --shadow-gold: 0 0 40px hsl(35 55% 55% / 0.25);
+  }
+
 }
 
 @layer base {
