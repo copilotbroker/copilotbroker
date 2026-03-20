@@ -56,7 +56,7 @@ const NAUConditionsSection = () => {
               </div>
 
               <div className="p-4 rounded bg-[hsl(24,70%,42%)]/10 border border-[hsl(24,70%,42%)]/20 text-center mb-6">
-                <p className="text-sm text-[hsl(24,70%,55%)]">A partir de</p>
+                <p className="text-sm text-[hsl(200,60%,60%)]">A partir de</p>
                 <p className="text-3xl font-bold text-white mt-1">R$ 229.000</p>
                 <p className="text-xs text-white/50 mt-1">já com desconto aplicado</p>
               </div>
