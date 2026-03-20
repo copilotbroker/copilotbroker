@@ -24,18 +24,18 @@ const MonacoHeroSection = () => {
 
   return (
     <section
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-[110vh] sm:min-h-[120vh] flex items-start justify-center overflow-hidden"
       aria-labelledby="hero-heading"
     >
       <div
         className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-        style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
+        style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center bottom" }}
         role="img"
         aria-label="Vista do Mônaco Grand Marina com piscina e lagoa"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-background" />
 
-      <div className="relative z-10 container px-4 pt-24 pb-16 text-center">
+      <div className="relative z-10 container px-4 pt-32 sm:pt-40 md:pt-48 pb-16 text-center">
         <div className={`max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <img src={logoMonaco} alt="Mônaco Grand Marina" className="h-20 sm:h-28 md:h-36 w-auto mx-auto mb-8 brightness-0 invert" />
 
