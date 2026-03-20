@@ -44,6 +44,8 @@ import NotFound from "./pages/NotFound";
 import NAULandingPage from "./pages/nau/NAULandingPage";
 import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
 import TermosNAU from "./pages/nau/TermosNAU";
+import MonacoLandingPage from "./pages/monaco/MonacoLandingPage";
+import TermosMonaco from "./pages/monaco/TermosMonaco";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +92,11 @@ const App = () => (
             <Route path="/osorio/nau/obrigado" element={<NAULandingPage />} />
             <Route path="/osorio/nau/termos" element={<TermosNAU />} />
             <Route path="/osorio/nau/:brokerSlug" element={<NAUBrokerLandingPage />} />
+            
+            {/* Mônaco Grand Marina - Condomínio Náutico em Xangri-lá */}
+            <Route path="/xangrila/monaco" element={<MonacoLandingPage />} />
+            <Route path="/xangrila/monaco/obrigado" element={<MonacoLandingPage />} />
+            <Route path="/xangrila/monaco/termos" element={<TermosMonaco />} />
             
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />

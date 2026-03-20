@@ -1,0 +1,11 @@
+export { default as MonacoHeader } from "./MonacoHeader";
+export { default as MonacoHeroSection } from "./MonacoHeroSection";
+export { default as MonacoAboutSection } from "./MonacoAboutSection";
+export { default as MonacoNauticoSection } from "./MonacoNauticoSection";
+export { default as MonacoClubSection } from "./MonacoClubSection";
+export { default as MonacoParqueSection } from "./MonacoParqueSection";
+export { default as MonacoLocationSection } from "./MonacoLocationSection";
+export { default as MonacoTargetSection } from "./MonacoTargetSection";
+export { default as MonacoFormSection } from "./MonacoFormSection";
+export { default as MonacoFooter } from "./MonacoFooter";
+export { default as MonacoFloatingCTA } from "./MonacoFloatingCTA";
