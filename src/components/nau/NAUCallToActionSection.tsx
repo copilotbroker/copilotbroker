@@ -23,8 +23,8 @@ const NAUCallToActionSection = () => {
       className="py-20 md:py-32 bg-[hsl(210,35%,6%)] relative overflow-hidden"
     >
       <div className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[hsl(200,60%,40%)]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[hsl(200,60%,40%)]/5 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[hsl(24,70%,42%)]/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[hsl(24,70%,42%)]/5 rounded-full blur-3xl" />
       </div>
 
       <div className="container px-4 relative z-10">
@@ -32,7 +32,7 @@ const NAUCallToActionSection = () => {
           <div className={`mb-10 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-white">
               Garanta um dos últimos lotes com{" "}
-              <span className="text-[hsl(200,60%,55%)]">condição exclusiva</span>
+              <span className="text-[hsl(24,70%,50%)]">condição exclusiva</span>
             </h2>
 
             <p className="text-base sm:text-lg text-white/60 leading-relaxed mb-6">
@@ -45,10 +45,10 @@ const NAUCallToActionSection = () => {
           </div>
 
           <div className={`transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}`}>
-            <div className="w-20 h-px bg-[hsl(200,60%,40%)]/30 mx-auto mb-8" />
+            <div className="w-20 h-px bg-[hsl(24,70%,42%)]/30 mx-auto mb-8" />
             <button
               onClick={scrollToForm}
-              className="px-10 py-5 bg-[hsl(200,60%,40%)] hover:bg-[hsl(200,60%,35%)] text-white font-semibold uppercase tracking-[0.15em] text-base transition-all duration-300 rounded hover:shadow-[0_10px_40px_hsl(200,60%,40%,0.3)]"
+              className="px-10 py-5 bg-[hsl(24,70%,42%)] hover:bg-[hsl(24,70%,36%)] text-white font-semibold uppercase tracking-[0.15em] text-base transition-all duration-300 rounded hover:shadow-[0_10px_40px_hsl(200,60%,40%,0.3)]"
             >
               Quero Garantir Meu Lote
             </button>

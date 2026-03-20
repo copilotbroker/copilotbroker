@@ -164,14 +164,14 @@ const NAUFormSection = ({
       ref={sectionRef}
       className="py-20 md:py-32 bg-[hsl(210,35%,8%)] relative overflow-hidden"
     >
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[hsl(200,60%,40%)]/5 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[hsl(24,70%,42%)]/5 rounded-full blur-3xl" />
 
       <div className="container px-4 relative z-10">
         <div className={`max-w-xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <div className="text-center mb-10">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-white">
               GARANTA SEU{" "}
-              <span className="text-[hsl(200,60%,55%)]">LOTE AGORA</span>
+              <span className="text-[hsl(24,70%,50%)]">LOTE AGORA</span>
             </h2>
             <p className="text-white/60">
               Cadastre-se para receber mais informações e consultar os últimos lotes disponíveis.
@@ -179,17 +179,17 @@ const NAUFormSection = ({
           </div>
 
           {submitted ? (
-            <div className="p-8 md:p-10 flex flex-col items-center justify-center text-center space-y-4 min-h-[200px] rounded-lg bg-[hsl(210,35%,10%)] border border-[hsl(200,60%,40%)]/20">
+            <div className="p-8 md:p-10 flex flex-col items-center justify-center text-center space-y-4 min-h-[200px] rounded-lg bg-[hsl(210,35%,10%)] border border-[hsl(24,70%,42%)]/20">
               <h3 className="font-serif text-2xl md:text-3xl font-bold text-white">
                 Parabéns! Você está na{" "}
-                <span className="text-[hsl(200,60%,55%)]">lista prioritária!</span>
+                <span className="text-[hsl(24,70%,50%)]">lista prioritária!</span>
               </h3>
               <p className="text-white/60">Em breve entraremos em contato pelo WhatsApp.</p>
             </div>
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="p-8 md:p-10 space-y-6 rounded-lg bg-[hsl(210,35%,10%)] border border-[hsl(200,60%,40%)]/20"
+              className="p-8 md:p-10 space-y-6 rounded-lg bg-[hsl(210,35%,10%)] border border-[hsl(24,70%,42%)]/20"
             >
               <div>
                 <label htmlFor="nau-name" className="block text-sm font-medium text-white/80 mb-2">
@@ -202,7 +202,7 @@ const NAUFormSection = ({
                   autoComplete="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3.5 bg-[hsl(210,35%,8%)] border border-[hsl(200,60%,40%)]/20 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[hsl(200,60%,40%)]/50 focus:border-[hsl(200,60%,40%)] transition-all"
+                  className="w-full px-4 py-3.5 bg-[hsl(210,35%,8%)] border border-[hsl(24,70%,42%)]/20 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[hsl(24,70%,42%)]/50 focus:border-[hsl(24,70%,42%)] transition-all"
                   placeholder="Digite seu nome completo"
                 />
               </div>
@@ -217,7 +217,7 @@ const NAUFormSection = ({
                   autoComplete="tel"
                   value={formData.whatsapp}
                   onChange={(val) => setFormData({ ...formData, whatsapp: val })}
-                  className="py-3.5 bg-[hsl(210,35%,8%)] border-[hsl(200,60%,40%)]/20 text-white placeholder:text-white/40 focus:ring-2 focus:ring-[hsl(200,60%,40%)]/50 focus:border-[hsl(200,60%,40%)]"
+                  className="py-3.5 bg-[hsl(210,35%,8%)] border-[hsl(24,70%,42%)]/20 text-white placeholder:text-white/40 focus:ring-2 focus:ring-[hsl(24,70%,42%)]/50 focus:border-[hsl(24,70%,42%)]"
                 />
               </div>
 
@@ -237,7 +237,7 @@ const NAUFormSection = ({
                         value={selectedBrokerId || "none"}
                         onValueChange={(value) => setSelectedBrokerId(value === "none" ? "" : value)}
                       >
-                        <SelectTrigger className="w-full bg-[hsl(210,35%,8%)] border-[hsl(200,60%,40%)]/20 text-white/60">
+                        <SelectTrigger className="w-full bg-[hsl(210,35%,8%)] border-[hsl(24,70%,42%)]/20 text-white/60">
                           <SelectValue placeholder="Nenhum / Não encontrei meu corretor" />
                         </SelectTrigger>
                         <SelectContent>
@@ -268,7 +268,7 @@ const NAUFormSection = ({
                   <Link
                     to="/osorio/nau/termos#termos-de-uso"
                     target="_blank"
-                    className="text-[hsl(200,60%,55%)] hover:text-[hsl(200,60%,45%)] underline underline-offset-2"
+                    className="text-[hsl(24,70%,50%)] hover:text-[hsl(24,70%,40%)] underline underline-offset-2"
                   >
                     Termos de Uso
                   </Link>{" "}
@@ -276,7 +276,7 @@ const NAUFormSection = ({
                   <Link
                     to="/osorio/nau/termos#politica-de-privacidade"
                     target="_blank"
-                    className="text-[hsl(200,60%,55%)] hover:text-[hsl(200,60%,45%)] underline underline-offset-2"
+                    className="text-[hsl(24,70%,50%)] hover:text-[hsl(24,70%,40%)] underline underline-offset-2"
                   >
                     Política de Privacidade
                   </Link>
@@ -286,7 +286,7 @@ const NAUFormSection = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full px-6 py-4 bg-[hsl(200,60%,40%)] hover:bg-[hsl(200,60%,35%)] text-white font-semibold uppercase tracking-[0.15em] text-sm transition-all duration-300 rounded disabled:opacity-50 disabled:cursor-not-allowed min-h-[52px]"
+                className="w-full px-6 py-4 bg-[hsl(24,70%,42%)] hover:bg-[hsl(24,70%,36%)] text-white font-semibold uppercase tracking-[0.15em] text-sm transition-all duration-300 rounded disabled:opacity-50 disabled:cursor-not-allowed min-h-[52px]"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">

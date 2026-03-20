@@ -23,7 +23,7 @@ const NAUConditionsSection = () => {
       ref={sectionRef}
       className="py-20 md:py-32 bg-[hsl(210,35%,6%)] relative overflow-hidden"
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(200,60%,40%)]/5 via-transparent to-[hsl(200,60%,40%)]/5" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(24,70%,42%)]/5 via-transparent to-[hsl(24,70%,42%)]/5" />
 
       <div className="container px-4 relative z-10">
         <div className="max-w-4xl mx-auto">
@@ -34,12 +34,12 @@ const NAUConditionsSection = () => {
 
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
               ÚLTIMOS LOTES COM{" "}
-              <span className="text-[hsl(200,60%,55%)]">CONDIÇÃO EXCLUSIVA</span>
+              <span className="text-[hsl(24,70%,50%)]">CONDIÇÃO EXCLUSIVA</span>
             </h2>
           </div>
 
           <div className={`max-w-2xl mx-auto mb-12 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-            <div className="p-8 rounded-lg bg-[hsl(210,35%,10%)] border-2 border-[hsl(200,60%,40%)]/40">
+            <div className="p-8 rounded-lg bg-[hsl(210,35%,10%)] border-2 border-[hsl(24,70%,42%)]/40">
               <p className="text-white/70 mb-6 leading-relaxed">
                 Hoje, você pode garantir seu espaço no Nau com uma condição curta pensada para quem quer aproveitar o máximo da oportunidade:
               </p>
@@ -55,8 +55,8 @@ const NAUConditionsSection = () => {
                 </div>
               </div>
 
-              <div className="p-4 rounded bg-[hsl(200,60%,40%)]/10 border border-[hsl(200,60%,40%)]/20 text-center mb-6">
-                <p className="text-sm text-[hsl(200,60%,60%)]">A partir de</p>
+              <div className="p-4 rounded bg-[hsl(24,70%,42%)]/10 border border-[hsl(24,70%,42%)]/20 text-center mb-6">
+                <p className="text-sm text-[hsl(24,70%,55%)]">A partir de</p>
                 <p className="text-3xl font-bold text-white mt-1">R$ 229.000</p>
                 <p className="text-xs text-white/50 mt-1">já com desconto aplicado</p>
               </div>
@@ -71,7 +71,7 @@ const NAUConditionsSection = () => {
           <div className={`text-center transition-all duration-1000 delay-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
             <button
               onClick={scrollToForm}
-              className="px-10 py-5 bg-[hsl(200,60%,40%)] hover:bg-[hsl(200,60%,35%)] text-white font-semibold uppercase tracking-[0.15em] text-base transition-all duration-300 rounded hover:shadow-[0_10px_40px_hsl(200,60%,40%,0.3)]"
+              className="px-10 py-5 bg-[hsl(24,70%,42%)] hover:bg-[hsl(24,70%,36%)] text-white font-semibold uppercase tracking-[0.15em] text-base transition-all duration-300 rounded hover:shadow-[0_10px_40px_hsl(200,60%,40%,0.3)]"
             >
               Consultar Lotes Disponíveis
             </button>

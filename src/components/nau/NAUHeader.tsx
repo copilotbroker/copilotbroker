@@ -18,7 +18,7 @@ const NAUHeader = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 pt-safe ${
         isScrolled
-          ? "bg-[hsl(210,35%,8%)]/95 backdrop-blur-md border-b border-[hsl(200,60%,40%)]/20 py-3"
+          ? "bg-[hsl(210,35%,8%)]/95 backdrop-blur-md border-b border-[hsl(24,70%,42%)]/20 py-3"
           : "bg-transparent py-5"
       }`}
     >
@@ -30,7 +30,7 @@ const NAUHeader = () => {
         />
         <button
           onClick={scrollToForm}
-          className="hidden sm:inline-flex px-6 py-3 bg-[hsl(200,60%,40%)] hover:bg-[hsl(200,60%,35%)] text-white font-semibold uppercase tracking-[0.15em] text-xs transition-all duration-300 rounded"
+          className="hidden sm:inline-flex px-6 py-3 bg-[hsl(24,70%,42%)] hover:bg-[hsl(24,70%,36%)] text-white font-semibold uppercase tracking-[0.15em] text-xs transition-all duration-300 rounded"
         >
           Garantir Meu Lote
         </button>
