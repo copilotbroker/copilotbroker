@@ -624,8 +624,24 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
           </PopoverContent>
         </Popover>
 
-        {/* Label filter */}
-        {availableLabels.length > 0 && (
+        {isAdmin && brokers.length > 0 && (
+          <Select value={selectedBroker} onValueChange={setSelectedBroker}>
+            <SelectTrigger className="w-auto h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-2 px-2">
+              <Users className="w-4 h-4 text-slate-500" />
+              <SelectValue placeholder="Corretor" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
+              <SelectItem value="all">Corretor</SelectItem>
+              <SelectItem value="enove">Enove (Direto)</SelectItem>
+              {brokers.map(broker => (
+                <SelectItem key={broker.id} value={broker.id}>{broker.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Label filter - only shown when a specific broker is selected */}
+        {effectiveLabelBrokerId && availableLabels.length > 0 && (
           <Popover>
             <PopoverTrigger asChild>
               <button className="flex items-center gap-1 md:gap-2 h-9 px-2 text-sm text-slate-400 hover:text-slate-200 transition-colors rounded-lg hover:bg-[#2a2a2e]">
@@ -661,22 +677,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
               </ScrollArea>
             </PopoverContent>
           </Popover>
-        )}
-
-        {isAdmin && brokers.length > 0 && (
-          <Select value={selectedBroker} onValueChange={setSelectedBroker}>
-            <SelectTrigger className="w-auto h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-2 px-2">
-              <Users className="w-4 h-4 text-slate-500" />
-              <SelectValue placeholder="Corretor" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-              <SelectItem value="all">Corretor</SelectItem>
-              <SelectItem value="enove">Enove (Direto)</SelectItem>
-              {brokers.map(broker => (
-                <SelectItem key={broker.id} value={broker.id}>{broker.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         )}
 
         {/* Desktop search */}
