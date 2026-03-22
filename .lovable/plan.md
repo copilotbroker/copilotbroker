@@ -1,59 +1,38 @@
 
 
-# Alertar Corretor sobre WhatsApp Desconectado
+# Corrigir filtro de Etiquetas no Kanban Admin
 
-## Resumo
-Implementar um sistema de alertas em 3 camadas para notificar o corretor quando sua instância WhatsApp estiver desconectada.
+## Problema
+O filtro de Etiquetas busca **todas** as etiquetas de todos os corretores quando o admin está logado (linha 72-84). Etiquetas são vinculadas a instâncias individuais de WhatsApp, então sem selecionar um corretor específico, o filtro não faz sentido.
 
 ## Mudanças
 
-### 1. Banner visual no CRM do corretor
-**Arquivo**: `src/components/broker/BrokerLayout.tsx`
+### `src/components/crm/KanbanBoard.tsx`
 
-- Criar um componente `WhatsAppDisconnectedBanner` que consulta `broker_whatsapp_instances` para o broker logado
-- Se `status !== 'connected'`, exibir um banner vermelho/amarelo fixo no topo do layout com mensagem "Seu WhatsApp está desconectado" e botão para ir à página de conexão (`/corretor/whatsapp`)
-- Usar `useQuery` com polling a cada 60s para manter atualizado
-- Banner aparece acima do conteúdo principal, dentro do `BrokerLayout`
+1. **Query de labels**: Condicionar a query `whatsapp-labels-for-filter` ao `selectedBroker` (não ao `brokerId` do admin). Quando `isAdmin`, só buscar labels quando `selectedBroker` não for `"all"` nem `"enove"`, filtrando por `selectedBroker` como `broker_id`.
 
-### 2. Notificação no sistema (sino)
-**Arquivo**: `supabase/functions/roleta-distribuir/index.ts`
+2. **Limpar etiquetas ao trocar corretor**: Adicionar `useEffect` que limpa `selectedLabelIds` quando `selectedBroker` muda.
 
-- Após o passo 7 (criar notificação de novo lead), adicionar verificação: buscar `broker_whatsapp_instances` do corretor atribuído
-- Se `status !== 'connected'`, inserir uma notificação adicional do tipo `whatsapp_disconnected` com título "WhatsApp Desconectado" e mensagem alertando que leads estão chegando mas a cadência não será ativada
+3. **UI**: Mover o filtro de Etiquetas para **depois** do seletor de Corretor, e só exibi-lo quando um corretor específico estiver selecionado (não `"all"` nem `"enove"`).
 
-### 3. WhatsApp via instância global
-**Arquivo**: `supabase/functions/roleta-distribuir/index.ts`
+### Detalhes técnicos
 
-- Após o passo 8 (notificação WhatsApp do lead), adicionar verificação da instância do corretor
-- Se a instância estiver desconectada, enviar mensagem adicional via instância global para o WhatsApp pessoal do corretor: "⚠️ Sua instância WhatsApp do CRM está desconectada. Leads estão chegando mas a cadência automática não será ativada. Reconecte em: [link]"
-
-### 4. Hook de status da instância
-**Arquivo**: `src/hooks/use-broker-whatsapp-status.ts` (novo)
-
-- Hook simples que retorna `{ isConnected, status, isLoading }` para o broker logado
-- Consulta `broker_whatsapp_instances` filtrando por `broker_id`
-- Reutilizável no banner e em outros pontos do CRM
-
-## Detalhes técnicos
-
-### Banner (novo componente)
 ```text
-src/components/broker/WhatsAppDisconnectedBanner.tsx
-- useQuery("broker-whatsapp-status") → broker_whatsapp_instances
-- Se desconectado: banner fixo com ícone WifiOff, texto, botão "Reconectar"
-- Link para /corretor/whatsapp
-```
+// Query condicionada:
+const effectiveLabelBrokerId = isAdmin
+  ? (selectedBroker !== "all" && selectedBroker !== "enove" ? selectedBroker : null)
+  : brokerId;
 
-### Edge Function (roleta-distribuir) - verificação adicional
-```text
-// Após passo 7, antes do passo 8:
-// Buscar instância do corretor
-const { data: brokerInstance } = await supabase
-  .from("broker_whatsapp_instances")
-  .select("status")
-  .eq("broker_id", assignedBrokerId)
-  .single();
+useQuery({
+  queryKey: ["whatsapp-labels-for-filter", effectiveLabelBrokerId],
+  enabled: !!effectiveLabelBrokerId,
+  queryFn: ... .eq("broker_id", effectiveLabelBrokerId)
+});
 
-// Se desconectado → notificação extra + WhatsApp global de alerta
+// Limpar ao trocar corretor:
+useEffect(() => { setSelectedLabelIds([]); }, [selectedBroker]);
+
+// UI: mover bloco de Etiquetas para depois do Select de Corretor
+// Só exibir se effectiveLabelBrokerId existir e availableLabels.length > 0
 ```
 
