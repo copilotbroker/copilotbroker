@@ -730,6 +730,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
         onUpdate={handleLeadUpdate}
         onStatusChange={handleStatusUpdate}
         brokers={brokers}
+        roletas={activeRoletas}
         onTransferred={() => {
           setSelectedLead(null);
           invalidateAll();
