@@ -68,20 +68,31 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [localBrokers, setLocalBrokers] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Fetch available WhatsApp labels for filter
+  // Determine effective broker ID for label filtering
+  const effectiveLabelBrokerId = isAdmin
+    ? (selectedBroker !== "all" && selectedBroker !== "enove" ? selectedBroker : null)
+    : brokerId;
+
+  // Fetch available WhatsApp labels for filter (scoped to selected broker)
   const { data: availableLabels = [] } = useQuery({
-    queryKey: ["whatsapp-labels-for-filter", brokerId, isAdmin],
+    queryKey: ["whatsapp-labels-for-filter", effectiveLabelBrokerId],
+    enabled: !!effectiveLabelBrokerId,
     queryFn: async () => {
-      let query = supabase.from("whatsapp_labels").select("id, name, color, broker_id").order("name");
-      if (!isAdmin && brokerId) {
-        query = query.eq("broker_id", brokerId);
-      }
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from("whatsapp_labels")
+        .select("id, name, color, broker_id")
+        .eq("broker_id", effectiveLabelBrokerId!)
+        .order("name");
       if (error) throw error;
       return data || [];
     },
     staleTime: 60_000,
   });
+
+  // Clear selected labels when broker changes
+  useEffect(() => {
+    setSelectedLabelIds([]);
+  }, [selectedBroker]);
 
   // Fetch lead IDs matching selected labels
   const { data: labelFilteredLeadIds } = useQuery({
@@ -613,8 +624,24 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
           </PopoverContent>
         </Popover>
 
-        {/* Label filter */}
-        {availableLabels.length > 0 && (
+        {isAdmin && brokers.length > 0 && (
+          <Select value={selectedBroker} onValueChange={setSelectedBroker}>
+            <SelectTrigger className="w-auto h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-2 px-2">
+              <Users className="w-4 h-4 text-slate-500" />
+              <SelectValue placeholder="Corretor" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
+              <SelectItem value="all">Corretor</SelectItem>
+              <SelectItem value="enove">Enove (Direto)</SelectItem>
+              {brokers.map(broker => (
+                <SelectItem key={broker.id} value={broker.id}>{broker.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Label filter - only shown when a specific broker is selected */}
+        {effectiveLabelBrokerId && availableLabels.length > 0 && (
           <Popover>
             <PopoverTrigger asChild>
               <button className="flex items-center gap-1 md:gap-2 h-9 px-2 text-sm text-slate-400 hover:text-slate-200 transition-colors rounded-lg hover:bg-[#2a2a2e]">
@@ -650,22 +677,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
               </ScrollArea>
             </PopoverContent>
           </Popover>
-        )}
-
-        {isAdmin && brokers.length > 0 && (
-          <Select value={selectedBroker} onValueChange={setSelectedBroker}>
-            <SelectTrigger className="w-auto h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-2 px-2">
-              <Users className="w-4 h-4 text-slate-500" />
-              <SelectValue placeholder="Corretor" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-              <SelectItem value="all">Corretor</SelectItem>
-              <SelectItem value="enove">Enove (Direto)</SelectItem>
-              {brokers.map(broker => (
-                <SelectItem key={broker.id} value={broker.id}>{broker.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         )}
 
         {/* Desktop search */}
