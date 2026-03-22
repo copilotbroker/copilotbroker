@@ -1,50 +1,38 @@
 
 
-# Transferir Lead para Roleta
+# Bug: Transferência para Roleta sobrescreve o empreendimento original do lead
 
-## Objetivo
-Permitir que, ao transferir um lead, o usuário escolha entre transferir para um **corretor específico** ou para uma **roleta** (o lead será distribuído automaticamente pelo round-robin).
+## Causa raiz
 
-## Mudanças
+No `TransferLeadDialog`, ao transferir para uma roleta, o código busca o **primeiro** `empreendimento_id` vinculado à roleta (linha 77-82) e **sobrescreve** o `project_id` do lead com esse valor (linha 98).
 
-### 1. TransferLeadDialog — Adicionar opção de Roleta
-**Arquivo**: `src/components/crm/TransferLeadDialog.tsx`
+Se a roleta tem múltiplos empreendimentos (ex: Mauricio Cardoso e NAU), o primeiro retornado pelo banco substitui o empreendimento real do lead. No caso da Mari Prediger, o lead veio do NAU, mas o Mauricio Cardoso foi retornado primeiro na query, sobrescrevendo o `project_id`.
 
-- Adicionar nova prop `roletas` (lista de roletas ativas com id/nome)
-- Adicionar toggle/tabs para escolher entre "Corretor" e "Roleta"
-- Quando "Roleta" selecionada, mostrar select com roletas disponíveis
-- No `handleTransfer`:
-  - Se corretor: manter fluxo atual (`supabase.rpc("transfer_lead")` + `notify-transfer`)
-  - Se roleta: limpar o `broker_id` do lead, setar `project_id` baseado na roleta (ou invocar `roleta-distribuir` diretamente), para que o lead entre na distribuição round-robin
-- A transferência para roleta vai:
-  1. Atualizar o lead: `broker_id = null`, `roleta_id = null`, `status_distribuicao = null`
-  2. Registrar interação na timeline
-  3. Invocar a edge function `roleta-distribuir` com `{ lead_id, project_id }` (pegando o `empreendimento_id` da roleta selecionada)
+## Correção
 
-### 2. Carregar roletas nos pontos de uso
-**Arquivos**: `src/pages/LeadPage.tsx`, `src/components/crm/LeadDetailSheet.tsx`
+### `src/components/crm/TransferLeadDialog.tsx`
 
-- Fazer fetch das roletas ativas (id, nome) via Supabase
-- Passar como prop `roletas` ao `TransferLeadDialog`
+**Não sobrescrever o `project_id` do lead.** O lead já possui o `project_id` correto (NAU). A transferência para roleta deve:
 
-### 3. Props atualizadas do TransferLeadDialog
+1. Manter o `project_id` original do lead
+2. Buscar o `project_id` atual do lead para passar ao `roleta-distribuir`
+3. Só usar o empreendimento da roleta como fallback se o lead não tiver `project_id`
+
+Mudanças:
+- Antes de limpar os campos, buscar o `project_id` atual do lead
+- Usar esse `project_id` para invocar `roleta-distribuir`
+- Somente se o lead não tiver `project_id`, usar o primeiro empreendimento da roleta como fallback
+- **Nunca sobrescrever** o `project_id` do lead com o empreendimento da roleta
+
 ```text
-interface TransferLeadDialogProps {
-  leadId: string;
-  leadName: string;
-  currentBrokerId?: string | null;
-  brokers: { id: string; name: string }[];
-  roletas: { id: string; nome: string }[];  // NOVO
-  isOpen: boolean;
-  onClose: () => void;
-  onTransferred: () => void;
-}
+// Fluxo corrigido:
+1. Buscar lead.project_id atual
+2. Se lead.project_id existir → usar esse para roleta-distribuir (não alterar)
+3. Se lead.project_id for null → buscar primeiro empreendimento da roleta como fallback
+4. Limpar broker_id, status_distribuicao, etc. (sem mexer no project_id, exceto no fallback)
+5. Invocar roleta-distribuir com o project_id correto
 ```
 
-### Fluxo de transferência para Roleta
-1. Usuário seleciona aba "Roleta" e escolhe uma roleta
-2. Sistema busca o primeiro `empreendimento_id` vinculado à roleta
-3. Limpa `broker_id` do lead e seta o `project_id` do empreendimento
-4. Invoca `roleta-distribuir` com `{ lead_id, project_id }` — a edge function faz o round-robin e atribui o corretor da vez
-5. Registra interação `roleta_transferencia` na timeline
+### Nenhuma mudança na edge function `roleta-distribuir`
+A edge function já funciona corretamente — ela recebe `project_id` e distribui. O problema era exclusivamente no frontend que passava o `project_id` errado.
 
