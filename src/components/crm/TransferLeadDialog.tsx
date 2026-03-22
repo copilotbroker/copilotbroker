@@ -73,30 +73,47 @@ export function TransferLeadDialog({
         const targetBroker = brokers.find(b => b.id === selectedBrokerId);
         toast.success(`Lead transferido para ${targetBroker?.name || "corretor"}`);
       } else {
-        // Transfer to roleta: find the first empreendimento linked to this roleta
-        const { data: empreendimentos, error: empError } = await (supabase
-          .from("roletas_empreendimentos" as any)
-          .select("empreendimento_id")
-          .eq("roleta_id", selectedRoletaId)
-          .eq("ativo", true)
-          .limit(1) as any);
+        // Fetch current lead project_id to preserve it
+        const { data: currentLead, error: leadError } = await supabase
+          .from("leads")
+          .select("project_id")
+          .eq("id", leadId)
+          .single();
 
-        if (empError) throw empError;
+        if (leadError) throw leadError;
 
-        const projectId = empreendimentos?.[0]?.empreendimento_id || null;
+        let projectId = currentLead?.project_id || null;
 
-        // Clear broker assignment and reset distribution status
+        // Only use roleta's empreendimento as fallback if lead has no project_id
+        if (!projectId) {
+          const { data: empreendimentos, error: empError } = await (supabase
+            .from("roletas_empreendimentos" as any)
+            .select("empreendimento_id")
+            .eq("roleta_id", selectedRoletaId)
+            .eq("ativo", true)
+            .limit(1) as any);
+
+          if (empError) throw empError;
+          projectId = empreendimentos?.[0]?.empreendimento_id || null;
+        }
+
+        // Clear broker assignment and reset distribution status (preserve project_id)
+        const updatePayload: any = {
+          broker_id: null,
+          roleta_id: null,
+          status_distribuicao: null,
+          reserva_expira_em: null,
+          corretor_atribuido_id: null,
+          atribuido_em: null,
+        };
+        // Only set project_id if it was a fallback (lead had none)
+        if (!currentLead?.project_id && projectId) {
+          updatePayload.project_id = projectId;
+        }
+
         const { error: updateError } = await supabase
           .from("leads")
-          .update({
-            broker_id: null,
-            roleta_id: null,
-            status_distribuicao: null,
-            reserva_expira_em: null,
-            corretor_atribuido_id: null,
-            atribuido_em: null,
-            ...(projectId ? { project_id: projectId } : {}),
-          })
+          .update(updatePayload)
           .eq("id", leadId);
 
         if (updateError) throw updateError;
