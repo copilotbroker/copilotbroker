@@ -707,7 +707,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
       {/* Kanban Board */}
       <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden scrollbar-subtle pb-4 -mx-3 px-3 md:mx-0 md:px-0">
-          <div className="flex gap-3 md:gap-4 min-w-max">
+          <div className="flex gap-3 md:gap-4 min-w-max h-full">
             {STATUSES.map(status => (
               <KanbanColumn
                 key={status}
