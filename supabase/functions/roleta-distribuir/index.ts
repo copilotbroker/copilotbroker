@@ -254,6 +254,38 @@ Deno.serve(async (req) => {
       console.error("WhatsApp notification failed (non-critical):", whatsappError);
     }
 
+    // 8b. WhatsApp alert for disconnected broker instance
+    if (brokerInstanceDisconnected && brokerData?.whatsapp) {
+      try {
+        const { data: globalCfg } = await supabase
+          .from("global_whatsapp_config")
+          .select("instance_token")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (globalCfg?.instance_token) {
+          const envUrl = Deno.env.get("UAZAPI_INSTANCE_URL") || "";
+          let base: string;
+          try { base = new URL(envUrl).origin; } catch { base = envUrl.replace(/\/[^\/]+\/?$/, ""); }
+
+          if (base) {
+            const phone = brokerData.whatsapp.replace(/\D/g, "");
+            const alertMsg = `⚠️ *Sua instância WhatsApp do CRM está desconectada*\n\nLeads estão chegando via roleta, mas a cadência automática não será ativada.\n\nReconecte sua instância acessando o CRM → WhatsApp.`;
+
+            await fetch(`${base}/send/text`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "token": globalCfg.instance_token },
+              body: JSON.stringify({ number: phone, text: alertMsg }),
+            });
+            console.log("WhatsApp disconnect alert sent to broker:", maskPhone(phone));
+          }
+        }
+      } catch (alertErr) {
+        console.error("Disconnect alert failed (non-critical):", alertErr);
+      }
+    }
+
     // 9. Trigger auto-cadencia-10d (non-blocking)
     try {
       await fetch(`${supabaseUrl}/functions/v1/auto-cadencia-10d`, {
