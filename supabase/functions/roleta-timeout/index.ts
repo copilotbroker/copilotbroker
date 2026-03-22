@@ -72,6 +72,11 @@ Deno.serve(async (req) => {
     console.log(`Processing ${expiredLeads.length} expired leads`);
     let processed = 0;
     let skippedPause = 0;
+    let loopBroken = 0;
+
+    // Max reassignment threshold: if a lead has been reassigned this many times,
+    // stop the loop and fallback to leader
+    const MAX_REASSIGNMENTS = 6;
 
     for (const lead of expiredLeads) {
       if (!lead.roleta_id) continue;
@@ -92,6 +97,81 @@ Deno.serve(async (req) => {
         skippedPause++;
         continue;
       }
+
+      // --- LOOP BREAKER: count recent timeout reassignments for this lead ---
+      const { count: reassignmentCount } = await supabase
+        .from("roletas_log")
+        .select("id", { count: "exact", head: true })
+        .eq("lead_id", lead.id)
+        .eq("acao", "timeout_reassinado");
+
+      if ((reassignmentCount || 0) >= MAX_REASSIGNMENTS) {
+        console.log(`Lead ${lead.id} hit ${reassignmentCount} reassignments - breaking loop, fallback to leader`);
+
+        // Fallback to leader and STOP the timeout cycle
+        await supabase
+          .from("leads")
+          .update({
+            broker_id: roleta.lider_id,
+            corretor_atribuido_id: roleta.lider_id,
+            atribuido_em: new Date().toISOString(),
+            reserva_expira_em: null, // No more timeout
+            status_distribuicao: "fallback_lider",
+            motivo_atribuicao: `Loop detectado (${reassignmentCount} reassinações) - atribuído ao líder`,
+          })
+          .eq("id", lead.id);
+
+        await supabase.from("roletas_log").insert({
+          roleta_id: lead.roleta_id,
+          lead_id: lead.id,
+          acao: "timeout_loop_breaker",
+          de_corretor_id: lead.corretor_atribuido_id,
+          para_corretor_id: roleta.lider_id,
+          motivo: `Loop detectado: ${reassignmentCount} reassinações sem atendimento. Atribuído ao líder.`,
+        });
+
+        const { data: liderData } = await supabase
+          .from("brokers")
+          .select("name, user_id")
+          .eq("id", roleta.lider_id)
+          .single();
+
+        await supabase.from("lead_interactions").insert({
+          lead_id: lead.id,
+          interaction_type: "roleta_fallback",
+          notes: `Loop de timeout detectado (${reassignmentCount} reassinações). Nenhum corretor iniciou atendimento. Atribuído ao líder ${liderData?.name || "líder"}.`,
+        });
+
+        if (liderData?.user_id) {
+          await supabase.from("notifications").insert({
+            user_id: liderData.user_id,
+            type: "roleta_loop_breaker",
+            title: "Lead preso em loop de timeout",
+            message: `Lead ${lead.name} passou por ${reassignmentCount} reassinações sem atendimento e foi atribuído a você.`,
+            lead_id: lead.id,
+          });
+        }
+
+        // Trigger cadência for the leader
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/auto-cadencia-10d`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({ leadId: lead.id }),
+          });
+          console.log("Auto cadencia triggered for leader (loop breaker), lead:", lead.id);
+        } catch (cadErr) {
+          console.error("Auto cadencia trigger failed (loop breaker):", cadErr);
+        }
+
+        loopBroken++;
+        processed++;
+        continue;
+      }
+      // --- END LOOP BREAKER ---
 
       // Get active members (excluding current assignee)
       const { data: membros } = await supabase
@@ -226,6 +306,21 @@ Deno.serve(async (req) => {
         } catch (whatsappErr) {
           console.error("WhatsApp timeout notification failed (non-critical):", whatsappErr);
         }
+      }
+
+      // Trigger auto-cadencia for the new broker (prevents infinite timeout loops)
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/auto-cadencia-10d`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({ leadId: lead.id }),
+        });
+        console.log("Auto cadencia triggered after timeout reassignment, lead:", lead.id);
+      } catch (cadenciaErr) {
+        console.error("Auto cadencia trigger failed after timeout (non-critical):", cadenciaErr);
       }
 
       processed++;
