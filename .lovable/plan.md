@@ -1,38 +1,59 @@
 
 
-# Bug: Transferência para Roleta sobrescreve o empreendimento original do lead
+# Alertar Corretor sobre WhatsApp Desconectado
 
-## Causa raiz
+## Resumo
+Implementar um sistema de alertas em 3 camadas para notificar o corretor quando sua instância WhatsApp estiver desconectada.
 
-No `TransferLeadDialog`, ao transferir para uma roleta, o código busca o **primeiro** `empreendimento_id` vinculado à roleta (linha 77-82) e **sobrescreve** o `project_id` do lead com esse valor (linha 98).
+## Mudanças
 
-Se a roleta tem múltiplos empreendimentos (ex: Mauricio Cardoso e NAU), o primeiro retornado pelo banco substitui o empreendimento real do lead. No caso da Mari Prediger, o lead veio do NAU, mas o Mauricio Cardoso foi retornado primeiro na query, sobrescrevendo o `project_id`.
+### 1. Banner visual no CRM do corretor
+**Arquivo**: `src/components/broker/BrokerLayout.tsx`
 
-## Correção
+- Criar um componente `WhatsAppDisconnectedBanner` que consulta `broker_whatsapp_instances` para o broker logado
+- Se `status !== 'connected'`, exibir um banner vermelho/amarelo fixo no topo do layout com mensagem "Seu WhatsApp está desconectado" e botão para ir à página de conexão (`/corretor/whatsapp`)
+- Usar `useQuery` com polling a cada 60s para manter atualizado
+- Banner aparece acima do conteúdo principal, dentro do `BrokerLayout`
 
-### `src/components/crm/TransferLeadDialog.tsx`
+### 2. Notificação no sistema (sino)
+**Arquivo**: `supabase/functions/roleta-distribuir/index.ts`
 
-**Não sobrescrever o `project_id` do lead.** O lead já possui o `project_id` correto (NAU). A transferência para roleta deve:
+- Após o passo 7 (criar notificação de novo lead), adicionar verificação: buscar `broker_whatsapp_instances` do corretor atribuído
+- Se `status !== 'connected'`, inserir uma notificação adicional do tipo `whatsapp_disconnected` com título "WhatsApp Desconectado" e mensagem alertando que leads estão chegando mas a cadência não será ativada
 
-1. Manter o `project_id` original do lead
-2. Buscar o `project_id` atual do lead para passar ao `roleta-distribuir`
-3. Só usar o empreendimento da roleta como fallback se o lead não tiver `project_id`
+### 3. WhatsApp via instância global
+**Arquivo**: `supabase/functions/roleta-distribuir/index.ts`
 
-Mudanças:
-- Antes de limpar os campos, buscar o `project_id` atual do lead
-- Usar esse `project_id` para invocar `roleta-distribuir`
-- Somente se o lead não tiver `project_id`, usar o primeiro empreendimento da roleta como fallback
-- **Nunca sobrescrever** o `project_id` do lead com o empreendimento da roleta
+- Após o passo 8 (notificação WhatsApp do lead), adicionar verificação da instância do corretor
+- Se a instância estiver desconectada, enviar mensagem adicional via instância global para o WhatsApp pessoal do corretor: "⚠️ Sua instância WhatsApp do CRM está desconectada. Leads estão chegando mas a cadência automática não será ativada. Reconecte em: [link]"
 
+### 4. Hook de status da instância
+**Arquivo**: `src/hooks/use-broker-whatsapp-status.ts` (novo)
+
+- Hook simples que retorna `{ isConnected, status, isLoading }` para o broker logado
+- Consulta `broker_whatsapp_instances` filtrando por `broker_id`
+- Reutilizável no banner e em outros pontos do CRM
+
+## Detalhes técnicos
+
+### Banner (novo componente)
 ```text
-// Fluxo corrigido:
-1. Buscar lead.project_id atual
-2. Se lead.project_id existir → usar esse para roleta-distribuir (não alterar)
-3. Se lead.project_id for null → buscar primeiro empreendimento da roleta como fallback
-4. Limpar broker_id, status_distribuicao, etc. (sem mexer no project_id, exceto no fallback)
-5. Invocar roleta-distribuir com o project_id correto
+src/components/broker/WhatsAppDisconnectedBanner.tsx
+- useQuery("broker-whatsapp-status") → broker_whatsapp_instances
+- Se desconectado: banner fixo com ícone WifiOff, texto, botão "Reconectar"
+- Link para /corretor/whatsapp
 ```
 
-### Nenhuma mudança na edge function `roleta-distribuir`
-A edge function já funciona corretamente — ela recebe `project_id` e distribui. O problema era exclusivamente no frontend que passava o `project_id` errado.
+### Edge Function (roleta-distribuir) - verificação adicional
+```text
+// Após passo 7, antes do passo 8:
+// Buscar instância do corretor
+const { data: brokerInstance } = await supabase
+  .from("broker_whatsapp_instances")
+  .select("status")
+  .eq("broker_id", assignedBrokerId)
+  .single();
+
+// Se desconectado → notificação extra + WhatsApp global de alerta
+```
 
