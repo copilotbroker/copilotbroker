@@ -52,14 +52,14 @@ export function AdminLayout({
         </SheetContent>
       </Sheet>
 
-      <div className="md:ml-16 min-h-screen flex flex-col pb-20 md:pb-0">
+      <div className="md:ml-16 h-screen flex flex-col pb-20 md:pb-0 overflow-hidden">
         <AdminHeader
           activeTab={activeTab}
           searchTerm={searchTerm}
           onSearchChange={onSearchChange}
           brokers={brokers}
         />
-        <main className="flex-1 flex flex-col p-3 md:p-6">
+        <main className="flex-1 flex flex-col min-h-0 p-3 md:p-6">
           {children}
         </main>
       </div>
