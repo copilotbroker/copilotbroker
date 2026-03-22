@@ -97,7 +97,7 @@ export function BrokerLayout({
           onSearchChange={onSearchChange}
         />
         <WhatsAppDisconnectedBanner />
-        <main className="flex-1 flex flex-col p-3 lg:p-6">{children}</main>
+        <main className="flex-1 flex flex-col min-h-0 p-3 lg:p-6">{children}</main>
       </div>
     </div>
   );
