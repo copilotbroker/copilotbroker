@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus, MoreHorizontal, MessageSquare } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CRMLead, LeadStatus, STATUS_CONFIG } from "@/types/crm";
-import { useKanbanColumn, KanbanColumnFilters } from "@/hooks/use-kanban-column";
+import { useKanbanColumn, KanbanColumnFilters, ActiveFlowData } from "@/hooks/use-kanban-column";
 import { KanbanCard } from "./KanbanCard";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
