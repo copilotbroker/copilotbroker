@@ -21,6 +21,7 @@ import {
 interface KanbanColumnProps {
   status: LeadStatus;
   filters: KanbanColumnFilters;
+  activeFlow: ActiveFlowData;
   newLeadIds?: Set<string>;
   activeFlowLeadIds?: Set<string>;
   onCancelCadencia?: (leadId: string) => void;
