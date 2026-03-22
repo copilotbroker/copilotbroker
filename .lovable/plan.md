@@ -1,58 +1,34 @@
 
 
-# Otimização de Performance do Kanban
+# Fix: Virtualização não está funcionando — cards todos renderizados
 
-## Diagnóstico
+## Causa raiz
 
-Identifiquei os seguintes gargalos:
-
-1. **PAGE_SIZE = 30 por coluna**: Com 6 colunas, são 180 leads carregados inicialmente. Na tela (~600px de altura, ~210px por card) cabem apenas ~3 cards visíveis por coluna = 18 cards no total.
-
-2. **overscan: 5**: Cada coluna renderiza 5 cards extras acima e abaixo da área visível. São 60 cards extras no DOM sem necessidade.
-
-3. **Polling agressivo com realtime redundante**: Todas as 12 queries (6 data + 6 count) fazem polling a cada 15s com `staleTime: 10s`, mas já existe uma subscription realtime que invalida queries automaticamente. Isso gera ~50 requests/minuto desnecessários.
-
-4. **Labels query key instável**: O `leadIdsKey` (concatenação de 30 UUIDs) muda toda vez que os leads mudam, causando re-fetch cascata.
-
-5. **`useActiveFlowLeads` duplicado**: Chamado 6x (uma por coluna via `useKanbanColumn`), apesar do React Query deduplicar. O Board já chama esse hook separadamente na linha 240.
-
-## Mudanças
-
-### 1. `src/hooks/use-kanban-column.ts`
-- Reduzir `PAGE_SIZE` de 30 para **15** (suficiente para preencher a tela + scroll inicial)
-- Aumentar `staleTime` para 30s e `refetchInterval` para 60s (realtime já cuida de atualizações instantâneas)
-- Receber `activeFlowLeadIds` como parâmetro em vez de cada coluna chamar o hook separadamente
-
-### 2. `src/components/crm/KanbanColumn.tsx`
-- Reduzir `overscan` de 5 para **2** (suficiente para scroll suave, reduz ~36 cards no DOM)
-- Estabilizar o query key das labels usando um hash simples em vez de concatenar 15+ UUIDs
-- Aumentar `staleTime` das labels para 60s
-
-### 3. `src/components/crm/KanbanBoard.tsx`
-- Passar `activeFlowLeadIds`/`activeFlowIdList`/`activeFlowSignature` como props para o `KanbanColumn`, evitando 6 hooks duplicados
-- Aumentar `staleTime` do realtime-related polling
-
-### Detalhes técnicos
+A cadeia de alturas CSS está quebrada. O virtualizer precisa que o scroll container tenha uma **altura fixa/constrained** para saber quais items estão visíveis. Atualmente:
 
 ```text
-// use-kanban-column.ts
-- PAGE_SIZE: 30 → 15
-- staleTime: 10_000 → 30_000
-- refetchInterval: 15_000 → 60_000
-- Novo parâmetro: activeFlowData passado externamente
-
-// KanbanColumn.tsx
-- overscan: 5 → 2
-- Labels staleTime: 30_000 → 60_000
-- Hash do leadIdsKey em vez de join(",")
-
-// KanbanBoard.tsx
-- Passa activeFlow data para KanbanColumn como props
-- KanbanColumn repassa para useKanbanColumn
+Board:   flex-1 min-h-0 overflow-x-auto overflow-y-hidden  ← tem altura fixa ✓
+  └─ div: flex gap-3 min-w-max                             ← SEM h-full ✗
+      └─ Column: flex flex-col min-h-[600px]               ← SEM max-height ✗
+          └─ Scroll: flex-1 min-h-0 overflow-y-auto        ← EXPANDE infinitamente ✗
 ```
 
-Impacto estimado:
-- DOM nodes: ~180 cards → ~60 cards (-67%)
-- Network requests/min: ~50 → ~12 (-76%)
-- Hooks duplicados eliminados: 5 instâncias de useActiveFlowLeads
+Sem constraint de altura, o scroll container **expande para caber todo o conteúdo**. O virtualizer acha que tudo está visível → renderiza todos os items → sentinel sempre visível → fetchNextPage em cascata → carrega todas as páginas.
+
+## Correção
+
+### `src/components/crm/KanbanBoard.tsx` (1 linha)
+- Adicionar `h-full` no div wrapper das colunas (linha 710):
+  `"flex gap-3 md:gap-4 min-w-max"` → `"flex gap-3 md:gap-4 min-w-max h-full"`
+
+### `src/components/crm/KanbanColumn.tsx` (1 linha)
+- Trocar `min-h-[600px]` por `h-full` no container da coluna (linha 140):
+  `"flex flex-col w-[280px] md:min-w-[300px] md:max-w-[320px] shrink-0 min-h-[600px]"` → `"flex flex-col w-[280px] md:min-w-[300px] md:max-w-[320px] shrink-0 h-full min-h-[400px]"`
+
+Isso propaga a altura fixa do board até o scroll container, fazendo o virtualizer funcionar corretamente: apenas ~5 cards no DOM por coluna (3 visíveis + 2 overscan) em vez de todos.
+
+## Impacto
+- DOM nodes por coluna: de ~todos os leads → ~5 cards
+- Fetch de páginas: apenas 1 página inicial (15 leads) até o usuário scrollar
+- Sentinel só dispara quando o usuário realmente chega perto do fim da lista
 
