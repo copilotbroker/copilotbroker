@@ -40,7 +40,7 @@ interface LeadDetailSheetProps {
   onTransferred?: () => void;
 }
 
-export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChange, brokers = [], onTransferred }: LeadDetailSheetProps) {
+export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChange, brokers = [], roletas = [], onTransferred }: LeadDetailSheetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedLead, setEditedLead] = useState<Partial<CRMLead> & { custom_origin?: string }>({});
   const [newNote, setNewNote] = useState("");
