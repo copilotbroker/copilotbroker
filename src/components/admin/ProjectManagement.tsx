@@ -241,7 +241,7 @@ export default function ProjectManagement() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => {
-            const statusConfig = PROJECT_STATUS_CONFIG[project.status];
+            const statusConfig = PROJECT_STATUS_CONFIG[project.status] || { label: project.status, color: 'text-slate-400', bgColor: 'bg-slate-800/30 border-slate-700' };
             return (
               <div
                 key={project.id}
