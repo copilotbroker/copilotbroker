@@ -237,11 +237,17 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     fetchProjects();
   }, [isAdmin, brokerId]);
 
-  const { activeFlowLeadIds } = useActiveFlowLeads({
+  const { activeFlowLeadIds, activeFlowIdList, activeFlowSignature } = useActiveFlowLeads({
     brokerId,
     isAdmin,
     selectedBroker,
   });
+
+  const activeFlow = useMemo(() => ({
+    activeFlowLeadIds,
+    activeFlowIdList,
+    activeFlowSignature,
+  }), [activeFlowLeadIds, activeFlowIdList, activeFlowSignature]);
 
   // Realtime subscription for lead changes → invalidate column queries
   useEffect(() => {
