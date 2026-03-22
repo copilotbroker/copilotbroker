@@ -179,7 +179,19 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
   const brokers = brokersProp.length > 0 ? brokersProp : localBrokers;
 
-  // Mutations only (no data fetching)
+  // Fetch active roletas for transfer dialog
+  const { data: activeRoletas = [] } = useQuery({
+    queryKey: ["active-roletas-transfer"],
+    queryFn: async () => {
+      const { data, error } = await (supabase
+        .from("roletas" as any)
+        .select("id, nome")
+        .eq("ativa", true)
+        .order("nome") as any);
+      if (error) throw error;
+      return (data || []) as { id: string; nome: string }[];
+    },
+  });
   const {
     invalidateAll, updateLeadStatus, updateLead, inactivateLead, deleteLead,
     iniciarAtendimento, registrarAgendamento, registrarComparecimento, registrarProposta,
