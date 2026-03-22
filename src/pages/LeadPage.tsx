@@ -124,6 +124,19 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     },
   });
 
+  const { data: activeRoletas = [] } = useQuery({
+    queryKey: ["active-roletas-transfer"],
+    queryFn: async () => {
+      const { data, error } = await (supabase
+        .from("roletas" as any)
+        .select("id, nome")
+        .eq("ativa", true)
+        .order("nome") as any);
+      if (error) throw error;
+      return (data || []) as { id: string; nome: string }[];
+    },
+  });
+
   useEffect(() => {
     if (!leadId) return;
     const fetchLead = async () => {
@@ -930,6 +943,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         leadName={lead.name}
         currentBrokerId={lead.broker?.id}
         brokers={allBrokers}
+        roletas={activeRoletas}
         isOpen={transferOpen}
         onClose={() => setTransferOpen(false)}
         onTransferred={refreshLead}

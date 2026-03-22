@@ -36,10 +36,11 @@ interface LeadDetailSheetProps {
   onUpdate: (leadId: string, updates: Partial<CRMLead>) => Promise<void>;
   onStatusChange: (leadId: string, oldStatus: LeadStatus, newStatus: LeadStatus) => Promise<void>;
   brokers?: { id: string; name: string }[];
+  roletas?: { id: string; nome: string }[];
   onTransferred?: () => void;
 }
 
-export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChange, brokers = [], onTransferred }: LeadDetailSheetProps) {
+export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChange, brokers = [], roletas = [], onTransferred }: LeadDetailSheetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedLead, setEditedLead] = useState<Partial<CRMLead> & { custom_origin?: string }>({});
   const [newNote, setNewNote] = useState("");
@@ -552,6 +553,7 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
         leadName={lead.name}
         currentBrokerId={lead.broker_id}
         brokers={brokers}
+        roletas={roletas}
         isOpen={transferOpen}
         onClose={() => setTransferOpen(false)}
         onTransferred={() => {
