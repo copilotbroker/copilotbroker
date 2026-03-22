@@ -943,6 +943,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         leadName={lead.name}
         currentBrokerId={lead.broker?.id}
         brokers={allBrokers}
+        roletas={activeRoletas}
         isOpen={transferOpen}
         onClose={() => setTransferOpen(false)}
         onTransferred={refreshLead}

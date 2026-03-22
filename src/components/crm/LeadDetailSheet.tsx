@@ -553,6 +553,7 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
         leadName={lead.name}
         currentBrokerId={lead.broker_id}
         brokers={brokers}
+        roletas={roletas}
         isOpen={transferOpen}
         onClose={() => setTransferOpen(false)}
         onTransferred={() => {
