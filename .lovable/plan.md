@@ -1,47 +1,50 @@
 
 
-## Plano: Adicionar Pareamento por Código (alternativa ao QR Code)
+# Transferir Lead para Roleta
 
-### Problema
-Corretores que acessam o CRM pelo celular (via QR Code) não conseguem escanear outro QR Code na mesma tela para conectar o WhatsApp.
+## Objetivo
+Permitir que, ao transferir um lead, o usuário escolha entre transferir para um **corretor específico** ou para uma **roleta** (o lead será distribuído automaticamente pelo round-robin).
 
-### Solução
-WhatsApp oferece **pareamento por código numérico** (8 dígitos) como alternativa ao QR. O backend já retorna o `pairingCode` da UAZAPI — basta exibi-lo no frontend.
+## Mudanças
 
-### Mudanças
+### 1. TransferLeadDialog — Adicionar opção de Roleta
+**Arquivo**: `src/components/crm/TransferLeadDialog.tsx`
 
-| Arquivo | O que muda |
-|---------|-----------|
-| `src/hooks/use-whatsapp-instance.ts` | Armazenar `pairingCode` no estado (já vem na resposta do `/qrcode`). |
-| `src/components/whatsapp/QRCodeDisplay.tsx` | Exibir o pairing code abaixo ou como alternativa ao QR. Botão "Usar código numérico" para alternar. |
-| `src/components/whatsapp/ConnectionTab.tsx` | Passar `pairingCode` ao `QRCodeDisplay`. |
+- Adicionar nova prop `roletas` (lista de roletas ativas com id/nome)
+- Adicionar toggle/tabs para escolher entre "Corretor" e "Roleta"
+- Quando "Roleta" selecionada, mostrar select com roletas disponíveis
+- No `handleTransfer`:
+  - Se corretor: manter fluxo atual (`supabase.rpc("transfer_lead")` + `notify-transfer`)
+  - Se roleta: limpar o `broker_id` do lead, setar `project_id` baseado na roleta (ou invocar `roleta-distribuir` diretamente), para que o lead entre na distribuição round-robin
+- A transferência para roleta vai:
+  1. Atualizar o lead: `broker_id = null`, `roleta_id = null`, `status_distribuicao = null`
+  2. Registrar interação na timeline
+  3. Invocar a edge function `roleta-distribuir` com `{ lead_id, project_id }` (pegando o `empreendimento_id` da roleta selecionada)
 
-### UX proposta
-- Manter o QR Code como padrão (funciona bem no desktop)
-- Abaixo do QR, adicionar link "No celular? Use um código numérico"
-- Ao clicar, exibe o código de 8 dígitos em destaque com instruções: "Abra o WhatsApp → Aparelhos conectados → Conectar um aparelho → Vincular com número de telefone → Digite o código abaixo"
-- Se `pairingCode` não estiver disponível (nem toda UAZAPI retorna), manter apenas o QR
+### 2. Carregar roletas nos pontos de uso
+**Arquivos**: `src/pages/LeadPage.tsx`, `src/components/crm/LeadDetailSheet.tsx`
 
-### Detalhes técnicos
+- Fazer fetch das roletas ativas (id, nome) via Supabase
+- Passar como prop `roletas` ao `TransferLeadDialog`
 
-**Hook** — adicionar estado `pairingCode`:
-```typescript
-const [pairingCode, setPairingCode] = useState<string | null>(null);
-
-// No fetchQRCode:
-setPairingCode(data.pairingCode || null);
-```
-
-**QRCodeDisplay** — aceitar `pairingCode` prop e renderizar alternativa:
-```typescript
-interface QRCodeDisplayProps {
-  qrCode: string | null;
-  pairingCode: string | null;
-  isLoading: boolean;
-  onRefresh: () => void;
+### 3. Props atualizadas do TransferLeadDialog
+```text
+interface TransferLeadDialogProps {
+  leadId: string;
+  leadName: string;
+  currentBrokerId?: string | null;
+  brokers: { id: string; name: string }[];
+  roletas: { id: string; nome: string }[];  // NOVO
+  isOpen: boolean;
+  onClose: () => void;
+  onTransferred: () => void;
 }
 ```
-- Estado local `showCode` para alternar entre QR e código
-- Código exibido com fonte mono grande, espaçado (ex: `1234-5678`)
-- Instruções adaptadas para o fluxo de pareamento por código
+
+### Fluxo de transferência para Roleta
+1. Usuário seleciona aba "Roleta" e escolhe uma roleta
+2. Sistema busca o primeiro `empreendimento_id` vinculado à roleta
+3. Limpa `broker_id` do lead e seta o `project_id` do empreendimento
+4. Invoca `roleta-distribuir` com `{ lead_id, project_id }` — a edge function faz o round-robin e atribui o corretor da vez
+5. Registra interação `roleta_transferencia` na timeline
 
