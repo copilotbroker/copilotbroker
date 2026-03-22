@@ -110,7 +110,7 @@ export function KanbanColumn({
     count: leads.length,
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => 210,
-    overscan: 5,
+    overscan: 2,
   });
 
   // IntersectionObserver for reliable infinite scroll

@@ -2,9 +2,8 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CRMLead, LeadStatus } from "@/types/crm";
 import { useMemo } from "react";
-import { useActiveFlowLeads } from "@/hooks/use-active-flow-reconciliation";
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 15;
 
 const KANBAN_SELECT = `
   id, name, whatsapp, email, created_at, source, status,
@@ -24,6 +23,12 @@ export interface KanbanColumnFilters {
   selectedOrigins?: string[];
   searchTerm?: string;
   selectedLabelIds?: string[];
+}
+
+export interface ActiveFlowData {
+  activeFlowLeadIds: Set<string>;
+  activeFlowIdList: string[];
+  activeFlowSignature: string;
 }
 
 function applyFilters(query: any, filters: KanbanColumnFilters) {
@@ -97,7 +102,7 @@ function reconcileLeadStatus<T extends CRMLead>(lead: T, activeFlowLeadIds: Set<
   return lead;
 }
 
-export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters) {
+export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters, activeFlow: ActiveFlowData) {
   const filtersKey = useMemo(() => [
     filters.brokerId, filters.isAdmin, filters.projectId,
     filters.selectedBroker,
@@ -106,11 +111,7 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     JSON.stringify(filters.selectedLabelIds || []),
   ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm, filters.selectedLabelIds]);
 
-  const { activeFlowLeadIds, activeFlowIdList, activeFlowSignature } = useActiveFlowLeads({
-    brokerId: filters.brokerId,
-    isAdmin: filters.isAdmin,
-    selectedBroker: filters.selectedBroker,
-  });
+  const { activeFlowLeadIds, activeFlowIdList, activeFlowSignature } = activeFlow;
 
   const queryKey = ["kanban-column", status, ...filtersKey, activeFlowSignature];
   const countKey = ["kanban-count", status, ...filtersKey, activeFlowSignature];
@@ -125,8 +126,8 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
       if (error) throw error;
       return count || 0;
     },
-    staleTime: 10_000,
-    refetchInterval: 15_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   const {
@@ -161,8 +162,8 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
       return allPages.reduce((acc, page) => acc + page.length, 0);
     },
     initialPageParam: 0,
-    staleTime: 10_000,
-    refetchInterval: 15_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   const leads = useMemo(() => data?.pages.flat() ?? [], [data]);
