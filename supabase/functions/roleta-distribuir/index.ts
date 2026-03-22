@@ -174,7 +174,31 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 8. WhatsApp notification via global instance
+    // 7b. Check broker WhatsApp instance status
+    let brokerInstanceDisconnected = false;
+    try {
+      const { data: brokerInstance } = await supabase
+        .from("broker_whatsapp_instances")
+        .select("status")
+        .eq("broker_id", assignedBrokerId)
+        .maybeSingle();
+
+      brokerInstanceDisconnected = !brokerInstance || brokerInstance.status !== "connected";
+
+      if (brokerInstanceDisconnected && brokerData?.user_id) {
+        // Insert notification about disconnected WhatsApp
+        await supabase.from("notifications").insert({
+          user_id: brokerData.user_id,
+          type: "whatsapp_disconnected",
+          title: "WhatsApp Desconectado",
+          message: "Seu WhatsApp está desconectado. Leads estão chegando mas a cadência automática não será ativada. Reconecte sua instância.",
+          lead_id: lead_id,
+        });
+        console.log("Notification sent: broker WhatsApp disconnected");
+      }
+    } catch (instanceCheckError) {
+      console.error("Instance check failed (non-critical):", instanceCheckError);
+    }
     try {
       const { data: globalConfig } = await supabase
         .from("global_whatsapp_config")
