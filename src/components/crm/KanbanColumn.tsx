@@ -73,7 +73,14 @@ export function KanbanColumn({
 
   // Batch fetch labels for all leads in this column (1 query instead of 2×N)
   const leadIds = useMemo(() => leads.map((l) => l.id), [leads]);
-  const leadIdsKey = useMemo(() => leadIds.join(","), [leadIds]);
+  const leadIdsHash = useMemo(() => {
+    let hash = 0;
+    const str = leadIds.join(",");
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    }
+    return hash;
+  }, [leadIds]);
 
   const { data: rawLeadLabels } = useQuery({
     queryKey: ["column-lead-labels", status, leadIdsKey],
