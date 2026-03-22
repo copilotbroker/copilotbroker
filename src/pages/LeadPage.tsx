@@ -124,6 +124,19 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     },
   });
 
+  const { data: activeRoletas = [] } = useQuery({
+    queryKey: ["active-roletas-transfer"],
+    queryFn: async () => {
+      const { data, error } = await (supabase
+        .from("roletas" as any)
+        .select("id, nome")
+        .eq("ativa", true)
+        .order("nome") as any);
+      if (error) throw error;
+      return (data || []) as { id: string; nome: string }[];
+    },
+  });
+
   useEffect(() => {
     if (!leadId) return;
     const fetchLead = async () => {
