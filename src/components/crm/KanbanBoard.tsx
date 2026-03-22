@@ -68,20 +68,31 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [localBrokers, setLocalBrokers] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Fetch available WhatsApp labels for filter
+  // Determine effective broker ID for label filtering
+  const effectiveLabelBrokerId = isAdmin
+    ? (selectedBroker !== "all" && selectedBroker !== "enove" ? selectedBroker : null)
+    : brokerId;
+
+  // Fetch available WhatsApp labels for filter (scoped to selected broker)
   const { data: availableLabels = [] } = useQuery({
-    queryKey: ["whatsapp-labels-for-filter", brokerId, isAdmin],
+    queryKey: ["whatsapp-labels-for-filter", effectiveLabelBrokerId],
+    enabled: !!effectiveLabelBrokerId,
     queryFn: async () => {
-      let query = supabase.from("whatsapp_labels").select("id, name, color, broker_id").order("name");
-      if (!isAdmin && brokerId) {
-        query = query.eq("broker_id", brokerId);
-      }
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from("whatsapp_labels")
+        .select("id, name, color, broker_id")
+        .eq("broker_id", effectiveLabelBrokerId!)
+        .order("name");
       if (error) throw error;
       return data || [];
     },
     staleTime: 60_000,
   });
+
+  // Clear selected labels when broker changes
+  useEffect(() => {
+    setSelectedLabelIds([]);
+  }, [selectedBroker]);
 
   // Fetch lead IDs matching selected labels
   const { data: labelFilteredLeadIds } = useQuery({
