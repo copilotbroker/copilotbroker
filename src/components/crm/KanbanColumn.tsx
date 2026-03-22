@@ -83,7 +83,7 @@ export function KanbanColumn({
   }, [leadIds]);
 
   const { data: rawLeadLabels } = useQuery({
-    queryKey: ["column-lead-labels", status, leadIdsKey],
+    queryKey: ["column-lead-labels", status, leadIdsHash],
     enabled: leadIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase
@@ -92,7 +92,7 @@ export function KanbanColumn({
         .in("lead_id", leadIds);
       return data || [];
     },
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
   const labelsByLead = useMemo(() => {
