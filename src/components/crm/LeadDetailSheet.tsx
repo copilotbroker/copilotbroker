@@ -36,6 +36,7 @@ interface LeadDetailSheetProps {
   onUpdate: (leadId: string, updates: Partial<CRMLead>) => Promise<void>;
   onStatusChange: (leadId: string, oldStatus: LeadStatus, newStatus: LeadStatus) => Promise<void>;
   brokers?: { id: string; name: string }[];
+  roletas?: { id: string; nome: string }[];
   onTransferred?: () => void;
 }
 
