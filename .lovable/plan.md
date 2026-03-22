@@ -1,38 +1,58 @@
 
 
-# Corrigir filtro de Etiquetas no Kanban Admin
+# Otimização de Performance do Kanban
 
-## Problema
-O filtro de Etiquetas busca **todas** as etiquetas de todos os corretores quando o admin está logado (linha 72-84). Etiquetas são vinculadas a instâncias individuais de WhatsApp, então sem selecionar um corretor específico, o filtro não faz sentido.
+## Diagnóstico
+
+Identifiquei os seguintes gargalos:
+
+1. **PAGE_SIZE = 30 por coluna**: Com 6 colunas, são 180 leads carregados inicialmente. Na tela (~600px de altura, ~210px por card) cabem apenas ~3 cards visíveis por coluna = 18 cards no total.
+
+2. **overscan: 5**: Cada coluna renderiza 5 cards extras acima e abaixo da área visível. São 60 cards extras no DOM sem necessidade.
+
+3. **Polling agressivo com realtime redundante**: Todas as 12 queries (6 data + 6 count) fazem polling a cada 15s com `staleTime: 10s`, mas já existe uma subscription realtime que invalida queries automaticamente. Isso gera ~50 requests/minuto desnecessários.
+
+4. **Labels query key instável**: O `leadIdsKey` (concatenação de 30 UUIDs) muda toda vez que os leads mudam, causando re-fetch cascata.
+
+5. **`useActiveFlowLeads` duplicado**: Chamado 6x (uma por coluna via `useKanbanColumn`), apesar do React Query deduplicar. O Board já chama esse hook separadamente na linha 240.
 
 ## Mudanças
 
-### `src/components/crm/KanbanBoard.tsx`
+### 1. `src/hooks/use-kanban-column.ts`
+- Reduzir `PAGE_SIZE` de 30 para **15** (suficiente para preencher a tela + scroll inicial)
+- Aumentar `staleTime` para 30s e `refetchInterval` para 60s (realtime já cuida de atualizações instantâneas)
+- Receber `activeFlowLeadIds` como parâmetro em vez de cada coluna chamar o hook separadamente
 
-1. **Query de labels**: Condicionar a query `whatsapp-labels-for-filter` ao `selectedBroker` (não ao `brokerId` do admin). Quando `isAdmin`, só buscar labels quando `selectedBroker` não for `"all"` nem `"enove"`, filtrando por `selectedBroker` como `broker_id`.
+### 2. `src/components/crm/KanbanColumn.tsx`
+- Reduzir `overscan` de 5 para **2** (suficiente para scroll suave, reduz ~36 cards no DOM)
+- Estabilizar o query key das labels usando um hash simples em vez de concatenar 15+ UUIDs
+- Aumentar `staleTime` das labels para 60s
 
-2. **Limpar etiquetas ao trocar corretor**: Adicionar `useEffect` que limpa `selectedLabelIds` quando `selectedBroker` muda.
-
-3. **UI**: Mover o filtro de Etiquetas para **depois** do seletor de Corretor, e só exibi-lo quando um corretor específico estiver selecionado (não `"all"` nem `"enove"`).
+### 3. `src/components/crm/KanbanBoard.tsx`
+- Passar `activeFlowLeadIds`/`activeFlowIdList`/`activeFlowSignature` como props para o `KanbanColumn`, evitando 6 hooks duplicados
+- Aumentar `staleTime` do realtime-related polling
 
 ### Detalhes técnicos
 
 ```text
-// Query condicionada:
-const effectiveLabelBrokerId = isAdmin
-  ? (selectedBroker !== "all" && selectedBroker !== "enove" ? selectedBroker : null)
-  : brokerId;
+// use-kanban-column.ts
+- PAGE_SIZE: 30 → 15
+- staleTime: 10_000 → 30_000
+- refetchInterval: 15_000 → 60_000
+- Novo parâmetro: activeFlowData passado externamente
 
-useQuery({
-  queryKey: ["whatsapp-labels-for-filter", effectiveLabelBrokerId],
-  enabled: !!effectiveLabelBrokerId,
-  queryFn: ... .eq("broker_id", effectiveLabelBrokerId)
-});
+// KanbanColumn.tsx
+- overscan: 5 → 2
+- Labels staleTime: 30_000 → 60_000
+- Hash do leadIdsKey em vez de join(",")
 
-// Limpar ao trocar corretor:
-useEffect(() => { setSelectedLabelIds([]); }, [selectedBroker]);
-
-// UI: mover bloco de Etiquetas para depois do Select de Corretor
-// Só exibir se effectiveLabelBrokerId existir e availableLabels.length > 0
+// KanbanBoard.tsx
+- Passa activeFlow data para KanbanColumn como props
+- KanbanColumn repassa para useKanbanColumn
 ```
+
+Impacto estimado:
+- DOM nodes: ~180 cards → ~60 cards (-67%)
+- Network requests/min: ~50 → ~12 (-76%)
+- Hooks duplicados eliminados: 5 instâncias de useActiveFlowLeads
 
