@@ -557,7 +557,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   };
 
   return (
-    <div className="flex flex-col min-h-[700px]">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Toolbar - Filters */}
       <div className="flex flex-col gap-2 md:gap-0 mb-4 md:mb-6 px-1">
         {/* Mobile search */}

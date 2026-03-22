@@ -125,7 +125,7 @@ export function KanbanColumn({
           fetchNextPage();
         }
       },
-      { root: container, rootMargin: "300px" }
+      { root: container, rootMargin: "200px" }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
