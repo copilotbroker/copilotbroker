@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { BrokerSidebar } from "./BrokerSidebar";
 import { BrokerHeader } from "./BrokerHeader";
 import { BrokerBottomNav } from "./BrokerBottomNav";
+import { WhatsAppDisconnectedBanner } from "./WhatsAppDisconnectedBanner";
 import {
   Sheet,
   SheetContent,
