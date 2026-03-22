@@ -54,7 +54,7 @@ const STATUS_SQUARE_COLORS: Record<LeadStatus, string> = {
 };
 
 export function KanbanColumn({
-  status, filters, newLeadIds, activeFlowLeadIds, onCancelCadencia,
+  status, filters, activeFlow, newLeadIds, activeFlowLeadIds, onCancelCadencia,
   onCardClick, onUpdateOrigin, onDelete, onIniciarAtendimento,
   onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda,
   onDispatchWhatsApp, onAddLead, onOpenProposta, onOpenReagendamento,
@@ -64,7 +64,7 @@ export function KanbanColumn({
   const config = STATUS_CONFIG[status];
   const canDispatchWhatsApp = status !== "inactive" && status !== "registered";
 
-  const { leads, totalCount, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useKanbanColumn(status, filters);
+  const { leads, totalCount, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useKanbanColumn(status, filters, activeFlow);
 
   // Report loaded leads to parent for lookup
   useEffect(() => {
