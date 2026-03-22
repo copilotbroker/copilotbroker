@@ -137,7 +137,7 @@ export function KanbanColumn({
 
   return (
     <TooltipProvider delayDuration={300}>
-    <div className="flex flex-col w-[280px] md:min-w-[300px] md:max-w-[320px] shrink-0 min-h-[600px]">
+    <div className="flex flex-col w-[280px] md:min-w-[300px] md:max-w-[320px] shrink-0 h-full min-h-[400px]">
       <div className="flex items-center gap-2.5 px-2 py-3 mb-2">
         <div className={cn("w-2 h-2 rounded-sm shrink-0", STATUS_SQUARE_COLORS[status])} />
         <h3 className="font-medium text-sm text-slate-300">
