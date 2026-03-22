@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus, MoreHorizontal, MessageSquare } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CRMLead, LeadStatus, STATUS_CONFIG } from "@/types/crm";
-import { useKanbanColumn, KanbanColumnFilters } from "@/hooks/use-kanban-column";
+import { useKanbanColumn, KanbanColumnFilters, ActiveFlowData } from "@/hooks/use-kanban-column";
 import { KanbanCard } from "./KanbanCard";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ import {
 interface KanbanColumnProps {
   status: LeadStatus;
   filters: KanbanColumnFilters;
+  activeFlow: ActiveFlowData;
   newLeadIds?: Set<string>;
   activeFlowLeadIds?: Set<string>;
   onCancelCadencia?: (leadId: string) => void;
@@ -53,7 +54,7 @@ const STATUS_SQUARE_COLORS: Record<LeadStatus, string> = {
 };
 
 export function KanbanColumn({
-  status, filters, newLeadIds, activeFlowLeadIds, onCancelCadencia,
+  status, filters, activeFlow, newLeadIds, activeFlowLeadIds, onCancelCadencia,
   onCardClick, onUpdateOrigin, onDelete, onIniciarAtendimento,
   onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda,
   onDispatchWhatsApp, onAddLead, onOpenProposta, onOpenReagendamento,
@@ -63,7 +64,7 @@ export function KanbanColumn({
   const config = STATUS_CONFIG[status];
   const canDispatchWhatsApp = status !== "inactive" && status !== "registered";
 
-  const { leads, totalCount, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useKanbanColumn(status, filters);
+  const { leads, totalCount, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useKanbanColumn(status, filters, activeFlow);
 
   // Report loaded leads to parent for lookup
   useEffect(() => {
@@ -72,10 +73,17 @@ export function KanbanColumn({
 
   // Batch fetch labels for all leads in this column (1 query instead of 2×N)
   const leadIds = useMemo(() => leads.map((l) => l.id), [leads]);
-  const leadIdsKey = useMemo(() => leadIds.join(","), [leadIds]);
+  const leadIdsHash = useMemo(() => {
+    let hash = 0;
+    const str = leadIds.join(",");
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    }
+    return hash;
+  }, [leadIds]);
 
   const { data: rawLeadLabels } = useQuery({
-    queryKey: ["column-lead-labels", status, leadIdsKey],
+    queryKey: ["column-lead-labels", status, leadIdsHash],
     enabled: leadIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase
@@ -84,7 +92,7 @@ export function KanbanColumn({
         .in("lead_id", leadIds);
       return data || [];
     },
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
   const labelsByLead = useMemo(() => {
@@ -102,7 +110,7 @@ export function KanbanColumn({
     count: leads.length,
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => 210,
-    overscan: 5,
+    overscan: 2,
   });
 
   // IntersectionObserver for reliable infinite scroll
