@@ -179,16 +179,24 @@ const BrokerAdmin = () => {
         isLeader={isLeader}
         inboxEnabled={inboxEnabled}
         copilotEnabled={copilotEnabled}
+        collapsibleContent={
+          viewMode === "kanban" && brokerId ? (
+            <BrokerRoletas brokerId={brokerId} />
+          ) : undefined
+        }
       >
         {viewMode === "kanban" ? (
           <div className="flex-1 min-h-0 flex flex-col gap-2">
-            {brokerId && <BrokerRoletas brokerId={brokerId} />}
+            <div className="hidden lg:block">
+              {brokerId && <BrokerRoletas brokerId={brokerId} />}
+            </div>
             <KanbanBoard
               brokerId={brokerId}
               isAdmin={false}
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               onAddLead={() => setIsAddLeadOpen(true)}
+              hideToolbarMobile
             />
           </div>
         ) : (
