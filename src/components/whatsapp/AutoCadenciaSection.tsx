@@ -11,9 +11,8 @@ import { useAutoCadenciaRules, type BrokerAutoCadenciaRule } from "@/hooks/use-a
 import { useWhatsAppCampaigns } from "@/hooks/use-whatsapp-campaigns";
 import { AutoCadenciaRuleEditor } from "./AutoCadenciaRuleEditor";
 import { CampaignCard } from "./CampaignCard";
-import { CampaignDetailSheet, type CampaignStepRow } from "./CampaignDetailSheet";
+import { CampaignDetailSheet } from "./CampaignDetailSheet";
 import { WhatsAppCampaign } from "@/types/whatsapp";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export function AutoCadenciaSection() {
