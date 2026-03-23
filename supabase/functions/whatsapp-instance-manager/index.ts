@@ -941,14 +941,15 @@ app.get("/qrcode", async (c) => {
       qrData.paircode ||
       qrData.pairing_code;
 
-    if (!qrcode) {
+    if (!qrcode && !pairingCode) {
       console.log("[UAZAPI] No QR code in response, instance may already be connected");
       return c.json({
         success: true,
         qrcode: null,
+        pairingCode: null,
         message: qrData.instance?.status === "connected" 
           ? "Instância já conectada" 
-          : "QR code não disponível no momento. Tente novamente.",
+          : "Código numérico e QR Code não disponíveis no momento. Tente novamente.",
       }, 200, corsHeaders);
     }
 
@@ -964,7 +965,11 @@ app.get("/qrcode", async (c) => {
     return c.json({
       success: true,
       qrcode: qrcode,
-      pairingCode: pairingCode,
+      pairingCode: pairingCode || null,
+      pairingCodeUnavailable: Boolean(phoneDigits && qrcode && !pairingCode),
+      message: phoneDigits && qrcode && !pairingCode
+        ? "Seu provedor não retornou código numérico agora. Use o QR Code como alternativa."
+        : undefined,
     }, 200, corsHeaders);
 
   } catch (err) {

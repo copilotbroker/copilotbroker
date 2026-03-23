@@ -34,6 +34,7 @@ export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRC
   const hasPairingCode = Boolean(formattedCode);
   const hasQRCode = Boolean(qrCode);
   const hasAnyCode = hasPairingCode || hasQRCode;
+  const pairingUnavailable = !hasPairingCode && hasQRCode;
 
   const handleCopyCode = async () => {
     if (!pairingCode) return;
@@ -117,6 +118,23 @@ export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRC
           )}
           Gerar Código
         </Button>
+
+        {pairingUnavailable && (
+          <div className="w-full rounded-md border border-border bg-muted/40 p-3 text-center">
+            <p className="text-xs text-muted-foreground">
+              O provedor não retornou código numérico agora. Use o QR Code como alternativa.
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setViewMode("qrcode")}
+              className="mt-3 w-full"
+            >
+              <QrCode className="w-4 h-4 mr-2" />
+              Ver QR Code
+            </Button>
+          </div>
+        )}
       </div>
     );
   };
