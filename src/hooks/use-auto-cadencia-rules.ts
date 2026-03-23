@@ -123,14 +123,6 @@ export function useAutoCadenciaRules() {
     if (!brokerId) return null;
     setIsSaving(true);
     try {
-      if (data.is_active) {
-        const hasConflict = await checkFirstMessageConflict(data.project_id);
-        if (hasConflict) {
-          toast.error("Já existe uma 1ª Mensagem ativa para este empreendimento. Desative-a antes de ativar a Cadência 10D.");
-          setIsSaving(false);
-          return null;
-        }
-      }
 
       const { data: newRule, error } = await (supabase
         .from("broker_auto_cadencia_rules") as any)
