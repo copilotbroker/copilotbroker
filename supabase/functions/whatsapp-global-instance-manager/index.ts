@@ -653,7 +653,9 @@ app.get("/qrcode", async (c) => {
                              null;
               
               if (qrCode) {
-                return c.json({ qrCode, instanceName: storedInstance.instance_name }, 200, corsHeaders);
+                const pairingCode = qrData.pairingCode || qrData.paircode || qrData.pairing_code ||
+                  (qrData.instance as Record<string, unknown>)?.paircode as string || null;
+                return c.json({ qrCode, pairingCode, instanceName: storedInstance.instance_name }, 200, corsHeaders);
               }
             } catch {
               // Try next endpoint
