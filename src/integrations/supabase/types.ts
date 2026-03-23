@@ -450,6 +450,82 @@ export type Database = {
           },
         ]
       }
+      calendar_events: {
+        Row: {
+          all_day: boolean | null
+          broker_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          event_type: string
+          google_event_id: string | null
+          id: string
+          lead_id: string | null
+          location: string | null
+          project_id: string | null
+          start_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean | null
+          broker_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          event_type?: string
+          google_event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          location?: string | null
+          project_id?: string | null
+          start_at: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean | null
+          broker_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          event_type?: string
+          google_event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          location?: string | null
+          project_id?: string | null
+          start_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_steps: {
         Row: {
           campaign_id: string
@@ -765,6 +841,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      google_calendar_connections: {
+        Row: {
+          access_token: string | null
+          broker_id: string
+          created_at: string
+          google_email: string | null
+          id: string
+          last_sync_at: string | null
+          refresh_token: string | null
+          sync_enabled: boolean | null
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          broker_id: string
+          created_at?: string
+          google_email?: string | null
+          id?: string
+          last_sync_at?: string | null
+          refresh_token?: string | null
+          sync_enabled?: boolean | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          broker_id?: string
+          created_at?: string
+          google_email?: string | null
+          id?: string
+          last_sync_at?: string | null
+          refresh_token?: string | null
+          sync_enabled?: boolean | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_connections_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: true
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lead_attribution: {
         Row: {
