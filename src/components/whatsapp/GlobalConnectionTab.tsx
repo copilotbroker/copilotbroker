@@ -34,6 +34,7 @@ export function GlobalConnectionTab() {
     needsInit,
     isLoading,
     qrCode,
+    pairingCode,
     isLoadingQR,
     isInitializing,
     refreshStatus,
