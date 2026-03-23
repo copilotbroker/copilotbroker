@@ -21,7 +21,6 @@ export interface CalendarEvent {
   created_by: string | null;
   created_at: string;
   updated_at: string;
-  // joined
   lead_name?: string;
   project_name?: string;
   broker_name?: string;
@@ -143,6 +142,146 @@ export function useCalendarEvents({ brokerId, isAdmin, selectedBrokerId }: UseCa
     return true;
   };
 
+  // ─── Google Calendar actions ───
+  const connectGoogle = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: "Faça login primeiro", variant: "destructive" });
+        return;
+      }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const callbackOrigin = window.location.origin;
+      const redirectUri = `https://${projectId}.supabase.co/functions/v1/google-calendar-auth?action=callback`;
+
+      const res = await supabase.functions.invoke("google-calendar-auth", {
+        body: { redirect_uri: redirectUri },
+        headers: { "x-action": "authorize" },
+      });
+
+      // The function is called via query param, so we need to use fetch directly
+      const funcUrl = `https://${projectId}.supabase.co/functions/v1/google-calendar-auth?action=authorize`;
+      const response = await fetch(funcUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ redirect_uri: redirectUri }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.url) {
+        toast({ title: "Erro ao iniciar conexão", description: data.error || "Tente novamente", variant: "destructive" });
+        return;
+      }
+
+      // Open popup
+      const popup = window.open(data.url, "google-calendar-auth", "width=500,height=600,scrollbars=yes");
+
+      // Listen for callback message
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === "google-calendar-callback") {
+          window.removeEventListener("message", handleMessage);
+          if (event.data.status === "success") {
+            toast({ title: "Google Agenda conectada com sucesso!" });
+            fetchGoogleConnection();
+            fetchEvents();
+          } else {
+            toast({ title: "Erro na conexão", description: event.data.message, variant: "destructive" });
+          }
+        }
+      };
+      window.addEventListener("message", handleMessage);
+
+      // Fallback: poll for connection if popup closes without message
+      const pollInterval = setInterval(async () => {
+        if (popup?.closed) {
+          clearInterval(pollInterval);
+          window.removeEventListener("message", handleMessage);
+          // Check if connection was established
+          await fetchGoogleConnection();
+          await fetchEvents();
+        }
+      }, 1000);
+
+      // Cleanup after 5 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        window.removeEventListener("message", handleMessage);
+      }, 300000);
+    } catch (err) {
+      console.error("connectGoogle error:", err);
+      toast({ title: "Erro ao conectar", variant: "destructive" });
+    }
+  };
+
+  const syncGoogle = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const funcUrl = `https://${projectId}.supabase.co/functions/v1/google-calendar-sync`;
+      const response = await fetch(funcUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        toast({ title: "Erro na sincronização", description: data.error, variant: "destructive" });
+        return;
+      }
+
+      toast({
+        title: "Sincronização concluída",
+        description: `${data.imported} importados, ${data.exported} exportados`,
+      });
+      await fetchGoogleConnection();
+      await fetchEvents();
+    } catch (err) {
+      console.error("syncGoogle error:", err);
+      toast({ title: "Erro na sincronização", variant: "destructive" });
+    }
+  };
+
+  const disconnectGoogle = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const funcUrl = `https://${projectId}.supabase.co/functions/v1/google-calendar-auth?action=disconnect`;
+      const response = await fetch(funcUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        toast({ title: "Erro ao desconectar", description: data.error, variant: "destructive" });
+        return;
+      }
+
+      toast({ title: "Google Agenda desconectada" });
+      setGoogleConnection(null);
+    } catch (err) {
+      console.error("disconnectGoogle error:", err);
+      toast({ title: "Erro ao desconectar", variant: "destructive" });
+    }
+  };
+
   const goToToday = () => setCurrentDate(new Date());
   const goNext = () => setCurrentDate(prev => addMonths(prev, 1));
   const goPrev = () => setCurrentDate(prev => subMonths(prev, 1));
@@ -158,6 +297,9 @@ export function useCalendarEvents({ brokerId, isAdmin, selectedBrokerId }: UseCa
     createEvent,
     updateEvent,
     deleteEvent,
+    connectGoogle,
+    syncGoogle,
+    disconnectGoogle,
     goToToday,
     goNext,
     goPrev,

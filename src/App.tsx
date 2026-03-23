@@ -130,6 +130,7 @@ const App = () => (
             <Route path="/caminhadaonovocondominioev" element={<CaminhadaEV />} />
             <Route path="/termos" element={<Termos />} />
             <Route path="/designsystem" element={<DesignSystem />} />
+            <Route path="/google-calendar/callback" element={<GoogleCalendarCallback />} />
             
             {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
             <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />
