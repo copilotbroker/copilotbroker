@@ -14,7 +14,7 @@ interface UseWhatsAppInstanceReturn {
   error: string | null;
   initInstance: () => Promise<void>;
   refreshStatus: () => Promise<void>;
-  fetchQRCode: () => Promise<void>;
+  fetchQRCode: (phoneNumber?: string) => Promise<void>;
   logout: () => Promise<void>;
   restart: () => Promise<void>;
   deleteInstance: () => Promise<void>;
@@ -113,13 +113,14 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
     }
   }, [toast]);
 
-  const fetchQRCode = useCallback(async () => {
+  const fetchQRCode = useCallback(async (phoneNumber?: string) => {
     try {
       setIsLoadingQR(true);
       setQRCode(null);
 
       const headers = await getAuthHeaders();
-      const response = await fetch(`${FUNCTION_URL}/qrcode`, {
+      const params = phoneNumber ? `?number=${encodeURIComponent(phoneNumber.replace(/\D/g, ""))}` : "";
+      const response = await fetch(`${FUNCTION_URL}/qrcode${params}`, {
         method: "GET",
         headers,
       });

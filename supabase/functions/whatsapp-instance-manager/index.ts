@@ -692,6 +692,8 @@ app.get("/status", async (c) => {
 
 // GET /qrcode - Get QR code for pairing
 app.get("/qrcode", async (c) => {
+  // Accept ?number=XXXX from frontend to request pairing code
+  const requestedNumber = c.req.query("number") || "";
   try {
     if (!UAZAPI_BASE_URL) {
       return c.json({ error: "UAZAPI not configured" }, 500, corsHeaders);
@@ -718,7 +720,7 @@ app.get("/qrcode", async (c) => {
       return c.json({ error: "No instance configured. Initialize first." }, 400, corsHeaders);
     }
 
-    const instance = instanceData as { id: string; instance_name: string; instance_token: string | null };
+    const instance = instanceData as { id: string; instance_name: string; instance_token: string | null; phone_number: string | null };
 
     // === FIXED: Use correct endpoint and token for QR code ===
     // According to UAZAPI V2 docs: POST /instance/connect with instance token
@@ -747,21 +749,30 @@ app.get("/qrcode", async (c) => {
     };
 
     const instanceNameEnc = encodeURIComponent(instance.instance_name);
+    // To get a pairing code, UAZAPI requires passing the phone number as ?number=XXXX
+    // Format: country code + number, no symbols (e.g. 5511999999999)
+    // Priority: frontend-supplied number > stored phone_number
+    const phoneDigits = (requestedNumber?.replace(/\D/g, "") || instance.phone_number?.replace(/\D/g, "") || "");
+    const numberParam = phoneDigits ? `number=${phoneDigits}` : "";
+    const qsConnect = numberParam ? `?${numberParam}` : "";
+    
+    console.log(`[UAZAPI] Phone for pairing: ${phoneDigits || "(none)"} (requested: ${requestedNumber || "none"}, stored: ${instance.phone_number || "none"})`);
+
     const attempts: QrAttempt[] = [
       {
-        name: "connect_get",
-        path: `/instance/connect/${instanceNameEnc}`,
+        name: "connect_get_with_number",
+        path: `/instance/connect/${instanceNameEnc}${qsConnect}`,
         opts: { method: "GET" },
       },
       // Some deployments use the instance name as a query parameter instead of a path param
       {
         name: "connect_get_q_instance",
-        path: `/instance/connect?instance=${instanceNameEnc}`,
+        path: `/instance/connect?instance=${instanceNameEnc}${numberParam ? "&" + numberParam : ""}`,
         opts: { method: "GET" },
       },
       {
         name: "connect_get_q_name",
-        path: `/instance/connect?name=${instanceNameEnc}`,
+        path: `/instance/connect?name=${instanceNameEnc}${numberParam ? "&" + numberParam : ""}`,
         opts: { method: "GET" },
       },
       {
@@ -781,7 +792,7 @@ app.get("/qrcode", async (c) => {
         opts: {
           method: "POST",
           includeJson: true,
-          bodyString: JSON.stringify({ name: instance.instance_name, instance: instance.instance_name }),
+          bodyString: JSON.stringify({ name: instance.instance_name, instance: instance.instance_name, number: phoneDigits || undefined }),
         },
       },
     ];

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Loader2, RefreshCw, QrCode, Smartphone, Copy, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
@@ -9,7 +10,7 @@ interface QRCodeDisplayProps {
   qrCode: string | null;
   pairingCode: string | null;
   isLoading: boolean;
-  onRefresh: () => void;
+  onRefresh: (phoneNumber?: string) => void;
 }
 
 type ViewMode = "pairing" | "qrcode";
@@ -18,6 +19,7 @@ export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRC
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<ViewMode>(isMobile ? "pairing" : "qrcode");
   const [copied, setCopied] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
 
   useEffect(() => {
     if (isMobile) {
@@ -43,6 +45,17 @@ export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRC
     } catch {
       toast.error("Não foi possível copiar");
     }
+  };
+
+  const handleGeneratePairingCode = () => {
+    const digits = phoneInput.replace(/\D/g, "");
+    if (!digits || digits.length < 10) {
+      toast.error("Informe seu número com DDD (ex: 51999999999)");
+      return;
+    }
+    // Ensure country code
+    const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
+    onRefresh(withCountry);
   };
 
   const renderPairingCodeView = () => {
@@ -72,27 +85,35 @@ export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRC
       );
     }
 
-    // No pairing code available yet — show instructions + generate button
+    // No pairing code — ask for phone number to generate one
     return (
       <div className="w-full max-w-[280px] flex flex-col items-center justify-center bg-[#0d0d0f] rounded-lg gap-4 p-6">
-        <Smartphone className="w-12 h-12 text-slate-600" />
+        <Smartphone className="w-10 h-10 text-slate-600" />
         <p className="text-sm text-slate-400 text-center">
-          Clique abaixo para gerar um código numérico de pareamento
+          Informe seu número de WhatsApp para gerar o código de pareamento
         </p>
+        <Input
+          type="tel"
+          placeholder="51999999999"
+          value={phoneInput}
+          onChange={(e) => setPhoneInput(e.target.value)}
+          className="bg-[#1a1a1d] border-[#2a2a2e] text-white text-center font-mono text-lg placeholder:text-slate-600"
+          maxLength={15}
+        />
         <p className="text-xs text-slate-500 text-center">
-          Ideal para conectar usando o mesmo celular, sem precisar de uma segunda tela
+          DDD + número, sem espaços
         </p>
         <Button
           variant="outline"
           size="sm"
-          onClick={onRefresh}
+          onClick={handleGeneratePairingCode}
           disabled={isLoading}
-          className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]"
+          className="w-full border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]"
         >
           {isLoading ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
-            <RefreshCw className="w-4 h-4 mr-2" />
+            <Smartphone className="w-4 h-4 mr-2" />
           )}
           Gerar Código
         </Button>
@@ -122,7 +143,7 @@ export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRC
         <Button
           variant="outline"
           size="sm"
-          onClick={onRefresh}
+          onClick={() => onRefresh()}
           disabled={isLoading}
           className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]"
         >
@@ -187,7 +208,7 @@ export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRC
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onRefresh}
+                onClick={() => onRefresh()}
                 disabled={isLoading}
                 className="mt-3 text-slate-400 hover:text-white"
               >
