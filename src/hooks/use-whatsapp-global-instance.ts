@@ -188,6 +188,7 @@ export function useWhatsAppGlobalInstance() {
 
       toast.success("Instância desconectada");
       setQrCode(null);
+      setPairingCode(null);
       await refreshStatus();
     } catch (error) {
       console.error("Failed to logout:", error);
