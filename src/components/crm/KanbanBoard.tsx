@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Building2, Users, Search, MapPin, X, Tags } from "lucide-react";
 import { toast } from "sonner";
