@@ -193,6 +193,7 @@ const BrokerAdmin = () => {
                   className="pl-9 h-9 bg-[#1a1a1e] border-[#2a2a2e] text-white text-sm placeholder:text-slate-500"
                 />
               </div>
+              <div id="kanban-mobile-filters" />
             </div>
           ) : undefined
         }
