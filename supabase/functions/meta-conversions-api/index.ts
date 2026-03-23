@@ -14,6 +14,10 @@ const PIXEL_CONFIGS: Record<string, { tokenEnv: string; defaultUrl: string }> = 
     tokenEnv: "META_CONVERSIONS_API_TOKEN_NAU",
     defaultUrl: "https://onovocondominio.com.br/osorio/nau",
   },
+  "4261464794069997": {
+    tokenEnv: "META_CONVERSIONS_API_TOKEN_MONACO",
+    defaultUrl: "https://onovocondominio.com.br/xangrila/monaco",
+  },
 };
 
 const DEFAULT_PIXEL_ID = "880409748241568";
