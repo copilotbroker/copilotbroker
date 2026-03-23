@@ -1,16 +1,53 @@
-import { BrokerLayout } from "@/components/broker/BrokerLayout";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { BrokerSidebar } from "@/components/broker/BrokerSidebar";
+import { BrokerBottomNav } from "@/components/broker/BrokerBottomNav";
 import { AgendaModule } from "@/components/agenda/AgendaModule";
-import { useUserRole } from "@/hooks/use-user-role";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const BrokerAgenda = () => {
-  const { brokerId } = useUserRole();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [brokerId, setBrokerId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { navigate("/auth"); return; }
+
+      const { data: broker } = await supabase
+        .from("brokers")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (broker) setBrokerId((broker as any).id);
+      else navigate("/auth");
+    };
+    checkAuth();
+  }, [navigate]);
 
   return (
-    <BrokerLayout>
-      <div className="p-4 md:p-6 max-w-7xl mx-auto">
-        <AgendaModule brokerId={brokerId} />
-      </div>
-    </BrokerLayout>
+    <div className="flex h-screen bg-background overflow-hidden">
+      {!isMobile && (
+        <BrokerSidebar
+          viewMode="kanban"
+          onViewChange={() => {}}
+          onLogout={() => { supabase.auth.signOut(); navigate("/auth"); }}
+        />
+      )}
+      <main className="flex-1 overflow-auto pb-20 md:pb-0">
+        <div className="p-4 md:p-6 max-w-7xl mx-auto">
+          <AgendaModule brokerId={brokerId} />
+        </div>
+      </main>
+      {isMobile && (
+        <BrokerBottomNav
+          viewMode="kanban"
+          onViewChange={() => {}}
+        />
+      )}
+    </div>
   );
 };
 
