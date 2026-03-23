@@ -143,7 +143,7 @@ export function useAutoCadenciaRules() {
       const rule = newRule as BrokerAutoCadenciaRule;
       rule.steps_count = data.steps.length;
       setRules(prev => [rule, ...prev]);
-      toast.success("Regra de cadência criada!");
+      toast.success("Cadência de follow-up criada!");
       return newRule;
     } catch (error: any) {
       if (error.code === "23505") {
