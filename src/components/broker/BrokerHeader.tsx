@@ -1,8 +1,8 @@
 import { useState, ReactNode } from "react";
-import { Search, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { BROKER_TAB_LABELS, getBrokerTabFromPath } from "./brokerNavigation";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface BrokerHeaderProps {
   brokerName?: string;
@@ -49,9 +49,12 @@ export function BrokerHeader({
         )}
       </div>
 
-      {/* Collapsible content - mobile only */}
-      {collapsibleContent && isExpanded && (
-        <div className="lg:hidden px-4 pb-3 space-y-2 animate-in slide-in-from-top-2 duration-200">
+      {/* Collapsible content - mobile only (always mounted for portal targets, hidden via CSS) */}
+      {collapsibleContent && (
+        <div className={cn(
+          "lg:hidden px-4 pb-3 space-y-2",
+          isExpanded ? "animate-in slide-in-from-top-2 duration-200" : "hidden"
+        )}>
           {collapsibleContent}
         </div>
       )}
