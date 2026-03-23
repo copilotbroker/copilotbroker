@@ -1,53 +1,27 @@
 
 
-# Fix: Kanban do corretor não propaga altura corretamente
+# Compactar Roletas e maximizar espaço do Kanban
 
 ## Problema
-
-No Admin, o `KanbanBoard` é filho direto do `<main>` e recebe `flex-1 min-h-0` corretamente. No Broker, há um wrapper intermediário que quebra a cadeia:
-
-```text
-Admin (funciona):
-  main flex-1 min-h-0
-    └─ KanbanBoard flex-1 min-h-0    ← recebe altura ✓
-
-Broker (quebrado):
-  main flex-1 min-h-0
-    └─ div.flex-1.min-h-[400px].space-y-4    ← NÃO propaga flex ✗
-        └─ BrokerRoletas                      ← consome espaço variável
-        └─ KanbanBoard flex-1 min-h-0         ← não recebe altura ✗
-```
-
-O wrapper em `BrokerAdmin.tsx` (linha 184) usa `min-h-[400px] space-y-4` mas **não é flex column** e não tem `min-h-0`. Isso impede que o KanbanBoard receba altura constrained → virtualização falha → todos os cards são renderizados → scroll não funciona como esperado.
+O `BrokerRoletas` ocupa muito espaço vertical (padding, espaçamento, cards empilhados verticalmente), reduzindo a área visível do Kanban no mobile.
 
 ## Correção
 
-### `src/pages/BrokerAdmin.tsx` (linha 184)
+### `src/components/broker/BrokerRoletas.tsx`
+Transformar o layout em uma **linha horizontal compacta** com scroll:
 
-Trocar o wrapper do kanban de:
-```tsx
-<div className="flex-1 min-h-[400px] space-y-4">
-```
+1. **Container principal**: reduzir padding de `p-4 space-y-3` para `p-2`
+2. **Header + cards na mesma linha**: remover header separado "Minhas Roletas", integrar o ícone inline
+3. **Cards das roletas em linha horizontal**: `flex flex-row gap-2 overflow-x-auto` em vez de `space-y-3` vertical
+4. **Cada card compacto**: layout horizontal com nome da roleta + status + botão check-in/out em uma única linha, sem subtextos (ordem, tempo reserva) visíveis por default
+5. **Fila expandível**: manter funcionalidade mas colapsada por default
+6. **Altura total**: ~48-56px quando colapsado (vs ~120px+ atual por roleta)
 
-Para:
-```tsx
-<div className="flex-1 min-h-0 flex flex-col gap-4">
-```
-
-Isso faz o wrapper virar um flex column container que:
-1. Encolhe com `min-h-0` (não força altura mínima)
-2. O `BrokerRoletas` ocupa seu espaço natural (colapsável)
-3. O `KanbanBoard` com `flex-1 min-h-0` preenche o resto — virtualização funciona
-
-### Cadeia corrigida:
+Layout compacto:
 ```text
-BrokerLayout: h-screen overflow-hidden
-  └─ main: flex-1 min-h-0 flex flex-col
-      └─ div: flex-1 min-h-0 flex flex-col gap-4    ← CORRIGIDO
-          └─ BrokerRoletas (altura natural, ~60px)
-          └─ KanbanBoard: flex-1 min-h-0             ← RECEBE ALTURA ✓
-              └─ Virtualizer funciona ✓
+[🔄] [Roleta A ● Online | Check-out] [Roleta B ○ Offline | Check-in]
 ```
 
-Mudança de 1 linha, mesmo padrão do Admin.
+### `src/pages/BrokerAdmin.tsx`
+Manter `gap-4` → `gap-2` no wrapper para reduzir espaço entre roletas e kanban.
 
