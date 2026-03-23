@@ -370,8 +370,8 @@ export function AutoCadenciaRuleEditor({
                 <Alert className="bg-yellow-500/10 border-yellow-500/30">
                   <AlertTriangle className="w-4 h-4 text-yellow-400" />
                   <AlertDescription className="text-yellow-300 text-sm">
-                    A cadência será ativada <strong>automaticamente</strong> quando um lead for 
-                    atribuído a você neste empreendimento. O lead será movido para "Atendimento" 
+                    Quando ativa, a cadência será disparada <strong>automaticamente</strong> ao receber 
+                    um lead neste empreendimento. O lead será movido para "Atendimento" 
                     e o timeout da roleta será desativado.
                   </AlertDescription>
                 </Alert>
