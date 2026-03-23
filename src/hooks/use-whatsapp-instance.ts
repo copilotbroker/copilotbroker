@@ -14,7 +14,7 @@ interface UseWhatsAppInstanceReturn {
   error: string | null;
   initInstance: () => Promise<void>;
   refreshStatus: () => Promise<void>;
-  fetchQRCode: () => Promise<void>;
+  fetchQRCode: (phoneNumber?: string) => Promise<void>;
   logout: () => Promise<void>;
   restart: () => Promise<void>;
   deleteInstance: () => Promise<void>;
