@@ -1,34 +1,63 @@
 
 
-# Mover busca e filtros para a área colapsável do header mobile
+# Renomear "Automação" para "Follow-up" e ajustar fluxo de criação
 
-## Problema
-A busca e os filtros do KanbanBoard ainda aparecem fixos no mobile, ocupando espaço. O usuário quer que fiquem dentro da área colapsável do header (junto com as roletas), visíveis só ao clicar na lupa.
+## Resumo
 
-## Solução
+Renomear a aba "Automação" para "Follow-up" em todos os locais (broker, admin, whatsapp). Ajustar textos internos para "Cadência de Follow-up" em vez de "Cadência 10D". Após o usuário criar/salvar uma cadência, exibir um diálogo perguntando se deseja ativar a sequência automaticamente ao receber um lead.
 
-### 1. `src/components/crm/KanbanBoard.tsx`
-- Reativar a prop `hideToolbarMobile` (que já existe mas foi removida do uso)
-- A toolbar mobile (busca + filtros, linhas 563-707) já respeita essa prop com `hidden md:flex`
+## Arquivos alterados
 
-### 2. `src/pages/BrokerAdmin.tsx`
-- Passar `hideToolbarMobile={true}` no `<KanbanBoard>` para esconder a toolbar mobile interna
-- No `collapsibleContent`, adicionar busca e filtros inline abaixo do `<BrokerRoletas>`:
-  - Input de busca com ícone de lupa (controlado por `searchTerm`/`setSearchTerm`)
-  - Linha de filtros: reutilizar os mesmos selects de projeto/origem que o KanbanBoard usa internamente — porém como o KanbanBoard gerencia esses estados internamente, a abordagem mais simples é:
-    - Passar `hideToolbarMobile` para esconder no mobile
-    - Duplicar apenas o campo de busca no `collapsibleContent` (já controlado via props `searchTerm`/`onSearchChange`)
-    - Os filtros de projeto/origem são estado interno do KanbanBoard — para não duplicar lógica, a melhor abordagem é manter os filtros dentro do KanbanBoard mas movê-los para uma área que só aparece no mobile quando expandido
+### 1. Renomear aba "Automação" → "Follow-up" (3 arquivos)
 
-**Abordagem final (simples e eficaz):**
-- Não duplicar filtros — usar `hideToolbarMobile` para esconder toda a toolbar mobile do KanbanBoard
-- No `collapsibleContent` do header, incluir:
-  1. `<BrokerRoletas>` (já está)
-  2. Campo de busca inline (usando `searchTerm`/`setSearchTerm` do BrokerAdmin)
-- Os filtros de projeto/origem ficam acessíveis via scroll horizontal na toolbar do KanbanBoard que continua visível no desktop
-- No mobile, ao expandir o header, o corretor vê roletas + busca. Os filtros por projeto/origem são menos usados pelo corretor (não-admin) e continuam acessíveis no desktop
+**`src/pages/BrokerCopilotConfig.tsx`** (linha 103-106)
+- Trocar label "Automação" por "Follow-up"
+- Trocar ícone `Bot` por `RotateCcw` ou manter `Bot`
 
-### Arquivos alterados:
-1. **`src/pages/BrokerAdmin.tsx`**: adicionar busca no `collapsibleContent` + passar `hideToolbarMobile` ao KanbanBoard
-2. **Nenhuma mudança** no KanbanBoard (a prop `hideToolbarMobile` já funciona)
+**`src/pages/AdminCopilotConfig.tsx`** (linha 59)
+- No `TAB_GROUPS`, trocar `{ id: "automation", label: "Automação", icon: Bot }` por `{ id: "automation", label: "Follow-up", icon: Bot }`
+
+**`src/pages/BrokerWhatsApp.tsx`** (linha 119)
+- Trocar label "Automação" por "Follow-up"
+
+### 2. Ajustar textos internos da seção
+
+**`src/components/whatsapp/AutoCadenciaSection.tsx`**
+- Título: "Cadências automáticas" → "Cadências de Follow-up"
+- Subtítulo: "Ative uma cadência automática ao receber leads" → "Configure sequências de follow-up para seus leads"
+- Botão: "Nova Regra" → "Nova Cadência"
+- Empty state: "Crie uma regra para ativar a Cadência 10D automaticamente" → "Crie uma cadência de follow-up para engajar seus leads"
+- Botão empty: "Criar Primeira Regra" → "Criar Primeira Cadência"
+
+**`src/components/whatsapp/AutoCadenciaRuleEditor.tsx`**
+- Título: "Nova Regra de Cadência 10D" → "Nova Cadência de Follow-up"
+- Descrição: "Configure as etapas da cadência automática" → "Configure as etapas do follow-up"
+- Warning text: atualizar menção a "cadência 10D"
+- Botão: "Criar Regra" → "Criar Cadência"
+
+### 3. Diálogo pós-criação: "Ativar automaticamente?"
+
+**`src/components/whatsapp/AutoCadenciaSection.tsx`**
+- Adicionar estado `showAutoActivateDialog` + `lastCreatedRuleId`
+- Após `createRule` retornar com sucesso, setar `showAutoActivateDialog = true`
+- Renderizar um `AlertDialog` perguntando:
+  - Título: "Ativar sequência automática?"
+  - Descrição: "Deseja que esta cadência de follow-up seja ativada automaticamente quando um novo lead for atribuído a você?"
+  - Botão "Sim, ativar" → chama `toggleRuleActive(ruleId, true)` e fecha
+  - Botão "Não, depois" → fecha sem ativar
+- A regra será criada com `is_active: false` por padrão, e só ativada se o usuário confirmar
+
+**`src/components/whatsapp/AutoCadenciaRuleEditor.tsx`**
+- Alterar `handleSubmit` para criar com `is_active: false` em vez de `true`
+- Adicionar prop `onCreated?: (ruleId: string) => void` para notificar o pai após criação bem-sucedida
+
+## Fluxo do usuário
+
+1. Corretor vai em "Follow-up" (antigo "Automação")
+2. Clica "Nova Cadência"
+3. Preenche nome, empreendimento, etapas
+4. Clica "Criar Cadência"
+5. Cadência é salva (inativa)
+6. Diálogo aparece: "Ativar automaticamente ao receber leads?"
+7. Se "Sim" → regra fica ativa. Se "Não" → fica inativa, pode ativar depois pelo switch.
 
