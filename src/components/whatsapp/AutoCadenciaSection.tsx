@@ -11,8 +11,9 @@ import { useAutoCadenciaRules, type BrokerAutoCadenciaRule } from "@/hooks/use-a
 import { useWhatsAppCampaigns } from "@/hooks/use-whatsapp-campaigns";
 import { AutoCadenciaRuleEditor } from "./AutoCadenciaRuleEditor";
 import { CampaignCard } from "./CampaignCard";
-import { CampaignDetailSheet } from "./CampaignDetailSheet";
+import { CampaignDetailSheet, type CampaignStepRow } from "./CampaignDetailSheet";
 import { WhatsAppCampaign } from "@/types/whatsapp";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export function AutoCadenciaSection() {
@@ -26,6 +27,7 @@ export function AutoCadenciaSection() {
 
   // Campaign detail
   const [detailCampaign, setDetailCampaign] = useState<WhatsAppCampaign | null>(null);
+  const [detailSteps, setDetailSteps] = useState<CampaignStepRow[]>([]);
 
   const handleCreateNew = () => { setEditingRule(null); setIsEditorOpen(true); };
   const handleEdit = (rule: BrokerAutoCadenciaRule) => { setEditingRule(rule); setIsEditorOpen(true); };
@@ -53,14 +55,8 @@ export function AutoCadenciaSection() {
     }
   };
 
-  const handleCampaignDetail = async (campaign: WhatsAppCampaign) => {
+  const handleCampaignDetail = (campaign: WhatsAppCampaign) => {
     setDetailCampaign(campaign);
-    const { data } = await supabase
-      .from("campaign_steps")
-      .select("*")
-      .eq("campaign_id", campaign.id)
-      .order("step_order", { ascending: true });
-    setDetailSteps((data || []) as CampaignStepRow[]);
   };
 
   const loading = isLoading || isLoadingCampaigns;
@@ -191,10 +187,11 @@ export function AutoCadenciaSection() {
             <CampaignCard
               key={campaign.id}
               campaign={campaign}
-              onPause={() => pauseCampaign(campaign.id)}
-              onResume={() => resumeCampaign(campaign.id)}
-              onCancel={() => cancelCampaign(campaign.id)}
-              onDetail={() => handleCampaignDetail(campaign)}
+              onPause={(id) => pauseCampaign(id)}
+              onResume={(id) => resumeCampaign(id)}
+              onCancel={(id) => cancelCampaign(id)}
+              onViewDetail={(c) => handleCampaignDetail(c)}
+              onDuplicate={() => {}}
             />
           ))}
         </div>
@@ -217,9 +214,9 @@ export function AutoCadenciaSection() {
       {detailCampaign && (
         <CampaignDetailSheet
           campaign={detailCampaign}
-          steps={detailSteps}
           open={!!detailCampaign}
           onOpenChange={(open) => !open && setDetailCampaign(null)}
+          onDuplicate={() => {}}
         />
       )}
 
