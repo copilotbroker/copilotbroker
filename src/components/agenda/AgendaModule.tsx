@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, ChevronLeft, ChevronRight, List, LayoutGrid, Plus, RefreshCw, Search } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -41,6 +41,9 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
     createEvent,
     updateEvent,
     deleteEvent,
+    connectGoogle,
+    syncGoogle,
+    disconnectGoogle,
     goToToday,
     goNext,
     goPrev,
@@ -114,13 +117,18 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
             <Plus className="h-4 w-4" /> Novo evento
           </Button>
           <Button variant="outline" size="sm" onClick={refetch} className="gap-1">
-            <RefreshCw className="h-3.5 w-3.5" /> Sincronizar
+            <RefreshCw className="h-3.5 w-3.5" /> Atualizar
           </Button>
         </div>
       </div>
 
       {/* Google Connection Card */}
-      <GoogleConnectCard connection={googleConnection} />
+      <GoogleConnectCard
+        connection={googleConnection}
+        onConnect={connectGoogle}
+        onSync={syncGoogle}
+        onDisconnect={disconnectGoogle}
+      />
 
       {/* Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

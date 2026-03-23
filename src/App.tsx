@@ -42,6 +42,7 @@ import ProntosBrokerPage from "./pages/ProntosBrokerPage";
 import Termos from "./pages/Termos";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
+import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
 import NotFound from "./pages/NotFound";
 import NAULandingPage from "./pages/nau/NAULandingPage";
 import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
@@ -129,6 +130,7 @@ const App = () => (
             <Route path="/caminhadaonovocondominioev" element={<CaminhadaEV />} />
             <Route path="/termos" element={<Termos />} />
             <Route path="/designsystem" element={<DesignSystem />} />
+            <Route path="/google-calendar/callback" element={<GoogleCalendarCallback />} />
             
             {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
             <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />
