@@ -212,10 +212,10 @@ export function AutoCadenciaRuleEditor({
           <SheetHeader className="space-y-1">
             <SheetTitle className="text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-emerald-400" />
-              {editingRule ? "Editar Regra" : "Nova Regra de Cadência 10D"}
+              {editingRule ? "Editar Cadência" : "Nova Cadência de Follow-up"}
             </SheetTitle>
             <SheetDescription className="text-slate-400">
-              Configure as etapas da cadência automática
+              Configure as etapas do follow-up
             </SheetDescription>
           </SheetHeader>
         </div>
