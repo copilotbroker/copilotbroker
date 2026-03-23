@@ -24,6 +24,7 @@ export function useWhatsAppGlobalInstance() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [isLoadingQR, setIsLoadingQR] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
 
