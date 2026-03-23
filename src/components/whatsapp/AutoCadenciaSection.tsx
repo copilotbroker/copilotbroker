@@ -62,8 +62,8 @@ export function AutoCadenciaSection() {
 
   const loading = isLoading || isLoadingCampaigns;
 
-  // Only show user-created bulk campaigns (not individual lead cadências)
-  const bulkCampaigns = campaigns.filter(c => !c.lead_id && c.target_status && c.target_status.length > 0);
+  // Only show user-created bulk campaigns (those with target_status filters)
+  const bulkCampaigns = campaigns.filter(c => c.target_status && c.target_status.length > 0);
   const activeCampaigns = bulkCampaigns.filter(c => !["completed", "cancelled"].includes(c.status));
   const archivedCampaigns = bulkCampaigns.filter(c => ["completed", "cancelled"].includes(c.status));
 
