@@ -44,7 +44,7 @@ const AdminAgenda = () => {
         </div>
       </main>
       {isMobile && (
-        <MobileBottomNav activeTab="agenda" onLogout={() => { supabase.auth.signOut(); navigate("/auth"); }} />
+        <MobileBottomNav activeTab="agenda" />
       )}
     </div>
   );
