@@ -24,6 +24,7 @@ export function useWhatsAppGlobalInstance() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [isLoadingQR, setIsLoadingQR] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
 
@@ -59,8 +60,9 @@ export function useWhatsAppGlobalInstance() {
       const newStatus = data.status as GlobalInstanceState["status"];
       
       // Clear QR code if connected
-      if (newStatus === "connected" && qrCode) {
+      if (newStatus === "connected" && (qrCode || pairingCode)) {
         setQrCode(null);
+        setPairingCode(null);
       }
 
       setState({
@@ -81,7 +83,7 @@ export function useWhatsAppGlobalInstance() {
     } finally {
       setIsLoading(false);
     }
-  }, [getAuthHeaders, qrCode]);
+  }, [getAuthHeaders, qrCode, pairingCode]);
 
   const initInstance = useCallback(async () => {
     try {
@@ -106,6 +108,10 @@ export function useWhatsAppGlobalInstance() {
       // If QR code was returned, set it
       if (data.qrCode) {
         setQrCode(data.qrCode);
+        setPairingCode(data.pairingCode || null);
+        setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
+      } else if (data.pairingCode) {
+        setPairingCode(data.pairingCode);
         setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
       } else {
         // Fetch QR code separately
@@ -143,6 +149,11 @@ export function useWhatsAppGlobalInstance() {
 
       if (data.qrCode) {
         setQrCode(data.qrCode);
+        setPairingCode(data.pairingCode || null);
+        setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
+      } else if (data.pairingCode) {
+        setPairingCode(data.pairingCode);
+        setQrCode(null);
         setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
         
         if (data.newInstance) {
@@ -177,6 +188,7 @@ export function useWhatsAppGlobalInstance() {
 
       toast.success("Instância desconectada");
       setQrCode(null);
+      setPairingCode(null);
       await refreshStatus();
     } catch (error) {
       console.error("Failed to logout:", error);
@@ -230,6 +242,7 @@ export function useWhatsAppGlobalInstance() {
 
       toast.success("Sessão limpa com sucesso");
       setQrCode(null);
+      setPairingCode(null);
       setState({
         status: "disconnected",
         phoneNumber: null,
@@ -276,6 +289,7 @@ export function useWhatsAppGlobalInstance() {
     needsInit: state.needsInit,
     isLoading,
     qrCode,
+    pairingCode,
     isLoadingQR,
     isInitializing,
     refreshStatus,

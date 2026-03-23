@@ -581,11 +581,19 @@ app.post("/init", async (c) => {
                      qrData.base64 ||
                      (qrData.instance as Record<string, unknown>)?.qrcode as string ||
                      null;
+            const pCode = qrData.pairingCode || qrData.paircode || qrData.pairing_code ||
+                         (qrData.instance as Record<string, unknown>)?.paircode as string || null;
             
-            if (qrCode) {
-              console.log(`✅ QR Code obtido via ${endpoint}`);
-              break;
-            }
+            if (qrCode || pCode) {
+              console.log(`✅ QR/Pairing obtido via ${endpoint}`);
+              return c.json({
+                success: true,
+                instanceName: returnedName,
+                token: newToken,
+                qrCode,
+                pairingCode: pCode,
+                message: qrCode ? "Instância criada com QR Code" : "Instância criada com código de pareamento"
+              }, 200, corsHeaders);
           } catch {
             // Try next endpoint
           }
@@ -599,8 +607,9 @@ app.post("/init", async (c) => {
       success: true,
       instanceName: returnedName,
       token: newToken,
-      qrCode,
-      message: qrCode ? "Instância criada com QR Code" : "Instância criada, aguarde para QR Code"
+      qrCode: null,
+      pairingCode: null,
+      message: "Instância criada, aguarde para QR Code"
     }, 200, corsHeaders);
 
   } catch (error) {
@@ -653,7 +662,9 @@ app.get("/qrcode", async (c) => {
                              null;
               
               if (qrCode) {
-                return c.json({ qrCode, instanceName: storedInstance.instance_name }, 200, corsHeaders);
+                const pairingCode = qrData.pairingCode || qrData.paircode || qrData.pairing_code ||
+                  (qrData.instance as Record<string, unknown>)?.paircode as string || null;
+                return c.json({ qrCode, pairingCode, instanceName: storedInstance.instance_name }, 200, corsHeaders);
               }
             } catch {
               // Try next endpoint
@@ -740,8 +751,10 @@ app.get("/qrcode", async (c) => {
       try {
         const qrData = JSON.parse(qrText);
         const qrCode = qrData.qrcode || qrData.qr || qrData.base64 || null;
-        if (qrCode) {
-          return c.json({ qrCode, instanceName: returnedName, newInstance: true }, 200, corsHeaders);
+        const pairingCode = qrData.pairingCode || qrData.paircode || qrData.pairing_code ||
+          (qrData.instance as Record<string, unknown>)?.paircode as string || null;
+        if (qrCode || pairingCode) {
+          return c.json({ qrCode, pairingCode, instanceName: returnedName, newInstance: true }, 200, corsHeaders);
         }
       } catch {
         // No QR
@@ -762,10 +775,12 @@ app.get("/qrcode", async (c) => {
       // Try getting status which might have QR code
     }
 
-    // Check for QR code in connect response
+    // Check for QR code and pairing code in connect response
     let qrCode = connectData.qrcode as string || 
                  (connectData.instance as Record<string, unknown>)?.qrcode as string ||
                  null;
+    let pairingCode = connectData.pairingCode as string || connectData.paircode as string ||
+                      (connectData.instance as Record<string, unknown>)?.paircode as string || null;
 
     // If no QR code in connect response, check status
     if (!qrCode) {
@@ -777,6 +792,10 @@ app.get("/qrcode", async (c) => {
         qrCode = statusData.qrcode || 
                  statusData.instance?.qrcode || 
                  null;
+        if (!pairingCode) {
+          pairingCode = statusData.pairingCode || statusData.paircode ||
+                        statusData.instance?.paircode || null;
+        }
       } catch {
         // No QR code available
       }
@@ -788,7 +807,7 @@ app.get("/qrcode", async (c) => {
       }, 200, corsHeaders);
     }
 
-    return c.json({ qrCode }, 200, corsHeaders);
+    return c.json({ qrCode, pairingCode }, 200, corsHeaders);
 
   } catch (error) {
     console.error("❌ Erro ao obter QR code:", error);
