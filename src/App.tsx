@@ -42,6 +42,7 @@ import ProntosBrokerPage from "./pages/ProntosBrokerPage";
 import Termos from "./pages/Termos";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
+import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
 import NotFound from "./pages/NotFound";
 import NAULandingPage from "./pages/nau/NAULandingPage";
 import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
