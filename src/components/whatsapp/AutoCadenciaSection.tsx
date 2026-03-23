@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Zap, Plus, Pencil, Trash2, Loader2, Megaphone } from "lucide-react";
+import { Zap, Plus, Pencil, Trash2, Loader2, Megaphone, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -7,6 +7,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAutoCadenciaRules, type BrokerAutoCadenciaRule } from "@/hooks/use-auto-cadencia-rules";
 import { useWhatsAppCampaigns } from "@/hooks/use-whatsapp-campaigns";
 import { AutoCadenciaRuleEditor } from "./AutoCadenciaRuleEditor";
@@ -18,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 export function AutoCadenciaSection() {
   const { rules, isLoading, toggleRuleActive, deleteRule, createRule, updateRule, isSaving, fetchRules } = useAutoCadenciaRules();
-  const { campaigns, isLoading: isLoadingCampaigns, pauseCampaign, resumeCampaign, cancelCampaign } = useWhatsAppCampaigns();
+  const { campaigns, isLoading: isLoadingCampaigns, pauseCampaign, resumeCampaign, cancelCampaign, deleteCampaign } = useWhatsAppCampaigns();
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<BrokerAutoCadenciaRule | null>(null);
@@ -27,7 +28,7 @@ export function AutoCadenciaSection() {
 
   // Campaign detail
   const [detailCampaign, setDetailCampaign] = useState<WhatsAppCampaign | null>(null);
-  const [detailSteps, setDetailSteps] = useState<CampaignStepRow[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
 
   const handleCreateNew = () => { setEditingRule(null); setIsEditorOpen(true); };
   const handleEdit = (rule: BrokerAutoCadenciaRule) => { setEditingRule(rule); setIsEditorOpen(true); };
@@ -61,6 +62,9 @@ export function AutoCadenciaSection() {
 
   const loading = isLoading || isLoadingCampaigns;
 
+  const activeCampaigns = campaigns.filter(c => !["completed", "cancelled"].includes(c.status));
+  const archivedCampaigns = campaigns.filter(c => ["completed", "cancelled"].includes(c.status));
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -69,7 +73,7 @@ export function AutoCadenciaSection() {
     );
   }
 
-  const hasContent = rules.length > 0 || campaigns.length > 0;
+  const hasContent = rules.length > 0 || activeCampaigns.length > 0 || archivedCampaigns.length > 0;
 
   return (
     <div className="space-y-4">
@@ -176,14 +180,14 @@ export function AutoCadenciaSection() {
         </div>
       )}
 
-      {/* Campaigns list */}
-      {campaigns.length > 0 && (
+      {/* Active Campaigns */}
+      {activeCampaigns.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 mt-4 mb-1">
             <Megaphone className="w-4 h-4 text-purple-400" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Campanhas</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Campanhas Ativas</span>
           </div>
-          {campaigns.map((campaign) => (
+          {activeCampaigns.map((campaign) => (
             <CampaignCard
               key={campaign.id}
               campaign={campaign}
@@ -192,9 +196,36 @@ export function AutoCadenciaSection() {
               onCancel={(id) => cancelCampaign(id)}
               onViewDetail={(c) => handleCampaignDetail(c)}
               onDuplicate={() => {}}
+              onDelete={(id) => deleteCampaign(id)}
             />
           ))}
         </div>
+      )}
+
+      {/* Archived Campaigns */}
+      {archivedCampaigns.length > 0 && (
+        <Collapsible open={showArchived} onOpenChange={setShowArchived}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#1a1a1d] mt-2">
+              <Archive className="w-4 h-4" />
+              Histórico ({archivedCampaigns.length})
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2 mt-2">
+            {archivedCampaigns.map((campaign) => (
+              <CampaignCard
+                key={campaign.id}
+                campaign={campaign}
+                onPause={(id) => pauseCampaign(id)}
+                onResume={(id) => resumeCampaign(id)}
+                onCancel={(id) => cancelCampaign(id)}
+                onViewDetail={(c) => handleCampaignDetail(c)}
+                onDuplicate={() => {}}
+                onDelete={(id) => deleteCampaign(id)}
+              />
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* Editor */}

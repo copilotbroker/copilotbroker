@@ -9,7 +9,8 @@ import {
   Clock,
   AlertTriangle,
   Eye,
-  Copy
+  Copy,
+  Trash2
 } from "lucide-react";
 import { WhatsAppCampaign, CampaignStatus } from "@/types/whatsapp";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ interface CampaignCardProps {
   onCancel: (id: string) => void;
   onViewDetail: (campaign: WhatsAppCampaign) => void;
   onDuplicate: (campaign: WhatsAppCampaign) => void;
+  onDelete?: (id: string) => void;
 }
 
 const STATUS_CONFIG: Record<CampaignStatus, { 
@@ -38,7 +40,7 @@ const STATUS_CONFIG: Record<CampaignStatus, {
   cancelled: { label: "Cancelada", color: "text-red-400", icon: XCircle },
 };
 
-export function CampaignCard({ campaign, onPause, onResume, onCancel, onViewDetail, onDuplicate }: CampaignCardProps) {
+export function CampaignCard({ campaign, onPause, onResume, onCancel, onViewDetail, onDuplicate, onDelete }: CampaignCardProps) {
   const rawStatus = campaign.status as CampaignStatus;
   
   // Derive visual status: if running but all sent, show as completed
@@ -129,6 +131,21 @@ export function CampaignCard({ campaign, onPause, onResume, onCancel, onViewDeta
                 onClick={() => onCancel(campaign.id)}
               >
                 <XCircle className="w-4 h-4" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-red-400 hover:bg-red-500/10"
+                onClick={() => {
+                  if (window.confirm("Tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita.")) {
+                    onDelete(campaign.id);
+                  }
+                }}
+                title="Excluir campanha"
+              >
+                <Trash2 className="w-4 h-4" />
               </Button>
             )}
           </div>
