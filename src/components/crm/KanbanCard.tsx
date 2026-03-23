@@ -166,7 +166,6 @@ export const KanbanCard = memo(function KanbanCard({
   const showMetaBadges = !!(
     lead.roleta_id ||
     lead.status_distribuicao === "fallback_lider" ||
-    lead.auto_first_message_sent ||
     lead.attribution?.landing_page === "admin_manual" ||
     isStale ||
     hasAutomacaoAtiva
