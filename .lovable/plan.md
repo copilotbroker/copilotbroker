@@ -1,96 +1,48 @@
 
 
-# Wizard de Criação de Follow-up Unificado
+# Excluir cadências/campanhas + separar campanhas ativas das finalizadas
 
 ## Resumo
 
-Unificar a criação de Cadências (Manual e Automática) e Campanhas em um único Wizard multi-etapas. Remover a aba "Campanhas" separada dos 3 locais onde existe (BrokerCopilotConfig, BrokerWhatsApp, AdminCopilotConfig). Substituir o seletor de intervalos pré-definidos por inputs livres (número + unidade).
-
-## Etapas do Wizard
-
-```text
-┌─────────────────────────────────────────────┐
-│ Etapa 1: Tipo                               │
-│ ┌─────────┐ ┌─────────┐ ┌─────────┐        │
-│ │ ⚡ Auto  │ │ 📋 Manual│ │ 📣 Camp.│        │
-│ └─────────┘ └─────────┘ └─────────┘        │
-├─────────────────────────────────────────────┤
-│ Etapa 2: Configuração                       │
-│  - Auto: Nome + Empreendimento              │
-│  - Manual: Nome apenas                      │
-│  - Campanha: Nome + Filtros de leads        │
-│    (status kanban, empreendimento,          │
-│     etiquetas) + lista de leads             │
-├─────────────────────────────────────────────┤
-│ Etapa 3: Sequência de mensagens             │
-│  - Intervalo livre (número + unidade)       │
-│  - Etapas com mensagem + reply behavior     │
-├─────────────────────────────────────────────┤
-│ Etapa 4 (só Auto): Ativar automaticamente?  │
-└─────────────────────────────────────────────┘
-```
-
-## Intervalo livre
-
-Substituir os `DELAY_PRESETS` + `<Select>` por dois inputs inline:
-- Input numérico (ex: 2)
-- Select de unidade: minutos / horas / dias / semanas / meses
-
-Isso permite criar intervalos como "45 dias", "3 meses", "1 semana", sem limite.
+Permitir exclusão de cadências e campanhas. Na listagem de campanhas, exibir apenas as ativas (draft, scheduled, running, paused). Campanhas concluídas/canceladas ficam acessíveis via botão "Histórico".
 
 ## Arquivos alterados
 
-### 1. `src/components/whatsapp/AutoCadenciaRuleEditor.tsx` (reescrever)
-- Transformar em Wizard com 3-4 etapas
-- Etapa 1: Seletor de tipo (automática / manual / campanha) com cards visuais
-- Etapa 2: Configuração conforme tipo
-  - Automática: nome + empreendimento
-  - Manual: nome
-  - Campanha: nome + filtros (status kanban, empreendimento, etiquetas, corretor admin) + lista de leads com busca e seleção
-- Etapa 3: Sequência de mensagens com intervalo livre (número + unidade em vez de presets)
-- Etapa 4 (só automática): Dialog de ativação automática
-- Para campanha, o submit chama `createCampaign` do hook `use-whatsapp-campaigns`
+### 1. `src/hooks/use-whatsapp-campaigns.ts`
+- Adicionar mutation `deleteCampaign(id)`: deleta `campaign_steps` e `whatsapp_message_queue` associados, depois deleta a campanha. Invalida query cache.
 
-### 2. `src/components/whatsapp/AutoCadenciaSection.tsx`
-- Remover botão separado "Nova Cadência" — agora o wizard unificado cobre tudo
-- Exibir tanto cadências (auto/manual) quanto campanhas existentes na mesma lista
-- Importar e usar campanhas do hook `use-whatsapp-campaigns`
-- Manter badges de tipo (⚡ Auto / 📋 Manual / 📣 Campanha)
+### 2. `src/components/whatsapp/CampaignCard.tsx`
+- Adicionar prop `onDelete: (id: string) => void`
+- Adicionar botão de delete (Trash2) no grupo de ações, visível para campanhas concluídas/canceladas ou qualquer status
 
-### 3. Remover aba "Campanhas" de 3 páginas:
-- **`src/pages/BrokerCopilotConfig.tsx`**: remover TabsTrigger + TabsContent de "campaigns", remover import CampaignsTab
-- **`src/pages/BrokerWhatsApp.tsx`**: idem
-- **`src/pages/AdminCopilotConfig.tsx`**: remover do TAB_GROUPS + TabsContent, remover import
+### 3. `src/components/whatsapp/AutoCadenciaSection.tsx`
+- Importar `deleteCampaign` do hook
+- Separar campanhas em duas listas:
+  - `activeCampaigns`: status `draft`, `scheduled`, `running`, `paused`
+  - `archivedCampaigns`: status `completed`, `cancelled`
+- Exibir `activeCampaigns` normalmente na seção "Campanhas"
+- Adicionar botão "Histórico de campanhas" (com ícone Archive) que abre um colapsável ou dialog com as campanhas arquivadas
+- Passar `onDelete` para `CampaignCard` com confirmação via `window.confirm`
 
-### 4. `src/components/whatsapp/AutoMessageTab.tsx`
-- Sem mudança (já renderiza AutoCadenciaSection)
+### 4. Cadências (já funciona)
+- A exclusão de cadências já está implementada via `deleteRule` e botão Trash2 na listagem
 
-### 5. `src/components/crm/CadenciaPickerSheet.tsx`
-- Atualizar para usar o novo formato de intervalo livre (se necessário)
+## Detalhes técnicos
 
-### 6. `src/components/crm/CadenciaSheet.tsx` e `FollowUpSheet.tsx`
-- Atualizar para usar intervalo livre em vez de DELAY_PRESETS
-
-## Componente de Intervalo Livre
-
-Novo componente inline reutilizável:
-```tsx
-// Inline: [  2  ] [ dias ▾ ]
-// Converte para minutos internamente
-// Unidades: minutos, horas, dias, semanas, meses (1 mês = 43200 min)
+**Delete campaign** (no hook):
+```typescript
+const deleteCampaignMutation = useMutation({
+  mutationFn: async (campaignId: string) => {
+    await supabase.from("whatsapp_message_queue").delete().eq("campaign_id", campaignId);
+    await supabase.from("campaign_steps").delete().eq("campaign_id", campaignId);
+    await supabase.from("whatsapp_campaigns").delete().eq("id", campaignId);
+  },
+  onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["whatsapp-campaigns"] }); toast.success("Campanha excluída"); }
+});
 ```
 
-## Fluxo detalhado — Campanha
-
-1. Wizard Etapa 1: usuário escolhe "📣 Campanha"
-2. Etapa 2: nome + filtros de leads (status kanban checkboxes, empreendimento select, etiquetas multi-select, corretor se admin) + lista de leads com busca/seleção
-3. Etapa 3: define sequência de mensagens com intervalos livres
-4. Submit: chama `createCampaign` do hook existente `use-whatsapp-campaigns`
-
-## O que NÃO muda
-
-- `CampaignsTab.tsx` continua existindo (lista de campanhas existentes será integrada no AutoCadenciaSection)
-- `CampaignCard.tsx`, `CampaignDetailSheet.tsx` — mantidos para visualização
-- Hooks `use-whatsapp-campaigns` e `use-auto-cadencia-rules` — mantidos, apenas consumidos pelo wizard
-- Lógica de backend (edge functions, message-sender) — intacta
+**Separação na UI**:
+- Filtro simples: `campaigns.filter(c => !["completed","cancelled"].includes(c.status))` para ativas
+- Botão colapsável com `useState(showArchived)` para mostrar/esconder finalizadas
+- Contagem no botão: "Histórico (3)"
 
