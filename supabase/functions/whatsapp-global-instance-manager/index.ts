@@ -766,10 +766,12 @@ app.get("/qrcode", async (c) => {
       // Try getting status which might have QR code
     }
 
-    // Check for QR code in connect response
+    // Check for QR code and pairing code in connect response
     let qrCode = connectData.qrcode as string || 
                  (connectData.instance as Record<string, unknown>)?.qrcode as string ||
                  null;
+    let pairingCode = connectData.pairingCode as string || connectData.paircode as string ||
+                      (connectData.instance as Record<string, unknown>)?.paircode as string || null;
 
     // If no QR code in connect response, check status
     if (!qrCode) {
