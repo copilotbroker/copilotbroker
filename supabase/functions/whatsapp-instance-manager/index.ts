@@ -692,6 +692,8 @@ app.get("/status", async (c) => {
 
 // GET /qrcode - Get QR code for pairing
 app.get("/qrcode", async (c) => {
+  // Accept ?number=XXXX from frontend to request pairing code
+  const requestedNumber = c.req.query("number") || "";
   try {
     if (!UAZAPI_BASE_URL) {
       return c.json({ error: "UAZAPI not configured" }, 500, corsHeaders);
