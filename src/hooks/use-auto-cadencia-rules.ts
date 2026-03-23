@@ -117,6 +117,7 @@ export function useAutoCadenciaRules() {
           name: data.name || "Cadência de Follow-up",
           project_id: data.project_id,
           is_active: data.is_active,
+          cadence_type: data.cadence_type || 'manual',
         })
         .select(`*, project:projects(id, name)`)
         .single();
