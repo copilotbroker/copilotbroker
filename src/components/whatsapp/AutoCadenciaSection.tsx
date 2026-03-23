@@ -136,13 +136,15 @@ export function AutoCadenciaSection() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Switch
-                      checked={rule.is_active}
-                      onCheckedChange={() => toggleRuleActive(rule.id, !rule.is_active)}
-                      className="data-[state=checked]:bg-emerald-500"
-                    />
-                  </div>
+                  {rule.cadence_type === "automatic" && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={rule.is_active}
+                        onCheckedChange={() => toggleRuleActive(rule.id, !rule.is_active)}
+                        className="data-[state=checked]:bg-emerald-500"
+                      />
+                    </div>
+                  )}
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
                       <TooltipTrigger asChild>
