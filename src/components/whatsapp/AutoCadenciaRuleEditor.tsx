@@ -232,11 +232,6 @@ export function AutoCadenciaRuleEditor({
                       ))}
                     </SelectContent>
                   </Select>
-                  {checkingConflict && (
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                      <Loader2 className="w-3 h-3 animate-spin" />Verificando conflitos...
-                    </div>
-                  )}
                   {projectHasRule && (
                     <p className="text-xs text-red-400">Já existe uma regra para este empreendimento</p>
                   )}
