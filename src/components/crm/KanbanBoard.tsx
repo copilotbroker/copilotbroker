@@ -546,6 +546,13 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
   const handleCallConfirm = async (notes: string) => {
     if (!callModal.leadId) return;
+
+    // If lead is "new", initiate attendance (moves to info_sent + logs timeline)
+    const lead = allLeadsRef.current.get(callModal.leadId);
+    if (lead && lead.status === "new") {
+      await iniciarAtendimento(callModal.leadId);
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("lead_interactions").insert({
       lead_id: callModal.leadId,
@@ -559,7 +566,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
       toast.error("Erro ao registrar ligação.");
     } else {
       toast.success("Ligação registrada!");
-      // Invalidate timeline
       queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
     }
   };
