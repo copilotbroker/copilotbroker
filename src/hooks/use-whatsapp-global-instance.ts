@@ -83,7 +83,7 @@ export function useWhatsAppGlobalInstance() {
     } finally {
       setIsLoading(false);
     }
-  }, [getAuthHeaders, qrCode]);
+  }, [getAuthHeaders, qrCode, pairingCode]);
 
   const initInstance = useCallback(async () => {
     try {
