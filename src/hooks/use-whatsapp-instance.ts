@@ -117,6 +117,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
     try {
       setIsLoadingQR(true);
       setQRCode(null);
+      setPairingCode(null);
 
       const headers = await getAuthHeaders();
       const params = phoneNumber ? `?number=${encodeURIComponent(phoneNumber.replace(/\D/g, ""))}` : "";
@@ -131,8 +132,28 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
         throw new Error(data.error || "Failed to get QR code");
       }
 
-      setQRCode(data.qrcode);
-      setPairingCode(data.pairingCode || null);
+      const nextQrCode = data.qrcode || null;
+      const nextPairingCode = data.pairingCode || null;
+
+      setQRCode(nextQrCode);
+      setPairingCode(nextPairingCode);
+
+      if (data.message) {
+        toast({
+          title: nextPairingCode ? "Código gerado" : "Pareamento disponível",
+          description: data.message,
+        });
+      } else if (phoneNumber && nextPairingCode) {
+        toast({
+          title: "Código gerado",
+          description: "Digite o código no WhatsApp para concluir o pareamento.",
+        });
+      } else if (phoneNumber && nextQrCode && !nextPairingCode) {
+        toast({
+          title: "Código numérico indisponível",
+          description: "Seu provedor não retornou o código agora. Use o QR Code como alternativa.",
+        });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       console.error("QR Code error:", err);
