@@ -40,7 +40,7 @@ const STATUS_CONFIG: Record<CampaignStatus, {
   cancelled: { label: "Cancelada", color: "text-red-400", icon: XCircle },
 };
 
-export function CampaignCard({ campaign, onPause, onResume, onCancel, onViewDetail, onDuplicate }: CampaignCardProps) {
+export function CampaignCard({ campaign, onPause, onResume, onCancel, onViewDetail, onDuplicate, onDelete }: CampaignCardProps) {
   const rawStatus = campaign.status as CampaignStatus;
   
   // Derive visual status: if running but all sent, show as completed
