@@ -68,23 +68,6 @@ export function useAutoCadenciaRules() {
     if (brokerId) fetchRules();
   }, [brokerId, fetchRules]);
 
-  const checkFirstMessageConflict = async (projectId: string | null): Promise<boolean> => {
-    if (!brokerId) return false;
-    try {
-      let query = supabase
-        .from("broker_auto_message_rules")
-        .select("id")
-        .eq("broker_id", brokerId)
-        .eq("is_active", true);
-      if (projectId) {
-        query = query.or(`project_id.eq.${projectId},project_id.is.null`);
-      } else {
-        query = query.is("project_id", null);
-      }
-      const { data } = await query.limit(1);
-      return (data && data.length > 0);
-    } catch { return false; }
-  };
 
   const saveSteps = async (ruleId: string, steps: AutoCadenciaStep[]) => {
     await (supabase.from("auto_cadencia_steps") as any)
