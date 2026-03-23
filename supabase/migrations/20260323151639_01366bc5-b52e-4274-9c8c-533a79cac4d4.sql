@@ -1,0 +1,1 @@
+ALTER TABLE public.broker_auto_cadencia_rules ADD COLUMN cadence_type text NOT NULL DEFAULT 'manual';

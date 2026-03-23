@@ -141,6 +141,7 @@ export type Database = {
       broker_auto_cadencia_rules: {
         Row: {
           broker_id: string
+          cadence_type: string
           created_at: string | null
           id: string
           is_active: boolean | null
@@ -150,6 +151,7 @@ export type Database = {
         }
         Insert: {
           broker_id: string
+          cadence_type?: string
           created_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -159,6 +161,7 @@ export type Database = {
         }
         Update: {
           broker_id?: string
+          cadence_type?: string
           created_at?: string | null
           id?: string
           is_active?: boolean | null
