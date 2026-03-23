@@ -432,6 +432,12 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   }, []);
 
   const handleSendWhatsAppNow = useCallback(async (leadId: string, content: string) => {
+    // If lead is "new", initiate attendance (moves to info_sent + logs timeline)
+    const lead = allLeadsRef.current.get(leadId);
+    if (lead && lead.status === "new") {
+      await iniciarAtendimento(leadId);
+    }
+
     const conversationId = await ensureConversationForLead(leadId);
     const { error } = await supabase.functions.invoke("inbox-send-message", {
       body: {
@@ -450,7 +456,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
     toast.success("Mensagem enviada");
     queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
-  }, [ensureConversationForLead, queryClient]);
+  }, [ensureConversationForLead, queryClient, iniciarAtendimento]);
 
   const handleScheduleWhatsApp = useCallback(async (leadId: string, content: string, scheduledAt: string) => {
     const conversationId = await ensureConversationForLead(leadId);
