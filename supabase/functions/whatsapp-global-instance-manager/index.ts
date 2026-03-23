@@ -783,6 +783,10 @@ app.get("/qrcode", async (c) => {
         qrCode = statusData.qrcode || 
                  statusData.instance?.qrcode || 
                  null;
+        if (!pairingCode) {
+          pairingCode = statusData.pairingCode || statusData.paircode ||
+                        statusData.instance?.paircode || null;
+        }
       } catch {
         // No QR code available
       }
