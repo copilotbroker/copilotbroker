@@ -73,7 +73,7 @@ export function AutoCadenciaSection() {
     );
   }
 
-  const hasContent = rules.length > 0 || campaigns.length > 0;
+  const hasContent = rules.length > 0 || activeCampaigns.length > 0 || archivedCampaigns.length > 0;
 
   return (
     <div className="space-y-4">
