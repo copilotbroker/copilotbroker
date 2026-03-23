@@ -60,8 +60,9 @@ export function useWhatsAppGlobalInstance() {
       const newStatus = data.status as GlobalInstanceState["status"];
       
       // Clear QR code if connected
-      if (newStatus === "connected" && qrCode) {
+      if (newStatus === "connected" && (qrCode || pairingCode)) {
         setQrCode(null);
+        setPairingCode(null);
       }
 
       setState({
