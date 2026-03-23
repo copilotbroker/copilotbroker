@@ -193,10 +193,11 @@ export function AutoCadenciaSection() {
             <CampaignCard
               key={campaign.id}
               campaign={campaign}
-              onPause={() => pauseCampaign(campaign.id)}
-              onResume={() => resumeCampaign(campaign.id)}
-              onCancel={() => cancelCampaign(campaign.id)}
-              onDetail={() => handleCampaignDetail(campaign)}
+              onPause={(id) => pauseCampaign(id)}
+              onResume={(id) => resumeCampaign(id)}
+              onCancel={(id) => cancelCampaign(id)}
+              onViewDetail={(c) => handleCampaignDetail(c)}
+              onDuplicate={() => {}}
             />
           ))}
         </div>
