@@ -35,6 +35,8 @@ import BrokerInbox from "./pages/BrokerInbox";
 import BrokerCopilotConfig from "./pages/BrokerCopilotConfig";
 import AdminInbox from "./pages/AdminInbox";
 import AdminCopilotConfig from "./pages/AdminCopilotConfig";
+import AdminAgenda from "./pages/AdminAgenda";
+import BrokerAgenda from "./pages/BrokerAgenda";
 import Prontos from "./pages/Prontos";
 import ProntosBrokerPage from "./pages/ProntosBrokerPage";
 import Termos from "./pages/Termos";
