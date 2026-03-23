@@ -106,7 +106,7 @@ export function AutoCadenciaRuleEditor({
     if (editingRule) {
       setRuleName(editingRule.name || "");
       setProjectId(editingRule.project_id || "all");
-      setHasFirstMessageConflict(false);
+      
       setLoadingSteps(true);
       (supabase.from("auto_cadencia_steps") as any)
         .select("*")
