@@ -432,6 +432,12 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   }, []);
 
   const handleSendWhatsAppNow = useCallback(async (leadId: string, content: string) => {
+    // If lead is "new", initiate attendance (moves to info_sent + logs timeline)
+    const lead = allLeadsRef.current.get(leadId);
+    if (lead && lead.status === "new") {
+      await iniciarAtendimento(leadId);
+    }
+
     const conversationId = await ensureConversationForLead(leadId);
     const { error } = await supabase.functions.invoke("inbox-send-message", {
       body: {
@@ -450,7 +456,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
     toast.success("Mensagem enviada");
     queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
-  }, [ensureConversationForLead, queryClient]);
+  }, [ensureConversationForLead, queryClient, iniciarAtendimento]);
 
   const handleScheduleWhatsApp = useCallback(async (leadId: string, content: string, scheduledAt: string) => {
     const conversationId = await ensureConversationForLead(leadId);
@@ -540,6 +546,13 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
   const handleCallConfirm = async (notes: string) => {
     if (!callModal.leadId) return;
+
+    // If lead is "new", initiate attendance (moves to info_sent + logs timeline)
+    const lead = allLeadsRef.current.get(callModal.leadId);
+    if (lead && lead.status === "new") {
+      await iniciarAtendimento(callModal.leadId);
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("lead_interactions").insert({
       lead_id: callModal.leadId,
@@ -553,7 +566,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
       toast.error("Erro ao registrar ligação.");
     } else {
       toast.success("Ligação registrada!");
-      // Invalidate timeline
       queryClient.invalidateQueries({ queryKey: ["lead-interactions"] });
     }
   };
