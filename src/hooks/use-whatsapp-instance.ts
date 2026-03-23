@@ -113,13 +113,14 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
     }
   }, [toast]);
 
-  const fetchQRCode = useCallback(async () => {
+  const fetchQRCode = useCallback(async (phoneNumber?: string) => {
     try {
       setIsLoadingQR(true);
       setQRCode(null);
 
       const headers = await getAuthHeaders();
-      const response = await fetch(`${FUNCTION_URL}/qrcode`, {
+      const params = phoneNumber ? `?number=${encodeURIComponent(phoneNumber.replace(/\D/g, ""))}` : "";
+      const response = await fetch(`${FUNCTION_URL}/qrcode${params}`, {
         method: "GET",
         headers,
       });
