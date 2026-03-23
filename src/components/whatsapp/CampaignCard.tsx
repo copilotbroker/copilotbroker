@@ -9,7 +9,8 @@ import {
   Clock,
   AlertTriangle,
   Eye,
-  Copy
+  Copy,
+  Trash2
 } from "lucide-react";
 import { WhatsAppCampaign, CampaignStatus } from "@/types/whatsapp";
 import { cn } from "@/lib/utils";
