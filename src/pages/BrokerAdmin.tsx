@@ -205,7 +205,7 @@ const BrokerAdmin = () => {
             </div>
             <KanbanBoard
               brokerId={brokerId}
-              isAdmin={false}
+              isAdmin={isLeader}
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               onAddLead={() => setIsAddLeadOpen(true)}
