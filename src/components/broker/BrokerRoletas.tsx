@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { RotateCw, LogIn, LogOut, Users, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { RotateCw, LogIn, LogOut, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,6 @@ export function BrokerRoletas({ brokerId }: { brokerId: string }) {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Get my memberships
       const { data: myMembros, error: e1 } = await (supabase
         .from("roletas_membros" as any)
         .select("*")
@@ -62,7 +61,6 @@ export function BrokerRoletas({ brokerId }: { brokerId: string }) {
 
       const roletaIds = (myMembros as any[]).map((m) => m.roleta_id);
 
-      // 2. Fetch roletas + all members in parallel
       const [roletasRes, allMembrosRes] = await Promise.all([
         (supabase
           .from("roletas" as any)
@@ -111,7 +109,6 @@ export function BrokerRoletas({ brokerId }: { brokerId: string }) {
     fetchData();
   }, [fetchData]);
 
-  // Realtime subscriptions
   useEffect(() => {
     if (groups.length === 0) return;
     const roletaIds = groups.map((g) => g.roleta.id);
@@ -164,8 +161,8 @@ export function BrokerRoletas({ brokerId }: { brokerId: string }) {
 
   if (isLoading) {
     return (
-      <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-xl p-6 flex items-center justify-center">
-        <RotateCw className="w-5 h-5 animate-spin text-primary" />
+      <div className="bg-card border border-border rounded-lg p-2 flex items-center justify-center">
+        <RotateCw className="w-4 h-4 animate-spin text-primary" />
       </div>
     );
   }
@@ -173,131 +170,108 @@ export function BrokerRoletas({ brokerId }: { brokerId: string }) {
   if (groups.length === 0) return null;
 
   return (
-    <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-xl p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <RotateCw className="w-4 h-4 text-cyan-400" />
-        <h3 className="text-sm font-semibold text-white">Minhas Roletas</h3>
-      </div>
-
-      <div className="space-y-3">
+    <div className="bg-card border border-border rounded-lg">
+      {/* Compact horizontal row */}
+      <div className="flex items-center gap-2 p-2 overflow-x-auto">
+        <RotateCw className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
         {groups.map(({ roleta, myMembro, allMembros }) => {
-          const nextId = getNextMembro(allMembros, roleta.ultimo_membro_ordem_atribuida);
           const onlineCount = allMembros.filter((m) => m.status_checkin).length;
           const isExpanded = expandedRoletas.has(roleta.id);
+          const nextId = getNextMembro(allMembros, roleta.ultimo_membro_ordem_atribuida);
+          const isNext = myMembro.id === nextId;
 
           return (
-            <div
-              key={myMembro.id}
-              className={cn(
-                "rounded-lg border overflow-hidden",
-                myMembro.status_checkin
-                  ? "bg-emerald-500/10 border-emerald-500/30"
-                  : "bg-[#0f0f12] border-[#2a2a2e]"
-              )}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between p-3">
-                <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-white">{roleta.nome}</p>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                    <span className="flex items-center gap-0.5">
-                      <Users className="w-3 h-3" />
-                      Ordem: {myMembro.ordem}
-                    </span>
-                    <span className="flex items-center gap-0.5">
-                      <Clock className="w-3 h-3" />
-                      {roleta.tempo_reserva_minutos}min reserva
-                    </span>
-                  </div>
-                </div>
+            <div key={myMembro.id} className="shrink-0">
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => toggleExpanded(roleta.id)}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span
+                    className={cn(
+                      "w-2 h-2 rounded-full shrink-0",
+                      myMembro.status_checkin ? "bg-emerald-400" : "bg-muted-foreground/40"
+                    )}
+                  />
+                  <span className="font-medium text-foreground whitespace-nowrap">{roleta.nome}</span>
+                  <span className="text-[10px] text-muted-foreground">({onlineCount})</span>
+                  {isNext && myMembro.status_checkin && (
+                    <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] px-1 py-0 leading-tight">
+                      Próximo
+                    </Badge>
+                  )}
+                  {isExpanded ? (
+                    <ChevronUp className="w-3 h-3" />
+                  ) : (
+                    <ChevronDown className="w-3 h-3" />
+                  )}
+                </button>
                 <Button
                   size="sm"
                   variant={myMembro.status_checkin ? "destructive" : "default"}
                   disabled={togglingId === myMembro.id}
                   onClick={() => handleToggleCheckin(myMembro)}
                   className={cn(
-                    "min-w-[110px]",
+                    "h-6 text-[10px] px-2",
                     !myMembro.status_checkin && "bg-emerald-600 hover:bg-emerald-700"
                   )}
                 >
                   {myMembro.status_checkin ? (
-                    <>
-                      <LogOut className="w-3.5 h-3.5 mr-1.5" />
-                      Check-out
-                    </>
+                    <><LogOut className="w-3 h-3 mr-1" />Out</>
                   ) : (
-                    <>
-                      <LogIn className="w-3.5 h-3.5 mr-1.5" />
-                      Check-in
-                    </>
+                    <><LogIn className="w-3 h-3 mr-1" />In</>
                   )}
                 </Button>
               </div>
-
-              {/* Queue toggle */}
-              <button
-                onClick={() => toggleExpanded(roleta.id)}
-                className="w-full flex items-center justify-between px-3 py-1.5 bg-[#16161a] text-[11px] text-slate-400 hover:text-slate-300 transition-colors"
-              >
-                <span>
-                  Fila Online ({onlineCount} corretor{onlineCount !== 1 ? "es" : ""})
-                </span>
-                {isExpanded ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
-
-              {/* Queue list - only online members */}
-              {isExpanded && (
-                <div className="px-3 pb-2 pt-1 space-y-1">
-                  {allMembros.filter((m) => m.status_checkin).map((m) => {
-                    const isMe = m.corretor_id === brokerId;
-                    const isNext = m.id === nextId;
-                    const corretorName = (m.corretor as any)?.name || "Corretor";
-
-                    return (
-                      <div
-                        key={m.id}
-                        className={cn(
-                          "flex items-center justify-between py-1 px-2 rounded text-xs",
-                          isMe && "bg-white/5"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              "w-2 h-2 rounded-full shrink-0",
-                              m.status_checkin ? "bg-emerald-400" : "bg-slate-600"
-                            )}
-                          />
-                          <span className="text-slate-500 w-5">#{m.ordem}</span>
-                          <span
-                            className={cn(
-                              "text-slate-300",
-                              isMe && "font-semibold text-white"
-                            )}
-                          >
-                            {isMe ? "Você" : corretorName}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {isNext && (
-                            <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[10px] px-1.5 py-0">
-                              Próximo
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           );
         })}
       </div>
+
+      {/* Expanded queue panels */}
+      {groups.map(({ roleta, myMembro, allMembros }) => {
+        const isExpanded = expandedRoletas.has(roleta.id);
+        const nextId = getNextMembro(allMembros, roleta.ultimo_membro_ordem_atribuida);
+        if (!isExpanded) return null;
+
+        return (
+          <div key={`queue-${roleta.id}`} className="border-t border-border px-3 py-2">
+            <p className="text-[10px] text-muted-foreground mb-1">
+              Fila: {roleta.nome} — {allMembros.filter((m) => m.status_checkin).length} online
+            </p>
+            <div className="space-y-0.5">
+              {allMembros.filter((m) => m.status_checkin).map((m) => {
+                const isMe = m.corretor_id === brokerId;
+                const isNext = m.id === nextId;
+                const corretorName = (m.corretor as any)?.name || "Corretor";
+
+                return (
+                  <div
+                    key={m.id}
+                    className={cn(
+                      "flex items-center justify-between py-0.5 px-1.5 rounded text-[11px]",
+                      isMe && "bg-accent/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                      <span className="text-muted-foreground w-4">#{m.ordem}</span>
+                      <span className={cn("text-foreground", isMe && "font-semibold")}>
+                        {isMe ? "Você" : corretorName}
+                      </span>
+                    </div>
+                    {isNext && (
+                      <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] px-1 py-0">
+                        Próximo
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

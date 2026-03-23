@@ -181,7 +181,7 @@ const BrokerAdmin = () => {
         copilotEnabled={copilotEnabled}
       >
         {viewMode === "kanban" ? (
-          <div className="flex-1 min-h-0 flex flex-col gap-4">
+          <div className="flex-1 min-h-0 flex flex-col gap-2">
             {brokerId && <BrokerRoletas brokerId={brokerId} />}
             <KanbanBoard
               brokerId={brokerId}
