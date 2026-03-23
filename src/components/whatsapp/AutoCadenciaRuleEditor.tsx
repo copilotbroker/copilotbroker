@@ -128,7 +128,7 @@ export function AutoCadenciaRuleEditor({
       setRuleName("");
       setProjectId("all");
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
-      if (isOpen && brokerId) checkConflict("all");
+      
     }
   }, [editingRule, isOpen, brokerId]);
 
