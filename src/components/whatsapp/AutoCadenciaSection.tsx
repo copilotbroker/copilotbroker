@@ -55,14 +55,8 @@ export function AutoCadenciaSection() {
     }
   };
 
-  const handleCampaignDetail = async (campaign: WhatsAppCampaign) => {
+  const handleCampaignDetail = (campaign: WhatsAppCampaign) => {
     setDetailCampaign(campaign);
-    const { data } = await supabase
-      .from("campaign_steps")
-      .select("*")
-      .eq("campaign_id", campaign.id)
-      .order("step_order", { ascending: true });
-    setDetailSteps((data || []) as CampaignStepRow[]);
   };
 
   const loading = isLoading || isLoadingCampaigns;
