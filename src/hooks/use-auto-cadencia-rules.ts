@@ -147,9 +147,9 @@ export function useAutoCadenciaRules() {
       return newRule;
     } catch (error: any) {
       if (error.code === "23505") {
-        toast.error("Já existe uma regra para este empreendimento");
+        toast.error("Já existe uma cadência para este empreendimento");
       } else {
-        toast.error("Erro ao criar regra");
+        toast.error("Erro ao criar cadência");
       }
       return null;
     } finally {
