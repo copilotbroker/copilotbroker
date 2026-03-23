@@ -1,63 +1,96 @@
 
 
-# Renomear "Automação" para "Follow-up" e ajustar fluxo de criação
+# Wizard de Criação de Follow-up Unificado
 
 ## Resumo
 
-Renomear a aba "Automação" para "Follow-up" em todos os locais (broker, admin, whatsapp). Ajustar textos internos para "Cadência de Follow-up" em vez de "Cadência 10D". Após o usuário criar/salvar uma cadência, exibir um diálogo perguntando se deseja ativar a sequência automaticamente ao receber um lead.
+Unificar a criação de Cadências (Manual e Automática) e Campanhas em um único Wizard multi-etapas. Remover a aba "Campanhas" separada dos 3 locais onde existe (BrokerCopilotConfig, BrokerWhatsApp, AdminCopilotConfig). Substituir o seletor de intervalos pré-definidos por inputs livres (número + unidade).
+
+## Etapas do Wizard
+
+```text
+┌─────────────────────────────────────────────┐
+│ Etapa 1: Tipo                               │
+│ ┌─────────┐ ┌─────────┐ ┌─────────┐        │
+│ │ ⚡ Auto  │ │ 📋 Manual│ │ 📣 Camp.│        │
+│ └─────────┘ └─────────┘ └─────────┘        │
+├─────────────────────────────────────────────┤
+│ Etapa 2: Configuração                       │
+│  - Auto: Nome + Empreendimento              │
+│  - Manual: Nome apenas                      │
+│  - Campanha: Nome + Filtros de leads        │
+│    (status kanban, empreendimento,          │
+│     etiquetas) + lista de leads             │
+├─────────────────────────────────────────────┤
+│ Etapa 3: Sequência de mensagens             │
+│  - Intervalo livre (número + unidade)       │
+│  - Etapas com mensagem + reply behavior     │
+├─────────────────────────────────────────────┤
+│ Etapa 4 (só Auto): Ativar automaticamente?  │
+└─────────────────────────────────────────────┘
+```
+
+## Intervalo livre
+
+Substituir os `DELAY_PRESETS` + `<Select>` por dois inputs inline:
+- Input numérico (ex: 2)
+- Select de unidade: minutos / horas / dias / semanas / meses
+
+Isso permite criar intervalos como "45 dias", "3 meses", "1 semana", sem limite.
 
 ## Arquivos alterados
 
-### 1. Renomear aba "Automação" → "Follow-up" (3 arquivos)
+### 1. `src/components/whatsapp/AutoCadenciaRuleEditor.tsx` (reescrever)
+- Transformar em Wizard com 3-4 etapas
+- Etapa 1: Seletor de tipo (automática / manual / campanha) com cards visuais
+- Etapa 2: Configuração conforme tipo
+  - Automática: nome + empreendimento
+  - Manual: nome
+  - Campanha: nome + filtros (status kanban, empreendimento, etiquetas, corretor admin) + lista de leads com busca e seleção
+- Etapa 3: Sequência de mensagens com intervalo livre (número + unidade em vez de presets)
+- Etapa 4 (só automática): Dialog de ativação automática
+- Para campanha, o submit chama `createCampaign` do hook `use-whatsapp-campaigns`
 
-**`src/pages/BrokerCopilotConfig.tsx`** (linha 103-106)
-- Trocar label "Automação" por "Follow-up"
-- Trocar ícone `Bot` por `RotateCcw` ou manter `Bot`
+### 2. `src/components/whatsapp/AutoCadenciaSection.tsx`
+- Remover botão separado "Nova Cadência" — agora o wizard unificado cobre tudo
+- Exibir tanto cadências (auto/manual) quanto campanhas existentes na mesma lista
+- Importar e usar campanhas do hook `use-whatsapp-campaigns`
+- Manter badges de tipo (⚡ Auto / 📋 Manual / 📣 Campanha)
 
-**`src/pages/AdminCopilotConfig.tsx`** (linha 59)
-- No `TAB_GROUPS`, trocar `{ id: "automation", label: "Automação", icon: Bot }` por `{ id: "automation", label: "Follow-up", icon: Bot }`
+### 3. Remover aba "Campanhas" de 3 páginas:
+- **`src/pages/BrokerCopilotConfig.tsx`**: remover TabsTrigger + TabsContent de "campaigns", remover import CampaignsTab
+- **`src/pages/BrokerWhatsApp.tsx`**: idem
+- **`src/pages/AdminCopilotConfig.tsx`**: remover do TAB_GROUPS + TabsContent, remover import
 
-**`src/pages/BrokerWhatsApp.tsx`** (linha 119)
-- Trocar label "Automação" por "Follow-up"
+### 4. `src/components/whatsapp/AutoMessageTab.tsx`
+- Sem mudança (já renderiza AutoCadenciaSection)
 
-### 2. Ajustar textos internos da seção
+### 5. `src/components/crm/CadenciaPickerSheet.tsx`
+- Atualizar para usar o novo formato de intervalo livre (se necessário)
 
-**`src/components/whatsapp/AutoCadenciaSection.tsx`**
-- Título: "Cadências automáticas" → "Cadências de Follow-up"
-- Subtítulo: "Ative uma cadência automática ao receber leads" → "Configure sequências de follow-up para seus leads"
-- Botão: "Nova Regra" → "Nova Cadência"
-- Empty state: "Crie uma regra para ativar a Cadência 10D automaticamente" → "Crie uma cadência de follow-up para engajar seus leads"
-- Botão empty: "Criar Primeira Regra" → "Criar Primeira Cadência"
+### 6. `src/components/crm/CadenciaSheet.tsx` e `FollowUpSheet.tsx`
+- Atualizar para usar intervalo livre em vez de DELAY_PRESETS
 
-**`src/components/whatsapp/AutoCadenciaRuleEditor.tsx`**
-- Título: "Nova Regra de Cadência 10D" → "Nova Cadência de Follow-up"
-- Descrição: "Configure as etapas da cadência automática" → "Configure as etapas do follow-up"
-- Warning text: atualizar menção a "cadência 10D"
-- Botão: "Criar Regra" → "Criar Cadência"
+## Componente de Intervalo Livre
 
-### 3. Diálogo pós-criação: "Ativar automaticamente?"
+Novo componente inline reutilizável:
+```tsx
+// Inline: [  2  ] [ dias ▾ ]
+// Converte para minutos internamente
+// Unidades: minutos, horas, dias, semanas, meses (1 mês = 43200 min)
+```
 
-**`src/components/whatsapp/AutoCadenciaSection.tsx`**
-- Adicionar estado `showAutoActivateDialog` + `lastCreatedRuleId`
-- Após `createRule` retornar com sucesso, setar `showAutoActivateDialog = true`
-- Renderizar um `AlertDialog` perguntando:
-  - Título: "Ativar sequência automática?"
-  - Descrição: "Deseja que esta cadência de follow-up seja ativada automaticamente quando um novo lead for atribuído a você?"
-  - Botão "Sim, ativar" → chama `toggleRuleActive(ruleId, true)` e fecha
-  - Botão "Não, depois" → fecha sem ativar
-- A regra será criada com `is_active: false` por padrão, e só ativada se o usuário confirmar
+## Fluxo detalhado — Campanha
 
-**`src/components/whatsapp/AutoCadenciaRuleEditor.tsx`**
-- Alterar `handleSubmit` para criar com `is_active: false` em vez de `true`
-- Adicionar prop `onCreated?: (ruleId: string) => void` para notificar o pai após criação bem-sucedida
+1. Wizard Etapa 1: usuário escolhe "📣 Campanha"
+2. Etapa 2: nome + filtros de leads (status kanban checkboxes, empreendimento select, etiquetas multi-select, corretor se admin) + lista de leads com busca/seleção
+3. Etapa 3: define sequência de mensagens com intervalos livres
+4. Submit: chama `createCampaign` do hook existente `use-whatsapp-campaigns`
 
-## Fluxo do usuário
+## O que NÃO muda
 
-1. Corretor vai em "Follow-up" (antigo "Automação")
-2. Clica "Nova Cadência"
-3. Preenche nome, empreendimento, etapas
-4. Clica "Criar Cadência"
-5. Cadência é salva (inativa)
-6. Diálogo aparece: "Ativar automaticamente ao receber leads?"
-7. Se "Sim" → regra fica ativa. Se "Não" → fica inativa, pode ativar depois pelo switch.
+- `CampaignsTab.tsx` continua existindo (lista de campanhas existentes será integrada no AutoCadenciaSection)
+- `CampaignCard.tsx`, `CampaignDetailSheet.tsx` — mantidos para visualização
+- Hooks `use-whatsapp-campaigns` e `use-auto-cadencia-rules` — mantidos, apenas consumidos pelo wizard
+- Lógica de backend (edge functions, message-sender) — intacta
 
