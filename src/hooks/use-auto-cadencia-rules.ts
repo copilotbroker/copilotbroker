@@ -105,7 +105,7 @@ export function useAutoCadenciaRules() {
     }));
   };
 
-  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => {
+  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; cadence_type?: CadenceType; steps: AutoCadenciaStep[] }) => {
     if (!brokerId) return null;
     setIsSaving(true);
     try {
