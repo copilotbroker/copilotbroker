@@ -62,6 +62,9 @@ export function AutoCadenciaSection() {
 
   const loading = isLoading || isLoadingCampaigns;
 
+  const activeCampaigns = campaigns.filter(c => !["completed", "cancelled"].includes(c.status));
+  const archivedCampaigns = campaigns.filter(c => ["completed", "cancelled"].includes(c.status));
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
