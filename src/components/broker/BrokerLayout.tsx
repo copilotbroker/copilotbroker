@@ -97,6 +97,8 @@ export function BrokerLayout({
           brokerName={brokerName}
           searchTerm={searchTerm}
           onSearchChange={onSearchChange}
+          collapsibleContent={collapsibleContent}
+          onAddLead={onAddLead}
         />
         <WhatsAppDisconnectedBanner />
         <main className="flex-1 flex flex-col min-h-0 p-3 lg:p-6">{children}</main>

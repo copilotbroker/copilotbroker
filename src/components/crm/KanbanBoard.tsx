@@ -560,7 +560,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Toolbar - Filters */}
-      <div className="flex flex-col gap-2 md:gap-0 mb-4 md:mb-6 px-1">
+      <div className={cn("flex flex-col gap-2 md:gap-0 mb-4 md:mb-6 px-1", hideToolbarMobile && "hidden md:flex")}>
         {/* Mobile search */}
         <div className="md:hidden relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
