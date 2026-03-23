@@ -1,27 +1,30 @@
 
 
-# Fix: Bottom nav overlapping page content on mobile
+# Adicionar Meta Pixel ao Monaco (4261464794069997)
 
-## Problem
-The bottom navigation bar (`BrokerBottomNav`, fixed at `z-50`) covers content at the bottom of the page because `pb-20` is applied to the **parent flex container** instead of the **scrollable `<main>`** element. Since `<main>` has `overflow-y-auto`, it creates its own scroll context, and the parent's padding does not create space inside it.
+O Monaco é a única landing page sem rastreamento do Meta Pixel. Vou seguir o mesmo padrão já usado nas páginas GoldenView, NAU e Maurício Cardoso.
 
-## Fix
+## Alterações
 
-**File: `src/components/broker/BrokerLayout.tsx`**
+### 1. Meta Pixel no `<Helmet>` da página
+**Arquivo: `src/pages/monaco/MonacoLandingPage.tsx`**
 
-Move `pb-20 lg:pb-0` from the outer `div` to the `<main>` element:
+Adicionar dentro do `<Helmet>` o script do Facebook Pixel (init + PageView) e o noscript fallback, usando o pixel ID `4261464794069997`.
 
-```
-// Before:
-<div className="lg:ml-16 h-screen flex flex-col pb-20 lg:pb-0 overflow-hidden">
-  ...
-  <main className="flex-1 min-h-0 overflow-y-auto p-3 lg:p-6">
+### 2. Disparo do evento Lead + CAPI no formulário
+**Arquivo: `src/components/monaco/MonacoFormSection.tsx`**
 
-// After:
-<div className="lg:ml-16 h-screen flex flex-col overflow-hidden">
-  ...
-  <main className="flex-1 min-h-0 overflow-y-auto p-3 pb-20 lg:p-6 lg:pb-6">
-```
+Após o insert do lead no banco, adicionar:
+- Disparo client-side: `fbq('track', 'Lead')` com `eventID` único
+- Disparo server-side: chamada à edge function `meta-conversions-api` com `pixel_id: "4261464794069997"`, dados do usuário (phone + name hasheados no server), e o mesmo `eventID` para deduplicação
 
-This ensures the bottom padding is inside the scrollable area, so the user can scroll past the bottom nav to see all content.
+### 3. Registrar o pixel na edge function
+**Arquivo: `supabase/functions/meta-conversions-api/index.ts`**
+
+Adicionar entrada no `PIXEL_CONFIGS` para o pixel `4261464794069997` com:
+- `tokenEnv`: variável de ambiente para o token da API de Conversões (ex: `META_CONVERSIONS_API_TOKEN_MONACO`)
+- `defaultUrl`: `https://onovocondominio.com.br/xangrila/monaco`
+
+### 4. Secret do token
+Será necessário cadastrar o secret `META_CONVERSIONS_API_TOKEN_MONACO` com o token de acesso da API de Conversões do Meta para este pixel.
 
