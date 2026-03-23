@@ -24,6 +24,7 @@ interface CampaignCardProps {
   onCancel: (id: string) => void;
   onViewDetail: (campaign: WhatsAppCampaign) => void;
   onDuplicate: (campaign: WhatsAppCampaign) => void;
+  onDelete?: (id: string) => void;
 }
 
 const STATUS_CONFIG: Record<CampaignStatus, { 
