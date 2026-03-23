@@ -56,7 +56,7 @@ const TAB_GROUPS = [
       { id: "connection", label: "Conexão", icon: Wifi },
       { id: "campaigns", label: "Campanhas", icon: Megaphone },
       { id: "queue", label: "Fila", icon: Send },
-      { id: "automation", label: "Automação", icon: Bot },
+      { id: "automation", label: "Follow-up", icon: Bot },
       { id: "security", label: "Segurança", icon: Shield },
     ],
   },

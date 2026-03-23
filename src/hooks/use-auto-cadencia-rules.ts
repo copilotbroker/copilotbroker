@@ -68,23 +68,6 @@ export function useAutoCadenciaRules() {
     if (brokerId) fetchRules();
   }, [brokerId, fetchRules]);
 
-  const checkFirstMessageConflict = async (projectId: string | null): Promise<boolean> => {
-    if (!brokerId) return false;
-    try {
-      let query = supabase
-        .from("broker_auto_message_rules")
-        .select("id")
-        .eq("broker_id", brokerId)
-        .eq("is_active", true);
-      if (projectId) {
-        query = query.or(`project_id.eq.${projectId},project_id.is.null`);
-      } else {
-        query = query.is("project_id", null);
-      }
-      const { data } = await query.limit(1);
-      return (data && data.length > 0);
-    } catch { return false; }
-  };
 
   const saveSteps = async (ruleId: string, steps: AutoCadenciaStep[]) => {
     await (supabase.from("auto_cadencia_steps") as any)
@@ -123,20 +106,12 @@ export function useAutoCadenciaRules() {
     if (!brokerId) return null;
     setIsSaving(true);
     try {
-      if (data.is_active) {
-        const hasConflict = await checkFirstMessageConflict(data.project_id);
-        if (hasConflict) {
-          toast.error("Já existe uma 1ª Mensagem ativa para este empreendimento. Desative-a antes de ativar a Cadência 10D.");
-          setIsSaving(false);
-          return null;
-        }
-      }
 
       const { data: newRule, error } = await (supabase
         .from("broker_auto_cadencia_rules") as any)
         .insert({
           broker_id: brokerId,
-          name: data.name || "Cadência 10D",
+          name: data.name || "Cadência de Follow-up",
           project_id: data.project_id,
           is_active: data.is_active,
         })
@@ -151,13 +126,13 @@ export function useAutoCadenciaRules() {
       const rule = newRule as BrokerAutoCadenciaRule;
       rule.steps_count = data.steps.length;
       setRules(prev => [rule, ...prev]);
-      toast.success("Regra de cadência criada!");
+      toast.success("Cadência de follow-up criada!");
       return newRule;
     } catch (error: any) {
       if (error.code === "23505") {
-        toast.error("Já existe uma regra para este empreendimento");
+        toast.error("Já existe uma cadência para este empreendimento");
       } else {
-        toast.error("Erro ao criar regra");
+        toast.error("Erro ao criar cadência");
       }
       return null;
     } finally {
@@ -212,16 +187,6 @@ export function useAutoCadenciaRules() {
   };
 
   const toggleRuleActive = async (id: string, is_active: boolean) => {
-    if (is_active) {
-      const rule = rules.find(r => r.id === id);
-      if (rule) {
-        const hasConflict = await checkFirstMessageConflict(rule.project_id);
-        if (hasConflict) {
-          toast.error("Já existe uma 1ª Mensagem ativa para este empreendimento. Desative-a primeiro.");
-          return null;
-        }
-      }
-    }
     return updateRule(id, { is_active });
   };
 

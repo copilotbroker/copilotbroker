@@ -20,6 +20,7 @@ interface AutoCadenciaRuleEditorProps {
   updateRule: (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => Promise<any>;
   isSaving: boolean;
   rules: BrokerAutoCadenciaRule[];
+  onCreated?: (ruleId: string) => void;
 }
 
 interface Project { id: string; name: string; }
@@ -64,44 +65,18 @@ function replaceVarsPreview(text: string) {
 }
 
 export function AutoCadenciaRuleEditor({
-  isOpen, onClose, editingRule, createRule, updateRule, isSaving, rules,
+  isOpen, onClose, editingRule, createRule, updateRule, isSaving, rules, onCreated,
 }: AutoCadenciaRuleEditorProps) {
   const { brokerId } = useUserRole();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectId, setProjectId] = useState<string>("all");
   const [ruleName, setRuleName] = useState("");
-  const [checkingConflict, setCheckingConflict] = useState(false);
-  const [hasFirstMessageConflict, setHasFirstMessageConflict] = useState(false);
   const [steps, setSteps] = useState<AutoCadenciaStep[]>(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
   const [loadingSteps, setLoadingSteps] = useState(false);
 
-  const checkConflict = async (pid: string) => {
-    if (!brokerId) return;
-    setCheckingConflict(true);
-    try {
-      let query = supabase
-        .from("broker_auto_message_rules")
-        .select("id")
-        .eq("broker_id", brokerId)
-        .eq("is_active", true);
-      if (pid !== "all") {
-        query = query.or(`project_id.eq.${pid},project_id.is.null`);
-      } else {
-        query = query.is("project_id", null);
-      }
-      const { data } = await query.limit(1);
-      setHasFirstMessageConflict(!!(data && data.length > 0));
-    } catch {
-      setHasFirstMessageConflict(false);
-    } finally {
-      setCheckingConflict(false);
-    }
-  };
-
   const handleProjectChange = (value: string) => {
     setProjectId(value);
-    if (!editingRule) checkConflict(value);
   };
 
   useEffect(() => {
@@ -131,7 +106,7 @@ export function AutoCadenciaRuleEditor({
     if (editingRule) {
       setRuleName(editingRule.name || "");
       setProjectId(editingRule.project_id || "all");
-      setHasFirstMessageConflict(false);
+      
       setLoadingSteps(true);
       (supabase.from("auto_cadencia_steps") as any)
         .select("*")
@@ -153,7 +128,7 @@ export function AutoCadenciaRuleEditor({
       setRuleName("");
       setProjectId("all");
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
-      if (isOpen && brokerId) checkConflict("all");
+      
     }
   }, [editingRule, isOpen, brokerId]);
 
@@ -181,10 +156,11 @@ export function AutoCadenciaRuleEditor({
   const handleSubmit = async () => {
     if (!nameValid) return;
 
+    const isNew = !editingRule;
     const data = {
       name: ruleName.trim(),
       project_id: projectId === "all" ? null : projectId,
-      is_active: true,
+      is_active: isNew ? false : true,
     };
 
     let success;
@@ -193,7 +169,12 @@ export function AutoCadenciaRuleEditor({
     } else {
       success = await createRule({ ...data, steps });
     }
-    if (success) onClose();
+    if (success) {
+      onClose();
+      if (isNew && success?.id && onCreated) {
+        onCreated(success.id);
+      }
+    }
   };
 
   const isLoading = loadingProjects || loadingSteps;
@@ -205,10 +186,10 @@ export function AutoCadenciaRuleEditor({
           <SheetHeader className="space-y-1">
             <SheetTitle className="text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-emerald-400" />
-              {editingRule ? "Editar Regra" : "Nova Regra de Cadência 10D"}
+              {editingRule ? "Editar Cadência" : "Nova Cadência de Follow-up"}
             </SheetTitle>
             <SheetDescription className="text-slate-400">
-              Configure as etapas da cadência automática
+              Configure as etapas do follow-up
             </SheetDescription>
           </SheetHeader>
         </div>
@@ -251,16 +232,8 @@ export function AutoCadenciaRuleEditor({
                       ))}
                     </SelectContent>
                   </Select>
-                  {checkingConflict && (
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                      <Loader2 className="w-3 h-3 animate-spin" />Verificando conflitos...
-                    </div>
-                  )}
                   {projectHasRule && (
                     <p className="text-xs text-red-400">Já existe uma regra para este empreendimento</p>
-                  )}
-                  {!editingRule && hasFirstMessageConflict && !projectHasRule && (
-                    <p className="text-xs text-red-400">Já existe uma 1ª Mensagem ativa para este empreendimento. Desative-a primeiro.</p>
                   )}
                 </div>
 
@@ -366,8 +339,8 @@ export function AutoCadenciaRuleEditor({
                 <Alert className="bg-yellow-500/10 border-yellow-500/30">
                   <AlertTriangle className="w-4 h-4 text-yellow-400" />
                   <AlertDescription className="text-yellow-300 text-sm">
-                    A cadência será ativada <strong>automaticamente</strong> quando um lead for 
-                    atribuído a você neste empreendimento. O lead será movido para "Atendimento" 
+                    Quando ativa, a cadência será disparada <strong>automaticamente</strong> ao receber 
+                    um lead neste empreendimento. O lead será movido para "Atendimento" 
                     e o timeout da roleta será desativado.
                   </AlertDescription>
                 </Alert>
@@ -380,11 +353,11 @@ export function AutoCadenciaRuleEditor({
                 className="flex-1 border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e] min-h-[44px] sm:min-h-0">
                 Cancelar
               </Button>
-              <Button onClick={handleSubmit} disabled={isSaving || projectHasRule || hasFirstMessageConflict || checkingConflict || !stepsValid || !nameValid}
+              <Button onClick={handleSubmit} disabled={isSaving || projectHasRule || !stepsValid || !nameValid}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700 min-h-[44px] sm:min-h-0">
                 {isSaving ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>
-                ) : editingRule ? "Salvar" : "Criar Regra"}
+                ) : editingRule ? "Salvar" : "Criar Cadência"}
               </Button>
             </div>
           </>
