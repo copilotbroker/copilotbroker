@@ -1,61 +1,16 @@
 
 
-# Redesign: Toolbar colapsável no mobile do corretor
+# Trocar botão "+" por lupa no header mobile
 
-## Situação atual (mobile ~844px)
-No mobile, antes do Kanban temos ~3 linhas ocupando ~130px+:
-1. **Header** "Meus Leads" (~48px)
-2. **BrokerRoletas** compactas (~50px)
-3. **Busca + filtros** do KanbanBoard (~40px)
+## Mudança
 
-## Proposta
-Transformar o header mobile em uma linha com "Meus Leads" + botão chevron que expande/colapsa roletas, busca e filtros. Por default, colapsado → Kanban ocupa quase toda a tela.
+No `src/components/broker/BrokerHeader.tsx`, o botão quadrado `+` (linhas 42-50) será substituído por um botão de lupa (`Search`) que, ao ser clicado, expande o conteúdo colapsável (roletas + busca + filtros) — o mesmo comportamento do chevron.
 
-```text
-Colapsado (default):
-┌─────────────────────────┐
-│ Meus Leads         ▼  + │  ← header ~44px
-├─────────────────────────┤
-│ ██ KANBAN COLUMNS ████  │  ← resto da tela
-└─────────────────────────┘
+### `src/components/broker/BrokerHeader.tsx`
 
-Expandido:
-┌─────────────────────────┐
-│ Meus Leads         ▲  + │
-│ [Roleta A ●] [Roleta B] │  ← roletas
-│ 🔍 Buscar...             │  ← search
-│ [Empreend.] [Origens]    │  ← filtros
-├─────────────────────────┤
-│ ██ KANBAN COLUMNS ████  │
-└─────────────────────────┘
-```
+1. Remover o bloco do botão `+` com `onAddLead` (linhas 42-50)
+2. Adicionar um botão com ícone `Search` no mesmo local, que ao clicar faz `setIsExpanded(!isExpanded)` — abrindo/fechando o painel colapsável com busca e filtros
+3. O botão terá estilo ghost/sutil para combinar com o header
 
-## Implementação (3 arquivos)
-
-### 1. `src/components/broker/BrokerHeader.tsx`
-- Adicionar prop `collapsibleContent` (ReactNode) e `onAddLead`
-- No mobile: renderizar botão ChevronDown/Up ao lado do título
-- Estado local `isExpanded` (default `false`)
-- Quando expandido, mostrar o `collapsibleContent` abaixo do título com animação
-- Botão "+" para adicionar lead ao lado do chevron
-
-### 2. `src/pages/BrokerAdmin.tsx`
-- Mover `<BrokerRoletas>` para dentro do header como conteúdo colapsável
-- Passar como prop `collapsibleContent` para o `BrokerLayout`/`BrokerHeader`
-
-### 3. `src/components/crm/KanbanBoard.tsx`
-- Extrair a toolbar mobile (busca + filtros, linhas 562-706) em um bloco que pode ser renderizado externamente
-- Adicionar prop `renderToolbarOutside?: boolean` — quando true, não renderiza a toolbar interna no mobile
-- Ou: adicionar prop `mobileToolbarCollapsed?: boolean` que esconde a toolbar mobile via `hidden`
-- Abordagem mais simples: adicionar prop `externalMobileToolbar?: ReactNode` que substitui a toolbar mobile interna
-
-**Abordagem escolhida** (mais simples): O KanbanBoard já aceita `searchTerm` e `onSearchChange` como props. Vamos:
-1. No `BrokerHeader`, quando expandido no mobile, renderizar o `collapsibleContent` passado pelo pai
-2. No `BrokerAdmin`, montar o conteúdo colapsável com `<BrokerRoletas>` + busca + filtros inline
-3. No `KanbanBoard`, adicionar prop `hideToolbarMobile?: boolean` — quando true, esconde o bloco de toolbar mobile (linhas 562-706), já que está sendo renderizado fora
-
-## Resultado
-- Ganho de ~130px de espaço vertical no mobile
-- Roletas/busca/filtros acessíveis com 1 tap
-- Desktop não muda (toolbar permanece inline)
+O chevron ao lado do título permanece como indicador visual do estado expandido/colapsado.
 
