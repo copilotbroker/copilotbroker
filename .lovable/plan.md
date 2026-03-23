@@ -1,27 +1,61 @@
 
 
-# Compactar Roletas e maximizar espaço do Kanban
+# Redesign: Toolbar colapsável no mobile do corretor
 
-## Problema
-O `BrokerRoletas` ocupa muito espaço vertical (padding, espaçamento, cards empilhados verticalmente), reduzindo a área visível do Kanban no mobile.
+## Situação atual (mobile ~844px)
+No mobile, antes do Kanban temos ~3 linhas ocupando ~130px+:
+1. **Header** "Meus Leads" (~48px)
+2. **BrokerRoletas** compactas (~50px)
+3. **Busca + filtros** do KanbanBoard (~40px)
 
-## Correção
+## Proposta
+Transformar o header mobile em uma linha com "Meus Leads" + botão chevron que expande/colapsa roletas, busca e filtros. Por default, colapsado → Kanban ocupa quase toda a tela.
 
-### `src/components/broker/BrokerRoletas.tsx`
-Transformar o layout em uma **linha horizontal compacta** com scroll:
-
-1. **Container principal**: reduzir padding de `p-4 space-y-3` para `p-2`
-2. **Header + cards na mesma linha**: remover header separado "Minhas Roletas", integrar o ícone inline
-3. **Cards das roletas em linha horizontal**: `flex flex-row gap-2 overflow-x-auto` em vez de `space-y-3` vertical
-4. **Cada card compacto**: layout horizontal com nome da roleta + status + botão check-in/out em uma única linha, sem subtextos (ordem, tempo reserva) visíveis por default
-5. **Fila expandível**: manter funcionalidade mas colapsada por default
-6. **Altura total**: ~48-56px quando colapsado (vs ~120px+ atual por roleta)
-
-Layout compacto:
 ```text
-[🔄] [Roleta A ● Online | Check-out] [Roleta B ○ Offline | Check-in]
+Colapsado (default):
+┌─────────────────────────┐
+│ Meus Leads         ▼  + │  ← header ~44px
+├─────────────────────────┤
+│ ██ KANBAN COLUMNS ████  │  ← resto da tela
+└─────────────────────────┘
+
+Expandido:
+┌─────────────────────────┐
+│ Meus Leads         ▲  + │
+│ [Roleta A ●] [Roleta B] │  ← roletas
+│ 🔍 Buscar...             │  ← search
+│ [Empreend.] [Origens]    │  ← filtros
+├─────────────────────────┤
+│ ██ KANBAN COLUMNS ████  │
+└─────────────────────────┘
 ```
 
-### `src/pages/BrokerAdmin.tsx`
-Manter `gap-4` → `gap-2` no wrapper para reduzir espaço entre roletas e kanban.
+## Implementação (3 arquivos)
+
+### 1. `src/components/broker/BrokerHeader.tsx`
+- Adicionar prop `collapsibleContent` (ReactNode) e `onAddLead`
+- No mobile: renderizar botão ChevronDown/Up ao lado do título
+- Estado local `isExpanded` (default `false`)
+- Quando expandido, mostrar o `collapsibleContent` abaixo do título com animação
+- Botão "+" para adicionar lead ao lado do chevron
+
+### 2. `src/pages/BrokerAdmin.tsx`
+- Mover `<BrokerRoletas>` para dentro do header como conteúdo colapsável
+- Passar como prop `collapsibleContent` para o `BrokerLayout`/`BrokerHeader`
+
+### 3. `src/components/crm/KanbanBoard.tsx`
+- Extrair a toolbar mobile (busca + filtros, linhas 562-706) em um bloco que pode ser renderizado externamente
+- Adicionar prop `renderToolbarOutside?: boolean` — quando true, não renderiza a toolbar interna no mobile
+- Ou: adicionar prop `mobileToolbarCollapsed?: boolean` que esconde a toolbar mobile via `hidden`
+- Abordagem mais simples: adicionar prop `externalMobileToolbar?: ReactNode` que substitui a toolbar mobile interna
+
+**Abordagem escolhida** (mais simples): O KanbanBoard já aceita `searchTerm` e `onSearchChange` como props. Vamos:
+1. No `BrokerHeader`, quando expandido no mobile, renderizar o `collapsibleContent` passado pelo pai
+2. No `BrokerAdmin`, montar o conteúdo colapsável com `<BrokerRoletas>` + busca + filtros inline
+3. No `KanbanBoard`, adicionar prop `hideToolbarMobile?: boolean` — quando true, esconde o bloco de toolbar mobile (linhas 562-706), já que está sendo renderizado fora
+
+## Resultado
+- Ganho de ~130px de espaço vertical no mobile
+- Roletas/busca/filtros acessíveis com 1 tap
+- Desktop não muda (toolbar permanece inline)
 
