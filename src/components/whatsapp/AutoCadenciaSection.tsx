@@ -180,14 +180,14 @@ export function AutoCadenciaSection() {
         </div>
       )}
 
-      {/* Campaigns list */}
-      {campaigns.length > 0 && (
+      {/* Active Campaigns */}
+      {activeCampaigns.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 mt-4 mb-1">
             <Megaphone className="w-4 h-4 text-purple-400" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Campanhas</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Campanhas Ativas</span>
           </div>
-          {campaigns.map((campaign) => (
+          {activeCampaigns.map((campaign) => (
             <CampaignCard
               key={campaign.id}
               campaign={campaign}
@@ -196,9 +196,36 @@ export function AutoCadenciaSection() {
               onCancel={(id) => cancelCampaign(id)}
               onViewDetail={(c) => handleCampaignDetail(c)}
               onDuplicate={() => {}}
+              onDelete={(id) => deleteCampaign(id)}
             />
           ))}
         </div>
+      )}
+
+      {/* Archived Campaigns */}
+      {archivedCampaigns.length > 0 && (
+        <Collapsible open={showArchived} onOpenChange={setShowArchived}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#1a1a1d] mt-2">
+              <Archive className="w-4 h-4" />
+              Histórico ({archivedCampaigns.length})
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2 mt-2">
+            {archivedCampaigns.map((campaign) => (
+              <CampaignCard
+                key={campaign.id}
+                campaign={campaign}
+                onPause={(id) => pauseCampaign(id)}
+                onResume={(id) => resumeCampaign(id)}
+                onCancel={(id) => cancelCampaign(id)}
+                onViewDetail={(c) => handleCampaignDetail(c)}
+                onDuplicate={() => {}}
+                onDelete={(id) => deleteCampaign(id)}
+              />
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* Editor */}
