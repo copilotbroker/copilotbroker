@@ -747,21 +747,29 @@ app.get("/qrcode", async (c) => {
     };
 
     const instanceNameEnc = encodeURIComponent(instance.instance_name);
+    // To get a pairing code, UAZAPI requires passing the phone number as ?number=XXXX
+    // Format: country code + number, no symbols (e.g. 5511999999999)
+    const phoneDigits = instance.phone_number?.replace(/\D/g, "") || "";
+    const numberParam = phoneDigits ? `number=${phoneDigits}` : "";
+    const qsConnect = numberParam ? `?${numberParam}` : "";
+    
+    console.log(`[UAZAPI] Phone for pairing: ${phoneDigits || "(none)"}`);
+
     const attempts: QrAttempt[] = [
       {
-        name: "connect_get",
-        path: `/instance/connect/${instanceNameEnc}`,
+        name: "connect_get_with_number",
+        path: `/instance/connect/${instanceNameEnc}${qsConnect}`,
         opts: { method: "GET" },
       },
       // Some deployments use the instance name as a query parameter instead of a path param
       {
         name: "connect_get_q_instance",
-        path: `/instance/connect?instance=${instanceNameEnc}`,
+        path: `/instance/connect?instance=${instanceNameEnc}${numberParam ? "&" + numberParam : ""}`,
         opts: { method: "GET" },
       },
       {
         name: "connect_get_q_name",
-        path: `/instance/connect?name=${instanceNameEnc}`,
+        path: `/instance/connect?name=${instanceNameEnc}${numberParam ? "&" + numberParam : ""}`,
         opts: { method: "GET" },
       },
       {
@@ -781,7 +789,7 @@ app.get("/qrcode", async (c) => {
         opts: {
           method: "POST",
           includeJson: true,
-          bodyString: JSON.stringify({ name: instance.instance_name, instance: instance.instance_name }),
+          bodyString: JSON.stringify({ name: instance.instance_name, instance: instance.instance_name, number: phoneDigits || undefined }),
         },
       },
     ];
