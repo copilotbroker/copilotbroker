@@ -165,7 +165,7 @@ export function GlobalConnectionTab() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={fetchQRCode}
+                  onClick={() => fetchQRCode()}
                   disabled={isLoadingQR}
                   className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]"
                 >
