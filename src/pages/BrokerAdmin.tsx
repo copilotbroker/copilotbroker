@@ -208,6 +208,7 @@ const BrokerAdmin = () => {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               onAddLead={() => setIsAddLeadOpen(true)}
+              hideToolbarMobile
             />
           </div>
         ) : (
