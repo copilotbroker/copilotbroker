@@ -187,16 +187,6 @@ export function useAutoCadenciaRules() {
   };
 
   const toggleRuleActive = async (id: string, is_active: boolean) => {
-    if (is_active) {
-      const rule = rules.find(r => r.id === id);
-      if (rule) {
-        const hasConflict = await checkFirstMessageConflict(rule.project_id);
-        if (hasConflict) {
-          toast.error("Já existe uma 1ª Mensagem ativa para este empreendimento. Desative-a primeiro.");
-          return null;
-        }
-      }
-    }
     return updateRule(id, { is_active });
   };
 
