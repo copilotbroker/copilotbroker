@@ -260,14 +260,7 @@ export const KanbanCard = memo(function KanbanCard({
               </Badge>
             )}
 
-            {lead.auto_first_message_sent && (
-              <Badge variant="outline" className="gap-1 border-crm-success/30 bg-crm-success/10 text-[10px] text-crm-success">
-                <CheckCircle2 className="h-3 w-3" />
-                1ª msg
-              </Badge>
-            )}
-
-            {lead.attribution?.landing_page === "admin_manual" && !lead.auto_first_message_sent && (
+            {lead.attribution?.landing_page === "admin_manual" && (
               <Badge variant="outline" className="gap-1 border-border bg-muted/40 text-[10px] text-muted-foreground">
                 <Lock className="h-3 w-3" />
                 Manual

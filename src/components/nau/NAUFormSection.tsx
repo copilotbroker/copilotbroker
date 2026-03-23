@@ -136,7 +136,6 @@ const NAUFormSection = ({
         },
       }).catch(console.warn);
 
-      supabase.functions.invoke("auto-first-message", { body: { leadId } }).catch(console.warn);
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
 
       if (webhookUrl) {

@@ -123,7 +123,6 @@ const CaminhadaEV = () => {
 
       await trackLeadAttribution(leadId, projectId || undefined, "landing_page");
       Promise.resolve(supabase.rpc("unify_lead", { _new_lead_id: leadId } as any)).catch(() => {});
-      supabase.functions.invoke("auto-first-message", { body: { leadId } }).catch(() => {});
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(() => {});
       supabase.functions.invoke("notify-new-lead", {
         body: {

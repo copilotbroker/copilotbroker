@@ -33,9 +33,6 @@ export interface CRMLead {
   inactivated_by: string | null;
   broker_id: string | null;
   project_id: string | null;
-  // Auto first message tracking
-  auto_first_message_sent?: boolean;
-  auto_first_message_at?: string | null;
   // Roleta / distribution fields
   roleta_id?: string | null;
   corretor_atribuido_id?: string | null;

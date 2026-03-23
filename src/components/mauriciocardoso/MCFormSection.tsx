@@ -78,7 +78,6 @@ const MCFormSection = ({ projectId, brokerId, submitted }: MCFormSectionProps) =
       // Unify duplicate leads (non-blocking fallback — edge functions also unify)
       supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
 
-      supabase.functions.invoke("auto-first-message", { body: { leadId } }).catch(console.warn);
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
 
       const eventId = crypto.randomUUID();
