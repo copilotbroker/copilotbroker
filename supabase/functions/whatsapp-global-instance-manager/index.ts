@@ -581,27 +581,20 @@ app.post("/init", async (c) => {
                      qrData.base64 ||
                      (qrData.instance as Record<string, unknown>)?.qrcode as string ||
                      null;
+            const pCode = qrData.pairingCode || qrData.paircode || qrData.pairing_code ||
+                         (qrData.instance as Record<string, unknown>)?.paircode as string || null;
             
-            if (qrCode) {
-              console.log(`✅ QR Code obtido via ${endpoint}`);
-              break;
+            if (qrCode || pCode) {
+              console.log(`✅ QR/Pairing obtido via ${endpoint}`);
+              return c.json({
+                success: true,
+                instanceName: returnedName,
+                token: newToken,
+                qrCode,
+                pairingCode: pCode,
+                message: qrCode ? "Instância criada com QR Code" : "Instância criada com código de pareamento"
+              }, 200, corsHeaders);
             }
-          } catch {
-            // Try next endpoint
-          }
-        }
-      } catch (err) {
-        console.error(`❌ Erro ao buscar QR via ${endpoint}:`, err);
-      }
-    }
-
-    return c.json({
-      success: true,
-      instanceName: returnedName,
-      token: newToken,
-      qrCode,
-      message: qrCode ? "Instância criada com QR Code" : "Instância criada, aguarde para QR Code"
-    }, 200, corsHeaders);
 
   } catch (error) {
     console.error("❌ Erro ao criar instância:", error);
