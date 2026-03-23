@@ -47,6 +47,7 @@ interface KanbanBoardProps {
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
   onAddLead?: () => void;
+  hideToolbarMobile?: boolean;
 }
 
 const STATUSES: LeadStatus[] = ['new', 'info_sent', 'awaiting_docs', 'scheduling', 'docs_received', 'registered'];

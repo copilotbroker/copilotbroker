@@ -27,6 +27,7 @@ interface BrokerLayoutProps {
   isLeader?: boolean;
   inboxEnabled?: boolean;
   copilotEnabled?: boolean;
+  collapsibleContent?: ReactNode;
 }
 
 
