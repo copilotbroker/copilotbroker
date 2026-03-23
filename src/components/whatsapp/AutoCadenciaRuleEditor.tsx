@@ -72,37 +72,11 @@ export function AutoCadenciaRuleEditor({
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectId, setProjectId] = useState<string>("all");
   const [ruleName, setRuleName] = useState("");
-  const [checkingConflict, setCheckingConflict] = useState(false);
-  const [hasFirstMessageConflict, setHasFirstMessageConflict] = useState(false);
   const [steps, setSteps] = useState<AutoCadenciaStep[]>(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
   const [loadingSteps, setLoadingSteps] = useState(false);
 
-  const checkConflict = async (pid: string) => {
-    if (!brokerId) return;
-    setCheckingConflict(true);
-    try {
-      let query = supabase
-        .from("broker_auto_message_rules")
-        .select("id")
-        .eq("broker_id", brokerId)
-        .eq("is_active", true);
-      if (pid !== "all") {
-        query = query.or(`project_id.eq.${pid},project_id.is.null`);
-      } else {
-        query = query.is("project_id", null);
-      }
-      const { data } = await query.limit(1);
-      setHasFirstMessageConflict(!!(data && data.length > 0));
-    } catch {
-      setHasFirstMessageConflict(false);
-    } finally {
-      setCheckingConflict(false);
-    }
-  };
-
   const handleProjectChange = (value: string) => {
     setProjectId(value);
-    if (!editingRule) checkConflict(value);
   };
 
   useEffect(() => {
