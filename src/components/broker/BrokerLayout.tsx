@@ -92,7 +92,7 @@ export function BrokerLayout({
       </Sheet>
 
       {/* Main content - offset by sidebar width on desktop */}
-      <div className="lg:ml-16 h-screen flex flex-col pb-20 lg:pb-0 overflow-hidden">
+      <div className="lg:ml-16 h-screen flex flex-col overflow-hidden">
         <BrokerHeader
           brokerName={brokerName}
           searchTerm={searchTerm}
@@ -101,7 +101,7 @@ export function BrokerLayout({
           onAddLead={onAddLead}
         />
         <WhatsAppDisconnectedBanner />
-        <main className="flex-1 min-h-0 overflow-y-auto p-3 lg:p-6">{children}</main>
+        <main className="flex-1 min-h-0 overflow-y-auto p-3 pb-20 lg:p-6 lg:pb-6">{children}</main>
       </div>
     </div>
   );
