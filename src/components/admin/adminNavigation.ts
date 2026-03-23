@@ -1,9 +1,10 @@
-import { Brain, Building2, LayoutDashboard, MessageCircle, Shuffle, Users, Bot } from "lucide-react";
+import { Brain, Building2, CalendarDays, LayoutDashboard, MessageCircle, Shuffle, Users, Bot } from "lucide-react";
 
 export const ADMIN_ROUTE_TABS = [
   { id: "crm", label: "CRM", path: "/admin/crm", icon: LayoutDashboard },
   { id: "leads", label: "Leads", path: "/admin/leads", icon: Users },
   { id: "inbox", label: "Inbox", path: "/admin/inbox", icon: MessageCircle },
+  { id: "agenda", label: "Agenda", path: "/admin/agenda", icon: CalendarDays },
   { id: "brokers", label: "Corretores", path: "/admin/corretores", icon: Users },
   { id: "roletas", label: "Roletas", path: "/admin/roletas", icon: Shuffle },
   { id: "projects", label: "Empreendimentos", path: "/admin/empreendimentos", icon: Building2 },
@@ -17,6 +18,7 @@ export const ADMIN_TAB_LABELS: Record<AdminRouteTabId, { title: string; subtitle
   crm: { title: "CRM", subtitle: "Gerencie seus leads e pipeline de vendas" },
   leads: { title: "Leads", subtitle: "Visualize e exporte todos os leads" },
   inbox: { title: "Inbox", subtitle: "Gerencie conversas e atendimento em tempo real" },
+  agenda: { title: "Agenda", subtitle: "Gerencie compromissos e eventos" },
   brokers: { title: "Corretores", subtitle: "Cadastre e gerencie corretores parceiros" },
   roletas: { title: "Roletas", subtitle: "Gerencie distribuição e regras de atendimento" },
   projects: { title: "Empreendimentos", subtitle: "Configure seus empreendimentos ativos" },
@@ -34,6 +36,7 @@ export const ADMIN_TAB_BY_SEGMENT: Record<string, AdminRouteTabId> = {
   empreendimentos: "projects",
   inteligencia: "analytics",
   inbox: "inbox",
+  agenda: "agenda",
   copiloto: "copilot",
 };
 
