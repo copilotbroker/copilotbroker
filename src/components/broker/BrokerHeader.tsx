@@ -1,8 +1,8 @@
 import { useState, ReactNode } from "react";
-import { Search, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { BROKER_TAB_LABELS, getBrokerTabFromPath } from "./brokerNavigation";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface BrokerHeaderProps {
   brokerName?: string;
