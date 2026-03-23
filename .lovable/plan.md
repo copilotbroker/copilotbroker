@@ -1,48 +1,57 @@
 
+Implementar uma conexão mobile-first por código numérico, mantendo o QR Code como alternativa.
 
-# Excluir cadências/campanhas + separar campanhas ativas das finalizadas
+1. Diagnóstico do problema
+- Hoje o componente `QRCodeDisplay` já sabe exibir `pairingCode`, mas isso só acontece se o código vier do hook.
+- No fluxo do corretor, o `useWhatsAppInstance` recebe `pairingCode` apenas quando o backend devolve esse campo.
+- No fluxo global/admin, o suporte está incompleto: `useWhatsAppGlobalInstance` não armazena `pairingCode` e `GlobalConnectionTab` passa `pairingCode={null}` sempre.
+- Resultado: no mobile, a UI até está preparada, mas na prática quase sempre só existe QR Code disponível.
 
-## Resumo
+2. O que vou ajustar
+- Garantir que o backend busque e retorne também o código numérico de pareamento, não só o QR.
+- Propagar esse `pairingCode` nos hooks de conexão.
+- Exibir no mobile o código numérico como método principal, com botão para alternar para QR Code.
+- Manter QR Code como fallback quando o provedor não retornar código numérico.
 
-Permitir exclusão de cadências e campanhas. Na listagem de campanhas, exibir apenas as ativas (draft, scheduled, running, paused). Campanhas concluídas/canceladas ficam acessíveis via botão "Histórico".
+3. Arquivos a ajustar
+- `supabase/functions/whatsapp-instance-manager/index.ts`
+  - reforçar a extração de `pairingCode` nas respostas do provedor;
+  - se necessário, consultar endpoint alternativo de conexão/pareamento quando o QR vier sem código.
+- `supabase/functions/whatsapp-global-instance-manager/index.ts`
+  - adicionar suporte completo a `pairingCode` no `/init` e `/qrcode`;
+  - retornar `{ qrCode, pairingCode }` em vez de apenas QR.
+- `src/hooks/use-whatsapp-instance.ts`
+  - preservar e atualizar `pairingCode` junto com `qrCode`;
+  - limpar ambos apenas quando realmente conectar.
+- `src/hooks/use-whatsapp-global-instance.ts`
+  - adicionar estado `pairingCode`;
+  - preencher esse estado nas chamadas de init/refresh/qrcode.
+- `src/components/whatsapp/GlobalConnectionTab.tsx`
+  - passar o `pairingCode` real para `QRCodeDisplay`.
+- `src/components/whatsapp/QRCodeDisplay.tsx`
+  - reforçar o comportamento mobile:
+    - abrir já em “Código de Pareamento”;
+    - deixar o botão de troca entre código e QR bem visível;
+    - mostrar mensagem clara quando só houver QR disponível.
 
-## Arquivos alterados
+4. UX esperada depois
+- No celular:
+  - método padrão = “Código de Pareamento”;
+  - usuário vê instruções curtas + código copiável/selecionável;
+  - QR Code fica como opção secundária.
+- No desktop:
+  - QR Code continua sendo o padrão;
+  - código numérico aparece como alternativa quando disponível.
+- Se o provedor não gerar código numérico:
+  - a tela informa isso claramente e mantém o QR como fallback.
 
-### 1. `src/hooks/use-whatsapp-campaigns.ts`
-- Adicionar mutation `deleteCampaign(id)`: deleta `campaign_steps` e `whatsapp_message_queue` associados, depois deleta a campanha. Invalida query cache.
+5. Detalhe técnico importante
+- O problema não parece ser o `useIsMobile`.
+- O bloqueio principal é de dados: o frontend só consegue mostrar código numérico quando o backend realmente o entrega.
+- Por isso a correção precisa ser feita em cadeia: backend → hook → componente.
 
-### 2. `src/components/whatsapp/CampaignCard.tsx`
-- Adicionar prop `onDelete: (id: string) => void`
-- Adicionar botão de delete (Trash2) no grupo de ações, visível para campanhas concluídas/canceladas ou qualquer status
-
-### 3. `src/components/whatsapp/AutoCadenciaSection.tsx`
-- Importar `deleteCampaign` do hook
-- Separar campanhas em duas listas:
-  - `activeCampaigns`: status `draft`, `scheduled`, `running`, `paused`
-  - `archivedCampaigns`: status `completed`, `cancelled`
-- Exibir `activeCampaigns` normalmente na seção "Campanhas"
-- Adicionar botão "Histórico de campanhas" (com ícone Archive) que abre um colapsável ou dialog com as campanhas arquivadas
-- Passar `onDelete` para `CampaignCard` com confirmação via `window.confirm`
-
-### 4. Cadências (já funciona)
-- A exclusão de cadências já está implementada via `deleteRule` e botão Trash2 na listagem
-
-## Detalhes técnicos
-
-**Delete campaign** (no hook):
-```typescript
-const deleteCampaignMutation = useMutation({
-  mutationFn: async (campaignId: string) => {
-    await supabase.from("whatsapp_message_queue").delete().eq("campaign_id", campaignId);
-    await supabase.from("campaign_steps").delete().eq("campaign_id", campaignId);
-    await supabase.from("whatsapp_campaigns").delete().eq("id", campaignId);
-  },
-  onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["whatsapp-campaigns"] }); toast.success("Campanha excluída"); }
-});
-```
-
-**Separação na UI**:
-- Filtro simples: `campaigns.filter(c => !["completed","cancelled"].includes(c.status))` para ativas
-- Botão colapsável com `useState(showArchived)` para mostrar/esconder finalizadas
-- Contagem no botão: "Histórico (3)"
-
+6. Validação após implementação
+- Testar em `/corretor/copiloto` com viewport mobile.
+- Confirmar que “Código de Pareamento” aparece sem depender de segundo dispositivo.
+- Validar reconexão após logout/desconexão.
+- Validar também o fluxo global/admin para não ficar inconsistente com o fluxo do corretor.
