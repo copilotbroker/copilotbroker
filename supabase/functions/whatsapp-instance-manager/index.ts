@@ -718,7 +718,7 @@ app.get("/qrcode", async (c) => {
       return c.json({ error: "No instance configured. Initialize first." }, 400, corsHeaders);
     }
 
-    const instance = instanceData as { id: string; instance_name: string; instance_token: string | null };
+    const instance = instanceData as { id: string; instance_name: string; instance_token: string | null; phone_number: string | null };
 
     // === FIXED: Use correct endpoint and token for QR code ===
     // According to UAZAPI V2 docs: POST /instance/connect with instance token
