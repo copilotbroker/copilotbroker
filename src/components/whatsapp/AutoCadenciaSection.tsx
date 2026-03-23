@@ -220,9 +220,9 @@ export function AutoCadenciaSection() {
       {detailCampaign && (
         <CampaignDetailSheet
           campaign={detailCampaign}
-          steps={detailSteps}
           open={!!detailCampaign}
           onOpenChange={(open) => !open && setDetailCampaign(null)}
+          onDuplicate={() => {}}
         />
       )}
 
