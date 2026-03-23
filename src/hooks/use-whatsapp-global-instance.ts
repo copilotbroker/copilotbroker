@@ -289,6 +289,7 @@ export function useWhatsAppGlobalInstance() {
     needsInit: state.needsInit,
     isLoading,
     qrCode,
+    pairingCode,
     isLoadingQR,
     isInitializing,
     refreshStatus,

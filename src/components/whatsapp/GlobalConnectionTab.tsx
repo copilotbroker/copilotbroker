@@ -243,7 +243,7 @@ export function GlobalConnectionTab() {
         {needsQR ? (
           <QRCodeDisplay
             qrCode={qrCode}
-            pairingCode={null}
+            pairingCode={pairingCode}
             isLoading={isLoadingQR}
             onRefresh={fetchQRCode}
           />
