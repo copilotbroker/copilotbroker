@@ -594,6 +594,7 @@ app.post("/init", async (c) => {
                 pairingCode: pCode,
                 message: qrCode ? "Instância criada com QR Code" : "Instância criada com código de pareamento"
               }, 200, corsHeaders);
+            }
           } catch {
             // Try next endpoint
           }
