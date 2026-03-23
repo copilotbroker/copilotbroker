@@ -27,6 +27,7 @@ interface BrokerLayoutProps {
   isLeader?: boolean;
   inboxEnabled?: boolean;
   copilotEnabled?: boolean;
+  collapsibleContent?: ReactNode;
 }
 
 
@@ -45,6 +46,7 @@ export function BrokerLayout({
   isLeader = false,
   inboxEnabled,
   copilotEnabled,
+  collapsibleContent,
 }: BrokerLayoutProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   // Rastrear sessão de login
@@ -95,6 +97,8 @@ export function BrokerLayout({
           brokerName={brokerName}
           searchTerm={searchTerm}
           onSearchChange={onSearchChange}
+          collapsibleContent={collapsibleContent}
+          onAddLead={onAddLead}
         />
         <WhatsAppDisconnectedBanner />
         <main className="flex-1 flex flex-col min-h-0 p-3 lg:p-6">{children}</main>

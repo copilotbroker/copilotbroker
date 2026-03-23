@@ -1,31 +1,63 @@
-import { Search } from "lucide-react";
+import { useState, ReactNode } from "react";
+import { Search, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { BROKER_TAB_LABELS, getBrokerTabFromPath } from "./brokerNavigation";
+import { Button } from "@/components/ui/button";
 
 interface BrokerHeaderProps {
   brokerName?: string;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
+  collapsibleContent?: ReactNode;
+  onAddLead?: () => void;
 }
 
 export function BrokerHeader({
   brokerName,
   searchTerm,
   onSearchChange,
+  collapsibleContent,
+  onAddLead,
 }: BrokerHeaderProps) {
   const location = useLocation();
   const activeTab = getBrokerTabFromPath(location.pathname);
   const copy = BROKER_TAB_LABELS[activeTab];
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 bg-[#141417]/95 backdrop-blur-sm border-b border-[#2a2a2e] pt-safe">
+      {/* Mobile header */}
       <div className="lg:hidden flex items-center justify-between px-4 py-3">
-        <div>
+        <div className="flex items-center gap-2">
           <h1 className="text-lg font-bold text-white">{copy.title}</h1>
-          {copy.subtitle && <p className="text-xs text-slate-400 mt-0.5">{copy.subtitle}</p>}
+          {collapsibleContent && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-[#2a2a2e] transition-colors"
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          )}
         </div>
+        {onAddLead && (
+          <Button
+            size="sm"
+            onClick={onAddLead}
+            className="h-8 w-8 p-0 bg-primary hover:bg-primary/90"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
+      {/* Collapsible content - mobile only */}
+      {collapsibleContent && isExpanded && (
+        <div className="lg:hidden px-4 pb-3 space-y-2 animate-in slide-in-from-top-2 duration-200">
+          {collapsibleContent}
+        </div>
+      )}
+
+      {/* Desktop header */}
       <div className="hidden lg:flex items-center justify-between px-6 py-3 gap-4">
         <nav className="flex items-center gap-2 text-sm min-w-0">
           <span className="text-slate-500">Corretor</span>
