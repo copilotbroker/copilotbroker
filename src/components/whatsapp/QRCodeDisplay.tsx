@@ -17,10 +17,12 @@ export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRC
   const [showCode, setShowCode] = useState(isMobile || Boolean(pairingCode));
 
   useEffect(() => {
-    if (pairingCode) {
+    if (pairingCode && isMobile) {
+      setShowCode(true);
+    } else if (pairingCode && !qrCode) {
       setShowCode(true);
     }
-  }, [pairingCode]);
+  }, [pairingCode, isMobile, qrCode]);
 
   const formattedCode = pairingCode
     ? pairingCode.replace(/(\w{4})(\w{4})/, "$1-$2")
