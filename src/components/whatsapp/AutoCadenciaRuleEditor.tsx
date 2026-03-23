@@ -266,9 +266,6 @@ export function AutoCadenciaRuleEditor({
                   {projectHasRule && (
                     <p className="text-xs text-red-400">Já existe uma regra para este empreendimento</p>
                   )}
-                  {!editingRule && hasFirstMessageConflict && !projectHasRule && (
-                    <p className="text-xs text-red-400">Já existe uma 1ª Mensagem ativa para este empreendimento. Desative-a primeiro.</p>
-                  )}
                 </div>
 
                 {/* Steps Editor */}
