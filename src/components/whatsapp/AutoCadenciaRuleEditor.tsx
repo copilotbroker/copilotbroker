@@ -65,7 +65,7 @@ function replaceVarsPreview(text: string) {
 }
 
 export function AutoCadenciaRuleEditor({
-  isOpen, onClose, editingRule, createRule, updateRule, isSaving, rules,
+  isOpen, onClose, editingRule, createRule, updateRule, isSaving, rules, onCreated,
 }: AutoCadenciaRuleEditorProps) {
   const { brokerId } = useUserRole();
   const [projects, setProjects] = useState<Project[]>([]);
