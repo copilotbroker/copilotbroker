@@ -594,7 +594,23 @@ app.post("/init", async (c) => {
                 pairingCode: pCode,
                 message: qrCode ? "Instância criada com QR Code" : "Instância criada com código de pareamento"
               }, 200, corsHeaders);
-            }
+          } catch {
+            // Try next endpoint
+          }
+        }
+      } catch (err) {
+        console.error(`❌ Erro ao buscar QR via ${endpoint}:`, err);
+      }
+    }
+
+    return c.json({
+      success: true,
+      instanceName: returnedName,
+      token: newToken,
+      qrCode: null,
+      pairingCode: null,
+      message: "Instância criada, aguarde para QR Code"
+    }, 200, corsHeaders);
 
   } catch (error) {
     console.error("❌ Erro ao criar instância:", error);
