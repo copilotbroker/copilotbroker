@@ -742,8 +742,10 @@ app.get("/qrcode", async (c) => {
       try {
         const qrData = JSON.parse(qrText);
         const qrCode = qrData.qrcode || qrData.qr || qrData.base64 || null;
-        if (qrCode) {
-          return c.json({ qrCode, instanceName: returnedName, newInstance: true }, 200, corsHeaders);
+        const pairingCode = qrData.pairingCode || qrData.paircode || qrData.pairing_code ||
+          (qrData.instance as Record<string, unknown>)?.paircode as string || null;
+        if (qrCode || pairingCode) {
+          return c.json({ qrCode, pairingCode, instanceName: returnedName, newInstance: true }, 200, corsHeaders);
         }
       } catch {
         // No QR
