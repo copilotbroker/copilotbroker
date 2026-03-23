@@ -182,10 +182,11 @@ export function AutoCadenciaRuleEditor({
   const handleSubmit = async () => {
     if (!nameValid) return;
 
+    const isNew = !editingRule;
     const data = {
       name: ruleName.trim(),
       project_id: projectId === "all" ? null : projectId,
-      is_active: true,
+      is_active: isNew ? false : true,
     };
 
     let success;
@@ -194,7 +195,12 @@ export function AutoCadenciaRuleEditor({
     } else {
       success = await createRule({ ...data, steps });
     }
-    if (success) onClose();
+    if (success) {
+      onClose();
+      if (isNew && success?.id && onCreated) {
+        onCreated(success.id);
+      }
+    }
   };
 
   const isLoading = loadingProjects || loadingSteps;
