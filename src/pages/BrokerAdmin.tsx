@@ -180,9 +180,20 @@ const BrokerAdmin = () => {
         isLeader={isLeader}
         inboxEnabled={inboxEnabled}
         copilotEnabled={copilotEnabled}
-        collapsibleContent={
+          collapsibleContent={
           viewMode === "kanban" && brokerId ? (
-            <BrokerRoletas brokerId={brokerId} />
+            <div className="space-y-2">
+              <BrokerRoletas brokerId={brokerId} />
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou WhatsApp..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 h-9 bg-[#1a1a1e] border-[#2a2a2e] text-white text-sm placeholder:text-slate-500"
+                />
+              </div>
+            </div>
           ) : undefined
         }
       >
