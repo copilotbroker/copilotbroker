@@ -149,6 +149,11 @@ export function useWhatsAppGlobalInstance() {
 
       if (data.qrCode) {
         setQrCode(data.qrCode);
+        setPairingCode(data.pairingCode || null);
+        setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
+      } else if (data.pairingCode) {
+        setPairingCode(data.pairingCode);
+        setQrCode(null);
         setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
         
         if (data.newInstance) {
