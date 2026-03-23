@@ -108,6 +108,10 @@ export function useWhatsAppGlobalInstance() {
       // If QR code was returned, set it
       if (data.qrCode) {
         setQrCode(data.qrCode);
+        setPairingCode(data.pairingCode || null);
+        setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
+      } else if (data.pairingCode) {
+        setPairingCode(data.pairingCode);
         setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
       } else {
         // Fetch QR code separately
