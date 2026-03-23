@@ -46,6 +46,7 @@ export function BrokerLayout({
   isLeader = false,
   inboxEnabled,
   copilotEnabled,
+  collapsibleContent,
 }: BrokerLayoutProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   // Rastrear sessão de login
