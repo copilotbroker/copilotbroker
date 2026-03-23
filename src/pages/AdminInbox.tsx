@@ -168,7 +168,7 @@ export default function AdminInbox() {
       .from("leads")
       .insert({
         name: leadName,
-        whatsapp: selectedConversation.phone,
+        whatsapp: selectedConversation.phone.replace(/^\+/, ''),
         broker_id: brokerId,
         project_id: projectId,
         status: "new" as any,
