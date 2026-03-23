@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Zap, Plus, Pencil, Trash2, Loader2, Megaphone } from "lucide-react";
+import { Zap, Plus, Pencil, Trash2, Loader2, Megaphone, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
