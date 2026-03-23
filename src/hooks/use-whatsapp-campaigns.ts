@@ -390,6 +390,35 @@ export function useWhatsAppCampaigns(adminBrokerFilterId?: string) {
     },
   });
 
+  // Delete campaign
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (campaignId: string) => {
+      await supabase
+        .from("whatsapp_message_queue")
+        .delete()
+        .eq("campaign_id", campaignId);
+
+      await supabase
+        .from("campaign_steps")
+        .delete()
+        .eq("campaign_id", campaignId);
+
+      const { error } = await supabase
+        .from("whatsapp_campaigns")
+        .delete()
+        .eq("id", campaignId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Campanha excluída");
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-campaigns"] });
+    },
+    onError: () => {
+      toast.error("Erro ao excluir campanha");
+    },
+  });
+
   return {
     broker,
     campaigns,
@@ -400,5 +429,6 @@ export function useWhatsAppCampaigns(adminBrokerFilterId?: string) {
     pauseCampaign: pauseCampaignMutation.mutateAsync,
     resumeCampaign: resumeCampaignMutation.mutateAsync,
     cancelCampaign: cancelCampaignMutation.mutateAsync,
+    deleteCampaign: deleteCampaignMutation.mutateAsync,
   };
 }
