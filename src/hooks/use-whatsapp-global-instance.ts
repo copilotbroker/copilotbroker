@@ -242,6 +242,7 @@ export function useWhatsAppGlobalInstance() {
 
       toast.success("Sessão limpa com sucesso");
       setQrCode(null);
+      setPairingCode(null);
       setState({
         status: "disconnected",
         phoneNumber: null,
