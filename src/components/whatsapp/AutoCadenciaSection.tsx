@@ -28,7 +28,7 @@ export function AutoCadenciaSection() {
 
   // Campaign detail
   const [detailCampaign, setDetailCampaign] = useState<WhatsAppCampaign | null>(null);
-  const [detailSteps, setDetailSteps] = useState<CampaignStepRow[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
 
   const handleCreateNew = () => { setEditingRule(null); setIsEditorOpen(true); };
   const handleEdit = (rule: BrokerAutoCadenciaRule) => { setEditingRule(rule); setIsEditorOpen(true); };
