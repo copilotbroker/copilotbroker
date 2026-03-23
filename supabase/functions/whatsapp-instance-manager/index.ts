@@ -751,11 +751,12 @@ app.get("/qrcode", async (c) => {
     const instanceNameEnc = encodeURIComponent(instance.instance_name);
     // To get a pairing code, UAZAPI requires passing the phone number as ?number=XXXX
     // Format: country code + number, no symbols (e.g. 5511999999999)
-    const phoneDigits = instance.phone_number?.replace(/\D/g, "") || "";
+    // Priority: frontend-supplied number > stored phone_number
+    const phoneDigits = (requestedNumber?.replace(/\D/g, "") || instance.phone_number?.replace(/\D/g, "") || "");
     const numberParam = phoneDigits ? `number=${phoneDigits}` : "";
     const qsConnect = numberParam ? `?${numberParam}` : "";
     
-    console.log(`[UAZAPI] Phone for pairing: ${phoneDigits || "(none)"}`);
+    console.log(`[UAZAPI] Phone for pairing: ${phoneDigits || "(none)"} (requested: ${requestedNumber || "none"}, stored: ${instance.phone_number || "none"})`);
 
     const attempts: QrAttempt[] = [
       {
