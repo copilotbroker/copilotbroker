@@ -159,12 +159,6 @@ const GVFormSection = ({
       supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
       
       // Trigger automations (non-blocking)
-      supabase.functions.invoke("auto-first-message", {
-        body: { leadId },
-      }).catch((err) => {
-        console.warn("Auto first message trigger failed:", err);
-      });
-
       supabase.functions.invoke("auto-cadencia-10d", {
         body: { leadId },
       }).catch((err) => {

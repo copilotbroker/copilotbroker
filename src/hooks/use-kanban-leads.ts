@@ -60,7 +60,7 @@ export function useKanbanLeads({ brokerId, isAdmin = false, projectId }: UseKanb
         'comparecimento', 'valor_proposta', 'data_envio_proposta', 'valor_final_venda',
         'data_fechamento', 'data_perda', 'etapa_perda', 'inactivation_reason',
         'inactivated_at', 'inactivated_by', 'registered_at', 'registered_by',
-        'auto_first_message_sent', 'auto_first_message_at', 'project_id',
+        'project_id',
         'atendimento_iniciado_em', 'status_distribuicao', 'reserva_expira_em',
         'broker_id', 'roleta_id', 'corretor_atribuido_id', 'motivo_atribuicao',
       ];
