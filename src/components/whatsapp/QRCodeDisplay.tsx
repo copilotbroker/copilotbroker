@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, QrCode, Smartphone } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QRCodeDisplayProps {
   qrCode: string | null;
@@ -11,13 +12,17 @@ interface QRCodeDisplayProps {
 }
 
 export function QRCodeDisplay({ qrCode, pairingCode, isLoading, onRefresh }: QRCodeDisplayProps) {
-  const [showCode, setShowCode] = useState(Boolean(pairingCode));
+  const isMobile = useIsMobile();
+  // On mobile, default to pairing code; on desktop, default to QR code
+  const [showCode, setShowCode] = useState(isMobile || Boolean(pairingCode));
 
   useEffect(() => {
-    if (pairingCode) {
+    if (pairingCode && isMobile) {
+      setShowCode(true);
+    } else if (pairingCode && !qrCode) {
       setShowCode(true);
     }
-  }, [pairingCode]);
+  }, [pairingCode, isMobile, qrCode]);
 
   const formattedCode = pairingCode
     ? pairingCode.replace(/(\w{4})(\w{4})/, "$1-$2")
