@@ -798,7 +798,7 @@ app.get("/qrcode", async (c) => {
       }, 200, corsHeaders);
     }
 
-    return c.json({ qrCode }, 200, corsHeaders);
+    return c.json({ qrCode, pairingCode }, 200, corsHeaders);
 
   } catch (error) {
     console.error("❌ Erro ao obter QR code:", error);
