@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 export function AutoCadenciaSection() {
   const { rules, isLoading, toggleRuleActive, deleteRule, createRule, updateRule, isSaving, fetchRules } = useAutoCadenciaRules();
-  const { campaigns, isLoading: isLoadingCampaigns, pauseCampaign, resumeCampaign, cancelCampaign } = useWhatsAppCampaigns();
+  const { campaigns, isLoading: isLoadingCampaigns, pauseCampaign, resumeCampaign, cancelCampaign, deleteCampaign } = useWhatsAppCampaigns();
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<BrokerAutoCadenciaRule | null>(null);
