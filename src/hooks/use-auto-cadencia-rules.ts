@@ -9,12 +9,15 @@ export interface AutoCadenciaStep {
   sendIfReplied: boolean;
 }
 
+export type CadenceType = 'manual' | 'automatic';
+
 export interface BrokerAutoCadenciaRule {
   id: string;
   broker_id: string;
   name: string;
   project_id: string | null;
   is_active: boolean;
+  cadence_type: CadenceType;
   created_at: string;
   updated_at: string;
   project?: { id: string; name: string } | null;
