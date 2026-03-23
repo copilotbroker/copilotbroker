@@ -87,6 +87,27 @@ const MonacoFormSection = ({ projectId, brokerId, submitted }: MonacoFormSection
         },
       }).catch(console.error);
 
+      // Meta Pixel — Lead event with deduplication
+      const eventId = crypto.randomUUID();
+      try {
+        if (typeof window !== "undefined" && window.fbq) {
+          window.fbq("track", "Lead", {}, { eventID: eventId });
+        }
+        supabase.functions.invoke("meta-conversions-api", {
+          body: {
+            event_name: "Lead",
+            pixel_id: "4261464794069997",
+            event_id: eventId,
+            event_source_url: window.location.href,
+            user_data: { ph: whatsapp, fn: name.trim() },
+            fbp: document.cookie.match(/_fbp=([^;]+)/)?.[1] || null,
+            fbc: document.cookie.match(/_fbc=([^;]+)/)?.[1] || null,
+          },
+        }).catch(console.warn);
+      } catch (e) {
+        console.warn("Meta CAPI error:", e);
+      }
+
       const basePath = location.pathname.replace(/\/obrigado$/, "").replace(/\/+$/, "");
       navigate(`${basePath}/obrigado`, { replace: true });
     } catch (error) {
