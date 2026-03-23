@@ -9,12 +9,15 @@ export interface AutoCadenciaStep {
   sendIfReplied: boolean;
 }
 
+export type CadenceType = 'manual' | 'automatic';
+
 export interface BrokerAutoCadenciaRule {
   id: string;
   broker_id: string;
   name: string;
   project_id: string | null;
   is_active: boolean;
+  cadence_type: CadenceType;
   created_at: string;
   updated_at: string;
   project?: { id: string; name: string } | null;
@@ -102,7 +105,7 @@ export function useAutoCadenciaRules() {
     }));
   };
 
-  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => {
+  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; cadence_type?: CadenceType; steps: AutoCadenciaStep[] }) => {
     if (!brokerId) return null;
     setIsSaving(true);
     try {
@@ -114,6 +117,7 @@ export function useAutoCadenciaRules() {
           name: data.name || "Cadência de Follow-up",
           project_id: data.project_id,
           is_active: data.is_active,
+          cadence_type: data.cadence_type || 'manual',
         })
         .select(`*, project:projects(id, name)`)
         .single();

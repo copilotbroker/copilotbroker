@@ -10,13 +10,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertTriangle, Zap, Plus, Trash2, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/use-user-role";
-import type { BrokerAutoCadenciaRule, AutoCadenciaStep } from "@/hooks/use-auto-cadencia-rules";
+import type { BrokerAutoCadenciaRule, AutoCadenciaStep, CadenceType } from "@/hooks/use-auto-cadencia-rules";
 
 interface AutoCadenciaRuleEditorProps {
   isOpen: boolean;
   onClose: () => void;
   editingRule: BrokerAutoCadenciaRule | null;
-  createRule: (data: { name?: string; project_id: string | null; is_active: boolean; steps: AutoCadenciaStep[] }) => Promise<any>;
+  createRule: (data: { name?: string; project_id: string | null; is_active: boolean; cadence_type?: CadenceType; steps: AutoCadenciaStep[] }) => Promise<any>;
   updateRule: (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => Promise<any>;
   isSaving: boolean;
   rules: BrokerAutoCadenciaRule[];
@@ -72,6 +72,7 @@ export function AutoCadenciaRuleEditor({
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectId, setProjectId] = useState<string>("all");
   const [ruleName, setRuleName] = useState("");
+  const [cadenceType, setCadenceType] = useState<CadenceType>("manual");
   const [steps, setSteps] = useState<AutoCadenciaStep[]>(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
   const [loadingSteps, setLoadingSteps] = useState(false);
 
@@ -106,6 +107,7 @@ export function AutoCadenciaRuleEditor({
     if (editingRule) {
       setRuleName(editingRule.name || "");
       setProjectId(editingRule.project_id || "all");
+      setCadenceType(editingRule.cadence_type || "manual");
       
       setLoadingSteps(true);
       (supabase.from("auto_cadencia_steps") as any)
@@ -127,16 +129,17 @@ export function AutoCadenciaRuleEditor({
     } else {
       setRuleName("");
       setProjectId("all");
+      setCadenceType("manual");
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
-      
     }
   }, [editingRule, isOpen, brokerId]);
 
   const projectHasRule = useMemo(() => {
     if (editingRule) return false;
+    if (cadenceType === "manual") return false;
     const target = projectId === "all" ? null : projectId;
-    return rules.some(r => r.project_id === target);
-  }, [projectId, rules, editingRule]);
+    return rules.some(r => r.project_id === target && r.cadence_type === "automatic");
+  }, [projectId, rules, editingRule, cadenceType]);
 
   const addStep = () => {
     setSteps(prev => [...prev, { messageContent: "", delayMinutes: 1440, sendIfReplied: false }]);
@@ -157,9 +160,10 @@ export function AutoCadenciaRuleEditor({
     if (!nameValid) return;
 
     const isNew = !editingRule;
+    const finalProjectId = cadenceType === "manual" ? null : (projectId === "all" ? null : projectId);
     const data = {
       name: ruleName.trim(),
-      project_id: projectId === "all" ? null : projectId,
+      project_id: finalProjectId,
       is_active: isNew ? false : true,
     };
 
@@ -167,11 +171,11 @@ export function AutoCadenciaRuleEditor({
     if (editingRule) {
       success = await updateRule(editingRule.id, data, steps);
     } else {
-      success = await createRule({ ...data, steps });
+      success = await createRule({ ...data, cadence_type: cadenceType, steps });
     }
     if (success) {
       onClose();
-      if (isNew && success?.id && onCreated) {
+      if (isNew && cadenceType === "automatic" && success?.id && onCreated) {
         onCreated(success.id);
       }
     }
@@ -215,27 +219,77 @@ export function AutoCadenciaRuleEditor({
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Empreendimento</Label>
-                  <Select value={projectId} onValueChange={handleProjectChange}>
-                    <SelectTrigger className="bg-[#141417] border-[#2a2a2e] text-white min-h-[44px]">
-                      <SelectValue placeholder="Selecione o empreendimento" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                      <SelectItem value="all" className="text-white">
-                        🌐 Todos os empreendimentos
-                      </SelectItem>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id} className="text-white">
-                          {project.name}
+                {/* Cadence Type Toggle */}
+                {!editingRule && (
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Tipo de cadência</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCadenceType("manual")}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          cadenceType === "manual"
+                            ? "border-emerald-500/50 bg-emerald-500/10"
+                            : "border-[#2a2a2e] bg-[#141417] hover:border-[#3a3a3e]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-base">📋</span>
+                          <span className={`text-sm font-medium ${cadenceType === "manual" ? "text-emerald-400" : "text-slate-300"}`}>
+                            Manual
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Salva como template. Você aplica no lead quando quiser.
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCadenceType("automatic")}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          cadenceType === "automatic"
+                            ? "border-emerald-500/50 bg-emerald-500/10"
+                            : "border-[#2a2a2e] bg-[#141417] hover:border-[#3a3a3e]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-base">⚡</span>
+                          <span className={`text-sm font-medium ${cadenceType === "automatic" ? "text-emerald-400" : "text-slate-300"}`}>
+                            Automática
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Dispara ao receber um lead no empreendimento.
+                        </p>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Project selector - only for automatic */}
+                {cadenceType === "automatic" && (
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Empreendimento</Label>
+                    <Select value={projectId} onValueChange={handleProjectChange}>
+                      <SelectTrigger className="bg-[#141417] border-[#2a2a2e] text-white min-h-[44px]">
+                        <SelectValue placeholder="Selecione o empreendimento" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
+                        <SelectItem value="all" className="text-white">
+                          🌐 Todos os empreendimentos
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {projectHasRule && (
-                    <p className="text-xs text-red-400">Já existe uma regra para este empreendimento</p>
-                  )}
-                </div>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id} className="text-white">
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {projectHasRule && (
+                      <p className="text-xs text-red-400">Já existe uma cadência automática para este empreendimento</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Steps Editor */}
                 <div className="space-y-3">
@@ -335,15 +389,17 @@ export function AutoCadenciaRuleEditor({
                   </p>
                 </div>
 
-                {/* Warning */}
-                <Alert className="bg-yellow-500/10 border-yellow-500/30">
-                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
-                  <AlertDescription className="text-yellow-300 text-sm">
-                    Quando ativa, a cadência será disparada <strong>automaticamente</strong> ao receber 
-                    um lead neste empreendimento. O lead será movido para "Atendimento" 
-                    e o timeout da roleta será desativado.
-                  </AlertDescription>
-                </Alert>
+                {/* Warning - only for automatic */}
+                {cadenceType === "automatic" && (
+                  <Alert className="bg-yellow-500/10 border-yellow-500/30">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                    <AlertDescription className="text-yellow-300 text-sm">
+                      Quando ativa, a cadência será disparada <strong>automaticamente</strong> ao receber 
+                      um lead neste empreendimento. O lead será movido para "Atendimento" 
+                      e o timeout da roleta será desativado.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
             </div>
 

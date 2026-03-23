@@ -107,7 +107,7 @@ export function AutoCadenciaSection() {
               )}
               onClick={() => handleEdit(rule)}
             >
-              <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={cn(
                     "px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide truncate max-w-[200px]",
@@ -115,24 +115,36 @@ export function AutoCadenciaSection() {
                   )}>
                     {rule.name || rule.project?.name || "Cadência"}
                   </span>
-                  {rule.is_active ? (
-                    <span className="flex items-center gap-1 text-xs text-emerald-400 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Ativo
-                    </span>
-                  ) : (
-                    <span className="text-xs text-slate-500 shrink-0">Inativo</span>
+                  <span className={cn(
+                    "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                    rule.cadence_type === "automatic"
+                      ? "bg-amber-500/20 text-amber-400"
+                      : "bg-blue-500/20 text-blue-400"
+                  )}>
+                    {rule.cadence_type === "automatic" ? "⚡ Auto" : "📋 Manual"}
+                  </span>
+                  {rule.cadence_type === "automatic" && (
+                    rule.is_active ? (
+                      <span className="flex items-center gap-1 text-xs text-emerald-400 shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Ativo
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-500 shrink-0">Inativo</span>
+                    )
                   )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Switch
-                      checked={rule.is_active}
-                      onCheckedChange={() => toggleRuleActive(rule.id, !rule.is_active)}
-                      className="data-[state=checked]:bg-emerald-500"
-                    />
-                  </div>
+                  {rule.cadence_type === "automatic" && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={rule.is_active}
+                        onCheckedChange={() => toggleRuleActive(rule.id, !rule.is_active)}
+                        className="data-[state=checked]:bg-emerald-500"
+                      />
+                    </div>
+                  )}
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
                       <TooltipTrigger asChild>
