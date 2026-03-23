@@ -3,6 +3,16 @@ import { Zap, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAutoCadenciaRules, type BrokerAutoCadenciaRule } from "@/hooks/use-auto-cadencia-rules";
 import { AutoCadenciaRuleEditor } from "./AutoCadenciaRuleEditor";
 import { cn } from "@/lib/utils";
@@ -11,13 +21,33 @@ export function AutoCadenciaSection() {
   const { rules, isLoading, toggleRuleActive, deleteRule, createRule, updateRule, isSaving } = useAutoCadenciaRules();
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<BrokerAutoCadenciaRule | null>(null);
+  const [showAutoActivateDialog, setShowAutoActivateDialog] = useState(false);
+  const [lastCreatedRuleId, setLastCreatedRuleId] = useState<string | null>(null);
 
   const handleCreateNew = () => { setEditingRule(null); setIsEditorOpen(true); };
   const handleEdit = (rule: BrokerAutoCadenciaRule) => { setEditingRule(rule); setIsEditorOpen(true); };
   const handleCloseEditor = () => { setIsEditorOpen(false); setEditingRule(null); };
 
+  const handleCreated = (ruleId: string) => {
+    setLastCreatedRuleId(ruleId);
+    setShowAutoActivateDialog(true);
+  };
+
+  const handleAutoActivate = () => {
+    if (lastCreatedRuleId) {
+      toggleRuleActive(lastCreatedRuleId, true);
+    }
+    setShowAutoActivateDialog(false);
+    setLastCreatedRuleId(null);
+  };
+
+  const handleSkipActivate = () => {
+    setShowAutoActivateDialog(false);
+    setLastCreatedRuleId(null);
+  };
+
   const handleDelete = async (ruleId: string) => {
-    if (window.confirm("Tem certeza que deseja excluir esta regra?")) {
+    if (window.confirm("Tem certeza que deseja excluir esta cadência?")) {
       await deleteRule(ruleId);
     }
   };
@@ -39,15 +69,15 @@ export function AutoCadenciaSection() {
             <Zap className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Cadências automáticas</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Cadências de Follow-up</h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-              Ative uma cadência automática ao receber leads
+              Configure sequências de follow-up para seus leads
             </p>
           </div>
         </div>
         <Button onClick={handleCreateNew} className="gap-2 w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700">
           <Plus className="w-4 h-4" />
-          Nova Regra
+          Nova Cadência
         </Button>
       </div>
 
@@ -55,13 +85,13 @@ export function AutoCadenciaSection() {
       {rules.length === 0 ? (
         <div className="text-center py-8 bg-[#1a1a1d] rounded-xl border border-[#2a2a2e]">
           <Zap className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-medium text-white mb-1">Nenhuma regra configurada</h3>
+          <h3 className="text-base font-medium text-white mb-1">Nenhuma cadência configurada</h3>
           <p className="text-slate-400 text-sm mb-4 px-4">
-            Crie uma regra para ativar a Cadência 10D automaticamente
+            Crie uma cadência de follow-up para engajar seus leads
           </p>
           <Button onClick={handleCreateNew} variant="outline" className="gap-2">
             <Plus className="w-4 h-4" />
-            Criar Primeira Regra
+            Criar Primeira Cadência
           </Button>
         </div>
       ) : (
@@ -145,7 +175,28 @@ export function AutoCadenciaSection() {
         updateRule={updateRule}
         isSaving={isSaving}
         rules={rules}
+        onCreated={handleCreated}
       />
+
+      {/* Auto-activate dialog */}
+      <AlertDialog open={showAutoActivateDialog} onOpenChange={setShowAutoActivateDialog}>
+        <AlertDialogContent className="bg-[#1a1a1d] border-[#2a2a2e]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Ativar sequência automática?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Deseja que esta cadência de follow-up seja ativada automaticamente quando um novo lead for atribuído a você?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleSkipActivate} className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]">
+              Não, depois
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleAutoActivate} className="bg-emerald-600 hover:bg-emerald-700">
+              Sim, ativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -100,10 +100,10 @@ export default function BrokerCopilotConfig() {
               <Shield className="w-4 h-4" />
               <span className="hidden sm:inline">Segurança</span>
             </TabsTrigger>
-            <TabsTrigger value="automation" className="text-slate-400 data-[state=active]:bg-[#2a2a2e] data-[state=active]:text-white hover:text-white flex items-center gap-2">
-              <Bot className="w-4 h-4" />
-              <span className="hidden sm:inline">Automação</span>
-            </TabsTrigger>
+              <TabsTrigger value="automation" className="text-slate-400 data-[state=active]:bg-[#2a2a2e] data-[state=active]:text-white hover:text-white flex items-center gap-2">
+                <Bot className="w-4 h-4" />
+                <span className="hidden sm:inline">Follow-up</span>
+              </TabsTrigger>
             <TabsTrigger value="campaigns" className="text-slate-400 data-[state=active]:bg-[#2a2a2e] data-[state=active]:text-white hover:text-white flex items-center gap-2">
               <Megaphone className="w-4 h-4" />
               <span className="hidden sm:inline">Campanhas</span>
