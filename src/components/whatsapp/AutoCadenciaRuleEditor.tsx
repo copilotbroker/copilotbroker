@@ -20,6 +20,7 @@ interface AutoCadenciaRuleEditorProps {
   updateRule: (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => Promise<any>;
   isSaving: boolean;
   rules: BrokerAutoCadenciaRule[];
+  onCreated?: (ruleId: string) => void;
 }
 
 interface Project { id: string; name: string; }
