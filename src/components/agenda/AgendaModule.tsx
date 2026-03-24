@@ -145,13 +145,15 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
         </div>
       </div>
 
-      {/* Google Connection Card */}
-      <GoogleConnectCard
-        connection={googleConnection}
-        onConnect={connectGoogle}
-        onSync={syncGoogle}
-        onDisconnect={disconnectGoogle}
-      />
+      {/* Google Connection Card — only when not connected */}
+      {!googleConnection && (
+        <GoogleConnectCard
+          connection={googleConnection}
+          onConnect={connectGoogle}
+          onSync={syncGoogle}
+          onDisconnect={disconnectGoogle}
+        />
+      )}
 
       {/* Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
