@@ -57,7 +57,7 @@ const STATUS_ORDER: LeadStatus[] = ['new', 'info_sent', 'awaiting_docs', 'schedu
 export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = [], searchTerm = "", onSearchChange, onAddLead, hideToolbarMobile = false }: KanbanBoardProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [selectedBroker, setSelectedBroker] = useState<string>("all");
+  const [selectedBroker, setSelectedBroker] = useState<string>(isAdmin && brokerId ? brokerId : "all");
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
