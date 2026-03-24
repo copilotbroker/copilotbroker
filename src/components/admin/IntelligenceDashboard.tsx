@@ -265,6 +265,7 @@ export default function IntelligenceDashboard() {
     });
 
     const brokerPerformance = Object.entries(attendedByBroker)
+      .filter(([bid]) => brokerMap[bid])
       .map(([bid, arr]) => {
         const total = byBroker[bid]?.total || arr.length;
         return {
