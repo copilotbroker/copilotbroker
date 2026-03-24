@@ -797,6 +797,9 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
         open={agendamentoModal.open}
         onOpenChange={(v) => setAgendamentoModal(prev => ({ ...prev, open: v }))}
         title={agendamentoModal.isReagendamento ? "Reagendar" : "Registrar Agendamento"}
+        leadId={agendamentoModal.leadId || undefined}
+        leadName={agendamentoModal.leadId ? allLeadsRef.current.get(agendamentoModal.leadId)?.name : undefined}
+        brokerId={agendamentoModal.leadId ? allLeadsRef.current.get(agendamentoModal.leadId)?.broker_id : brokerId}
         onConfirm={async (data, tipo) => {
           if (!agendamentoModal.leadId) return;
           if (agendamentoModal.isReagendamento) {
@@ -874,6 +877,8 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
         open={callModal.open}
         onOpenChange={(v) => setCallModal(prev => ({ ...prev, open: v }))}
         leadName={callModal.leadId ? allLeadsRef.current.get(callModal.leadId)?.name : undefined}
+        leadId={callModal.leadId || undefined}
+        brokerId={callModal.leadId ? allLeadsRef.current.get(callModal.leadId)?.broker_id : brokerId}
         onConfirm={handleCallConfirm}
       />
     </div>
