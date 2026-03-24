@@ -1,28 +1,29 @@
 
 
-# Substituir Inbox por Agenda no bottom nav mobile do Corretor
+# Fix: Google Calendar connection not opening on mobile
 
-## Problema
-A Agenda não está acessível no mobile porque o bottom nav mostra Inbox no lugar. O usuário quer trocar: remover Inbox da barra inferior e colocar Agenda.
+## Problem
+`window.open()` with popup parameters (`width=500,height=600`) is blocked by mobile browsers. Mobile Safari and Chrome block popups that aren't directly triggered by user interaction, and even when allowed, popup windows don't work well on mobile.
 
-## Alteração
+## Solution
+Detect mobile and use `window.location.href` (full redirect) instead of popup. After the OAuth callback, redirect back to the agenda page.
 
-### Arquivo: `src/components/broker/BrokerBottomNav.tsx`
+### File: `src/hooks/use-calendar-events.ts`
 
-1. **Trocar `inbox` por `agenda`** na construção do `navItems` (linha 52):
-   - Substituir o item inbox pelo item agenda do `BROKER_ROUTE_TABS`
-   - Remover badge de unread do inbox nesse slot
+1. Replace `window.open(data.url, ...)` with mobile detection logic:
+   - If mobile viewport (`window.innerWidth < 768`): use `window.location.href = data.url` (full page redirect)
+   - If desktop: keep existing popup behavior
 
-2. **Atualizar `handleClick`** (linha 70): adicionar `"agenda"` ao bloco que navega via `getBrokerPathByTab`
+2. Update the callback HTML in `supabase/functions/google-calendar-auth/index.ts`:
+   - Instead of only `window.opener.postMessage` + `window.close()`, also handle the case where there's no `window.opener` (i.e., full redirect on mobile)
+   - In that case, redirect back to `/corretor/agenda` with a success query param
 
-3. **Atualizar `getItemColor` e `getActiveIndicator`**: incluir `"agenda"` com estilo amarelo (mesmo do CRM)
+3. Handle return from redirect in `AgendaModule.tsx`:
+   - On mount, check for `?google=success` in URL
+   - If present, show toast and remove the query param
 
-4. **Mover Inbox para o menu "Mais"** (`moreMenuItems`): adicionar item Inbox com badge de unread, para que ainda fique acessível
-
-O bottom nav ficará:
-```text
-[Agenda]  [CRM/Lista]  [+ FAB]  [Copiloto]  [⋮ Mais]
-```
-
-E no menu "Mais": Inbox (com badge), Modo Lista, Notificações, Roletas, Landing Pages, Sair.
+### Files changed
+- `src/hooks/use-calendar-events.ts` — mobile redirect instead of popup
+- `supabase/functions/google-calendar-auth/index.ts` — callback handles redirect case
+- `src/components/agenda/AgendaModule.tsx` — detect redirect return
 
