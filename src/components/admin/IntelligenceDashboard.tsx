@@ -73,7 +73,7 @@ export default function IntelligenceDashboard() {
   const { data: brokers = [] } = useQuery<BrokerRow[]>({
     queryKey: ["intel-brokers"],
     queryFn: async () => {
-      const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true).order("name");
+      const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true).not("lider_id", "is", null).order("name");
       return (data || []) as BrokerRow[];
     },
     staleTime: 5 * 60_000,
