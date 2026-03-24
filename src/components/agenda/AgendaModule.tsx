@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, ChevronLeft, ChevronRight, MoreVertical, Plus, RefreshCw, Search, Unplug, Calendar } from "lucide-react";
@@ -15,7 +15,8 @@ import { ListView } from "./ListView";
 import { EventModal } from "./EventModal";
 import { GoogleConnectCard } from "./GoogleConnectCard";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useSearchParams } from "react-router-dom";
 
 interface AgendaModuleProps {
   brokerId: string | null;

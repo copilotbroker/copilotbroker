@@ -178,7 +178,15 @@ export function useCalendarEvents({ brokerId, isAdmin, selectedBrokerId }: UseCa
         return;
       }
 
-      // Open popup
+      const isMobile = window.innerWidth < 768;
+
+      if (isMobile) {
+        // Mobile: full redirect (popups are blocked)
+        window.location.href = data.url;
+        return;
+      }
+
+      // Desktop: popup
       const popup = window.open(data.url, "google-calendar-auth", "width=500,height=600,scrollbars=yes");
 
       // Listen for callback message
@@ -201,7 +209,6 @@ export function useCalendarEvents({ brokerId, isAdmin, selectedBrokerId }: UseCa
         if (popup?.closed) {
           clearInterval(pollInterval);
           window.removeEventListener("message", handleMessage);
-          // Check if connection was established
           await fetchGoogleConnection();
           await fetchEvents();
         }
