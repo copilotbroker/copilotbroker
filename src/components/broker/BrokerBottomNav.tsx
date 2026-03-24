@@ -41,7 +41,7 @@ export function BrokerBottomNav({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const activeTab = getBrokerTabFromPath(location.pathname);
 
-  const baseItems = BROKER_ROUTE_TABS.filter((item) => ["crm", "inbox", "copilot"].includes(item.id));
+  const baseItems = BROKER_ROUTE_TABS.filter((item) => ["crm", "agenda", "copilot"].includes(item.id));
 
   const navItems: Array<{
     id: string;
@@ -49,7 +49,7 @@ export function BrokerBottomNav({
     isFab?: boolean;
     badge?: number;
   }> = [
-    ...(inboxEnabled ? [{ id: "inbox", icon: baseItems.find((item) => item.id === "inbox")!.icon, badge: inboxUnread }] : []),
+    { id: "agenda", icon: baseItems.find((item) => item.id === "agenda")!.icon },
     { id: viewMode === "list" ? "leads" : "crm", icon: baseItems.find((item) => item.id === "crm")!.icon },
     { id: "add", icon: Plus, isFab: true },
     ...(copilotEnabled ? [{ id: "copilot", icon: baseItems.find((item) => item.id === "copilot")!.icon }] : []),
