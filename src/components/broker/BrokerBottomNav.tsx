@@ -94,7 +94,7 @@ export function BrokerBottomNav({
     if (id === "copilot" && activeTab === "copilot") {
       return "text-blue-400";
     }
-    if (id === "inbox" && activeTab === "inbox") {
+    if (id === "agenda" && activeTab === "agenda") {
       return "text-[#FFFF00]";
     }
     return "text-slate-500 active:text-slate-300";
