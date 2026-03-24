@@ -8,27 +8,76 @@ import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface AgendamentoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (data: Date, tipo: string) => Promise<void>;
   title?: string;
+  leadId?: string;
+  leadName?: string;
+  brokerId?: string | null;
 }
 
-export function AgendamentoModal({ open, onOpenChange, onConfirm, title = "Registrar Agendamento" }: AgendamentoModalProps) {
+const HOURS = Array.from({ length: 14 }, (_, i) => {
+  const h = i + 7;
+  return { value: `${h.toString().padStart(2, "0")}:00`, label: `${h.toString().padStart(2, "0")}:00` };
+});
+
+const TIPO_TO_EVENT_TYPE: Record<string, string> = {
+  visita: "visit",
+  reuniao: "meeting",
+  videochamada: "meeting",
+  ligacao: "follow_up",
+};
+
+export function AgendamentoModal({ open, onOpenChange, onConfirm, title = "Registrar Agendamento", leadId, leadName, brokerId }: AgendamentoModalProps) {
   const [date, setDate] = useState<Date>();
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [time, setTime] = useState<string>("");
   const [tipo, setTipo] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
-    if (!date || !tipo) return;
+    if (!date || !tipo || !time) return;
     setLoading(true);
     try {
-      await onConfirm(date, tipo);
+      // Combine date + time
+      const [hours, minutes] = time.split(":").map(Number);
+      const fullDate = new Date(date);
+      fullDate.setHours(hours, minutes, 0, 0);
+
+      await onConfirm(fullDate, tipo);
+
+      // Create calendar event
+      if (brokerId) {
+        const endDate = new Date(fullDate);
+        endDate.setHours(hours + 1);
+
+        const tipoLabel = TIPO_AGENDAMENTO.find(t => t.key === tipo)?.label || tipo;
+        const eventType = TIPO_TO_EVENT_TYPE[tipo] || "scheduling";
+
+        const { error } = await supabase.from("calendar_events").insert({
+          broker_id: brokerId,
+          lead_id: leadId || null,
+          title: `${tipoLabel} - ${leadName || "Lead"}`,
+          event_type: eventType,
+          start_at: fullDate.toISOString(),
+          end_at: endDate.toISOString(),
+        });
+        if (error) {
+          console.error("Erro ao criar evento na agenda:", error);
+          toast.error("Agendamento salvo, mas erro ao criar evento na agenda.");
+        } else {
+          toast.success("Evento adicionado à agenda!");
+        }
+      }
+
       onOpenChange(false);
       setDate(undefined);
+      setTime("");
       setTipo("");
     } finally {
       setLoading(false);
@@ -65,9 +114,24 @@ export function AgendamentoModal({ open, onOpenChange, onConfirm, title = "Regis
                   onSelect={(d) => { setDate(d); setCalendarOpen(false); }}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
+                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
                 />
               </PopoverContent>
             </Popover>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-slate-400">Horário *</label>
+            <Select value={time} onValueChange={setTime}>
+              <SelectTrigger className="bg-[#0f0f12] border-[#2a2a2e]">
+                <SelectValue placeholder="Selecione o horário" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
+                {HOURS.map(h => (
+                  <SelectItem key={h.value} value={h.value}>{h.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -87,7 +151,7 @@ export function AgendamentoModal({ open, onOpenChange, onConfirm, title = "Regis
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleConfirm} disabled={!date || !tipo || loading}>
+          <Button onClick={handleConfirm} disabled={!date || !tipo || !time || loading}>
             {loading ? "Salvando..." : "Confirmar"}
           </Button>
         </DialogFooter>
