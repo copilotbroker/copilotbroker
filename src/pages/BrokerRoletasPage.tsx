@@ -57,7 +57,7 @@ const BrokerRoletasPage = () => {
         <title>Roletas | Enove</title>
       </Helmet>
       <BrokerLayout
-        viewMode="kanban"
+        viewMode="list"
         onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
         onLogout={handleLogout}
         isLeader={isLeader}

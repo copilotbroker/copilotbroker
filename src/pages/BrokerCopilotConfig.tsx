@@ -78,7 +78,7 @@ export default function BrokerCopilotConfig() {
     <BrokerLayout
       brokerName={brokerName}
       brokerInitial={brokerName?.charAt(0) || "C"}
-      viewMode="kanban"
+      viewMode="list"
       onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
       onLogout={handleLogout}
       isLeader={isLeader}
