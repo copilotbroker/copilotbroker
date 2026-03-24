@@ -184,16 +184,12 @@ export function BrokerBottomNav({
             {moreMenuItems.map((menuItem) => {
               const isDestructive = Boolean((menuItem as { destructive?: boolean }).destructive);
               const isNotifications = menuItem.id === "notifications";
-              const Icon =
-                menuItem.id === "projects"
-                  ? BROKER_ROUTE_TABS.find((item) => item.id === "projects")!.icon
-                  : menuItem.id === "roletas"
-                    ? BROKER_ROUTE_TABS.find((item) => item.id === "roletas")!.icon
-                    : menuItem.id === "notifications"
-                      ? Bell
-                      : menuItem.id === "leads"
-                        ? BROKER_ROUTE_TABS.find((item) => item.id === "leads")!.icon
-                        : LogOut;
+              const matchedTab = BROKER_ROUTE_TABS.find((item) => item.id === menuItem.id);
+              const Icon = matchedTab
+                ? matchedTab.icon
+                : menuItem.id === "notifications"
+                  ? Bell
+                  : LogOut;
 
               return (
                 <button
