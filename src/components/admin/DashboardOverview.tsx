@@ -7,8 +7,11 @@ import {
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { getInactivationReasonLabel, getOriginDisplayLabel } from "@/types/crm";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from "recharts";
 
 type Period = "today" | "7d" | "30d" | "all";
 
@@ -23,11 +26,18 @@ function getDateFrom(period: Period): string | null {
 
 interface BrokerRow { id: string; name: string }
 
+const CHART_COLORS = ["#FFFF00", "#22d3ee", "#a78bfa", "#f97316", "#34d399", "#f472b6", "#60a5fa", "#fbbf24"];
+
+const chartTooltipStyle = {
+  contentStyle: { background: "#1e1e22", border: "1px solid #2a2a2e", borderRadius: 8, fontSize: 12 },
+  labelStyle: { color: "#fff" },
+  itemStyle: { color: "#e2e8f0" },
+};
+
 export default function DashboardOverview() {
   const [period, setPeriod] = useState<Period>("30d");
   const dateFrom = getDateFrom(period);
 
-  // ── Brokers ──
   const { data: brokers = [] } = useQuery<BrokerRow[]>({
     queryKey: ["dash-brokers"],
     queryFn: async () => {
@@ -43,7 +53,6 @@ export default function DashboardOverview() {
     return m;
   }, [brokers]);
 
-  // ── All leads (with period filter) ──
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ["dash-leads", period],
     queryFn: async () => {
@@ -57,24 +66,19 @@ export default function DashboardOverview() {
     staleTime: 30_000,
   });
 
-  // ── Stale leads (always full period) ──
   const { data: staleLeads = [] } = useQuery({
     queryKey: ["dash-stale-leads"],
     queryFn: async () => {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 30);
-      const { data } = await supabase
-        .from("leads")
-        .select("id, broker_id")
+      const { data } = await supabase.from("leads").select("id, broker_id")
         .lt("last_interaction_at", cutoff.toISOString())
-        .not("status", "in", '("inactive","registered")')
-        .limit(5000);
+        .not("status", "in", '("inactive","registered")').limit(5000);
       return data || [];
     },
     staleTime: 60_000,
   });
 
-  // ── Projects ──
   const { data: projects = [] } = useQuery({
     queryKey: ["dash-projects"],
     queryFn: async () => {
@@ -90,7 +94,6 @@ export default function DashboardOverview() {
     return m;
   }, [projects]);
 
-  // ── Page views ──
   const { data: pageViews = [] } = useQuery({
     queryKey: ["dash-pageviews", period],
     queryFn: async () => {
@@ -102,11 +105,9 @@ export default function DashboardOverview() {
     staleTime: 60_000,
   });
 
-  // ── Computed metrics ──
   const metrics = useMemo(() => {
     const totalLeads = leads.length;
 
-    // Leads by broker
     const byBroker: Record<string, number> = {};
     const manualByBroker: Record<string, number> = {};
     const receivedByBroker: Record<string, number> = {};
@@ -120,7 +121,6 @@ export default function DashboardOverview() {
       }
     });
 
-    // Inactive leads + reasons
     const inactive = leads.filter((l: any) => l.status === "inactive");
     const inactiveCount = inactive.length;
     const reasonCount: Record<string, number> = {};
@@ -129,60 +129,49 @@ export default function DashboardOverview() {
       reasonCount[r] = (reasonCount[r] || 0) + 1;
     });
     const topReasons = Object.entries(reasonCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
+      .sort((a, b) => b[1] - a[1]).slice(0, 5)
       .map(([key, count]) => ({ key, label: getInactivationReasonLabel(key), count }));
 
-    // Leads by origin
     const byOrigin: Record<string, number> = {};
     leads.forEach((l: any) => {
       const o = l.lead_origin || "Não identificada";
       byOrigin[o] = (byOrigin[o] || 0) + 1;
     });
     const originRanking = Object.entries(byOrigin)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
+      .sort((a, b) => b[1] - a[1]).slice(0, 8)
       .map(([key, count]) => ({ label: getOriginDisplayLabel(key), count }));
 
-    // Leads by project
     const byProject: Record<string, number> = {};
     leads.forEach((l: any) => {
       if (l.project_id) byProject[l.project_id] = (byProject[l.project_id] || 0) + 1;
     });
     const projectRanking = Object.entries(byProject)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
+      .sort((a, b) => b[1] - a[1]).slice(0, 10)
       .map(([id, count]) => ({ name: projectMap[id] || id, count }));
 
-    // Page views by project
     const pvByProject: Record<string, number> = {};
     (pageViews as any[]).forEach((pv: any) => {
       if (pv.project_id) pvByProject[pv.project_id] = (pvByProject[pv.project_id] || 0) + 1;
     });
     const pvRanking = Object.entries(pvByProject)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([id, count]) => ({ name: projectMap[id] || id, count }));
+      .sort((a, b) => b[1] - a[1]).slice(0, 10)
+      .map(([id, count]) => ({ name: projectMap[id] || id, count, id }));
 
-    // Conversion rate leads/views per project
     const convByProject = pvRanking.map(pv => {
-      const leadsCount = byProject[Object.keys(projectMap).find(k => projectMap[k] === pv.name) || ""] || 0;
+      const leadsCount = byProject[pv.id] || 0;
       return { name: pv.name, views: pv.count, leads: leadsCount, rate: pv.count > 0 ? ((leadsCount / pv.count) * 100) : 0 };
     }).sort((a, b) => b.rate - a.rate);
 
-    // ── Conversion funnel (general + per broker) ──
-    // Only leads that reached at least "info_sent" (atendimento)
+    // Funnel: agendamento = data_agendamento (visita e agendamento são o mesmo)
     const attended = leads.filter((l: any) => l.atendimento_iniciado_em || !["new"].includes(l.status));
-    
+
     const calcFunnel = (subset: any[]) => {
       const total = subset.length;
-      if (total === 0) return { visita: 0, agendamento: 0, proposta: 0, venda: 0 };
-      const visita = subset.filter((l: any) => l.comparecimento === true).length;
+      if (total === 0) return { agendamento: 0, proposta: 0, venda: 0 };
       const agendamento = subset.filter((l: any) => l.data_agendamento).length;
       const proposta = subset.filter((l: any) => l.data_envio_proposta).length;
       const venda = subset.filter((l: any) => l.data_fechamento).length;
       return {
-        visita: (visita / total) * 100,
         agendamento: (agendamento / total) * 100,
         proposta: (proposta / total) * 100,
         venda: (venda / total) * 100,
@@ -191,7 +180,6 @@ export default function DashboardOverview() {
 
     const generalFunnel = calcFunnel(attended);
 
-    // Per broker funnel
     const brokerFunnels: { name: string; id: string; total: number; funnel: ReturnType<typeof calcFunnel> }[] = [];
     const attendedByBroker: Record<string, any[]> = {};
     attended.forEach((l: any) => {
@@ -205,19 +193,13 @@ export default function DashboardOverview() {
     });
     brokerFunnels.sort((a, b) => b.funnel.venda - a.funnel.venda);
 
-    // ── Conversion time rankings (avg days) ──
     const calcAvgDays = (subset: any[], fromField: string, toField: string) => {
       const diffs: number[] = [];
       subset.forEach((l: any) => {
-        const from = l[fromField];
-        const to = l[toField];
-        if (from && to) {
-          const days = (new Date(to).getTime() - new Date(from).getTime()) / 86_400_000;
-          if (days >= 0) diffs.push(days);
-        }
+        const from = l[fromField]; const to = l[toField];
+        if (from && to) { const d = (new Date(to).getTime() - new Date(from).getTime()) / 86_400_000; if (d >= 0) diffs.push(d); }
       });
-      if (diffs.length === 0) return null;
-      return diffs.reduce((a, b) => a + b, 0) / diffs.length;
+      return diffs.length === 0 ? null : diffs.reduce((a, b) => a + b, 0) / diffs.length;
     };
 
     const convTimeByBroker = (toField: string) => {
@@ -232,19 +214,10 @@ export default function DashboardOverview() {
     };
 
     return {
-      totalLeads,
-      byBroker,
-      manualByBroker,
-      receivedByBroker,
-      inactiveCount,
-      topReasons,
-      staleCount: staleLeads.length,
-      originRanking,
-      projectRanking,
-      pvRanking,
-      convByProject,
-      generalFunnel,
-      brokerFunnels,
+      totalLeads, byBroker, manualByBroker, receivedByBroker,
+      inactiveCount, topReasons, staleCount: staleLeads.length,
+      originRanking, projectRanking, pvRanking, convByProject,
+      generalFunnel, brokerFunnels,
       timeToAgendamento: convTimeByBroker("data_agendamento"),
       timeToProposta: convTimeByBroker("data_envio_proposta"),
       timeToVenda: convTimeByBroker("data_fechamento"),
@@ -261,8 +234,36 @@ export default function DashboardOverview() {
 
   const fmtPct = (v: number) => `${v.toFixed(1)}%`;
   const fmtDays = (v: number) => v < 1 ? `${Math.round(v * 24)}h` : `${v.toFixed(1)}d`;
-
   const brokerName = (id: string) => id === "_enove" ? "Enove" : (brokerMap[id] || id.slice(0, 8));
+
+  // Chart data
+  const brokerLeadsChart = Object.entries(metrics.byBroker)
+    .sort((a, b) => b[1] - a[1]).slice(0, 10)
+    .map(([id, count]) => ({ name: brokerName(id), total: count, manual: metrics.manualByBroker[id] || 0, recebidos: metrics.receivedByBroker[id] || 0 }));
+
+  const originPieData = metrics.originRanking.map((o, i) => ({ name: o.label, value: o.count, fill: CHART_COLORS[i % CHART_COLORS.length] }));
+
+  const funnelChartData = [
+    { name: "Agendamento", geral: metrics.generalFunnel.agendamento },
+    { name: "Proposta", geral: metrics.generalFunnel.proposta },
+    { name: "Venda", geral: metrics.generalFunnel.venda },
+  ];
+
+  const projectLeadsChart = metrics.projectRanking.slice(0, 8).map(p => ({ name: p.name.length > 15 ? p.name.slice(0, 15) + "…" : p.name, leads: p.count }));
+
+  const brokerFunnelChart = metrics.brokerFunnels.slice(0, 8).map(bf => ({
+    name: bf.name.split(" ")[0],
+    agendamento: +bf.funnel.agendamento.toFixed(1),
+    proposta: +bf.funnel.proposta.toFixed(1),
+    venda: +bf.funnel.venda.toFixed(1),
+  }));
+
+  const timeChartData = metrics.timeToAgendamento.slice(0, 8).map(t => ({
+    name: t.name.split(" ")[0],
+    agendamento: +(metrics.timeToAgendamento.find(x => x.name === t.name)?.avgDays || 0).toFixed(1),
+    proposta: +(metrics.timeToProposta.find(x => x.name === t.name)?.avgDays || 0).toFixed(1),
+    venda: +(metrics.timeToVenda.find(x => x.name === t.name)?.avgDays || 0).toFixed(1),
+  }));
 
   return (
     <div className="space-y-6">
@@ -281,108 +282,170 @@ export default function DashboardOverview() {
         <KpiCard icon={Users} label="Total de Leads" value={metrics.totalLeads} />
         <KpiCard icon={AlertTriangle} label="Inativados" value={metrics.inactiveCount} color="text-red-400" />
         <KpiCard icon={Clock} label="Parados +30d" value={metrics.staleCount} color="text-amber-400" />
-        <KpiCard icon={TrendingUp} label="Conv. Geral (Venda)" value={fmtPct(metrics.generalFunnel.venda)} color="text-emerald-400" />
+        <KpiCard icon={TrendingUp} label="Conv. Venda" value={fmtPct(metrics.generalFunnel.venda)} color="text-emerald-400" />
       </div>
 
-      {/* General funnel */}
+      {/* Row 1: Funnel + Origin pie */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-[#FFFF00]" /> Funil de Conversão Geral
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={funnelChartData} layout="vertical">
+                <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 10 }} domain={[0, "auto"]} unit="%" />
+                <YAxis type="category" dataKey="name" tick={{ fill: "#e2e8f0", fontSize: 11 }} width={90} />
+                <Tooltip {...chartTooltipStyle} formatter={(v: number) => `${v.toFixed(1)}%`} />
+                <Bar dataKey="geral" fill="#FFFF00" radius={[0, 4, 4, 0]} barSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+              <Globe className="w-4 h-4 text-[#FFFF00]" /> Leads por Origem
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={originPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={35} paddingAngle={2} strokeWidth={0}>
+                  {originPieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                </Pie>
+                <Tooltip {...chartTooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: 10, color: "#94a3b8" }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 2: Leads by broker (stacked bar) */}
       <Card className="bg-[#1e1e22] border-[#2a2a2e]">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-[#FFFF00]" /> Taxa de Conversão Geral
+            <UserCheck className="w-4 h-4 text-[#FFFF00]" /> Leads por Corretor
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <FunnelBar label="Visita" value={metrics.generalFunnel.visita} />
-            <FunnelBar label="Agendamento" value={metrics.generalFunnel.agendamento} />
-            <FunnelBar label="Proposta" value={metrics.generalFunnel.proposta} />
-            <FunnelBar label="Venda" value={metrics.generalFunnel.venda} />
-          </div>
+          <ResponsiveContainer width="100%" height={Math.max(200, brokerLeadsChart.length * 36)}>
+            <BarChart data={brokerLeadsChart} layout="vertical">
+              <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 10 }} />
+              <YAxis type="category" dataKey="name" tick={{ fill: "#e2e8f0", fontSize: 11 }} width={100} />
+              <Tooltip {...chartTooltipStyle} />
+              <Bar dataKey="recebidos" stackId="a" fill="#FFFF00" name="Recebidos" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="manual" stackId="a" fill="#a78bfa" name="Manual" radius={[0, 4, 4, 0]} />
+              <Legend wrapperStyle={{ fontSize: 10, color: "#94a3b8" }} />
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
+      {/* Row 3: Inactivation reasons + Project leads */}
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Leads by broker */}
-        <RankingCard title="Leads por Corretor" icon={UserCheck} items={
-          Object.entries(metrics.byBroker)
-            .sort((a, b) => b[1] - a[1])
-            .map(([id, count]) => ({ label: brokerName(id), value: count }))
-        } />
+        <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+              <ArrowDownRight className="w-4 h-4 text-red-400" /> Motivos de Inativação
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.topReasons.length === 0 ? <p className="text-xs text-slate-500">Sem dados</p> : (
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={metrics.topReasons.map(r => ({ name: r.label.length > 18 ? r.label.slice(0, 18) + "…" : r.label, count: r.count }))} layout="vertical">
+                  <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 10 }} />
+                  <YAxis type="category" dataKey="name" tick={{ fill: "#e2e8f0", fontSize: 10 }} width={130} />
+                  <Tooltip {...chartTooltipStyle} />
+                  <Bar dataKey="count" fill="#f87171" radius={[0, 4, 4, 0]} barSize={18} name="Leads" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Inactivation reasons */}
-        <RankingCard title="Motivos de Inativação" icon={ArrowDownRight} items={
-          metrics.topReasons.map(r => ({ label: r.label, value: r.count }))
-        } />
+        <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-[#FFFF00]" /> Empreendimentos com mais Leads
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {projectLeadsChart.length === 0 ? <p className="text-xs text-slate-500">Sem dados</p> : (
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={projectLeadsChart} layout="vertical">
+                  <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 10 }} />
+                  <YAxis type="category" dataKey="name" tick={{ fill: "#e2e8f0", fontSize: 10 }} width={120} />
+                  <Tooltip {...chartTooltipStyle} />
+                  <Bar dataKey="leads" fill="#22d3ee" radius={[0, 4, 4, 0]} barSize={18} name="Leads" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Manual leads by broker */}
-        <RankingCard title="Leads Cadastrados (Manual)" icon={UserPlus} items={
-          Object.entries(metrics.manualByBroker)
-            .sort((a, b) => b[1] - a[1])
-            .map(([id, count]) => ({ label: brokerName(id), value: count }))
-        } />
-
-        {/* Received leads by broker */}
-        <RankingCard title="Leads Recebidos" icon={Users} items={
-          Object.entries(metrics.receivedByBroker)
-            .sort((a, b) => b[1] - a[1])
-            .map(([id, count]) => ({ label: brokerName(id), value: count }))
-        } />
-
-        {/* Origin */}
-        <RankingCard title="Leads por Origem" icon={Globe} items={
-          metrics.originRanking.map(o => ({ label: o.label, value: o.count }))
-        } />
-
-        {/* Project ranking */}
-        <RankingCard title="Empreendimentos com mais Leads" icon={Trophy} items={
-          metrics.projectRanking.map(p => ({ label: p.name, value: p.count }))
-        } />
-
-        {/* Page views ranking */}
+      {/* Row 4: Page views + Conversion leads/views */}
+      <div className="grid md:grid-cols-2 gap-4">
         <RankingCard title="Visualizações por Empreendimento" icon={Eye} items={
           metrics.pvRanking.map(p => ({ label: p.name, value: p.count }))
         } />
-
-        {/* Conversion rate leads/views */}
         <RankingCard title="Conversão Leads/Acessos" icon={TrendingUp} items={
           metrics.convByProject.map(p => ({ label: p.name, value: `${p.rate.toFixed(1)}%`, subtext: `${p.leads} leads / ${p.views} views` }))
         } />
       </div>
 
-      {/* Conversion funnel per broker */}
-      <Card className="bg-[#1e1e22] border-[#2a2a2e]">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-[#FFFF00]" /> Conversão por Corretor
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {metrics.brokerFunnels.length === 0 && <p className="text-xs text-slate-500">Sem dados no período</p>}
-            {metrics.brokerFunnels.map(bf => (
-              <div key={bf.id} className="bg-[#16161a] rounded-lg p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-white">{bf.name}</span>
-                  <span className="text-[10px] text-slate-500">{bf.total} leads atendidos</span>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  <MiniStat label="Visita" value={fmtPct(bf.funnel.visita)} />
-                  <MiniStat label="Agend." value={fmtPct(bf.funnel.agendamento)} />
-                  <MiniStat label="Proposta" value={fmtPct(bf.funnel.proposta)} />
-                  <MiniStat label="Venda" value={fmtPct(bf.funnel.venda)} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Row 5: Broker funnel chart */}
+      {brokerFunnelChart.length > 0 && (
+        <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-[#FFFF00]" /> Conversão por Corretor (%)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={Math.max(220, brokerFunnelChart.length * 40)}>
+              <BarChart data={brokerFunnelChart} layout="vertical">
+                <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 10 }} unit="%" />
+                <YAxis type="category" dataKey="name" tick={{ fill: "#e2e8f0", fontSize: 11 }} width={80} />
+                <Tooltip {...chartTooltipStyle} formatter={(v: number) => `${v}%`} />
+                <Bar dataKey="agendamento" fill="#FFFF00" name="Agendamento" barSize={10} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="proposta" fill="#22d3ee" name="Proposta" barSize={10} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="venda" fill="#34d399" name="Venda" barSize={10} radius={[0, 4, 4, 0]} />
+                <Legend wrapperStyle={{ fontSize: 10, color: "#94a3b8" }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Conversion time rankings */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <TimeRankingCard title="Atend. → Agendamento" items={metrics.timeToAgendamento} fmtDays={fmtDays} />
-        <TimeRankingCard title="Atend. → Proposta" items={metrics.timeToProposta} fmtDays={fmtDays} />
-        <TimeRankingCard title="Atend. → Venda" items={metrics.timeToVenda} fmtDays={fmtDays} />
-      </div>
+      {/* Row 6: Conversion time by broker */}
+      {timeChartData.length > 0 && (
+        <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+              <Timer className="w-4 h-4 text-[#FFFF00]" /> Tempo Médio de Conversão por Corretor (dias)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={Math.max(220, timeChartData.length * 40)}>
+              <BarChart data={timeChartData} layout="vertical">
+                <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 10 }} unit="d" />
+                <YAxis type="category" dataKey="name" tick={{ fill: "#e2e8f0", fontSize: 11 }} width={80} />
+                <Tooltip {...chartTooltipStyle} formatter={(v: number) => `${v} dias`} />
+                <Bar dataKey="agendamento" fill="#FFFF00" name="→ Agendamento" barSize={10} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="proposta" fill="#22d3ee" name="→ Proposta" barSize={10} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="venda" fill="#34d399" name="→ Venda" barSize={10} radius={[0, 4, 4, 0]} />
+                <Legend wrapperStyle={{ fontSize: 10, color: "#94a3b8" }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -401,27 +464,6 @@ function KpiCard({ icon: Icon, label, value, color = "text-white" }: { icon: any
           <p className={`text-lg sm:text-xl font-bold ${color}`}>{value}</p>
         </div>
       </div>
-    </div>
-  );
-}
-
-function FunnelBar({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] text-slate-400">{label}</span>
-        <span className="text-xs font-bold text-white">{value.toFixed(1)}%</span>
-      </div>
-      <Progress value={Math.min(value, 100)} className="h-2 bg-[#2a2a2e] [&>div]:bg-[#FFFF00]" />
-    </div>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="text-center">
-      <p className="text-[10px] text-slate-500">{label}</p>
-      <p className="text-xs font-bold text-white">{value}</p>
     </div>
   );
 }
@@ -446,35 +488,6 @@ function RankingCard({ title, icon: Icon, items }: { title: string; icon: any; i
               <div className="text-right shrink-0">
                 <span className="text-xs font-bold text-white">{item.value}</span>
                 {item.subtext && <p className="text-[10px] text-slate-500">{item.subtext}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function TimeRankingCard({ title, items, fmtDays }: { title: string; items: { name: string; avgDays: number; count: number }[]; fmtDays: (v: number) => string }) {
-  return (
-    <Card className="bg-[#1e1e22] border-[#2a2a2e]">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
-          <Timer className="w-4 h-4 text-[#FFFF00]" /> {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {items.length === 0 && <p className="text-xs text-slate-500">Sem dados</p>}
-        <div className="space-y-2">
-          {items.map((item, i) => (
-            <div key={i} className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[10px] text-slate-500 w-4 text-right shrink-0">{i + 1}.</span>
-                <span className="text-xs text-slate-300 truncate">{item.name}</span>
-              </div>
-              <div className="text-right shrink-0">
-                <span className="text-xs font-bold text-emerald-400">{fmtDays(item.avgDays)}</span>
-                <p className="text-[10px] text-slate-500">{item.count} leads</p>
               </div>
             </div>
           ))}
