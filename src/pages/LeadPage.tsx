@@ -426,9 +426,26 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   <MessageCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">Chat</span>
                 </button>
               )}
-              <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 transition-all">
+              <button
+                onClick={async () => {
+                  if (lead.status === "new") {
+                    const result = await iniciarAtendimento(lead.id);
+                    if (result.success) {
+                      addInteraction("whatsapp_manual" as any, {
+                        notes: "Atendimento iniciado via botão WhatsApp",
+                        channel: "whatsapp",
+                        createdBy: result.userId,
+                      });
+                      toast.success("Atendimento iniciado!");
+                      refreshLead();
+                    }
+                  }
+                  window.open(whatsappLink, "_blank");
+                }}
+                className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 transition-all"
+              >
                 <MessageCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">WhatsApp</span><ExternalLink className="w-3 h-3 hidden sm:inline" />
-              </a>
+              </button>
             </div>
           </div>
 
