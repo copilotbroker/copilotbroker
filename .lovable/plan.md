@@ -1,41 +1,28 @@
 
 
-# Corrigir layout mobile dos botões de visualização da Agenda
+# Substituir Inbox por Agenda no bottom nav mobile do Corretor
 
 ## Problema
+A Agenda não está acessível no mobile porque o bottom nav mostra Inbox no lugar. O usuário quer trocar: remover Inbox da barra inferior e colocar Agenda.
 
-As alterações de cores e largura dos botões **estão no código** e funcionam tanto para Admin quanto Corretor (ambos usam o mesmo `AgendaModule`). Porém, o layout mobile não está funcionando como esperado porque:
+## Alteração
 
-1. O `Tabs` está dentro de um `div` com `flex items-center gap-2 flex-wrap` — nesse contexto, `w-full` no `TabsList` não expande porque o **pai `Tabs`** não tem `w-full`
-2. Filtros (tipo de evento, busca) e tabs estão todos no mesmo container flex, competindo por espaço
+### Arquivo: `src/components/broker/BrokerBottomNav.tsx`
 
-## Solução
+1. **Trocar `inbox` por `agenda`** na construção do `navItems` (linha 52):
+   - Substituir o item inbox pelo item agenda do `BROKER_ROUTE_TABS`
+   - Remover badge de unread do inbox nesse slot
 
-### Arquivo: `src/components/agenda/AgendaModule.tsx`
+2. **Atualizar `handleClick`** (linha 70): adicionar `"agenda"` ao bloco que navega via `getBrokerPathByTab`
 
-Reorganizar a seção de controles no mobile:
+3. **Atualizar `getItemColor` e `getActiveIndicator`**: incluir `"agenda"` com estilo amarelo (mesmo do CRM)
 
-1. **Mover os Tabs para fora** do container de filtros, em uma linha própria no mobile
-2. Adicionar `w-full sm:w-auto` no **componente `Tabs`** (não só no `TabsList`)
-3. No mobile, tabs ocupam a largura toda da tela em linha separada; no desktop, ficam inline com os filtros
+4. **Mover Inbox para o menu "Mais"** (`moreMenuItems`): adicionar item Inbox com badge de unread, para que ainda fique acessível
 
-Estrutura resultante no mobile:
+O bottom nav ficará:
 ```text
-[◀] [Hoje] [▶] março 2026
-
-[Tipo de evento ▼] [🔍 Buscar...]
-
-[  Dia  |  Semana  |  Mês  |  Lista  ]  ← linha própria, full width
-
-Calendário...
+[Agenda]  [CRM/Lista]  [+ FAB]  [Copiloto]  [⋮ Mais]
 ```
 
-### Detalhes técnicos
-
-- Separar o bloco `<Tabs>` do `div` de filtros
-- Envolver filtros e tabs em containers separados dentro do `flex-col`
-- Adicionar `className="w-full sm:w-auto"` no elemento `<Tabs>`
-- Manter as classes `flex-1 sm:flex-none` nos `TabsTrigger`
-
-Apenas 1 arquivo alterado: `AgendaModule.tsx`
+E no menu "Mais": Inbox (com badge), Modo Lista, Notificações, Roletas, Landing Pages, Sair.
 
