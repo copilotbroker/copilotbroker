@@ -57,7 +57,7 @@ export default function DashboardOverview() {
     queryKey: ["dash-leads", period],
     queryFn: async () => {
       let q = supabase.from("leads").select(
-        "id, name, status, broker_id, project_id, lead_origin, source, created_at, inactivation_reason, atendimento_iniciado_em, data_agendamento, tipo_agendamento, comparecimento, data_envio_proposta, data_fechamento, data_perda, last_interaction_at"
+        "id, name, status, broker_id, project_id, lead_origin, source, created_at, inactivation_reason, atendimento_iniciado_em, data_agendamento, tipo_agendamento, comparecimento, data_envio_proposta, data_fechamento, data_perda, last_interaction_at, registered_by"
       );
       if (dateFrom) q = q.gte("created_at", dateFrom);
       const { data } = await q.order("created_at", { ascending: false }).limit(5000);
@@ -108,13 +108,14 @@ export default function DashboardOverview() {
   const metrics = useMemo(() => {
     const totalLeads = leads.length;
 
+    const isManual = (l: any) => l.source === "manual" || l.source === "csv" || !!l.registered_by;
     const byBroker: Record<string, number> = {};
     const manualByBroker: Record<string, number> = {};
     const receivedByBroker: Record<string, number> = {};
     leads.forEach((l: any) => {
       const bid = l.broker_id || "_enove";
       byBroker[bid] = (byBroker[bid] || 0) + 1;
-      if (l.source === "manual" || l.source === "csv") {
+      if (isManual(l)) {
         manualByBroker[bid] = (manualByBroker[bid] || 0) + 1;
       } else {
         receivedByBroker[bid] = (receivedByBroker[bid] || 0) + 1;
