@@ -31,6 +31,8 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date>(new Date());
+  const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     events,
