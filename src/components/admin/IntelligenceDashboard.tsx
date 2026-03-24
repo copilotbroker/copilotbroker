@@ -307,13 +307,13 @@ export default function IntelligenceDashboard() {
       })
       .sort((a, b) => b.venda - a.venda);
 
-    // Projects — only count non-manual leads for conversion rate
+    // Projects — only count landing page leads for conversion rate
     const byProject: Record<string, number> = {};
-    const byProjectNonManual: Record<string, number> = {};
+    const byProjectLandingPage: Record<string, number> = {};
     currentLeads.forEach((l: any) => {
       if (l.project_id) {
         byProject[l.project_id] = (byProject[l.project_id] || 0) + 1;
-        if (!isManual(l)) byProjectNonManual[l.project_id] = (byProjectNonManual[l.project_id] || 0) + 1;
+        if (landingPageLeadIds.has(l.id)) byProjectLandingPage[l.project_id] = (byProjectLandingPage[l.project_id] || 0) + 1;
       }
     });
     const pvByProject: Record<string, number> = {};
