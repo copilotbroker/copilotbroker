@@ -54,6 +54,21 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
     refetch,
   } = useCalendarEvents({ brokerId, isAdmin, selectedBrokerId });
 
+  // Handle mobile redirect return from Google OAuth
+  useEffect(() => {
+    const googleStatus = searchParams.get("google");
+    if (googleStatus) {
+      if (googleStatus === "success") {
+        toast({ title: "Google Agenda conectada com sucesso!" });
+        refetch();
+      } else {
+        toast({ title: "Erro na conexão com Google Agenda", variant: "destructive" });
+      }
+      searchParams.delete("google");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
+
   // Fetch brokers for admin filter
   useEffect(() => {
     if (!isAdmin) return;
