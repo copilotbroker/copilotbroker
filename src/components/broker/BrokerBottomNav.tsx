@@ -103,7 +103,7 @@ export function BrokerBottomNav({
   const getActiveIndicator = (id: string) => {
     if ((id === "crm" && activeTab === "crm") || (id === "leads" && activeTab === "leads")) return true;
     if (id === "copilot" && activeTab === "copilot") return true;
-    if (id === "inbox" && activeTab === "inbox") return true;
+    if (id === "agenda" && activeTab === "agenda") return true;
     return false;
   };
 
