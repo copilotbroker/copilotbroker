@@ -265,6 +265,7 @@ export default function IntelligenceDashboard() {
     });
 
     const brokerPerformance = Object.entries(attendedByBroker)
+      .filter(([bid]) => brokerMap[bid])
       .map(([bid, arr]) => {
         const total = byBroker[bid]?.total || arr.length;
         return {
@@ -323,6 +324,7 @@ export default function IntelligenceDashboard() {
     const convTimeByBroker = (toField: string) => {
       const results: { name: string; medianDays: number; count: number }[] = [];
       Object.entries(attendedByBroker).forEach(([bid, arr]) => {
+        if (!brokerMap[bid]) return;
         const relevant = arr.filter((l: any) => l.atendimento_iniciado_em && l[toField]);
         if (relevant.length === 0) return;
         const median = calcMedianDays(relevant, "atendimento_iniciado_em", toField);

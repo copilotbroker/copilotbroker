@@ -189,6 +189,7 @@ export default function DashboardOverview() {
       attendedByBroker[bid].push(l);
     });
     Object.entries(attendedByBroker).forEach(([bid, arr]) => {
+      if (!brokerMap[bid]) return;
       brokerFunnels.push({ name: brokerMap[bid] || bid, id: bid, total: arr.length, funnel: calcFunnel(arr) });
     });
     brokerFunnels.sort((a, b) => b.funnel.venda - a.funnel.venda);
