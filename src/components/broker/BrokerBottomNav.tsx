@@ -41,7 +41,7 @@ export function BrokerBottomNav({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const activeTab = getBrokerTabFromPath(location.pathname);
 
-  const baseItems = BROKER_ROUTE_TABS.filter((item) => ["crm", "inbox", "copilot"].includes(item.id));
+  const baseItems = BROKER_ROUTE_TABS.filter((item) => ["crm", "agenda", "copilot"].includes(item.id));
 
   const navItems: Array<{
     id: string;
@@ -49,7 +49,7 @@ export function BrokerBottomNav({
     isFab?: boolean;
     badge?: number;
   }> = [
-    ...(inboxEnabled ? [{ id: "inbox", icon: baseItems.find((item) => item.id === "inbox")!.icon, badge: inboxUnread }] : []),
+    { id: "agenda", icon: baseItems.find((item) => item.id === "agenda")!.icon },
     { id: viewMode === "list" ? "leads" : "crm", icon: baseItems.find((item) => item.id === "crm")!.icon },
     { id: "add", icon: Plus, isFab: true },
     ...(copilotEnabled ? [{ id: "copilot", icon: baseItems.find((item) => item.id === "copilot")!.icon }] : []),
@@ -67,7 +67,7 @@ export function BrokerBottomNav({
       onViewChange(id === "leads" ? "list" : "kanban");
     } else if (id === "add") {
       onAddLead?.();
-    } else if (id === "inbox" || id === "copilot") {
+    } else if (id === "agenda" || id === "copilot") {
       navigate(getBrokerPathByTab(id));
     } else if (id === "more") {
       setIsMoreOpen(true);
@@ -78,8 +78,8 @@ export function BrokerBottomNav({
     setIsMoreOpen(false);
     if (action === "leads") {
       onViewChange("list");
-    } else if (action === "projects" || action === "roletas") {
-      navigate(getBrokerPathByTab(action as "projects" | "roletas"));
+    } else if (action === "inbox" || action === "projects" || action === "roletas") {
+      navigate(getBrokerPathByTab(action as "inbox" | "projects" | "roletas"));
     } else if (action === "notifications") {
       onNotificationsClick?.();
     } else if (action === "logout") {
@@ -94,7 +94,7 @@ export function BrokerBottomNav({
     if (id === "copilot" && activeTab === "copilot") {
       return "text-blue-400";
     }
-    if (id === "inbox" && activeTab === "inbox") {
+    if (id === "agenda" && activeTab === "agenda") {
       return "text-[#FFFF00]";
     }
     return "text-slate-500 active:text-slate-300";
@@ -103,11 +103,12 @@ export function BrokerBottomNav({
   const getActiveIndicator = (id: string) => {
     if ((id === "crm" && activeTab === "crm") || (id === "leads" && activeTab === "leads")) return true;
     if (id === "copilot" && activeTab === "copilot") return true;
-    if (id === "inbox" && activeTab === "inbox") return true;
+    if (id === "agenda" && activeTab === "agenda") return true;
     return false;
   };
 
   const moreMenuItems = [
+    ...(inboxEnabled ? [{ id: "inbox", label: "Inbox", description: "Conversas e atendimento", badge: inboxUnread }] : []),
     { id: "leads", label: "Modo Lista", description: "Abrir visão em lista" },
     { id: "notifications", label: "Notificações", description: "Ver notificações", badge: unreadCount },
     ...(isLeader ? [{ id: "roletas", label: "Roletas", description: "Gerenciar roletas da equipe" }] : []),
@@ -183,16 +184,12 @@ export function BrokerBottomNav({
             {moreMenuItems.map((menuItem) => {
               const isDestructive = Boolean((menuItem as { destructive?: boolean }).destructive);
               const isNotifications = menuItem.id === "notifications";
-              const Icon =
-                menuItem.id === "projects"
-                  ? BROKER_ROUTE_TABS.find((item) => item.id === "projects")!.icon
-                  : menuItem.id === "roletas"
-                    ? BROKER_ROUTE_TABS.find((item) => item.id === "roletas")!.icon
-                    : menuItem.id === "notifications"
-                      ? Bell
-                      : menuItem.id === "leads"
-                        ? BROKER_ROUTE_TABS.find((item) => item.id === "leads")!.icon
-                        : LogOut;
+              const matchedTab = BROKER_ROUTE_TABS.find((item) => item.id === menuItem.id);
+              const Icon = matchedTab
+                ? matchedTab.icon
+                : menuItem.id === "notifications"
+                  ? Bell
+                  : LogOut;
 
               return (
                 <button
