@@ -157,10 +157,11 @@ export default function IntelligenceDashboard() {
     const totalLeads = currentLeads.length;
     const prevTotalLeads = prevLeads.length;
 
-    const manualLeads = currentLeads.filter((l: any) => l.source === "manual" || l.source === "csv");
-    const receivedLeads = currentLeads.filter((l: any) => l.source !== "manual" && l.source !== "csv");
-    const prevManualLeads = prevLeads.filter((l: any) => l.source === "manual" || l.source === "csv");
-    const prevReceivedLeads = prevLeads.filter((l: any) => l.source !== "manual" && l.source !== "csv");
+    const isManual = (l: any) => l.source === "manual" || l.source === "csv" || !!l.registered_by;
+    const manualLeads = currentLeads.filter(isManual);
+    const receivedLeads = currentLeads.filter((l: any) => !isManual(l));
+    const prevManualLeads = prevLeads.filter(isManual);
+    const prevReceivedLeads = prevLeads.filter((l: any) => !isManual(l));
 
     const inactive = currentLeads.filter((l: any) => l.status === "inactive");
     const prevInactive = prevLeads.filter((l: any) => l.status === "inactive");
@@ -224,7 +225,7 @@ export default function IntelligenceDashboard() {
       const bid = l.broker_id || "_sem";
       if (!byBroker[bid]) byBroker[bid] = { total: 0, manual: 0, received: 0 };
       byBroker[bid].total++;
-      if (l.source === "manual" || l.source === "csv") byBroker[bid].manual++;
+      if (isManual(l)) byBroker[bid].manual++;
       else byBroker[bid].received++;
     });
 
@@ -283,10 +284,14 @@ export default function IntelligenceDashboard() {
       })
       .sort((a, b) => b.venda - a.venda);
 
-    // Projects
+    // Projects — only count non-manual leads for conversion rate
     const byProject: Record<string, number> = {};
+    const byProjectNonManual: Record<string, number> = {};
     currentLeads.forEach((l: any) => {
-      if (l.project_id) byProject[l.project_id] = (byProject[l.project_id] || 0) + 1;
+      if (l.project_id) {
+        byProject[l.project_id] = (byProject[l.project_id] || 0) + 1;
+        if (!isManual(l)) byProjectNonManual[l.project_id] = (byProjectNonManual[l.project_id] || 0) + 1;
+      }
     });
     const pvByProject: Record<string, number> = {};
     (pageViews as any[]).forEach((pv: any) => {
@@ -299,8 +304,9 @@ export default function IntelligenceDashboard() {
         id,
         name: projectMap[id] || id.slice(0, 8),
         leads: byProject[id] || 0,
+        leadsNonManual: byProjectNonManual[id] || 0,
         views: pvByProject[id] || 0,
-        rate: pvByProject[id] ? calcRate(byProject[id] || 0, pvByProject[id]) : 0,
+        rate: pvByProject[id] ? calcRate(byProjectNonManual[id] || 0, pvByProject[id]) : 0,
       }))
       .sort((a, b) => b.leads - a.leads)
       .slice(0, 10);

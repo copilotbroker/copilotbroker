@@ -474,7 +474,7 @@ export function CsvImportModal({
           id: crypto.randomUUID(),
           name: row.name,
           whatsapp: row.phone,
-          source: resolvedBrokerId ? "broker" : "enove",
+          source: "csv",
           status: "new" as const,
           lead_origin: row.origin || originLabel,
           project_id: projectId,
