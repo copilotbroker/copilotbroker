@@ -16,16 +16,17 @@ import {
 } from "@/components/ui/dialog";
 import {
   Building2, MapPin, Users, ExternalLink, Pencil, RefreshCw, Sparkles,
-  Home, FileEdit, EyeOff, Eye,
+  Home, FileEdit, EyeOff, Eye, Copy, Check,
 } from "lucide-react";
 import ProjectWizard from "./ProjectWizard";
+import { toast } from "sonner";
 
 function ProjectStatsCard({ projectId }: { projectId: string }) {
   const { stats, isLoading } = useProjectStats(projectId);
-  if (isLoading) return <span className="text-slate-500">...</span>;
+  if (isLoading) return <span className="text-muted-foreground">...</span>;
   return (
-    <span className="text-sm text-slate-400">
-      {stats.totalLeads} leads ({stats.todayLeads} hoje)
+    <span className="text-[11px] text-muted-foreground/70">
+      {stats.totalLeads} leads · {stats.todayLeads} hoje
     </span>
   );
 }
@@ -48,87 +49,136 @@ const initialFormData: ProjectFormData = {
   hero_title: "", hero_subtitle: "", webhook_url: "", ai_prompt: "",
 };
 
-function ProjectCard({ project, onEdit, onEditLanding, onToggleStatus }: {
+function ProjectListCard({ project, onEdit, onEditLanding, onToggleStatus }: {
   project: Project;
   onEdit: (p: Project) => void;
   onEditLanding: (p: Project) => void;
   onToggleStatus: (id: string, active: boolean) => void;
 }) {
-  const statusConfig = PROJECT_STATUS_CONFIG[project.status] || { label: project.status, color: 'text-slate-400', bgColor: 'bg-slate-800/30 border-slate-700' };
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const statusConfig = PROJECT_STATUS_CONFIG[project.status] || { label: project.status, color: 'text-muted-foreground', bgColor: 'bg-muted/30 border-border' };
   const isBrokerCreated = !!project.created_by_broker_id;
+  const url = `/${project.city_slug}/${project.slug}`;
+  const isActive = project.is_active;
+  const isDraft = !project.is_active && !project.landing_content && project.status === "pre_launch";
+
+  const copyUrl = async () => {
+    const fullUrl = `${window.location.origin}${url}`;
+    await navigator.clipboard.writeText(fullUrl);
+    setCopiedUrl(true);
+    toast.success("Link copiado!");
+    setTimeout(() => setCopiedUrl(false), 2000);
+  };
+
+  const borderClass = isDraft
+    ? "border-dashed border-amber-500/40 bg-amber-950/20 hover:border-amber-500/60"
+    : isActive
+    ? "border-emerald-500/30 bg-emerald-950/20 hover:border-emerald-500/50"
+    : "border-border bg-muted/10 hover:border-border/80 opacity-60";
+
+  const iconColor = isDraft ? "text-amber-400" : isActive ? "text-emerald-400" : "text-muted-foreground";
 
   return (
-    <div className={`relative bg-[#1e1e22] border border-[#2a2a2e] rounded-xl overflow-hidden ${!project.is_active ? "opacity-60" : ""}`}>
-      <div className="p-4 pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1 min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-lg font-semibold text-white truncate">{project.name}</h3>
-              {project.landing_content && (
-                <Badge variant="outline" className="text-[10px] border-[#FFFF00]/40 text-[#FFFF00] bg-[#FFFF00]/10">
-                  <Sparkles className="w-3 h-3 mr-0.5" />
-                  Landing IA
-                </Badge>
-              )}
-              {isBrokerCreated && (
-                <Badge variant="outline" className="text-[10px] border-cyan-500/40 text-cyan-400 bg-cyan-500/10">
-                  <Home className="w-3 h-3 mr-0.5" />
-                  Corretor
-                </Badge>
-              )}
-            </div>
-            <p className="flex items-center gap-1 text-slate-400 text-sm">
-              <MapPin className="h-3 w-3" />
-              {project.city}
-            </p>
-          </div>
-          <span className={`px-2 py-0.5 text-xs rounded-full border shrink-0 ${statusConfig.bgColor} ${statusConfig.color}`}>
-            {statusConfig.label}
-          </span>
-        </div>
-      </div>
-      <div className="px-4 pb-4 space-y-4">
-        {project.description && (
-          <p className="text-sm text-slate-400 line-clamp-2">{project.description}</p>
+    <div className={`rounded-lg p-3 border transition-colors ${borderClass}`}>
+      <div className="flex items-start gap-3">
+        {isBrokerCreated ? (
+          <Home className={`w-5 h-5 ${iconColor} mt-0.5 shrink-0`} />
+        ) : (
+          <Building2 className={`w-5 h-5 ${iconColor} mt-0.5 shrink-0`} />
         )}
-        <div className="flex items-center gap-2 text-sm">
-          <Users className="h-4 w-4 text-slate-500" />
-          <ProjectStatsCard projectId={project.id} />
-        </div>
-        <div className="flex items-center justify-between pt-2 border-t border-[#2a2a2e]">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={project.is_active}
-              onCheckedChange={(checked) => onToggleStatus(project.id, checked)}
-            />
-            <span className="text-sm text-slate-400">{project.is_active ? "Ativo" : "Inativo"}</span>
-          </div>
-          <div className="flex gap-1">
-            {project.landing_content && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEditLanding(project)}
-                className="hover:bg-[#2a2a2e] text-[#FFFF00]"
-                title="Editar Landing IA"
-              >
-                <Sparkles className="h-4 w-4" />
-              </Button>
+
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+            <h3 className="font-semibold text-foreground truncate text-sm max-w-[55%]">{project.name}</h3>
+            {isDraft && (
+              <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
+                Rascunho
+              </span>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(project)}
-              className="hover:bg-[#2a2a2e] text-slate-400"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" asChild className="hover:bg-[#2a2a2e] text-slate-400">
-              <a href={`/${project.city_slug}/${project.slug}`} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            </Button>
+            {isActive && (
+              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0 font-medium">
+                Publicado
+              </span>
+            )}
+            {!isActive && !isDraft && (
+              <span className="text-[10px] text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded shrink-0 font-medium">
+                Inativo
+              </span>
+            )}
+            <span className="text-[10px] text-muted-foreground bg-[#2a2a2e] px-1.5 py-0.5 rounded shrink-0">
+              {project.city}
+            </span>
+            {project.landing_content && (
+              <span className="text-[10px] text-[#FFFF00] bg-[#FFFF00]/10 px-1.5 py-0.5 rounded shrink-0 font-medium flex items-center gap-0.5">
+                <Sparkles className="w-2.5 h-2.5" /> IA
+              </span>
+            )}
+            {isBrokerCreated && (
+              <span className="text-[10px] text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded shrink-0">
+                Corretor
+              </span>
+            )}
           </div>
+          <div className="flex items-center gap-3">
+            {isActive && (
+              <p className="text-[11px] text-muted-foreground/70 truncate">
+                {window.location.origin}{url}
+              </p>
+            )}
+            {isDraft && (
+              <p className="text-[11px] text-muted-foreground/70">
+                Landing page ainda não publicada.
+              </p>
+            )}
+            <ProjectStatsCard projectId={project.id} />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          {project.landing_content && (
+            <button
+              onClick={() => onEditLanding(project)}
+              className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-[#FFFF00] hover:bg-[#FFFF00]/10 transition-colors"
+              title="Editar Landing IA"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            onClick={() => onEdit(project)}
+            className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-foreground hover:bg-[#2a2a2e] transition-colors"
+            title="Editar configurações"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          {isActive && (
+            <button
+              onClick={() => copyUrl()}
+              className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-primary hover:bg-[#2a2a2e] transition-colors"
+              title="Copiar link"
+            >
+              {copiedUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          )}
+          {isActive && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-foreground hover:bg-[#2a2a2e] transition-colors"
+              title="Abrir landing page"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+          <button
+            onClick={() => onToggleStatus(project.id, !project.is_active)}
+            className="p-1.5 rounded-md bg-[#2a2a2e]/50 text-muted-foreground hover:text-orange-400 hover:bg-orange-500/10 transition-colors"
+            title={project.is_active ? "Inativar" : "Ativar"}
+          >
+            {project.is_active ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          </button>
         </div>
       </div>
     </div>
@@ -143,7 +193,6 @@ export default function ProjectManagement() {
   const [showWizard, setShowWizard] = useState(false);
   const [editLandingProject, setEditLandingProject] = useState<Project | null>(null);
 
-  // Categorize projects
   const { activeCompany, activeBroker, inactiveProjects, draftProjects } = useMemo(() => {
     const activeCompany: Project[] = [];
     const activeBroker: Project[] = [];
@@ -152,7 +201,6 @@ export default function ProjectManagement() {
 
     projects.forEach((p) => {
       if (!p.is_active) {
-        // Check if it's a draft (no landing_content and inactive) or truly inactive
         if (!p.landing_content && p.status === "pre_launch") {
           draftProjects.push(p);
         } else {
@@ -249,21 +297,19 @@ export default function ProjectManagement() {
     );
   }
 
-  const renderProjectGrid = (items: Project[], emptyIcon: React.ReactNode, emptyText: string) => {
+  const renderProjectList = (items: Project[], emptyIcon: React.ReactNode, emptyText: string) => {
     if (items.length === 0) {
       return (
-        <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-xl">
-          <div className="flex flex-col items-center justify-center py-12">
-            {emptyIcon}
-            <p className="text-slate-400">{emptyText}</p>
-          </div>
+        <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
+          {emptyIcon}
+          <p className="text-muted-foreground">{emptyText}</p>
         </div>
       );
     }
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3">
         {items.map((project) => (
-          <ProjectCard
+          <ProjectListCard
             key={project.id}
             project={project}
             onEdit={handleOpenDialog}
@@ -277,17 +323,22 @@ export default function ProjectManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Landing Pages</h2>
-          <p className="text-slate-400">Gerencie as landing pages da imobiliária e dos corretores</p>
+          <h2 className="text-xl font-bold text-foreground">Landing Pages</h2>
+          <p className="text-sm text-muted-foreground">
+            {activeCompany.length + activeBroker.length} {(activeCompany.length + activeBroker.length) === 1 ? 'ativa' : 'ativas'}
+            {draftProjects.length > 0 && ` · ${draftProjects.length} rascunho${draftProjects.length > 1 ? 's' : ''}`}
+            {inactiveProjects.length > 0 && ` · ${inactiveProjects.length} inativa${inactiveProjects.length > 1 ? 's' : ''}`}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="icon"
             onClick={() => fetchProjects(true)}
-            className="bg-[#1e1e22] border-[#2a2a2e] hover:bg-[#2a2a2e] text-slate-400"
+            className="bg-[#1e1e22] border-[#2a2a2e] hover:bg-[#2a2a2e] text-muted-foreground"
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -367,73 +418,89 @@ export default function ProjectManagement() {
       ) : (
         <Tabs defaultValue="ativas" className="space-y-4">
           <TabsList className="bg-[#1e1e22] border border-[#2a2a2e] w-full sm:w-auto">
-            <TabsTrigger value="ativas" className="data-[state=active]:bg-[#2a2a2e] text-xs sm:text-sm gap-1.5">
-              <Eye className="w-4 h-4" />
-              Ativas ({activeCompany.length + activeBroker.length})
+            <TabsTrigger value="ativas" className="data-[state=active]:bg-[#2a2a2e] flex-1 min-w-0 text-xs sm:text-sm gap-1.5">
+              <Eye className="w-4 h-4 shrink-0" />
+              <span className="truncate">Ativas ({activeCompany.length + activeBroker.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="inativas" className="data-[state=active]:bg-[#2a2a2e] text-xs sm:text-sm gap-1.5">
-              <EyeOff className="w-4 h-4" />
-              Inativas ({inactiveProjects.length})
+            <TabsTrigger value="inativas" className="data-[state=active]:bg-[#2a2a2e] flex-1 min-w-0 text-xs sm:text-sm gap-1.5">
+              <EyeOff className="w-4 h-4 shrink-0" />
+              <span className="truncate">Inativas ({inactiveProjects.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="rascunhos" className="data-[state=active]:bg-[#2a2a2e] text-xs sm:text-sm gap-1.5">
-              <FileEdit className="w-4 h-4" />
-              Rascunhos ({draftProjects.length})
+            <TabsTrigger value="rascunhos" className="data-[state=active]:bg-[#2a2a2e] flex-1 min-w-0 text-xs sm:text-sm gap-1.5">
+              <FileEdit className="w-4 h-4 shrink-0" />
+              <span className="truncate">Rascunhos ({draftProjects.length})</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="ativas" className="space-y-6">
-            {/* Company pages */}
             {activeCompany.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-[#FFFF00]" />
-                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Imobiliária ({activeCompany.length})</p>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Imobiliária ({activeCompany.length})</p>
                 </div>
-                {renderProjectGrid(activeCompany, null, "")}
+                <div className="grid gap-3">
+                  {activeCompany.map((project) => (
+                    <ProjectListCard
+                      key={project.id}
+                      project={project}
+                      onEdit={handleOpenDialog}
+                      onEditLanding={setEditLandingProject}
+                      onToggleStatus={toggleProjectStatus}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Broker-created pages */}
             {activeBroker.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Home className="w-4 h-4 text-cyan-400" />
-                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Criadas por Corretores ({activeBroker.length})</p>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Criadas por Corretores ({activeBroker.length})</p>
                 </div>
-                {renderProjectGrid(activeBroker, null, "")}
+                <div className="grid gap-3">
+                  {activeBroker.map((project) => (
+                    <ProjectListCard
+                      key={project.id}
+                      project={project}
+                      onEdit={handleOpenDialog}
+                      onEditLanding={setEditLandingProject}
+                      onToggleStatus={toggleProjectStatus}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
             {activeCompany.length === 0 && activeBroker.length === 0 && (
-              <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-xl">
-                <div className="flex flex-col items-center justify-center py-12">
-                  <Building2 className="h-12 w-12 text-slate-500 mb-4" />
-                  <p className="text-slate-400">Nenhuma landing page ativa</p>
-                  <Button
-                    variant="outline"
-                    className="mt-4 bg-[#1e1e22] border-[#2a2a2e] hover:bg-[#2a2a2e] text-white"
-                    onClick={() => setShowWizard(true)}
-                  >
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Criar primeira landing page
-                  </Button>
-                </div>
+              <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
+                <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Nenhuma landing page ativa</p>
+                <Button
+                  variant="outline"
+                  className="mt-4 bg-[#1e1e22] border-[#2a2a2e] hover:bg-[#2a2a2e] text-foreground"
+                  onClick={() => setShowWizard(true)}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Criar primeira landing page
+                </Button>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="inativas">
-            {renderProjectGrid(
+            {renderProjectList(
               inactiveProjects,
-              <EyeOff className="h-12 w-12 text-slate-500 mb-4" />,
+              <EyeOff className="h-12 w-12 text-muted-foreground mx-auto mb-4" />,
               "Nenhuma landing page inativa"
             )}
           </TabsContent>
 
           <TabsContent value="rascunhos">
-            {renderProjectGrid(
+            {renderProjectList(
               draftProjects,
-              <FileEdit className="h-12 w-12 text-slate-500 mb-4" />,
+              <FileEdit className="h-12 w-12 text-muted-foreground mx-auto mb-4" />,
               "Nenhum rascunho encontrado"
             )}
           </TabsContent>
