@@ -1,36 +1,44 @@
 
 
-# Limpar UI da Agenda: remover barra verde + unificar botão
+# Re-brand cores dos eventos da Agenda
 
-## Análise
+## Paleta proposta
 
-- O botão **Atualizar** (`refetch`) apenas re-busca os eventos do banco local — mesma coisa que o `syncGoogle` faz, mas sem sincronizar com o Google.
-- Quando conectado ao Google, **Sincronizar** já faz tudo: busca eventos do Google + recarrega do banco. Então "Atualizar" é redundante.
-- Quando **não** conectado, o botão deve funcionar como refresh local (refetch).
+Eventos do sistema usarão cores do design system CRM (dark professional), com destaque em **amber/gold** para eventos internos:
 
-**Concordo com a proposta.** A barra verde ocupa espaço desnecessário quando já está conectado. Podemos mover as ações essenciais (Sincronizar, Reconectar, Desconectar) para o header da página de forma discreta.
+| Tipo | Cor atual | Nova cor (balão) | Texto |
+|------|-----------|------------------|-------|
+| visit (Visita) | blue-500 | `bg-amber-400` | `text-black` |
+| meeting (Reunião) | purple-500 | `bg-violet-500` | `text-white` |
+| follow_up (Retorno) | amber-500 | `bg-sky-500` | `text-white` |
+| scheduling (Agendamento) | green-500 | `bg-emerald-500` | `text-white` |
+| task (Tarefa) | slate-500 | `bg-zinc-500` | `text-white` |
+| other (Outro) | gray-500 | `bg-stone-400` | `text-black` |
 
-## Alterações
+A **Visita** fica com balão amarelo/gold e texto preto (destaque principal, como solicitado). Eventos genéricos (other) também com texto escuro para contraste.
 
-### 1. `AgendaModule.tsx`
-- **Remover** o `<GoogleConnectCard>` quando `googleConnection` existe (conectado)
-- **Manter** o card apenas quando NÃO conectado (CTA de conexão)
-- Substituir o botão "Atualizar" por "Sincronizar":
-  - Se conectado ao Google: chama `syncGoogle` (sync + refetch)
-  - Se não conectado: chama `refetch` (apenas refresh local)
-- Adicionar um pequeno dropdown ou botões discretos no header para "Reconectar" e "Desconectar" (visíveis apenas quando conectado)
+## Arquivos alterados
 
-### 2. `GoogleConnectCard.tsx`
-- Sem alteração — continua sendo usado apenas para o estado "não conectado"
+### 1. `MonthView.tsx`, `WeekView.tsx`, `DayView.tsx`
+- Atualizar `EVENT_TYPE_COLORS` com as novas classes
+- Trocar `text-white` fixo por cor condicional (amarelo/stone usam `text-black`)
 
-### Resultado visual (quando conectado)
-```text
-Header:
-  [Agenda]                          [+ Novo evento] [🔄 Sincronizar] [⋮ menu: Reconectar | Desconectar]
+### 2. `ListView.tsx`
+- Atualizar `EVENT_TYPE_BADGE` para refletir a nova paleta nos badges
 
-Filtros e controles...
-Calendário...
+### Implementação
+Criar um mapa de texto por tipo para evitar repetição:
+
+```typescript
+const EVENT_TYPE_COLORS: Record<string, string> = {
+  visit: "bg-amber-400 text-black",
+  meeting: "bg-violet-500 text-white",
+  follow_up: "bg-sky-500 text-white",
+  scheduling: "bg-emerald-500 text-white",
+  task: "bg-zinc-500 text-white",
+  other: "bg-stone-400 text-black",
+};
 ```
 
-Sem barra verde. Página limpa e focada nos eventos.
+Remover o `text-white` hardcoded dos `className` dos event chips em todos os 3 arquivos de view, já que a cor do texto agora vem do mapa.
 
