@@ -1,6 +1,7 @@
-import { Building2, CalendarDays, LayoutDashboard, MessageCircle, Shuffle, Users, Bot } from "lucide-react";
+import { Building2, CalendarDays, LayoutDashboard, MessageCircle, Shuffle, Users, Bot, BarChart3 } from "lucide-react";
 
 export const ADMIN_ROUTE_TABS = [
+  { id: "dashboard", label: "Dashboard", path: "/admin/dashboard", icon: BarChart3 },
   { id: "crm", label: "CRM", path: "/admin/crm", icon: LayoutDashboard },
   { id: "leads", label: "Leads", path: "/admin/leads", icon: Users },
   { id: "inbox", label: "Inbox", path: "/admin/inbox", icon: MessageCircle },
@@ -14,6 +15,7 @@ export const ADMIN_ROUTE_TABS = [
 export type AdminRouteTabId = typeof ADMIN_ROUTE_TABS[number]["id"];
 
 export const ADMIN_TAB_LABELS: Record<AdminRouteTabId, { title: string; subtitle?: string }> = {
+  dashboard: { title: "Dashboard", subtitle: "Visão geral de métricas e performance" },
   crm: { title: "CRM", subtitle: "Gerencie seus leads e pipeline de vendas" },
   leads: { title: "Leads", subtitle: "Visualize e exporte todos os leads" },
   inbox: { title: "Inbox", subtitle: "Gerencie conversas e atendimento em tempo real" },
@@ -27,6 +29,7 @@ export const ADMIN_TAB_LABELS: Record<AdminRouteTabId, { title: string; subtitle
 export const ADMIN_DEFAULT_TAB: AdminRouteTabId = "crm";
 
 export const ADMIN_TAB_BY_SEGMENT: Record<string, AdminRouteTabId> = {
+  dashboard: "dashboard",
   crm: "crm",
   leads: "leads",
   corretores: "brokers",
