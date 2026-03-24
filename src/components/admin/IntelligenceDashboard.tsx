@@ -368,7 +368,7 @@ export default function IntelligenceDashboard() {
       timeToProposta: convTimeByBroker("data_envio_proposta"),
       timeToVenda: convTimeByBroker("data_fechamento"),
     };
-  }, [allLeads, staleLeads, brokerMap, projectMap, pageViews, dateFrom, dateTo, period, prevRange]);
+  }, [allLeads, staleLeads, brokerMap, projectMap, pageViews, dateFrom, dateTo, period, prevRange, manualLeadIds]);
 
   if (isLoading) {
     return (

@@ -244,7 +244,7 @@ export default function DashboardOverview() {
       timeToProposta: convTimeByBroker("data_envio_proposta"),
       timeToVenda: convTimeByBroker("data_fechamento"),
     };
-  }, [leads, staleLeads, brokerMap, projectMap, pageViews]);
+  }, [leads, staleLeads, brokerMap, projectMap, pageViews, manualLeadIds]);
 
   if (isLoading) {
     return (
