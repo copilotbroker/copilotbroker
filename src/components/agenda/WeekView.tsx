@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7h-20h
 const EVENT_TYPE_COLORS: Record<string, string> = {
-  visit: "bg-blue-500/80",
-  meeting: "bg-purple-500/80",
-  follow_up: "bg-amber-500/80",
-  scheduling: "bg-green-500/80",
-  task: "bg-slate-500/80",
-  other: "bg-gray-500/80",
+  visit: "bg-amber-400 text-black",
+  meeting: "bg-violet-500 text-white",
+  follow_up: "bg-sky-500 text-white",
+  scheduling: "bg-emerald-500 text-white",
+  task: "bg-zinc-500 text-white",
+  other: "bg-stone-400 text-black",
 };
 
 interface WeekViewProps {
@@ -75,7 +75,7 @@ export function WeekView({ currentDate, events, onEventClick, onDayClick }: Week
                     <div
                       key={evt.id}
                       className={cn(
-                        "text-[10px] text-white rounded px-1 py-0.5 truncate cursor-pointer",
+                        "text-[10px] rounded px-1 py-0.5 truncate cursor-pointer",
                         EVENT_TYPE_COLORS[evt.event_type] || "bg-slate-500/80"
                       )}
                       onClick={() => onEventClick(evt)}

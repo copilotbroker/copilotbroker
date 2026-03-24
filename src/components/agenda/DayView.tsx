@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6h-21h
 const EVENT_TYPE_COLORS: Record<string, string> = {
-  visit: "bg-blue-500/80",
-  meeting: "bg-purple-500/80",
-  follow_up: "bg-amber-500/80",
-  scheduling: "bg-green-500/80",
-  task: "bg-slate-500/80",
-  other: "bg-gray-500/80",
+  visit: "bg-amber-400 text-black",
+  meeting: "bg-violet-500 text-white",
+  follow_up: "bg-sky-500 text-white",
+  scheduling: "bg-emerald-500 text-white",
+  task: "bg-zinc-500 text-white",
+  other: "bg-stone-400 text-black",
 };
 
 interface DayViewProps {
@@ -37,7 +37,7 @@ export function DayView({ currentDate, events, onEventClick }: DayViewProps) {
           {allDayEvents.map(evt => (
             <div
               key={evt.id}
-              className={cn("text-xs text-white rounded px-2 py-1 cursor-pointer", EVENT_TYPE_COLORS[evt.event_type])}
+className={cn("text-xs rounded px-2 py-1 cursor-pointer", EVENT_TYPE_COLORS[evt.event_type])}
               onClick={() => onEventClick(evt)}
             >
               {evt.title}
@@ -58,7 +58,7 @@ export function DayView({ currentDate, events, onEventClick }: DayViewProps) {
                 {hourEvents.map(evt => (
                   <div
                     key={evt.id}
-                    className={cn("text-xs text-white rounded px-2 py-1 cursor-pointer", EVENT_TYPE_COLORS[evt.event_type])}
+className={cn("text-xs rounded px-2 py-1 cursor-pointer", EVENT_TYPE_COLORS[evt.event_type])}
                     onClick={() => onEventClick(evt)}
                   >
                     <span className="font-medium">{format(new Date(evt.start_at), "HH:mm")}</span> {evt.title}

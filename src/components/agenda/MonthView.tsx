@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
-  visit: "bg-blue-500",
-  meeting: "bg-purple-500",
-  follow_up: "bg-amber-500",
-  scheduling: "bg-green-500",
-  task: "bg-slate-500",
-  other: "bg-gray-500",
+  visit: "bg-amber-400 text-black",
+  meeting: "bg-violet-500 text-white",
+  follow_up: "bg-sky-500 text-white",
+  scheduling: "bg-emerald-500 text-white",
+  task: "bg-zinc-500 text-white",
+  other: "bg-stone-400 text-black",
 };
 
 interface MonthViewProps {
@@ -74,7 +74,7 @@ export function MonthView({ currentDate, events, onDayClick, onEventClick }: Mon
                   <div
                     key={evt.id}
                     className={cn(
-                      "text-[10px] leading-tight px-1 py-0.5 rounded truncate text-white cursor-pointer",
+                      "text-[10px] leading-tight px-1 py-0.5 rounded truncate cursor-pointer",
                       EVENT_TYPE_COLORS[evt.event_type] || "bg-slate-500"
                     )}
                     onClick={(e) => {
