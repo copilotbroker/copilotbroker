@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, MoreVertical, Plus, RefreshCw, Search, Unplug, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useCalendarEvents, CalendarEvent, CalendarViewMode } from "@/hooks/use-calendar-events";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
