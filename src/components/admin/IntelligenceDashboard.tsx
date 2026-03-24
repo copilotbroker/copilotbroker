@@ -145,17 +145,24 @@ export default function IntelligenceDashboard() {
   const { data: attributions = [] } = useQuery({
     queryKey: ["intel-attributions"],
     queryFn: async () => {
-      const { data } = await supabase.from("lead_attribution").select("lead_id, landing_page")
-        .in("landing_page", ["admin_manual", "csv_import"]);
+      const { data } = await supabase.from("lead_attribution").select("lead_id, landing_page");
       return data || [];
     },
     staleTime: 5 * 60_000,
   });
 
-  const manualLeadIds = useMemo(() => {
-    const s = new Set<string>();
-    (attributions as any[]).forEach(a => { if (a.lead_id) s.add(a.lead_id); });
-    return s;
+  const { manualLeadIds, landingPageLeadIds } = useMemo(() => {
+    const manual = new Set<string>();
+    const lp = new Set<string>();
+    (attributions as any[]).forEach(a => {
+      if (!a.lead_id) return;
+      if (a.landing_page === "admin_manual" || a.landing_page === "csv_import") {
+        manual.add(a.lead_id);
+      } else {
+        lp.add(a.lead_id);
+      }
+    });
+    return { manualLeadIds: manual, landingPageLeadIds: lp };
   }, [attributions]);
 
   // === Metrics calculation ===
@@ -300,13 +307,13 @@ export default function IntelligenceDashboard() {
       })
       .sort((a, b) => b.venda - a.venda);
 
-    // Projects — only count non-manual leads for conversion rate
+    // Projects — only count landing page leads for conversion rate
     const byProject: Record<string, number> = {};
-    const byProjectNonManual: Record<string, number> = {};
+    const byProjectLandingPage: Record<string, number> = {};
     currentLeads.forEach((l: any) => {
       if (l.project_id) {
         byProject[l.project_id] = (byProject[l.project_id] || 0) + 1;
-        if (!isManual(l)) byProjectNonManual[l.project_id] = (byProjectNonManual[l.project_id] || 0) + 1;
+        if (landingPageLeadIds.has(l.id)) byProjectLandingPage[l.project_id] = (byProjectLandingPage[l.project_id] || 0) + 1;
       }
     });
     const pvByProject: Record<string, number> = {};
@@ -320,9 +327,9 @@ export default function IntelligenceDashboard() {
         id,
         name: projectMap[id] || id.slice(0, 8),
         leads: byProject[id] || 0,
-        leadsNonManual: byProjectNonManual[id] || 0,
+        leadsLandingPage: byProjectLandingPage[id] || 0,
         views: pvByProject[id] || 0,
-        rate: pvByProject[id] ? calcRate(byProjectNonManual[id] || 0, pvByProject[id]) : 0,
+        rate: pvByProject[id] ? calcRate(byProjectLandingPage[id] || 0, pvByProject[id]) : 0,
       }))
       .sort((a, b) => b.leads - a.leads)
       .slice(0, 10);
@@ -368,7 +375,7 @@ export default function IntelligenceDashboard() {
       timeToProposta: convTimeByBroker("data_envio_proposta"),
       timeToVenda: convTimeByBroker("data_fechamento"),
     };
-  }, [allLeads, staleLeads, brokerMap, projectMap, pageViews, dateFrom, dateTo, period, prevRange, manualLeadIds]);
+  }, [allLeads, staleLeads, brokerMap, projectMap, pageViews, dateFrom, dateTo, period, prevRange, manualLeadIds, landingPageLeadIds]);
 
   if (isLoading) {
     return (

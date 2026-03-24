@@ -108,17 +108,24 @@ export default function DashboardOverview() {
   const { data: attributions = [] } = useQuery({
     queryKey: ["dash-attributions"],
     queryFn: async () => {
-      const { data } = await supabase.from("lead_attribution").select("lead_id, landing_page")
-        .in("landing_page", ["admin_manual", "csv_import"]);
+      const { data } = await supabase.from("lead_attribution").select("lead_id, landing_page");
       return data || [];
     },
     staleTime: 5 * 60_000,
   });
 
-  const manualLeadIds = useMemo(() => {
-    const s = new Set<string>();
-    (attributions as any[]).forEach(a => { if (a.lead_id) s.add(a.lead_id); });
-    return s;
+  const { manualLeadIds, landingPageLeadIds } = useMemo(() => {
+    const manual = new Set<string>();
+    const lp = new Set<string>();
+    (attributions as any[]).forEach(a => {
+      if (!a.lead_id) return;
+      if (a.landing_page === "admin_manual" || a.landing_page === "csv_import") {
+        manual.add(a.lead_id);
+      } else {
+        lp.add(a.lead_id);
+      }
+    });
+    return { manualLeadIds: manual, landingPageLeadIds: lp };
   }, [attributions]);
 
   const metrics = useMemo(() => {
@@ -159,11 +166,11 @@ export default function DashboardOverview() {
       .map(([key, count]) => ({ label: getOriginDisplayLabel(key), count }));
 
     const byProject: Record<string, number> = {};
-    const byProjectNonManual: Record<string, number> = {};
+    const byProjectLandingPage: Record<string, number> = {};
     leads.forEach((l: any) => {
       if (l.project_id) {
         byProject[l.project_id] = (byProject[l.project_id] || 0) + 1;
-        if (!isManual(l)) byProjectNonManual[l.project_id] = (byProjectNonManual[l.project_id] || 0) + 1;
+        if (landingPageLeadIds.has(l.id)) byProjectLandingPage[l.project_id] = (byProjectLandingPage[l.project_id] || 0) + 1;
       }
     });
     const projectRanking = Object.entries(byProject)
@@ -179,7 +186,7 @@ export default function DashboardOverview() {
       .map(([id, count]) => ({ name: projectMap[id] || id, count, id }));
 
     const convByProject = pvRanking.map(pv => {
-      const leadsCount = byProjectNonManual[pv.id] || 0;
+      const leadsCount = byProjectLandingPage[pv.id] || 0;
       return { name: pv.name, views: pv.count, leads: leadsCount, rate: pv.count > 0 ? ((leadsCount / pv.count) * 100) : 0 };
     }).sort((a, b) => b.rate - a.rate);
 
@@ -244,7 +251,7 @@ export default function DashboardOverview() {
       timeToProposta: convTimeByBroker("data_envio_proposta"),
       timeToVenda: convTimeByBroker("data_fechamento"),
     };
-  }, [leads, staleLeads, brokerMap, projectMap, pageViews, manualLeadIds]);
+  }, [leads, staleLeads, brokerMap, projectMap, pageViews, manualLeadIds, landingPageLeadIds]);
 
   if (isLoading) {
     return (
