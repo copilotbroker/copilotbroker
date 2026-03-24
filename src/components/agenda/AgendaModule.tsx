@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, RefreshCw, Search } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, MoreVertical, Plus, RefreshCw, Search, Unplug, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useCalendarEvents, CalendarEvent, CalendarViewMode } from "@/hooks/use-calendar-events";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
@@ -116,19 +117,43 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
           <Button onClick={() => { setSelectedEvent(null); setDefaultDate(new Date()); setModalOpen(true); }} className="gap-1">
             <Plus className="h-4 w-4" /> Novo evento
           </Button>
-          <Button variant="outline" size="sm" onClick={refetch} className="gap-1">
-            <RefreshCw className="h-3.5 w-3.5" /> Atualizar
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={googleConnection ? syncGoogle : refetch}
+            className="gap-1"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Sincronizar
           </Button>
+          {googleConnection && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={connectGoogle} className="gap-2">
+                  <Calendar className="h-4 w-4" /> Reconectar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={disconnectGoogle} className="gap-2 text-destructive">
+                  <Unplug className="h-4 w-4" /> Desconectar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
-      {/* Google Connection Card */}
-      <GoogleConnectCard
-        connection={googleConnection}
-        onConnect={connectGoogle}
-        onSync={syncGoogle}
-        onDisconnect={disconnectGoogle}
-      />
+      {/* Google Connection Card — only when not connected */}
+      {!googleConnection && (
+        <GoogleConnectCard
+          connection={googleConnection}
+          onConnect={connectGoogle}
+          onSync={syncGoogle}
+          onDisconnect={disconnectGoogle}
+        />
+      )}
 
       {/* Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
