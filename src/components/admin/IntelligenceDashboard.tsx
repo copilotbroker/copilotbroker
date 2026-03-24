@@ -327,9 +327,9 @@ export default function IntelligenceDashboard() {
         id,
         name: projectMap[id] || id.slice(0, 8),
         leads: byProject[id] || 0,
-        leadsNonManual: byProjectNonManual[id] || 0,
+        leadsLandingPage: byProjectLandingPage[id] || 0,
         views: pvByProject[id] || 0,
-        rate: pvByProject[id] ? calcRate(byProjectNonManual[id] || 0, pvByProject[id]) : 0,
+        rate: pvByProject[id] ? calcRate(byProjectLandingPage[id] || 0, pvByProject[id]) : 0,
       }))
       .sort((a, b) => b.leads - a.leads)
       .slice(0, 10);
