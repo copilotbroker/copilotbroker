@@ -108,17 +108,24 @@ export default function DashboardOverview() {
   const { data: attributions = [] } = useQuery({
     queryKey: ["dash-attributions"],
     queryFn: async () => {
-      const { data } = await supabase.from("lead_attribution").select("lead_id, landing_page")
-        .in("landing_page", ["admin_manual", "csv_import"]);
+      const { data } = await supabase.from("lead_attribution").select("lead_id, landing_page");
       return data || [];
     },
     staleTime: 5 * 60_000,
   });
 
-  const manualLeadIds = useMemo(() => {
-    const s = new Set<string>();
-    (attributions as any[]).forEach(a => { if (a.lead_id) s.add(a.lead_id); });
-    return s;
+  const { manualLeadIds, landingPageLeadIds } = useMemo(() => {
+    const manual = new Set<string>();
+    const lp = new Set<string>();
+    (attributions as any[]).forEach(a => {
+      if (!a.lead_id) return;
+      if (a.landing_page === "admin_manual" || a.landing_page === "csv_import") {
+        manual.add(a.lead_id);
+      } else {
+        lp.add(a.lead_id);
+      }
+    });
+    return { manualLeadIds: manual, landingPageLeadIds: lp };
   }, [attributions]);
 
   const metrics = useMemo(() => {
