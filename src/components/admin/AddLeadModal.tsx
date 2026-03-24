@@ -152,7 +152,7 @@ export function AddLeadModal({ isOpen, onClose, onSuccess, defaultBrokerId, hide
         id: leadId,
         name: name.trim(),
         whatsapp,
-        source: brokerId === "enove" ? "enove" : "broker",
+        source: "manual",
         status: "new",
         lead_origin: finalOrigin,
         project_id: projectId,
