@@ -7,7 +7,7 @@ export const ADMIN_ROUTE_TABS = [
   { id: "agenda", label: "Agenda", path: "/admin/agenda", icon: CalendarDays },
   { id: "brokers", label: "Corretores", path: "/admin/corretores", icon: Users },
   { id: "roletas", label: "Roletas", path: "/admin/roletas", icon: Shuffle },
-  { id: "projects", label: "Empreendimentos", path: "/admin/empreendimentos", icon: Building2 },
+  { id: "projects", label: "Landing Pages", path: "/admin/empreendimentos", icon: Building2 },
   { id: "copilot", label: "Copiloto", path: "/admin/copiloto", icon: Bot },
   { id: "analytics", label: "Inteligência", path: "/admin/inteligencia", icon: Brain },
 ] as const;
@@ -21,7 +21,7 @@ export const ADMIN_TAB_LABELS: Record<AdminRouteTabId, { title: string; subtitle
   agenda: { title: "Agenda", subtitle: "Gerencie compromissos e eventos" },
   brokers: { title: "Corretores", subtitle: "Cadastre e gerencie corretores parceiros" },
   roletas: { title: "Roletas", subtitle: "Gerencie distribuição e regras de atendimento" },
-  projects: { title: "Empreendimentos", subtitle: "Configure seus empreendimentos ativos" },
+  projects: { title: "Landing Pages", subtitle: "Gerencie todas as landing pages da imobiliária" },
   copilot: { title: "Copiloto IA", subtitle: "Configure o assistente IA dos corretores" },
   analytics: { title: "Analytics", subtitle: "Acompanhe métricas e performance" },
 };
