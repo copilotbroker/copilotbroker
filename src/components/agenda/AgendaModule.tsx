@@ -205,16 +205,16 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as CalendarViewMode)}>
-            <TabsList className="h-8 w-full sm:w-auto">
-              <TabsTrigger value="day" className="text-xs px-3 flex-1 sm:flex-none">Dia</TabsTrigger>
-              <TabsTrigger value="week" className="text-xs px-3 flex-1 sm:flex-none">Semana</TabsTrigger>
-              <TabsTrigger value="month" className="text-xs px-3 flex-1 sm:flex-none">Mês</TabsTrigger>
-              <TabsTrigger value="list" className="text-xs px-3 flex-1 sm:flex-none">Lista</TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
+
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as CalendarViewMode)} className="w-full sm:w-auto">
+          <TabsList className="h-8 w-full sm:w-auto">
+            <TabsTrigger value="day" className="text-xs px-3 flex-1 sm:flex-none">Dia</TabsTrigger>
+            <TabsTrigger value="week" className="text-xs px-3 flex-1 sm:flex-none">Semana</TabsTrigger>
+            <TabsTrigger value="month" className="text-xs px-3 flex-1 sm:flex-none">Mês</TabsTrigger>
+            <TabsTrigger value="list" className="text-xs px-3 flex-1 sm:flex-none">Lista</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Calendar View */}
