@@ -142,6 +142,22 @@ export default function IntelligenceDashboard() {
     staleTime: 60_000,
   });
 
+  const { data: attributions = [] } = useQuery({
+    queryKey: ["intel-attributions"],
+    queryFn: async () => {
+      const { data } = await supabase.from("lead_attribution").select("lead_id, landing_page")
+        .in("landing_page", ["admin_manual", "csv_import"]);
+      return data || [];
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const manualLeadIds = useMemo(() => {
+    const s = new Set<string>();
+    (attributions as any[]).forEach(a => { if (a.lead_id) s.add(a.lead_id); });
+    return s;
+  }, [attributions]);
+
   // === Metrics calculation ===
   const metrics = useMemo(() => {
     const currentLeads = dateFrom
@@ -157,7 +173,7 @@ export default function IntelligenceDashboard() {
     const totalLeads = currentLeads.length;
     const prevTotalLeads = prevLeads.length;
 
-    const isManual = (l: any) => l.source === "manual" || l.source === "csv" || !!l.registered_by;
+    const isManual = (l: any) => l.source === "manual" || l.source === "csv" || !!l.registered_by || manualLeadIds.has(l.id);
     const manualLeads = currentLeads.filter(isManual);
     const receivedLeads = currentLeads.filter((l: any) => !isManual(l));
     const prevManualLeads = prevLeads.filter(isManual);
