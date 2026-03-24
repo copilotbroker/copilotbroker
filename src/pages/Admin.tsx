@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Users, Calendar, Phone, RefreshCw, UserCog, FileSpreadsheet } from "lucide-react";
+import { Users, Calendar, Phone, RefreshCw, UserCog, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import LeadsTable from "@/components/admin/LeadsTable";
@@ -12,6 +12,8 @@ import LeadsAdvancedFilters, { LeadFilters } from "@/components/admin/LeadsAdvan
 import BrokerManagement from "@/components/admin/BrokerManagement";
 import ProjectManagement from "@/components/admin/ProjectManagement";
 import DashboardOverview from "@/components/admin/DashboardOverview";
+import IntelligenceDashboard from "@/components/admin/IntelligenceDashboard";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AddLeadModal } from "@/components/admin/AddLeadModal";
@@ -474,7 +476,18 @@ const Admin = () => {
         brokers={brokers}
       >
       {activeTab === "dashboard" ? (
-        <DashboardOverview />
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="bg-[#1e1e22] border border-[#2a2a2e] mb-4">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Overview</TabsTrigger>
+            <TabsTrigger value="intelligence" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Inteligência</TabsTrigger>
+          </TabsList>
+          <TabsContent value="overview">
+            <DashboardOverview />
+          </TabsContent>
+          <TabsContent value="intelligence">
+            <IntelligenceDashboard />
+          </TabsContent>
+        </Tabs>
       ) : activeTab === "crm" ? (
         <KanbanBoard isAdmin={true} brokers={brokers} searchTerm={crmSearchTerm} onSearchChange={setCrmSearchTerm} onAddLead={() => setIsAddLeadOpen(true)} />
       ) : activeTab === "leads" ? (
