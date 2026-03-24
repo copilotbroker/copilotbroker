@@ -193,30 +193,34 @@ export default function ProjectManagement() {
   const [showWizard, setShowWizard] = useState(false);
   const [editLandingProject, setEditLandingProject] = useState<Project | null>(null);
 
-  const { activeCompany, activeBroker, inactiveProjects, draftProjects } = useMemo(() => {
-    const activeCompany: Project[] = [];
-    const activeBroker: Project[] = [];
-    const inactiveProjects: Project[] = [];
-    const draftProjects: Project[] = [];
+  const { companyActive, companyDraft, companyInactive, brokerActive, brokerDraft, brokerInactive } = useMemo(() => {
+    const result = {
+      companyActive: [] as Project[],
+      companyDraft: [] as Project[],
+      companyInactive: [] as Project[],
+      brokerActive: [] as Project[],
+      brokerDraft: [] as Project[],
+      brokerInactive: [] as Project[],
+    };
 
     projects.forEach((p) => {
-      if (!p.is_active) {
-        if (!p.landing_content && p.status === "pre_launch") {
-          draftProjects.push(p);
-        } else {
-          inactiveProjects.push(p);
-        }
-        return;
-      }
-      if (p.created_by_broker_id) {
-        activeBroker.push(p);
+      const isBroker = !!p.created_by_broker_id;
+      const isDraft = !p.is_active && !p.landing_content && p.status === "pre_launch";
+
+      if (p.is_active) {
+        (isBroker ? result.brokerActive : result.companyActive).push(p);
+      } else if (isDraft) {
+        (isBroker ? result.brokerDraft : result.companyDraft).push(p);
       } else {
-        activeCompany.push(p);
+        (isBroker ? result.brokerInactive : result.companyInactive).push(p);
       }
     });
 
-    return { activeCompany, activeBroker, inactiveProjects, draftProjects };
+    return result;
   }, [projects]);
+
+  const totalCompany = companyActive.length + companyDraft.length + companyInactive.length;
+  const totalBroker = brokerActive.length + brokerDraft.length + brokerInactive.length;
 
   const handleOpenDialog = (project?: Project) => {
     if (project) {
@@ -297,29 +301,56 @@ export default function ProjectManagement() {
     );
   }
 
-  const renderProjectList = (items: Project[], emptyIcon: React.ReactNode, emptyText: string) => {
-    if (items.length === 0) {
+  const renderStatusSection = (title: string, items: Project[], icon: React.ReactNode, colorClass: string) => {
+    if (items.length === 0) return null;
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          {icon}
+          <p className={`text-xs font-medium uppercase tracking-wider ${colorClass}`}>{title} ({items.length})</p>
+        </div>
+        <div className="grid gap-3">
+          {items.map((project) => (
+            <ProjectListCard
+              key={project.id}
+              project={project}
+              onEdit={handleOpenDialog}
+              onEditLanding={setEditLandingProject}
+              onToggleStatus={toggleProjectStatus}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderTabContent = (active: Project[], draft: Project[], inactive: Project[]) => {
+    if (active.length === 0 && draft.length === 0 && inactive.length === 0) {
       return (
         <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
-          {emptyIcon}
-          <p className="text-muted-foreground">{emptyText}</p>
+          <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Nenhuma landing page encontrada</p>
+          <Button
+            variant="outline"
+            className="mt-4 bg-[#1e1e22] border-[#2a2a2e] hover:bg-[#2a2a2e] text-foreground"
+            onClick={() => setShowWizard(true)}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Criar landing page
+          </Button>
         </div>
       );
     }
     return (
-      <div className="grid gap-3">
-        {items.map((project) => (
-          <ProjectListCard
-            key={project.id}
-            project={project}
-            onEdit={handleOpenDialog}
-            onEditLanding={setEditLandingProject}
-            onToggleStatus={toggleProjectStatus}
-          />
-        ))}
+      <div className="space-y-6">
+        {renderStatusSection("Ativas", active, <Eye className="w-4 h-4 text-emerald-400" />, "text-emerald-400")}
+        {renderStatusSection("Rascunhos", draft, <FileEdit className="w-4 h-4 text-amber-400" />, "text-amber-400")}
+        {renderStatusSection("Inativas", inactive, <EyeOff className="w-4 h-4 text-muted-foreground" />, "text-muted-foreground")}
       </div>
     );
   };
+
+  const totalActive = companyActive.length + brokerActive.length;
 
   return (
     <div className="space-y-6">
@@ -328,9 +359,7 @@ export default function ProjectManagement() {
         <div>
           <h2 className="text-xl font-bold text-foreground">Landing Pages</h2>
           <p className="text-sm text-muted-foreground">
-            {activeCompany.length + activeBroker.length} {(activeCompany.length + activeBroker.length) === 1 ? 'ativa' : 'ativas'}
-            {draftProjects.length > 0 && ` · ${draftProjects.length} rascunho${draftProjects.length > 1 ? 's' : ''}`}
-            {inactiveProjects.length > 0 && ` · ${inactiveProjects.length} inativa${inactiveProjects.length > 1 ? 's' : ''}`}
+            {totalActive} {totalActive === 1 ? 'ativa' : 'ativas'} · {projects.length} total
           </p>
         </div>
         <div className="flex gap-2">
@@ -416,93 +445,24 @@ export default function ProjectManagement() {
           <RefreshCw className="h-6 w-6 animate-spin text-[#FFFF00]" />
         </div>
       ) : (
-        <Tabs defaultValue="ativas" className="space-y-4">
+        <Tabs defaultValue="imobiliaria" className="space-y-4">
           <TabsList className="bg-[#1e1e22] border border-[#2a2a2e] w-full sm:w-auto">
-            <TabsTrigger value="ativas" className="data-[state=active]:bg-[#2a2a2e] flex-1 min-w-0 text-xs sm:text-sm gap-1.5">
-              <Eye className="w-4 h-4 shrink-0" />
-              <span className="truncate">Ativas ({activeCompany.length + activeBroker.length})</span>
+            <TabsTrigger value="imobiliaria" className="data-[state=active]:bg-[#2a2a2e] flex-1 min-w-0 text-xs sm:text-sm gap-1.5">
+              <Building2 className="w-4 h-4 shrink-0" />
+              <span className="truncate">Imobiliária ({totalCompany})</span>
             </TabsTrigger>
-            <TabsTrigger value="inativas" className="data-[state=active]:bg-[#2a2a2e] flex-1 min-w-0 text-xs sm:text-sm gap-1.5">
-              <EyeOff className="w-4 h-4 shrink-0" />
-              <span className="truncate">Inativas ({inactiveProjects.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="rascunhos" className="data-[state=active]:bg-[#2a2a2e] flex-1 min-w-0 text-xs sm:text-sm gap-1.5">
-              <FileEdit className="w-4 h-4 shrink-0" />
-              <span className="truncate">Rascunhos ({draftProjects.length})</span>
+            <TabsTrigger value="corretores" className="data-[state=active]:bg-[#2a2a2e] flex-1 min-w-0 text-xs sm:text-sm gap-1.5">
+              <Home className="w-4 h-4 shrink-0" />
+              <span className="truncate">Corretores ({totalBroker})</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="ativas" className="space-y-6">
-            {activeCompany.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-[#FFFF00]" />
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Imobiliária ({activeCompany.length})</p>
-                </div>
-                <div className="grid gap-3">
-                  {activeCompany.map((project) => (
-                    <ProjectListCard
-                      key={project.id}
-                      project={project}
-                      onEdit={handleOpenDialog}
-                      onEditLanding={setEditLandingProject}
-                      onToggleStatus={toggleProjectStatus}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeBroker.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Home className="w-4 h-4 text-cyan-400" />
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Criadas por Corretores ({activeBroker.length})</p>
-                </div>
-                <div className="grid gap-3">
-                  {activeBroker.map((project) => (
-                    <ProjectListCard
-                      key={project.id}
-                      project={project}
-                      onEdit={handleOpenDialog}
-                      onEditLanding={setEditLandingProject}
-                      onToggleStatus={toggleProjectStatus}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeCompany.length === 0 && activeBroker.length === 0 && (
-              <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
-                <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nenhuma landing page ativa</p>
-                <Button
-                  variant="outline"
-                  className="mt-4 bg-[#1e1e22] border-[#2a2a2e] hover:bg-[#2a2a2e] text-foreground"
-                  onClick={() => setShowWizard(true)}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Criar primeira landing page
-                </Button>
-              </div>
-            )}
+          <TabsContent value="imobiliaria" className="space-y-6">
+            {renderTabContent(companyActive, companyDraft, companyInactive)}
           </TabsContent>
 
-          <TabsContent value="inativas">
-            {renderProjectList(
-              inactiveProjects,
-              <EyeOff className="h-12 w-12 text-muted-foreground mx-auto mb-4" />,
-              "Nenhuma landing page inativa"
-            )}
-          </TabsContent>
-
-          <TabsContent value="rascunhos">
-            {renderProjectList(
-              draftProjects,
-              <FileEdit className="h-12 w-12 text-muted-foreground mx-auto mb-4" />,
-              "Nenhum rascunho encontrado"
-            )}
+          <TabsContent value="corretores" className="space-y-6">
+            {renderTabContent(brokerActive, brokerDraft, brokerInactive)}
           </TabsContent>
         </Tabs>
       )}
