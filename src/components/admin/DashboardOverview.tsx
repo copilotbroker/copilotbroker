@@ -105,10 +105,26 @@ export default function DashboardOverview() {
     staleTime: 60_000,
   });
 
+  const { data: attributions = [] } = useQuery({
+    queryKey: ["dash-attributions"],
+    queryFn: async () => {
+      const { data } = await supabase.from("lead_attribution").select("lead_id, landing_page")
+        .in("landing_page", ["admin_manual", "csv_import"]);
+      return data || [];
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const manualLeadIds = useMemo(() => {
+    const s = new Set<string>();
+    (attributions as any[]).forEach(a => { if (a.lead_id) s.add(a.lead_id); });
+    return s;
+  }, [attributions]);
+
   const metrics = useMemo(() => {
     const totalLeads = leads.length;
 
-    const isManual = (l: any) => l.source === "manual" || l.source === "csv" || !!l.registered_by;
+    const isManual = (l: any) => l.source === "manual" || l.source === "csv" || !!l.registered_by || manualLeadIds.has(l.id);
     const byBroker: Record<string, number> = {};
     const manualByBroker: Record<string, number> = {};
     const receivedByBroker: Record<string, number> = {};
@@ -228,7 +244,7 @@ export default function DashboardOverview() {
       timeToProposta: convTimeByBroker("data_envio_proposta"),
       timeToVenda: convTimeByBroker("data_fechamento"),
     };
-  }, [leads, staleLeads, brokerMap, projectMap, pageViews]);
+  }, [leads, staleLeads, brokerMap, projectMap, pageViews, manualLeadIds]);
 
   if (isLoading) {
     return (
