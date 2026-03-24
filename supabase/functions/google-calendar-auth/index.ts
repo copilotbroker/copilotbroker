@@ -268,10 +268,19 @@ function buildCallbackHtml(status: string, message: string): string {
 <head><title>Google Calendar</title></head>
 <body>
 <script>
-  window.opener && window.opener.postMessage({ type: "google-calendar-callback", status: "${status}", message: "${message}" }, "*");
-  setTimeout(() => window.close(), 1500);
+  if (window.opener) {
+    window.opener.postMessage({ type: "google-calendar-callback", status: "${status}", message: "${message}" }, "*");
+    setTimeout(() => window.close(), 1500);
+  } else {
+    // Mobile redirect (no opener)
+    var base = window.location.origin;
+    var paths = ["/corretor/agenda", "/admin/agenda"];
+    var dest = paths[0]; // default to broker
+    if (document.referrer && document.referrer.includes("/admin")) dest = paths[1];
+    window.location.href = base + dest + "?google=${status}";
+  }
 </script>
-<p>${status === "success" ? "Conectado com sucesso! Fechando..." : "Erro: " + message}</p>
+<p>${status === "success" ? "Conectado com sucesso! Redirecionando..." : "Erro: " + message}</p>
 </body>
 </html>`;
 }

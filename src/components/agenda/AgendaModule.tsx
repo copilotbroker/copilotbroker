@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, ChevronLeft, ChevronRight, MoreVertical, Plus, RefreshCw, Search, Unplug, Calendar } from "lucide-react";
@@ -15,7 +15,8 @@ import { ListView } from "./ListView";
 import { EventModal } from "./EventModal";
 import { GoogleConnectCard } from "./GoogleConnectCard";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useSearchParams } from "react-router-dom";
 
 interface AgendaModuleProps {
   brokerId: string | null;
@@ -30,6 +31,8 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date>(new Date());
+  const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     events,
@@ -50,6 +53,21 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
     goPrev,
     refetch,
   } = useCalendarEvents({ brokerId, isAdmin, selectedBrokerId });
+
+  // Handle mobile redirect return from Google OAuth
+  useEffect(() => {
+    const googleStatus = searchParams.get("google");
+    if (googleStatus) {
+      if (googleStatus === "success") {
+        toast({ title: "Google Agenda conectada com sucesso!" });
+        refetch();
+      } else {
+        toast({ title: "Erro na conexão com Google Agenda", variant: "destructive" });
+      }
+      searchParams.delete("google");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
 
   // Fetch brokers for admin filter
   useEffect(() => {
