@@ -1,29 +1,31 @@
 
 
-# Fix: Google Calendar connection not opening on mobile
+# Kanban do Líder: default para leads próprios
 
-## Problem
-`window.open()` with popup parameters (`width=500,height=600`) is blocked by mobile browsers. Mobile Safari and Chrome block popups that aren't directly triggered by user interaction, and even when allowed, popup windows don't work well on mobile.
+## Análise atual
 
-## Solution
-Detect mobile and use `window.location.href` (full redirect) instead of popup. After the OAuth callback, redirect back to the agenda page.
+- `BrokerAdmin.tsx` passa `isAdmin={isLeader}` ao `KanbanBoard`
+- Quando `isAdmin=true`, o filtro de `broker_id` é removido na query (linha 35 de `use-kanban-column.ts`)
+- `selectedBroker` começa como `"all"`, então o líder vê todos os leads do time + próprios (via RLS)
+- A segurança está correta via RLS: líderes só veem leads do time + próprios. Não veem da organização inteira.
 
-### File: `src/hooks/use-calendar-events.ts`
+**O que precisa mudar:** o valor inicial de `selectedBroker` deve ser o `brokerId` do líder (não `"all"`), para que por padrão ele veja apenas seus próprios leads. Ele pode mudar o filtro para ver o time.
 
-1. Replace `window.open(data.url, ...)` with mobile detection logic:
-   - If mobile viewport (`window.innerWidth < 768`): use `window.location.href = data.url` (full page redirect)
-   - If desktop: keep existing popup behavior
+## Alterações
 
-2. Update the callback HTML in `supabase/functions/google-calendar-auth/index.ts`:
-   - Instead of only `window.opener.postMessage` + `window.close()`, also handle the case where there's no `window.opener` (i.e., full redirect on mobile)
-   - In that case, redirect back to `/corretor/agenda` with a success query param
+### 1. `src/components/crm/KanbanBoard.tsx`
 
-3. Handle return from redirect in `AgendaModule.tsx`:
-   - On mount, check for `?google=success` in URL
-   - If present, show toast and remove the query param
+- Alterar o `useState` de `selectedBroker` para iniciar com o `brokerId` do líder quando `isAdmin` é true e `brokerId` existe
+- Especificamente: `useState<string>(isAdmin && brokerId ? brokerId : "all")`
+- Isso faz o Kanban abrir filtrado nos leads do próprio líder por padrão
+- O seletor de corretor continua disponível para ele navegar entre "Todos", "Sem corretor", ou membros individuais
 
-### Files changed
-- `src/hooks/use-calendar-events.ts` — mobile redirect instead of popup
-- `supabase/functions/google-calendar-auth/index.ts` — callback handles redirect case
-- `src/components/agenda/AgendaModule.tsx` — detect redirect return
+### 2. Verificação de segurança (RLS)
+
+A RLS já está correta:
+- Líderes veem leads onde `broker_id IN (SELECT id FROM brokers WHERE lider_id = get_my_broker_id())` — time
+- Líderes também veem seus próprios leads via política de broker
+- Não há acesso à organização inteira
+
+Nenhuma mudança de RLS necessária.
 
