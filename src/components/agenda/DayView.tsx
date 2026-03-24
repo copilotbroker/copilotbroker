@@ -37,7 +37,7 @@ export function DayView({ currentDate, events, onEventClick }: DayViewProps) {
           {allDayEvents.map(evt => (
             <div
               key={evt.id}
-              className={cn("text-xs text-white rounded px-2 py-1 cursor-pointer", EVENT_TYPE_COLORS[evt.event_type])}
+className={cn("text-xs rounded px-2 py-1 cursor-pointer", EVENT_TYPE_COLORS[evt.event_type])}
               onClick={() => onEventClick(evt)}
             >
               {evt.title}
