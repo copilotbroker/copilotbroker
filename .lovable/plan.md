@@ -1,44 +1,41 @@
 
 
-# Re-brand cores dos eventos da Agenda
+# Corrigir layout mobile dos botões de visualização da Agenda
 
-## Paleta proposta
+## Problema
 
-Eventos do sistema usarão cores do design system CRM (dark professional), com destaque em **amber/gold** para eventos internos:
+As alterações de cores e largura dos botões **estão no código** e funcionam tanto para Admin quanto Corretor (ambos usam o mesmo `AgendaModule`). Porém, o layout mobile não está funcionando como esperado porque:
 
-| Tipo | Cor atual | Nova cor (balão) | Texto |
-|------|-----------|------------------|-------|
-| visit (Visita) | blue-500 | `bg-amber-400` | `text-black` |
-| meeting (Reunião) | purple-500 | `bg-violet-500` | `text-white` |
-| follow_up (Retorno) | amber-500 | `bg-sky-500` | `text-white` |
-| scheduling (Agendamento) | green-500 | `bg-emerald-500` | `text-white` |
-| task (Tarefa) | slate-500 | `bg-zinc-500` | `text-white` |
-| other (Outro) | gray-500 | `bg-stone-400` | `text-black` |
+1. O `Tabs` está dentro de um `div` com `flex items-center gap-2 flex-wrap` — nesse contexto, `w-full` no `TabsList` não expande porque o **pai `Tabs`** não tem `w-full`
+2. Filtros (tipo de evento, busca) e tabs estão todos no mesmo container flex, competindo por espaço
 
-A **Visita** fica com balão amarelo/gold e texto preto (destaque principal, como solicitado). Eventos genéricos (other) também com texto escuro para contraste.
+## Solução
 
-## Arquivos alterados
+### Arquivo: `src/components/agenda/AgendaModule.tsx`
 
-### 1. `MonthView.tsx`, `WeekView.tsx`, `DayView.tsx`
-- Atualizar `EVENT_TYPE_COLORS` com as novas classes
-- Trocar `text-white` fixo por cor condicional (amarelo/stone usam `text-black`)
+Reorganizar a seção de controles no mobile:
 
-### 2. `ListView.tsx`
-- Atualizar `EVENT_TYPE_BADGE` para refletir a nova paleta nos badges
+1. **Mover os Tabs para fora** do container de filtros, em uma linha própria no mobile
+2. Adicionar `w-full sm:w-auto` no **componente `Tabs`** (não só no `TabsList`)
+3. No mobile, tabs ocupam a largura toda da tela em linha separada; no desktop, ficam inline com os filtros
 
-### Implementação
-Criar um mapa de texto por tipo para evitar repetição:
+Estrutura resultante no mobile:
+```text
+[◀] [Hoje] [▶] março 2026
 
-```typescript
-const EVENT_TYPE_COLORS: Record<string, string> = {
-  visit: "bg-amber-400 text-black",
-  meeting: "bg-violet-500 text-white",
-  follow_up: "bg-sky-500 text-white",
-  scheduling: "bg-emerald-500 text-white",
-  task: "bg-zinc-500 text-white",
-  other: "bg-stone-400 text-black",
-};
+[Tipo de evento ▼] [🔍 Buscar...]
+
+[  Dia  |  Semana  |  Mês  |  Lista  ]  ← linha própria, full width
+
+Calendário...
 ```
 
-Remover o `text-white` hardcoded dos `className` dos event chips em todos os 3 arquivos de view, já que a cor do texto agora vem do mapa.
+### Detalhes técnicos
+
+- Separar o bloco `<Tabs>` do `div` de filtros
+- Envolver filtros e tabs em containers separados dentro do `flex-col`
+- Adicionar `className="w-full sm:w-auto"` no elemento `<Tabs>`
+- Manter as classes `flex-1 sm:flex-none` nos `TabsTrigger`
+
+Apenas 1 arquivo alterado: `AgendaModule.tsx`
 
