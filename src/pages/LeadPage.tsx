@@ -873,6 +873,9 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         open={agendamentoOpen || agendamentoReagendar}
         onOpenChange={(v) => { setAgendamentoOpen(v); setAgendamentoReagendar(v); }}
         title={agendamentoReagendar ? "Reagendar" : "Registrar Agendamento"}
+        leadId={lead.id}
+        leadName={lead.name}
+        brokerId={lead.broker?.id || lead.broker_id}
         onConfirm={async (data, tipo) => {
           if (agendamentoReagendar) {
             const ok = await reagendarLead(lead.id, data, tipo);
