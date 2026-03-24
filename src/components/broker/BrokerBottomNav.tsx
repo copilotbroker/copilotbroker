@@ -108,6 +108,7 @@ export function BrokerBottomNav({
   };
 
   const moreMenuItems = [
+    ...(inboxEnabled ? [{ id: "inbox", label: "Inbox", description: "Conversas e atendimento", badge: inboxUnread }] : []),
     { id: "leads", label: "Modo Lista", description: "Abrir visão em lista" },
     { id: "notifications", label: "Notificações", description: "Ver notificações", badge: unreadCount },
     ...(isLeader ? [{ id: "roletas", label: "Roletas", description: "Gerenciar roletas da equipe" }] : []),
