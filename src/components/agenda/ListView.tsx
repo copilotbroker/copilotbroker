@@ -15,12 +15,12 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 };
 
 const EVENT_TYPE_BADGE: Record<string, string> = {
-  visit: "bg-blue-500/10 text-blue-500 border-blue-500/30",
-  meeting: "bg-purple-500/10 text-purple-500 border-purple-500/30",
-  follow_up: "bg-amber-500/10 text-amber-500 border-amber-500/30",
-  scheduling: "bg-green-500/10 text-green-500 border-green-500/30",
-  task: "bg-slate-500/10 text-slate-400 border-slate-500/30",
-  other: "bg-gray-500/10 text-gray-400 border-gray-500/30",
+  visit: "bg-amber-400/10 text-amber-500 border-amber-400/30",
+  meeting: "bg-violet-500/10 text-violet-500 border-violet-500/30",
+  follow_up: "bg-sky-500/10 text-sky-500 border-sky-500/30",
+  scheduling: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30",
+  task: "bg-zinc-500/10 text-zinc-400 border-zinc-500/30",
+  other: "bg-stone-400/10 text-stone-400 border-stone-400/30",
 };
 
 interface ListViewProps {

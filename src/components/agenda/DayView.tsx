@@ -58,7 +58,7 @@ className={cn("text-xs rounded px-2 py-1 cursor-pointer", EVENT_TYPE_COLORS[evt.
                 {hourEvents.map(evt => (
                   <div
                     key={evt.id}
-                    className={cn("text-xs text-white rounded px-2 py-1 cursor-pointer", EVENT_TYPE_COLORS[evt.event_type])}
+className={cn("text-xs rounded px-2 py-1 cursor-pointer", EVENT_TYPE_COLORS[evt.event_type])}
                     onClick={() => onEventClick(evt)}
                   >
                     <span className="font-medium">{format(new Date(evt.start_at), "HH:mm")}</span> {evt.title}

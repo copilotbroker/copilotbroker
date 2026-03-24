@@ -74,7 +74,7 @@ export function MonthView({ currentDate, events, onDayClick, onEventClick }: Mon
                   <div
                     key={evt.id}
                     className={cn(
-                      "text-[10px] leading-tight px-1 py-0.5 rounded truncate text-white cursor-pointer",
+                      "text-[10px] leading-tight px-1 py-0.5 rounded truncate cursor-pointer",
                       EVENT_TYPE_COLORS[evt.event_type] || "bg-slate-500"
                     )}
                     onClick={(e) => {

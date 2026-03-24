@@ -75,7 +75,7 @@ export function WeekView({ currentDate, events, onEventClick, onDayClick }: Week
                     <div
                       key={evt.id}
                       className={cn(
-                        "text-[10px] text-white rounded px-1 py-0.5 truncate cursor-pointer",
+                        "text-[10px] rounded px-1 py-0.5 truncate cursor-pointer",
                         EVENT_TYPE_COLORS[evt.event_type] || "bg-slate-500/80"
                       )}
                       onClick={() => onEventClick(evt)}
