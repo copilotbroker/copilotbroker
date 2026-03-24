@@ -1,29 +1,36 @@
 
 
-# Tornar botão WhatsApp acessível no mobile na página do Lead
+# Fix: Scroll bloqueado em monitores menores / zoom
 
-## Problema
-O botão WhatsApp no header da página do lead tem a classe `hidden sm:inline-flex`, ficando invisível no mobile.
+## Problema raiz
+
+Os layouts `AdminLayout.tsx` e `BrokerLayout.tsx` usam `h-screen overflow-hidden` no container principal. O `<main>` dentro deles nem sempre tem `overflow-y-auto`, impedindo rolagem em telas menores ou com zoom.
+
+- **AdminLayout** (linha 55): `h-screen flex flex-col overflow-hidden` — o `<main>` (linha 62) usa `flex-1 flex flex-col min-h-0` mas **sem overflow-y-auto**
+- **BrokerLayout** (linha 96): no modo `kanban`, o `<main>` também não tem overflow-y-auto (correto para Kanban virtualizado, mas problemático para todas as outras páginas que usam `viewMode="kanban"`)
+
+Páginas afetadas: Admin CRM, Admin Copiloto, Admin Corretores, Admin Projetos, Admin Roletas, Admin Inteligência, Broker Copiloto, Broker Roletas, Broker Landing Pages, e qualquer outra página dentro desses layouts.
 
 ## Solução
 
-### Arquivo: `src/pages/LeadPage.tsx`
+### 1. `src/components/admin/AdminLayout.tsx`
+- Adicionar `overflow-y-auto` ao `<main>` para que todo conteúdo dentro do AdminLayout seja rolável
+- Manter `min-h-0` (necessário para flex shrink) e adicionar `overflow-y-auto`
+- De: `"flex-1 flex flex-col min-h-0 p-3 md:p-6"`
+- Para: `"flex-1 flex flex-col min-h-0 overflow-y-auto p-3 md:p-6"`
 
-Remover `hidden sm:inline-flex` do link WhatsApp (linha 429) e trocar por `inline-flex` para ficar visível em todos os tamanhos. Simplificar o botão no mobile (só ícone, sem texto) para economizar espaço:
+### 2. `src/components/broker/BrokerLayout.tsx`
+- No modo `kanban`, adicionar `overflow-y-auto` ao `<main>` — isso permite que páginas que usam Kanban mode (como Roletas e Copiloto do corretor) possam rolar. O KanbanBoard internamente gerencia seu próprio scroll, então não será afetado negativamente.
+- De (kanban): `"flex-1 flex flex-col min-h-0 p-3 lg:p-6"`
+- Para (kanban): `"flex-1 flex flex-col min-h-0 overflow-y-auto p-3 lg:p-6"`
 
-- Mobile: ícone WhatsApp compacto (sem texto "WhatsApp")
-- Desktop: ícone + texto como está hoje
+### 3. `src/pages/AdminAgenda.tsx` e `src/pages/BrokerAgenda.tsx`
+- Já têm `overflow-auto` no `<main>` — sem alteração necessária.
 
-```tsx
-<a href={whatsappLink} target="_blank" rel="noopener noreferrer" 
-   className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 transition-all">
-  <MessageCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-  <span className="hidden sm:inline">WhatsApp</span>
-  <ExternalLink className="w-3 h-3 hidden sm:inline" />
-</a>
-```
+### Impacto
+- O KanbanBoard não será afetado: ele usa `flex-1 min-h-0` com colunas que fazem seu próprio scroll horizontal/vertical internamente
+- Todas as outras páginas (Corretores, Projetos, Roletas, Copiloto, Inteligência) passam a ter scroll vertical funcional
+- Monitores pequenos, zoom alto, e resoluções baixas passam a funcionar corretamente
 
-Fazer o mesmo para o botão "Chat" (linha 422-428) que também tem `hidden sm:inline-flex` — torná-lo visível no mobile como ícone compacto.
-
-Apenas 1 arquivo alterado.
+**2 arquivos alterados**: `AdminLayout.tsx`, `BrokerLayout.tsx`
 
