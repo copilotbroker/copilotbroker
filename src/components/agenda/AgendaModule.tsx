@@ -207,11 +207,11 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
           </div>
 
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as CalendarViewMode)}>
-            <TabsList className="h-8">
-              <TabsTrigger value="day" className="text-xs px-2">Dia</TabsTrigger>
-              <TabsTrigger value="week" className="text-xs px-2">Semana</TabsTrigger>
-              <TabsTrigger value="month" className="text-xs px-2">Mês</TabsTrigger>
-              <TabsTrigger value="list" className="text-xs px-2">Lista</TabsTrigger>
+            <TabsList className="h-8 w-full sm:w-auto">
+              <TabsTrigger value="day" className="text-xs px-3 flex-1 sm:flex-none">Dia</TabsTrigger>
+              <TabsTrigger value="week" className="text-xs px-3 flex-1 sm:flex-none">Semana</TabsTrigger>
+              <TabsTrigger value="month" className="text-xs px-3 flex-1 sm:flex-none">Mês</TabsTrigger>
+              <TabsTrigger value="list" className="text-xs px-3 flex-1 sm:flex-none">Lista</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
