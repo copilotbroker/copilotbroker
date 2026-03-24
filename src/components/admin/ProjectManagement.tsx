@@ -193,30 +193,34 @@ export default function ProjectManagement() {
   const [showWizard, setShowWizard] = useState(false);
   const [editLandingProject, setEditLandingProject] = useState<Project | null>(null);
 
-  const { activeCompany, activeBroker, inactiveProjects, draftProjects } = useMemo(() => {
-    const activeCompany: Project[] = [];
-    const activeBroker: Project[] = [];
-    const inactiveProjects: Project[] = [];
-    const draftProjects: Project[] = [];
+  const { companyActive, companyDraft, companyInactive, brokerActive, brokerDraft, brokerInactive } = useMemo(() => {
+    const result = {
+      companyActive: [] as Project[],
+      companyDraft: [] as Project[],
+      companyInactive: [] as Project[],
+      brokerActive: [] as Project[],
+      brokerDraft: [] as Project[],
+      brokerInactive: [] as Project[],
+    };
 
     projects.forEach((p) => {
-      if (!p.is_active) {
-        if (!p.landing_content && p.status === "pre_launch") {
-          draftProjects.push(p);
-        } else {
-          inactiveProjects.push(p);
-        }
-        return;
-      }
-      if (p.created_by_broker_id) {
-        activeBroker.push(p);
+      const isBroker = !!p.created_by_broker_id;
+      const isDraft = !p.is_active && !p.landing_content && p.status === "pre_launch";
+
+      if (p.is_active) {
+        (isBroker ? result.brokerActive : result.companyActive).push(p);
+      } else if (isDraft) {
+        (isBroker ? result.brokerDraft : result.companyDraft).push(p);
       } else {
-        activeCompany.push(p);
+        (isBroker ? result.brokerInactive : result.companyInactive).push(p);
       }
     });
 
-    return { activeCompany, activeBroker, inactiveProjects, draftProjects };
+    return result;
   }, [projects]);
+
+  const totalCompany = companyActive.length + companyDraft.length + companyInactive.length;
+  const totalBroker = brokerActive.length + brokerDraft.length + brokerInactive.length;
 
   const handleOpenDialog = (project?: Project) => {
     if (project) {
