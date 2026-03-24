@@ -67,7 +67,7 @@ export function BrokerBottomNav({
       onViewChange(id === "leads" ? "list" : "kanban");
     } else if (id === "add") {
       onAddLead?.();
-    } else if (id === "inbox" || id === "copilot") {
+    } else if (id === "agenda" || id === "copilot") {
       navigate(getBrokerPathByTab(id));
     } else if (id === "more") {
       setIsMoreOpen(true);
