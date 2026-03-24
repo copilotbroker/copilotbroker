@@ -11,7 +11,7 @@ import ExportButton from "@/components/admin/ExportButton";
 import LeadsAdvancedFilters, { LeadFilters } from "@/components/admin/LeadsAdvancedFilters";
 import BrokerManagement from "@/components/admin/BrokerManagement";
 import ProjectManagement from "@/components/admin/ProjectManagement";
-import IntelligenceDashboard from "@/components/admin/intelligence/IntelligenceDashboard";
+
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AddLeadModal } from "@/components/admin/AddLeadModal";
 import { CsvImportModal } from "@/components/admin/CsvImportModal";
@@ -584,9 +584,7 @@ const Admin = () => {
         <RoletaManagement />
       ) : activeTab === "projects" ? (
         <ProjectManagement />
-      ) : (
-        <IntelligenceDashboard />
-      )}
+      ) : null}
 
 
       {/* Add Lead Modal */}

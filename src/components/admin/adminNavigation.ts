@@ -1,4 +1,4 @@
-import { Brain, Building2, CalendarDays, LayoutDashboard, MessageCircle, Shuffle, Users, Bot } from "lucide-react";
+import { Building2, CalendarDays, LayoutDashboard, MessageCircle, Shuffle, Users, Bot } from "lucide-react";
 
 export const ADMIN_ROUTE_TABS = [
   { id: "crm", label: "CRM", path: "/admin/crm", icon: LayoutDashboard },
@@ -9,7 +9,6 @@ export const ADMIN_ROUTE_TABS = [
   { id: "roletas", label: "Roletas", path: "/admin/roletas", icon: Shuffle },
   { id: "projects", label: "Landing Pages", path: "/admin/empreendimentos", icon: Building2 },
   { id: "copilot", label: "Copiloto", path: "/admin/copiloto", icon: Bot },
-  { id: "analytics", label: "Inteligência", path: "/admin/inteligencia", icon: Brain },
 ] as const;
 
 export type AdminRouteTabId = typeof ADMIN_ROUTE_TABS[number]["id"];
@@ -23,7 +22,6 @@ export const ADMIN_TAB_LABELS: Record<AdminRouteTabId, { title: string; subtitle
   roletas: { title: "Roletas", subtitle: "Gerencie distribuição e regras de atendimento" },
   projects: { title: "Landing Pages", subtitle: "Gerencie todas as landing pages da imobiliária" },
   copilot: { title: "Copiloto IA", subtitle: "Configure o assistente IA dos corretores" },
-  analytics: { title: "Analytics", subtitle: "Acompanhe métricas e performance" },
 };
 
 export const ADMIN_DEFAULT_TAB: AdminRouteTabId = "crm";
@@ -34,7 +32,6 @@ export const ADMIN_TAB_BY_SEGMENT: Record<string, AdminRouteTabId> = {
   corretores: "brokers",
   roletas: "roletas",
   empreendimentos: "projects",
-  inteligencia: "analytics",
   inbox: "inbox",
   agenda: "agenda",
   copiloto: "copilot",
