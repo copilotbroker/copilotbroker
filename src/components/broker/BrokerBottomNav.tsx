@@ -78,8 +78,8 @@ export function BrokerBottomNav({
     setIsMoreOpen(false);
     if (action === "leads") {
       onViewChange("list");
-    } else if (action === "projects" || action === "roletas") {
-      navigate(getBrokerPathByTab(action as "projects" | "roletas"));
+    } else if (action === "inbox" || action === "projects" || action === "roletas") {
+      navigate(getBrokerPathByTab(action as "inbox" | "projects" | "roletas"));
     } else if (action === "notifications") {
       onNotificationsClick?.();
     } else if (action === "logout") {
