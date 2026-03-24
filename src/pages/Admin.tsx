@@ -11,6 +11,7 @@ import ExportButton from "@/components/admin/ExportButton";
 import LeadsAdvancedFilters, { LeadFilters } from "@/components/admin/LeadsAdvancedFilters";
 import BrokerManagement from "@/components/admin/BrokerManagement";
 import ProjectManagement from "@/components/admin/ProjectManagement";
+import DashboardOverview from "@/components/admin/DashboardOverview";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AddLeadModal } from "@/components/admin/AddLeadModal";

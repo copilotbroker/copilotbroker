@@ -29,6 +29,7 @@ export const ADMIN_TAB_LABELS: Record<AdminRouteTabId, { title: string; subtitle
 export const ADMIN_DEFAULT_TAB: AdminRouteTabId = "crm";
 
 export const ADMIN_TAB_BY_SEGMENT: Record<string, AdminRouteTabId> = {
+  dashboard: "dashboard",
   crm: "crm",
   leads: "leads",
   corretores: "brokers",

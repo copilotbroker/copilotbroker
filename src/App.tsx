@@ -109,7 +109,8 @@ const App = () => (
             <Route path="/corretor/leads" element={<BrokerAdmin />} />
             <Route path="/corretor/empreendimentos" element={<BrokerProjects />} />
             <Route path="/corretor/whatsapp" element={<Navigate to="/corretor/copiloto" replace />} />
-            <Route path="/admin" element={<Navigate to="/admin/crm" replace />} />
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/admin/dashboard" element={<Admin />} />
             <Route path="/admin/crm" element={<Admin />} />
             <Route path="/admin/leads" element={<Admin />} />
             <Route path="/admin/corretores" element={<Admin />} />
