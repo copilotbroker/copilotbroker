@@ -450,7 +450,7 @@ export function ConversationThread({
         )}
       </div>
 
-      {copilotSuggestion && (
+      {copilotSuggestion && !isNewLead && !isReadOnly && (
         <div className="mx-3 mb-2 rounded-lg border border-border bg-card/90 p-3">
           <p className="mb-1 flex items-center gap-1 text-[10px] text-muted-foreground"><Sparkles className="h-3 w-3" /> Sugestão do Copiloto</p>
           <p className="whitespace-pre-wrap text-sm text-foreground">{copilotSuggestion}</p>
@@ -461,85 +461,93 @@ export function ConversationThread({
         </div>
       )}
 
-      <div className="space-y-2 border-t border-border px-3 pt-2 pb-3 pb-safe">
-        {pendingFile && pendingType && (
-          <div className="flex items-center justify-between rounded-xl border border-border bg-card/90 px-3 py-2 text-sm text-foreground">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                {pendingType === "image" && <ImageIcon className="h-4 w-4 text-muted-foreground" />}
-                {pendingType === "audio" && <Mic className="h-4 w-4 text-muted-foreground" />}
-                {pendingType === "video" && <Video className="h-4 w-4 text-muted-foreground" />}
-                {pendingType === "document" && <FileText className="h-4 w-4 text-muted-foreground" />}
-                <span className="truncate">{pendingFile.name}</span>
-              </div>
-              <p className="mt-1 text-[10px] text-muted-foreground">
-                {pendingType === "image" && "Imagem pronta para envio com legenda opcional."}
-                {pendingType === "audio" && "Áudio pronto para envio."}
-                {pendingType === "video" && "Vídeo pronto para envio."}
-                {pendingType === "document" && "Documento pronto para envio."}
-              </p>
-            </div>
-            <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => setPendingFile(null)}>Remover</Button>
-          </div>
-        )}
-
-        <div className="flex items-end gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-            onChange={(e) => setPendingFile(e.target.files?.[0] || null)}
-          />
-          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion} title="Pedir sugestão ao Copiloto">
-            {isGeneratingSuggestion ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" /> : <Sparkles className="h-5 w-5" />}
-          </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
-            <Paperclip className="h-4 w-4" />
-          </Button>
-          <Textarea
-            ref={inputRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem..."}
-            className="max-h-[120px] min-h-[36px] resize-none py-2 text-sm"
-            rows={1}
-          />
-          <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
-            <PopoverTrigger asChild>
-              <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canScheduleText || isScheduling || isSending} title="Programar envio">
-                <CalendarClock className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 space-y-3 p-3">
-              <div>
-                <p className="text-sm font-medium text-foreground">Programar mensagem</p>
-                <p className="text-xs text-muted-foreground">Use o texto digitado no campo e escolha dia e horário.</p>
-              </div>
-              <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="rounded-md border border-border" />
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground">Horário</label>
-                <input
-                  type="time"
-                  value={scheduleTime}
-                  onChange={(e) => setScheduleTime(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                />
-              </div>
-              <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
-                {buildScheduledDateTime() ? `Envio para ${formatScheduledAt(buildScheduledDateTime()!.toISOString())}` : "Selecione uma data e horário válidos."}
-              </div>
-              <Button className="w-full" onClick={handleSchedule} disabled={!canScheduleText || isScheduling}>
-                {isScheduling ? "Programando..." : "Confirmar agendamento"}
-              </Button>
-            </PopoverContent>
-          </Popover>
-          <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
-            <Send className="h-4 w-4" />
-          </Button>
+      {(isNewLead || isReadOnly) ? (
+        <div className="border-t border-border px-4 py-3 text-center">
+          <p className="text-xs text-muted-foreground">
+            {isNewLead ? "Inicie o atendimento para enviar mensagens" : "Modo supervisão — somente leitura"}
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-2 border-t border-border px-3 pt-2 pb-3 pb-safe">
+          {pendingFile && pendingType && (
+            <div className="flex items-center justify-between rounded-xl border border-border bg-card/90 px-3 py-2 text-sm text-foreground">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  {pendingType === "image" && <ImageIcon className="h-4 w-4 text-muted-foreground" />}
+                  {pendingType === "audio" && <Mic className="h-4 w-4 text-muted-foreground" />}
+                  {pendingType === "video" && <Video className="h-4 w-4 text-muted-foreground" />}
+                  {pendingType === "document" && <FileText className="h-4 w-4 text-muted-foreground" />}
+                  <span className="truncate">{pendingFile.name}</span>
+                </div>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  {pendingType === "image" && "Imagem pronta para envio com legenda opcional."}
+                  {pendingType === "audio" && "Áudio pronto para envio."}
+                  {pendingType === "video" && "Vídeo pronto para envio."}
+                  {pendingType === "document" && "Documento pronto para envio."}
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => setPendingFile(null)}>Remover</Button>
+            </div>
+          )}
+
+          <div className="flex items-end gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+              onChange={(e) => setPendingFile(e.target.files?.[0] || null)}
+            />
+            <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion} title="Pedir sugestão ao Copiloto">
+              {isGeneratingSuggestion ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" /> : <Sparkles className="h-5 w-5" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Textarea
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem..."}
+              className="max-h-[120px] min-h-[36px] resize-none py-2 text-sm"
+              rows={1}
+            />
+            <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
+              <PopoverTrigger asChild>
+                <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canScheduleText || isScheduling || isSending} title="Programar envio">
+                  <CalendarClock className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 space-y-3 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Programar mensagem</p>
+                  <p className="text-xs text-muted-foreground">Use o texto digitado no campo e escolha dia e horário.</p>
+                </div>
+                <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="rounded-md border border-border" />
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-foreground">Horário</label>
+                  <input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                  />
+                </div>
+                <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+                  {buildScheduledDateTime() ? `Envio para ${formatScheduledAt(buildScheduledDateTime()!.toISOString())}` : "Selecione uma data e horário válidos."}
+                </div>
+                <Button className="w-full" onClick={handleSchedule} disabled={!canScheduleText || isScheduling}>
+                  {isScheduling ? "Programando..." : "Confirmar agendamento"}
+                </Button>
+              </PopoverContent>
+            </Popover>
+            <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
