@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  ArrowRightLeft,
   ArrowLeft,
   Send,
   Bot,
