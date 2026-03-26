@@ -1,111 +1,45 @@
 
 
-# Roleta de Atendimento WhatsApp — Plano de Implementação
+# Por que você não está vendo mudanças visuais na Inbox
 
-## Contexto atual
+## O que foi implementado
 
-Hoje o sistema tem:
-- **Roletas vinculadas a empreendimentos (projects)**: quando um lead chega via landing page de um empreendimento, o trigger `trigger_roleta_distribuir` distribui automaticamente.
-- **Webhook WhatsApp** (`whatsapp-webhook`): recebe mensagens e as arquiva em `conversations` vinculadas ao corretor dono da instância (`broker_whatsapp_instances`). Mensagens da instância global **não são arquivadas** (o `archiveMessageToConversation` faz lookup em `broker_whatsapp_instances`, e a instância global está em `global_whatsapp_config` — não retorna broker, logo o `if (!inst) return` silencia a mensagem).
-- **Inbox do corretor**: filtra conversas por `broker_id` do corretor logado.
+As mudanças implementadas são de **três naturezas diferentes**, e apenas uma delas é visível imediatamente na UI:
 
-## Problema central
+### 1. Página de Roletas (visível agora)
+- No painel Admin → Roletas, ao clicar em "Nova Roleta", agora existe a opção de selecionar **"WhatsApp Global (plantão)"** como origem, além de "Landing Pages".
+- Roletas já criadas com tipo WhatsApp Global exibem um badge verde "WhatsApp Global".
+- Você já criou a roleta "Plantão Enove" — confirme se ela aparece com o badge verde na página de Roletas.
 
-Mensagens recebidas na instância global não têm um `broker_id` definido. O sistema precisa:
-1. Identificar se o remetente já tem corretor atribuído → rotear para ele
-2. Se não tem → entrar na roleta WhatsApp → distribuir
-3. Ao assumir → criar/unificar lead no CRM
+### 2. Webhook (backend — invisível na UI)
+- A Edge Function `whatsapp-webhook` foi atualizada com toda a lógica de roteamento:
+  - Identificar se a mensagem vem da instância global
+  - Caso A: lead já tem corretor → roteia direto
+  - Caso B: lead novo → distribui via roleta WhatsApp Global → cria lead no CRM
+- **Isso só entra em ação quando uma mensagem real chega na instância global.** Não há mudança visual até que isso aconteça.
 
----
+### 3. Inbox (visual condicional)
+- Os ícones Dark/Light do WhatsApp no avatar das conversas **só aparecem em conversas que possuem `source_instance = 'global'`**.
+- Como nenhuma mensagem passou pela instância global após a implementação, nenhuma conversa tem esse campo preenchido. Por isso a Inbox parece igual.
 
-## Mudanças necessárias
+## Como testar
 
-### 1. Schema: coluna `tipo_origem` na tabela `roletas`
+Para ver as mudanças funcionando de ponta a ponta:
 
-Adicionar campo para distinguir roletas de landing page vs WhatsApp global.
+1. **Verifique a Roleta**: acesse Admin → Roletas e confirme que "Plantão Enove" tem o badge "WhatsApp Global" e membros com check-in ativo.
+2. **Envie uma mensagem teste**: de um número que **não** esteja no CRM, envie uma mensagem para o número da instância global. O webhook deve:
+   - Criar a conversa com `source_instance = 'global'`
+   - Distribuir o lead via roleta para um corretor online
+   - Criar o lead no CRM com origem "WhatsApp do plantão"
+3. **Verifique a Inbox do corretor atribuído**: a conversa deve aparecer com o ícone WhatsApp escuro (dark).
 
-```sql
-ALTER TABLE public.roletas ADD COLUMN tipo_origem text NOT NULL DEFAULT 'landing_page';
--- Valores: 'landing_page' | 'whatsapp_global'
-```
+## Possível problema: webhook não foi redeployado
 
-Também adicionar campo `source_instance` na tabela `conversations` para identificar a origem:
+A Edge Function `whatsapp-webhook` precisa estar deployada com o código atualizado. Posso fazer o deploy agora para garantir que o código mais recente esteja ativo no backend.
 
-```sql
-ALTER TABLE public.conversations ADD COLUMN source_instance text DEFAULT NULL;
--- Valores: NULL (instância do corretor) | 'global' (instância global)
-```
+## Plano de ação
 
-### 2. UI: Redesign do formulário "Nova Roleta"
-
-**Arquivo**: `src/components/admin/RoletaManagement.tsx`
-
-- Adicionar campo `tipo_origem` no form de criação com toggle/radio:
-  - **Landing Pages** (default): mostra seleção de empreendimentos (comportamento atual)
-  - **WhatsApp Global**: oculta seleção de empreendimentos (a roleta é vinculada à instância global)
-- Exibir badge visual no card da roleta indicando o tipo
-
-### 3. Webhook: roteamento de mensagens da instância global
-
-**Arquivo**: `supabase/functions/whatsapp-webhook/index.ts`
-
-Modificar `archiveMessageToConversation` e `handleIncomingMessage`:
-
-1. Se `instanceName` corresponde a `global_whatsapp_config` (não a `broker_whatsapp_instances`):
-   - Buscar lead existente pelo telefone em `leads`
-   - **Caso A**: lead tem `broker_id` → criar/atualizar conversa vinculada a esse broker com `source_instance = 'global'`, arquivar mensagem normalmente
-   - **Caso B**: lead não existe ou não tem `broker_id` → buscar roleta ativa com `tipo_origem = 'whatsapp_global'` → distribuir via round-robin (mesma lógica de `roleta-distribuir`, inline ou via invoke) → criar lead com `lead_origin = 'whatsapp_plantao'` e `source = 'whatsapp_global'` → criar conversa vinculada ao broker atribuído com `source_instance = 'global'`
-
-2. Para mensagens subsequentes, o lead já terá `broker_id`, então cairá no Caso A.
-
-### 4. Criação/unificação de lead ao assumir
-
-No fluxo do webhook (Caso B):
-- Criar lead: `name = pushName || phone`, `whatsapp = phone`, `lead_origin = 'whatsapp_plantao'`, `source = 'whatsapp_global'`
-- Chamar `unify_lead` para verificar duplicatas
-- Vincular conversa ao lead criado/unificado
-- O lead no Kanban fica vinculado ao broker atribuído; em transferências futuras, o card segue o novo broker (já funciona assim com `transfer_lead`)
-
-### 5. Inbox: ícone de origem WhatsApp
-
-**Arquivos**: `src/components/inbox/ConversationList.tsx`, `src/components/inbox/ConversationThread.tsx`
-
-- No avatar/círculo da conversa:
-  - `source_instance = 'global'` → ícone WhatsApp escuro (dark)
-  - `source_instance = NULL` (instância do corretor) → ícone WhatsApp claro (light)
-- Buscar `source_instance` do `conversations` no hook `useConversations`
-
-### 6. Persistência do vínculo
-
-Já funciona naturalmente: uma vez que o lead tem `broker_id` e a conversa tem `broker_id`, mensagens futuras do mesmo telefone são roteadas para o mesmo broker (Caso A). O histórico permanece na mesma conversa canônica.
-
----
-
-## Arquivos alterados
-
-| Arquivo | Alteração |
-|---|---|
-| **Migration SQL** | `roletas.tipo_origem`, `conversations.source_instance` |
-| `src/types/roleta.ts` | Adicionar `tipo_origem` ao tipo `Roleta` |
-| `src/components/admin/RoletaManagement.tsx` | Toggle tipo_origem no form, badge no card |
-| `supabase/functions/whatsapp-webhook/index.ts` | Roteamento global: lookup lead → caso A/B, criar lead, distribuir, unificar |
-| `src/hooks/use-conversations.ts` | Incluir `source_instance` no select e no tipo `Conversation` |
-| `src/components/inbox/ConversationList.tsx` | Ícone WhatsApp dark/light baseado em `source_instance` |
-| `src/components/inbox/ConversationThread.tsx` | Ícone WhatsApp dark/light no header |
-
-## Fluxo resumido
-
-```text
-Mensagem chega no webhook
-  ↓
-instanceName é da global_whatsapp_config?
-  ├── NÃO → fluxo atual (instância do corretor)
-  └── SIM → buscar lead pelo telefone
-        ├── Lead TEM broker_id → roteiar para o broker (Caso A)
-        └── Lead NÃO tem broker_id → roleta whatsapp_global
-              ├── Distribuir (round-robin)
-              ├── Criar/unificar lead (origin=whatsapp_plantao)
-              ├── Criar conversa (source_instance=global)
-              └── Notificar broker
-```
+1. **Fazer deploy da Edge Function `whatsapp-webhook`** para garantir que a versão com roteamento global está ativa
+2. **Verificar na página de Roletas** se o badge "WhatsApp Global" aparece na roleta "Plantão Enove"
+3. Após deploy, basta enviar uma mensagem teste para a instância global para validar o fluxo completo
 
