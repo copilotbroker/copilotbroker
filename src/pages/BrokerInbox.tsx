@@ -209,7 +209,17 @@ export default function BrokerInbox() {
     } finally {
       setIsStartingAttendance(false);
     }
-  }, [selectedConversation, brokerId, fetchConversations, fetchNovos]);
+
+  const handleTransferFromInbox = useCallback(() => {
+    if (selectedConversation?.lead_id) setShowTransferDialog(true);
+  }, [selectedConversation]);
+
+  const handleTransferred = useCallback(() => {
+    setShowTransferDialog(false);
+    setSelectedConversation(null);
+    fetchConversations();
+    fetchNovos();
+  }, [fetchConversations, fetchNovos]);
 
   const handleRequestSuggestion = useCallback(async () => {
     if (!selectedConversation) return;
