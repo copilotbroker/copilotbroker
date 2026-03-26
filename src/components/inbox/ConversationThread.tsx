@@ -311,7 +311,31 @@ export function ConversationThread({
         </div>
       </div>
 
-      {!conversation.lead_id && onCreateLead && (
+      {isNewLead && onStartAttendance && (
+        <div className="border-b border-primary/30 bg-primary/10 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Novo contato aguardando atendimento</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Clique para assumir este lead e criar um card no Kanban</p>
+            </div>
+            <Button
+              size="sm"
+              className="h-8 gap-1.5 text-xs font-medium"
+              onClick={onStartAttendance}
+              disabled={isStartingAttendance}
+            >
+              {isStartingAttendance ? (
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+              ) : (
+                <UserRoundSearch className="h-3.5 w-3.5" />
+              )}
+              Iniciar Atendimento
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!isNewLead && !conversation.lead_id && onCreateLead && (
         <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <LayoutGrid className="h-3 w-3" /> Contato sem card no Kanban
