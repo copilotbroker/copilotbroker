@@ -1,45 +1,132 @@
 
 
-# Por que você não está vendo mudanças visuais na Inbox
+# Redesign da Inbox — Multi-atendimento com abas Novos / Meus / Outros
 
-## O que foi implementado
+## Conceito
 
-As mudanças implementadas são de **três naturezas diferentes**, e apenas uma delas é visível imediatamente na UI:
+Transformar a Inbox atual em um sistema de multi-atendimento com 3 abas principais que controlam a visibilidade das conversas, e um botão "Iniciar Atendimento" que vincula o lead ao corretor e cria o card no Kanban.
 
-### 1. Página de Roletas (visível agora)
-- No painel Admin → Roletas, ao clicar em "Nova Roleta", agora existe a opção de selecionar **"WhatsApp Global (plantão)"** como origem, além de "Landing Pages".
-- Roletas já criadas com tipo WhatsApp Global exibem um badge verde "WhatsApp Global".
-- Você já criou a roleta "Plantão Enove" — confirme se ela aparece com o badge verde na página de Roletas.
+## Nova estrutura de abas
 
-### 2. Webhook (backend — invisível na UI)
-- A Edge Function `whatsapp-webhook` foi atualizada com toda a lógica de roteamento:
-  - Identificar se a mensagem vem da instância global
-  - Caso A: lead já tem corretor → roteia direto
-  - Caso B: lead novo → distribui via roleta WhatsApp Global → cria lead no CRM
-- **Isso só entra em ação quando uma mensagem real chega na instância global.** Não há mudança visual até que isso aconteça.
+```text
+┌─────────────────────────────────────┐
+│  🟢 Novos (3)  │  Meus  │  Outros  │
+├─────────────────────────────────────┤
+│  [lista de conversas filtrada]      │
+│  [busca + filtros existentes]       │
+└─────────────────────────────────────┘
+```
 
-### 3. Inbox (visual condicional)
-- Os ícones Dark/Light do WhatsApp no avatar das conversas **só aparecem em conversas que possuem `source_instance = 'global'`**.
-- Como nenhuma mensagem passou pela instância global após a implementação, nenhuma conversa tem esse campo preenchido. Por isso a Inbox parece igual.
+- **Novos**: Conversas da instância global (`source_instance = 'global'`) onde o lead ainda NÃO tem `broker_id` atribuído, ou tem `broker_id` mas o status do lead é `new` e nunca foi "iniciado atendimento". Essas são as conversas aguardando alguém assumir. Visível para todos os corretores que participam de uma roleta `whatsapp_global`.
+- **Meus**: Conversas onde `broker_id = meu broker_id` (comportamento atual da inbox). Inclui tanto instância pessoal quanto global já assumida.
+- **Outros**: Visível apenas para `leader` e `admin`. Mostra conversas de outros corretores da equipe (para líderes) ou de todos (para admins). Somente leitura / supervisão.
 
-## Como testar
+## Fluxo "Iniciar Atendimento"
 
-Para ver as mudanças funcionando de ponta a ponta:
+Quando o corretor abre uma conversa da aba "Novos" e clica em **"Iniciar Atendimento"**:
+1. O sistema atribui `broker_id` na conversa
+2. Cria o lead no CRM (`lead_origin = 'whatsapp_plantao'`, `source = 'whatsapp_global'`)
+3. Vincula `lead_id` na conversa
+4. Chama `unify_lead` para deduplicar
+5. A conversa sai de "Novos" e vai para "Meus"
+6. Registra interação `status_change` no lead
 
-1. **Verifique a Roleta**: acesse Admin → Roletas e confirme que "Plantão Enove" tem o badge "WhatsApp Global" e membros com check-in ativo.
-2. **Envie uma mensagem teste**: de um número que **não** esteja no CRM, envie uma mensagem para o número da instância global. O webhook deve:
-   - Criar a conversa com `source_instance = 'global'`
-   - Distribuir o lead via roleta para um corretor online
-   - Criar o lead no CRM com origem "WhatsApp do plantão"
-3. **Verifique a Inbox do corretor atribuído**: a conversa deve aparecer com o ícone WhatsApp escuro (dark).
+## Mudanças por arquivo
 
-## Possível problema: webhook não foi redeployado
+### 1. `src/components/inbox/ConversationList.tsx`
+- Adicionar prop `inboxTab: 'novos' | 'meus' | 'outros'`
+- Renderizar as 3 abas no topo (acima da busca)
+- Prop `onTabChange` para o parent controlar
+- Na aba "Novos", mostrar contador de conversas pendentes
+- Manter filtros/KPIs existentes funcionando dentro de cada aba
 
-A Edge Function `whatsapp-webhook` precisa estar deployada com o código atualizado. Posso fazer o deploy agora para garantir que o código mais recente esteja ativo no backend.
+### 2. `src/components/inbox/ConversationThread.tsx`
+- Adicionar prop `isNewLead?: boolean` (conversa da aba Novos)
+- Quando `isNewLead = true`, exibir banner proeminente no topo: "Este contato está aguardando atendimento" com botão **"Iniciar Atendimento"**
+- Prop `onStartAttendance?: () => void`
+- Enquanto não iniciar, o compositor de mensagens fica desabilitado (somente leitura do histórico)
 
-## Plano de ação
+### 3. `src/pages/BrokerInbox.tsx`
+- Adicionar state `inboxTab` (`novos` | `meus` | `outros`)
+- Buscar conversas "Novos" separadamente: query em `conversations` com `source_instance = 'global'` onde o lead não tem broker_id (ou sem lead_id)
+- Para "Outros" (se leader/admin): buscar conversas de corretores do time
+- Implementar `handleStartAttendance`: atribuir broker_id na conversa, criar lead, unify, mover para "Meus"
+- Usar `useUserRole` para determinar se mostra aba "Outros"
 
-1. **Fazer deploy da Edge Function `whatsapp-webhook`** para garantir que a versão com roteamento global está ativa
-2. **Verificar na página de Roletas** se o badge "WhatsApp Global" aparece na roleta "Plantão Enove"
-3. Após deploy, basta enviar uma mensagem teste para a instância global para validar o fluxo completo
+### 4. `src/pages/AdminInbox.tsx`
+- Mesma lógica de abas aplicada ao admin
+- Admin sempre vê aba "Outros" com todas as conversas
+
+### 5. `src/hooks/use-conversations.ts`
+- Adicionar opção `inboxTab` no `UseConversationsOptions`
+- Para `novos`: buscar conversas com `source_instance = 'global'` e sem broker_id efetivo
+- Para `outros`: buscar conversas de outros brokers (baseado em `lider_id` para leaders, ou todos para admins)
+- Manter lógica atual para `meus`
+
+### 6. Schema / RLS
+- Adicionar RLS policy para que corretores em roletas `whatsapp_global` possam ver conversas sem `broker_id` (ou com `source_instance = 'global'` e `broker_id IS NULL`)
+- Criar policy: "Corretores em roleta whatsapp_global podem ver conversas globais não atribuídas"
+
+```sql
+-- Permitir que corretores vejam conversas globais não atribuídas
+CREATE POLICY "Corretores veem conversas globais nao atribuidas"
+ON public.conversations FOR SELECT TO authenticated
+USING (
+  source_instance = 'global' 
+  AND broker_id IS NULL 
+  AND EXISTS (
+    SELECT 1 FROM roletas_membros rm
+    JOIN roletas r ON r.id = rm.roleta_id
+    WHERE rm.corretor_id = get_my_broker_id()
+      AND rm.ativo = true
+      AND r.ativa = true
+      AND r.tipo_origem = 'whatsapp_global'
+  )
+);
+
+-- Permitir que corretores atualizem conversas globais para assumir
+CREATE POLICY "Corretores podem assumir conversas globais"
+ON public.conversations FOR UPDATE TO authenticated
+USING (
+  source_instance = 'global'
+  AND broker_id IS NULL
+  AND EXISTS (
+    SELECT 1 FROM roletas_membros rm
+    JOIN roletas r ON r.id = rm.roleta_id
+    WHERE rm.corretor_id = get_my_broker_id()
+      AND rm.ativo = true
+      AND r.ativa = true
+      AND r.tipo_origem = 'whatsapp_global'
+  )
+);
+```
+
+## Resumo visual
+
+```text
+Aba "Novos":
+  - Conversas globais sem dono
+  - Qualquer corretor da roleta WhatsApp vê
+  - Ao abrir: histórico visível, envio bloqueado
+  - Botão "Iniciar Atendimento" → cria lead + assume
+
+Aba "Meus":
+  - Inbox atual (conversas do corretor)
+  - Inclui pessoais + globais já assumidas
+
+Aba "Outros" (leader/admin):
+  - Conversas de outros corretores
+  - Supervisão / leitura
+```
+
+## Arquivos alterados
+
+| Arquivo | Alteração |
+|---|---|
+| Migration SQL | RLS para conversas globais não atribuídas |
+| `src/hooks/use-conversations.ts` | Opção `inboxTab`, queries separadas por aba |
+| `src/components/inbox/ConversationList.tsx` | 3 abas no topo, prop `inboxTab`/`onTabChange` |
+| `src/components/inbox/ConversationThread.tsx` | Banner "Iniciar Atendimento", bloqueio de envio |
+| `src/pages/BrokerInbox.tsx` | State de abas, lógica de assumir atendimento |
+| `src/pages/AdminInbox.tsx` | Mesmas abas adaptadas para admin |
 
