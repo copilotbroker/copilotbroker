@@ -53,6 +53,7 @@ export default function BrokerInbox() {
       if (data) setAllBrokers(data as any);
     };
     fetchBrokers();
+  }, []);
 
   const isArchived = statusFilter === "archived";
   const showOthersTab = role === "admin" || isLeader;
