@@ -395,6 +395,18 @@ export default function BrokerInbox() {
           onCreated={handleLeadCreated}
         />
       )}
+
+      {selectedConversation?.lead_id && brokerId && (
+        <TransferLeadDialog
+          leadId={selectedConversation.lead_id}
+          leadName={(selectedConversation.lead as any)?.name || selectedConversation.display_name || selectedConversation.phone}
+          currentBrokerId={brokerId}
+          brokers={allBrokers}
+          isOpen={showTransferDialog}
+          onClose={() => setShowTransferDialog(false)}
+          onTransferred={handleTransferred}
+        />
+      )}
     </BrokerLayout>
   );
 }
