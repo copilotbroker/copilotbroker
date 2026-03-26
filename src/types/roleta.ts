@@ -4,6 +4,8 @@ export type DistributionStatus =
   | 'fallback_lider'
   | 'atendimento_iniciado';
 
+export type RoletaTipoOrigem = 'landing_page' | 'whatsapp_global';
+
 export interface Roleta {
   id: string;
   nome: string;
@@ -11,6 +13,7 @@ export interface Roleta {
   tempo_reserva_minutos: number;
   timeout_ativo: boolean;
   ativa: boolean;
+  tipo_origem: RoletaTipoOrigem;
   ultimo_membro_ordem_atribuida: number;
   timeout_pausa_inicio: string;
   timeout_pausa_fim: string;
