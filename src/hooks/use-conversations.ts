@@ -66,11 +66,16 @@ export interface OutboundMessagePayload {
   metadata?: Record<string, unknown>;
 }
 
+export type InboxTab = "novos" | "meus" | "outros";
+
 interface UseConversationsOptions {
   brokerId?: string;
   statusFilter?: string;
   search?: string;
   isArchived?: boolean;
+  inboxTab?: InboxTab;
+  /** For "outros" tab: role of the current user */
+  userRole?: "admin" | "leader" | null;
 }
 
 const sortMessagesAsc = (items: ConversationMessage[]) => (
