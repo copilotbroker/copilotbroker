@@ -103,6 +103,10 @@ export function ConversationThread({
   onOpenLeadPanel,
   onCreateLead,
   onOpenLead,
+  isNewLead,
+  onStartAttendance,
+  isStartingAttendance,
+  isReadOnly,
 }: ConversationThreadProps) {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
