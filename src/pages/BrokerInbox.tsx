@@ -366,6 +366,7 @@ export default function BrokerInbox() {
                 onStartAttendance={handleStartAttendance}
                 isStartingAttendance={isStartingAttendance}
                 isReadOnly={isReadOnlyConversation}
+                onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
               />
             )}
           </div>
