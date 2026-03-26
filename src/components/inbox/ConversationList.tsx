@@ -34,6 +34,10 @@ interface ConversationListProps {
   onMarkAsRead?: (id: string) => void;
   onArchive?: (id: string) => void;
   isAdminView?: boolean;
+  inboxTab?: InboxTab;
+  onTabChange?: (tab: InboxTab) => void;
+  showOthersTab?: boolean;
+  novosCount?: number;
 }
 
 type SortMode = "recent" | "unread" | "temperature" | "opportunity" | "risk" | "idle";
