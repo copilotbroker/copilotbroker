@@ -1586,8 +1586,28 @@ async function handleGlobalInstanceMessage(
     return { brokerId: existingLead.broker_id as string, conversationId: result.conversationId };
   }
 
-  // Case B: No broker → distribute via whatsapp_global roleta
-  console.log(`🎰 Global msg from ${phone} → entering roleta distribution`);
+  // Case B: No broker → distribute via whatsapp_global roleta (NO lead creation yet)
+  console.log(`🎰 Global msg from ${phone} → entering roleta distribution (pending attendance)`);
+
+  // Check if there's already a global conversation for this phone
+  const canonicalPhoneNorm = getCanonicalPhoneNormalized(phone);
+  const { data: existingConv } = await supabase
+    .from("conversations")
+    .select("id, broker_id")
+    .eq("phone_normalized", canonicalPhoneNorm)
+    .eq("source_instance", "global")
+    .eq("attendance_started", false)
+    .maybeSingle();
+
+  if (existingConv) {
+    // Already pending — just archive the new message to the existing conversation
+    console.log(`📥 Additional msg for pending global conv ${existingConv.id}`);
+    const result = await archiveMessageToConversation(
+      supabase, phone, messageText, direction, undefined, senderName, sentBy,
+      uazapiMessageId, messageType, metadata, existingConv.broker_id as string, "global"
+    );
+    return { brokerId: existingConv.broker_id as string, conversationId: result.conversationId };
+  }
 
   const { data: roleta } = await supabase
     .from("roletas")
@@ -1610,51 +1630,32 @@ async function handleGlobalInstanceMessage(
     .filter((m: any) => m.ativo && m.status_checkin)
     .sort((a: any, b: any) => a.ordem - b.ordem);
 
+  let assignedBrokerId: string;
   if (membros.length === 0) {
-    // Fallback to leader
     console.log(`⚠️ No checked-in members → fallback to leader ${roleta.lider_id}`);
-    const assignedBrokerId = roleta.lider_id as string;
-    const leadId = await createGlobalLead(supabase, phone, senderName, assignedBrokerId, roleta.id as string);
-    const result = await archiveMessageToConversation(
-      supabase, phone, messageText, direction, undefined, senderName, sentBy,
-      uazapiMessageId, messageType, metadata, assignedBrokerId, "global"
-    );
-    if (leadId && result.conversationId) {
-      await supabase.from("conversations").update({ lead_id: leadId }).eq("id", result.conversationId);
-    }
-    return { brokerId: assignedBrokerId, conversationId: result.conversationId };
+    assignedBrokerId = roleta.lider_id as string;
+  } else {
+    const lastOrdem = (roleta.ultimo_membro_ordem_atribuida as number) || 0;
+    const nextMembro = membros.find((m: any) => m.ordem > lastOrdem) || membros[0];
+    assignedBrokerId = nextMembro.corretor_id;
+    await supabase.from("roletas").update({ ultimo_membro_ordem_atribuida: nextMembro.ordem }).eq("id", roleta.id);
   }
 
-  const lastOrdem = (roleta.ultimo_membro_ordem_atribuida as number) || 0;
-  const nextMembro = membros.find((m: any) => m.ordem > lastOrdem) || membros[0];
-  const assignedBrokerId = nextMembro.corretor_id;
-
-  // Update last assigned order
-  await supabase.from("roletas").update({ ultimo_membro_ordem_atribuida: nextMembro.ordem }).eq("id", roleta.id);
-
-  // Create/unify lead
-  const leadId = await createGlobalLead(supabase, phone, senderName, assignedBrokerId, roleta.id as string);
-
-  // Log distribution
-  await supabase.from("roletas_log").insert({
-    roleta_id: roleta.id,
-    lead_id: leadId,
-    para_corretor_id: assignedBrokerId,
-    acao: "atribuicao_inicial",
-    motivo: "Distribuição via roleta WhatsApp Global",
-  });
-
-  // Archive message to assigned broker's conversation
+  // Archive message — creates conversation with source_instance='global', attendance_started=false (default)
   const result = await archiveMessageToConversation(
     supabase, phone, messageText, direction, undefined, senderName, sentBy,
     uazapiMessageId, messageType, metadata, assignedBrokerId, "global"
   );
 
-  if (leadId && result.conversationId) {
-    await supabase.from("conversations").update({ lead_id: leadId }).eq("id", result.conversationId);
-  }
+  // Log distribution (no lead_id yet)
+  await supabase.from("roletas_log").insert({
+    roleta_id: roleta.id,
+    para_corretor_id: assignedBrokerId,
+    acao: "atribuicao_inicial",
+    motivo: "Distribuição via roleta WhatsApp Global (pendente atendimento)",
+  });
 
-  console.log(`✅ Global lead distributed: phone=${phone} → broker=${assignedBrokerId}`);
+  console.log(`✅ Global msg distributed: phone=${phone} → broker=${assignedBrokerId} (pending attendance)`);
   return { brokerId: assignedBrokerId, conversationId: result.conversationId };
 }
 

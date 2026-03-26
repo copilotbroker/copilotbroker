@@ -139,7 +139,7 @@ export default function AdminInbox() {
     if (!selectedConversation || !myBrokerId) return;
     setIsStartingAttendance(true);
     try {
-      await supabase.from("conversations").update({ broker_id: myBrokerId } as any).eq("id", selectedConversation.id);
+      await supabase.from("conversations").update({ broker_id: myBrokerId, attendance_started: true } as any).eq("id", selectedConversation.id);
 
       const displayName = selectedConversation.display_name || selectedConversation.phone;
       const { data: newLead, error: leadError } = await supabase

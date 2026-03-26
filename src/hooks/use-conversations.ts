@@ -165,8 +165,8 @@ export function useConversations(options: UseConversationsOptions = {}) {
         .order("last_message_at", { ascending: false });
 
       if (options.inboxTab === "novos") {
-        // Global unassigned conversations
-        query = query.eq("source_instance", "global").is("broker_id", null);
+        // Global conversations pending attendance
+        query = query.eq("source_instance", "global").eq("attendance_started" as any, false);
       } else if (options.inboxTab === "outros") {
         // Team conversations (exclude own)
         if (options.brokerId) {
