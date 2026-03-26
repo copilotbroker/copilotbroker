@@ -287,6 +287,68 @@ const makeRequest = async (
   throw new Error(lastError || "Todas as tentativas de autenticação falharam");
 };
 
+// Configure webhook on UAZAPI instance so incoming messages are forwarded
+const configureGlobalWebhook = async (instanceToken: string, instanceName: string, baseUrl: string): Promise<boolean> => {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+  const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
+  console.log(`🔗 Configuring webhook for global instance ${instanceName}: ${webhookUrl}`);
+
+  const authHeaders = [
+    { "token": instanceToken },
+    { "admintoken": instanceToken },
+  ];
+
+  for (const authHeader of authHeaders) {
+    try {
+      const response = await fetch(`${baseUrl}/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader },
+        body: JSON.stringify({
+          url: webhookUrl,
+          enabled: true,
+          events: ["messages", "connection", "messages_update"],
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`✅ Webhook configured for global instance ${instanceName}`);
+        return true;
+      }
+
+      const text = await response.text();
+      console.warn(`⚠️ Webhook config attempt failed (${response.status}):`, text);
+    } catch (err) {
+      console.warn(`⚠️ Webhook config error:`, err);
+    }
+  }
+
+  // Also try with admin token from env
+  const adminToken = Deno.env.get("UAZAPI_ADMIN_TOKEN");
+  if (adminToken && adminToken !== instanceToken) {
+    try {
+      const response = await fetch(`${baseUrl}/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "admintoken": adminToken },
+        body: JSON.stringify({
+          url: webhookUrl,
+          enabled: true,
+          events: ["messages", "connection", "messages_update"],
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`✅ Webhook configured via admin token for ${instanceName}`);
+        return true;
+      }
+    } catch {
+      // Continue
+    }
+  }
+
+  console.error(`❌ Failed to configure webhook for global instance ${instanceName}`);
+  return false;
+};
+
 // CORS preflight handler
 app.options("/*", (c) => {
   return c.body(null, 204, getHonoCors(c));
