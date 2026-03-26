@@ -63,6 +63,8 @@ interface ConversationThreadProps {
   isStartingAttendance?: boolean;
   /** Read-only supervision mode (Outros tab) */
   isReadOnly?: boolean;
+  /** Transfer lead to another broker */
+  onTransfer?: () => void;
 }
 
 const getMessageStatusIcon = (status?: string) => {
