@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  ArrowRightLeft,
   ArrowLeft,
   Send,
   Bot,
@@ -62,6 +63,8 @@ interface ConversationThreadProps {
   isStartingAttendance?: boolean;
   /** Read-only supervision mode (Outros tab) */
   isReadOnly?: boolean;
+  /** Transfer lead to another broker */
+  onTransfer?: () => void;
 }
 
 const getMessageStatusIcon = (status?: string) => {
@@ -107,6 +110,7 @@ export function ConversationThread({
   onStartAttendance,
   isStartingAttendance,
   isReadOnly,
+  onTransfer,
 }: ConversationThreadProps) {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -287,6 +291,17 @@ export function ConversationThread({
           </button>
 
           <div className="flex items-center gap-1">
+            {conversation.lead_id && onTransfer && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onTransfer}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="Transferir lead"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+              </Button>
+            )}
             {conversation.lead_id && (
               <Button
                 variant="ghost"

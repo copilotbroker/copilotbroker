@@ -5,6 +5,7 @@ import { ConversationList } from "@/components/inbox/ConversationList";
 import { ConversationThread } from "@/components/inbox/ConversationThread";
 import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatModal";
+import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
@@ -29,6 +30,8 @@ export default function BrokerInbox() {
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
   const [inboxTab, setInboxTab] = useState<InboxTab>("meus");
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
 
   const { role, isLeader } = useUserRole();
   const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
@@ -42,6 +45,15 @@ export default function BrokerInbox() {
     };
     getBrokerId();
   }, [navigate]);
+
+  // Fetch brokers for transfer dialog
+  useEffect(() => {
+    const fetchBrokers = async () => {
+      const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true);
+      if (data) setAllBrokers(data as any);
+    };
+    fetchBrokers();
+  }, []);
 
   const isArchived = statusFilter === "archived";
   const showOthersTab = role === "admin" || isLeader;
@@ -197,7 +209,17 @@ export default function BrokerInbox() {
     } finally {
       setIsStartingAttendance(false);
     }
-  }, [selectedConversation, brokerId, fetchConversations, fetchNovos]);
+
+  const handleTransferFromInbox = useCallback(() => {
+    if (selectedConversation?.lead_id) setShowTransferDialog(true);
+  }, [selectedConversation]);
+
+  const handleTransferred = useCallback(() => {
+    setShowTransferDialog(false);
+    setSelectedConversation(null);
+    fetchConversations();
+    fetchNovos();
+  }, [fetchConversations, fetchNovos]);
 
   const handleRequestSuggestion = useCallback(async () => {
     if (!selectedConversation) return;
@@ -344,6 +366,7 @@ export default function BrokerInbox() {
                 onStartAttendance={handleStartAttendance}
                 isStartingAttendance={isStartingAttendance}
                 isReadOnly={isReadOnlyConversation}
+                onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
               />
             )}
           </div>
@@ -370,6 +393,18 @@ export default function BrokerInbox() {
           suggestedName={(selectedConversation.lead as any)?.name || selectedConversation.phone}
           brokerId={brokerId}
           onCreated={handleLeadCreated}
+        />
+      )}
+
+      {selectedConversation?.lead_id && brokerId && (
+        <TransferLeadDialog
+          leadId={selectedConversation.lead_id}
+          leadName={(selectedConversation.lead as any)?.name || selectedConversation.display_name || selectedConversation.phone}
+          currentBrokerId={brokerId}
+          brokers={allBrokers}
+          isOpen={showTransferDialog}
+          onClose={() => setShowTransferDialog(false)}
+          onTransferred={handleTransferred}
         />
       )}
     </BrokerLayout>
