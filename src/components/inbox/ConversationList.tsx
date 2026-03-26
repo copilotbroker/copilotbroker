@@ -119,6 +119,10 @@ export function ConversationList({
   onMarkAsRead,
   onArchive,
   isAdminView,
+  inboxTab = "meus",
+  onTabChange,
+  showOthersTab = false,
+  novosCount = 0,
 }: ConversationListProps) {
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [activeKpi, setActiveKpi] = useState<string | null>(null);
