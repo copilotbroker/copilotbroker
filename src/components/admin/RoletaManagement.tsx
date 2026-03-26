@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Shuffle, Users, Building2, Clock, Power, PowerOff, RefreshCw, ChevronDown, ChevronUp, Trash2, UserPlus, History, Target, Timer, TimerOff, LogOut } from "lucide-react";
+import { Plus, Shuffle, Users, Building2, Clock, Power, PowerOff, RefreshCw, ChevronDown, ChevronUp, Trash2, UserPlus, History, Target, Timer, TimerOff, LogOut, MessageCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRoletas, useRoletaLogs } from "@/hooks/use-roletas";
-import { Roleta } from "@/types/roleta";
+import { Roleta, RoletaTipoOrigem } from "@/types/roleta";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -75,6 +76,7 @@ const RoletaManagement = () => {
   const [formPausaInicio, setFormPausaInicio] = useState("21:00");
   const [formPausaFim, setFormPausaFim] = useState("09:00");
   const [formSelectedProjects, setFormSelectedProjects] = useState<string[]>([]);
+  const [formTipoOrigem, setFormTipoOrigem] = useState<RoletaTipoOrigem>("landing_page");
 
   // Add member state
   const [addMemberRoletaId, setAddMemberRoletaId] = useState<string | null>(null);
@@ -109,11 +111,14 @@ const RoletaManagement = () => {
       timeout_ativo: formTimeoutAtivo,
       timeout_pausa_inicio: formPausaInicio,
       timeout_pausa_fim: formPausaFim,
+      tipo_origem: formTipoOrigem,
     } as any);
     if (roletaId) {
-      // Vincular empreendimentos selecionados
-      for (const projectId of formSelectedProjects) {
-        await addEmpreendimento(roletaId, projectId);
+      // Vincular empreendimentos selecionados (only for landing_page type)
+      if (formTipoOrigem === "landing_page") {
+        for (const projectId of formSelectedProjects) {
+          await addEmpreendimento(roletaId, projectId);
+        }
       }
       setIsCreateOpen(false);
       setFormNome("");
@@ -123,6 +128,7 @@ const RoletaManagement = () => {
       setFormPausaInicio("21:00");
       setFormPausaFim("09:00");
       setFormSelectedProjects([]);
+      setFormTipoOrigem("landing_page");
     }
   };
 
@@ -182,6 +188,7 @@ const RoletaManagement = () => {
             setFormPausaInicio("21:00");
             setFormPausaFim("09:00");
             setFormSelectedProjects([]);
+            setFormTipoOrigem("landing_page");
           }
         }}>
           <DialogTrigger asChild>
@@ -274,30 +281,55 @@ const RoletaManagement = () => {
                 )}
               </div>
               <div>
-                <Label>Empreendimentos</Label>
-                <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
-                  {projects.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">Nenhum empreendimento disponível.</p>
-                  ) : (
-                    projects.map(p => (
-                      <label key={p.id} className="flex items-center gap-2 cursor-pointer">
-                        <Checkbox
-                          checked={formSelectedProjects.includes(p.id)}
-                          onCheckedChange={(checked) => {
-                            setFormSelectedProjects(prev =>
-                              checked
-                                ? [...prev, p.id]
-                                : prev.filter(id => id !== p.id)
-                            );
-                          }}
-                        />
-                        <span className="text-sm text-foreground">{p.name}</span>
-                        <span className="text-xs text-muted-foreground">({p.city})</span>
-                      </label>
-                    ))
-                  )}
-                </div>
+                <Label>Origem dos leads</Label>
+                <RadioGroup value={formTipoOrigem} onValueChange={(v) => setFormTipoOrigem(v as RoletaTipoOrigem)} className="mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="landing_page" />
+                    <Building2 className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-foreground">Landing Pages (empreendimentos)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="whatsapp_global" />
+                    <MessageCircle className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm text-foreground">WhatsApp Global (plantão)</span>
+                  </label>
+                </RadioGroup>
               </div>
+              {formTipoOrigem === "landing_page" && (
+                <div>
+                  <Label>Empreendimentos</Label>
+                  <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
+                    {projects.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Nenhum empreendimento disponível.</p>
+                    ) : (
+                      projects.map(p => (
+                        <label key={p.id} className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox
+                            checked={formSelectedProjects.includes(p.id)}
+                            onCheckedChange={(checked) => {
+                              setFormSelectedProjects(prev =>
+                                checked
+                                  ? [...prev, p.id]
+                                  : prev.filter(id => id !== p.id)
+                              );
+                            }}
+                          />
+                          <span className="text-sm text-foreground">{p.name}</span>
+                          <span className="text-xs text-muted-foreground">({p.city})</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+              {formTipoOrigem === "whatsapp_global" && (
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                  <p className="text-xs text-muted-foreground">
+                    <MessageCircle className="w-3 h-3 inline mr-1 text-emerald-500" />
+                    Leads recebidos pela instância global do WhatsApp serão distribuídos por esta roleta.
+                  </p>
+                </div>
+              )}
               <div className="flex gap-3 pt-4">
                 <DialogClose asChild>
                   <Button variant="outline" className="flex-1">Cancelar</Button>
@@ -339,6 +371,17 @@ const RoletaManagement = () => {
                         roleta.ativa ? "bg-emerald-500" : "bg-red-500"
                       )} />
                       <h3 className="font-semibold text-foreground">{roleta.nome}</h3>
+                      {(roleta as any).tipo_origem === "whatsapp_global" ? (
+                        <Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-400">
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          WhatsApp Global
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">
+                          <Building2 className="w-3 h-3 mr-1" />
+                          Landing Pages
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="text-xs">
                         <Clock className="w-3 h-3 mr-1" />
                         {(roleta as any).timeout_ativo !== false ? `${roleta.tempo_reserva_minutos}min` : "Sem timeout"}

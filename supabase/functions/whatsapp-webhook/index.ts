@@ -957,6 +957,7 @@ async function getOrCreateCanonicalConversation(
   brokerId: string,
   phone: string,
   leadId?: string | null,
+  sourceInstance?: string | null,
 ): Promise<{ id: string } | null> {
   const canonicalPhone = getCanonicalPhone(phone);
   const canonicalNormalized = getCanonicalPhoneNormalized(phone);
@@ -964,13 +965,13 @@ async function getOrCreateCanonicalConversation(
 
   const { data: existing } = await supabase
     .from("conversations")
-    .select("id, lead_id, ai_mode, created_at, phone, phone_normalized")
+    .select("id, lead_id, ai_mode, created_at, phone, phone_normalized, source_instance")
     .eq("broker_id", brokerId)
     .in("phone_normalized", phoneVariants.map((value) => value.replace(/\D/g, "")))
     .order("created_at", { ascending: true });
 
   if (existing && existing.length > 0) {
-    const primary = existing[0] as { id: string; lead_id: string | null; ai_mode: string; phone: string; phone_normalized: string };
+    const primary = existing[0] as { id: string; lead_id: string | null; ai_mode: string; phone: string; phone_normalized: string; source_instance: string | null };
     const duplicateIds = existing.slice(1).map((conv: any) => conv.id);
 
     if (duplicateIds.length > 0) {
@@ -985,18 +986,20 @@ async function getOrCreateCanonicalConversation(
           phone_normalized: canonicalNormalized,
           ai_mode: primary.ai_mode === "ai_active" ? "ai_active" : "copilot",
           is_archived: false,
+          source_instance: sourceInstance || primary.source_instance || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", primary.id);
 
       await supabase.from("conversations").delete().in("id", duplicateIds);
-    } else if (primary.phone !== canonicalPhone || primary.phone_normalized !== canonicalNormalized || (!primary.lead_id && leadId)) {
+    } else if (primary.phone !== canonicalPhone || primary.phone_normalized !== canonicalNormalized || (!primary.lead_id && leadId) || (sourceInstance && !primary.source_instance)) {
       await supabase
         .from("conversations")
         .update({
           phone: canonicalPhone,
           phone_normalized: canonicalNormalized,
           lead_id: primary.lead_id || leadId || null,
+          source_instance: sourceInstance || primary.source_instance || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", primary.id);
@@ -1014,6 +1017,7 @@ async function getOrCreateCanonicalConversation(
       phone_normalized: canonicalNormalized,
       ai_mode: "copilot",
       status: "active",
+      source_instance: sourceInstance || null,
     })
     .select("id")
     .single();
@@ -1036,22 +1040,28 @@ async function archiveMessageToConversation(
   sentBy: string = "human",
   uazapiMessageId?: string,
   messageType: string = "text",
-  metadata?: Record<string, unknown>
-): Promise<void> {
-  if (!instanceName) return;
+  metadata?: Record<string, unknown>,
+  overrideBrokerId?: string,
+  sourceInstance?: string | null,
+): Promise<{ conversationId?: string; brokerId?: string }> {
+  if (!instanceName && !overrideBrokerId) return {};
 
   try {
-    const { data: inst } = await supabase
-      .from("broker_whatsapp_instances")
-      .select("broker_id")
-      .eq("instance_name", instanceName)
-      .maybeSingle();
+    let brokerId = overrideBrokerId;
 
-    if (!inst) return;
-    const brokerId = (inst as { broker_id: string }).broker_id;
-    const conv = await getOrCreateCanonicalConversation(supabase, brokerId, phone);
+    if (!brokerId) {
+      const { data: inst } = await supabase
+        .from("broker_whatsapp_instances")
+        .select("broker_id")
+        .eq("instance_name", instanceName!)
+        .maybeSingle();
 
-    if (!conv) return;
+      if (!inst) return {};
+      brokerId = (inst as { broker_id: string }).broker_id;
+    }
+
+    const conv = await getOrCreateCanonicalConversation(supabase, brokerId!, phone, undefined, sourceInstance);
+    if (!conv) return {};
 
     await supabase.from("conversation_messages").insert({
       conversation_id: (conv as { id: string }).id,
@@ -1066,8 +1076,10 @@ async function archiveMessageToConversation(
     });
 
     console.log(`📨 Archived ${direction} message to conversation ${(conv as { id: string }).id}`);
+    return { conversationId: (conv as { id: string }).id, brokerId };
   } catch (err) {
     console.error("Error archiving message:", err);
+    return {};
   }
 }
 
@@ -1528,6 +1540,195 @@ CONTEXTO DO LEAD:
   }
 }
 
+// ========================= GLOBAL INSTANCE ROUTING =========================
+
+async function isGlobalInstance(supabase: SupabaseClient, instanceName: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("global_whatsapp_config")
+    .select("id")
+    .eq("instance_name", instanceName)
+    .maybeSingle();
+  return !!data;
+}
+
+async function handleGlobalInstanceMessage(
+  supabase: SupabaseClient,
+  phone: string,
+  messageText: string,
+  direction: "inbound" | "outbound",
+  instanceName: string,
+  senderName?: string,
+  sentBy: string = "lead",
+  uazapiMessageId?: string,
+  messageType: string = "text",
+  metadata?: Record<string, unknown>,
+): Promise<{ brokerId?: string; conversationId?: string }> {
+  const phoneVariants = getPhoneVariants(phone);
+
+  // Check if lead already has a broker
+  const { data: existingLead } = await supabase
+    .from("leads")
+    .select("id, broker_id, name")
+    .in("whatsapp", phoneVariants)
+    .not("broker_id", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingLead && existingLead.broker_id) {
+    // Case A: Lead already has broker → route to them
+    console.log(`🔀 Global msg from ${phone} → routed to existing broker ${existingLead.broker_id}`);
+    const result = await archiveMessageToConversation(
+      supabase, phone, messageText, direction, undefined, senderName, sentBy,
+      uazapiMessageId, messageType, metadata,
+      existingLead.broker_id as string, "global"
+    );
+    return { brokerId: existingLead.broker_id as string, conversationId: result.conversationId };
+  }
+
+  // Case B: No broker → distribute via whatsapp_global roleta
+  console.log(`🎰 Global msg from ${phone} → entering roleta distribution`);
+
+  const { data: roleta } = await supabase
+    .from("roletas")
+    .select(`
+      id, lider_id, tempo_reserva_minutos, ultimo_membro_ordem_atribuida,
+      membros:roletas_membros(id, corretor_id, ordem, status_checkin, ativo)
+    `)
+    .eq("ativa", true)
+    .eq("tipo_origem", "whatsapp_global")
+    .limit(1)
+    .maybeSingle();
+
+  if (!roleta) {
+    console.warn("⚠️ No active whatsapp_global roleta found. Message will not be distributed.");
+    return {};
+  }
+
+  // Round-robin: find next available member
+  const membros = ((roleta as any).membros || [])
+    .filter((m: any) => m.ativo && m.status_checkin)
+    .sort((a: any, b: any) => a.ordem - b.ordem);
+
+  if (membros.length === 0) {
+    // Fallback to leader
+    console.log(`⚠️ No checked-in members → fallback to leader ${roleta.lider_id}`);
+    const assignedBrokerId = roleta.lider_id as string;
+    const leadId = await createGlobalLead(supabase, phone, senderName, assignedBrokerId, roleta.id as string);
+    const result = await archiveMessageToConversation(
+      supabase, phone, messageText, direction, undefined, senderName, sentBy,
+      uazapiMessageId, messageType, metadata, assignedBrokerId, "global"
+    );
+    if (leadId && result.conversationId) {
+      await supabase.from("conversations").update({ lead_id: leadId }).eq("id", result.conversationId);
+    }
+    return { brokerId: assignedBrokerId, conversationId: result.conversationId };
+  }
+
+  const lastOrdem = (roleta.ultimo_membro_ordem_atribuida as number) || 0;
+  const nextMembro = membros.find((m: any) => m.ordem > lastOrdem) || membros[0];
+  const assignedBrokerId = nextMembro.corretor_id;
+
+  // Update last assigned order
+  await supabase.from("roletas").update({ ultimo_membro_ordem_atribuida: nextMembro.ordem }).eq("id", roleta.id);
+
+  // Create/unify lead
+  const leadId = await createGlobalLead(supabase, phone, senderName, assignedBrokerId, roleta.id as string);
+
+  // Log distribution
+  await supabase.from("roletas_log").insert({
+    roleta_id: roleta.id,
+    lead_id: leadId,
+    para_corretor_id: assignedBrokerId,
+    acao: "atribuicao_inicial",
+    motivo: "Distribuição via roleta WhatsApp Global",
+  });
+
+  // Archive message to assigned broker's conversation
+  const result = await archiveMessageToConversation(
+    supabase, phone, messageText, direction, undefined, senderName, sentBy,
+    uazapiMessageId, messageType, metadata, assignedBrokerId, "global"
+  );
+
+  if (leadId && result.conversationId) {
+    await supabase.from("conversations").update({ lead_id: leadId }).eq("id", result.conversationId);
+  }
+
+  console.log(`✅ Global lead distributed: phone=${phone} → broker=${assignedBrokerId}`);
+  return { brokerId: assignedBrokerId, conversationId: result.conversationId };
+}
+
+async function createGlobalLead(
+  supabase: SupabaseClient,
+  phone: string,
+  senderName: string | undefined,
+  brokerId: string,
+  roletaId: string,
+): Promise<string | null> {
+  const canonicalPhone = getCanonicalPhone(phone);
+  const phoneVariants = getPhoneVariants(phone);
+
+  // Check for existing lead with this phone (any broker)
+  const { data: existingLead } = await supabase
+    .from("leads")
+    .select("id, broker_id")
+    .in("whatsapp", phoneVariants)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingLead) {
+    // Update existing lead with broker assignment
+    await supabase.from("leads").update({
+      broker_id: brokerId,
+      lead_origin: "whatsapp_plantao",
+      source: "whatsapp_global",
+      roleta_id: roletaId,
+      status_distribuicao: "atribuicao_inicial",
+      atribuido_em: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", existingLead.id);
+
+    // Try unify
+    const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: existingLead.id });
+    return (unifiedId as string) || (existingLead.id as string);
+  }
+
+  // Create new lead
+  const { data: newLead, error } = await supabase
+    .from("leads")
+    .insert({
+      name: senderName || canonicalPhone,
+      whatsapp: canonicalPhone,
+      source: "whatsapp_global",
+      lead_origin: "whatsapp_plantao",
+      broker_id: brokerId,
+      roleta_id: roletaId,
+      status: "new",
+      status_distribuicao: "atribuicao_inicial",
+      atribuido_em: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("❌ Failed to create global lead:", error.message);
+    return null;
+  }
+
+  // Insert attribution
+  await supabase.from("lead_attribution").insert({
+    lead_id: (newLead as any).id,
+    landing_page: "whatsapp_global",
+    utm_source: "whatsapp",
+    utm_medium: "plantao",
+  });
+
+  // Try unify
+  const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: (newLead as any).id });
+  return (unifiedId as string) || (newLead as any).id;
+}
+
 // ========================= EVENT HANDLERS =========================
 
 async function handleIncomingMessage(
@@ -1574,10 +1775,41 @@ async function handleIncomingMessage(
   const direction = msg.fromMe ? "outbound" : "inbound";
   console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | text="${messageText.substring(0, 50)}"`);
 
-  await archiveMessageToConversation(
-    supabase, phone, messageText, direction as "inbound" | "outbound",
-    instanceName, msg.pushName, msg.fromMe ? "human" : "lead", msg.id, resolvedMessageType, mediaMetadata
-  );
+  // Check if this is from the global WhatsApp instance
+  let archiveResult: { conversationId?: string; brokerId?: string } = {};
+  const isGlobal = instanceName ? await isGlobalInstance(supabase, instanceName) : false;
+
+  if (isGlobal && !msg.fromMe) {
+    // Global instance routing
+    archiveResult = await handleGlobalInstanceMessage(
+      supabase, phone, messageText, direction as "inbound" | "outbound",
+      instanceName!, msg.pushName, "lead", msg.id, resolvedMessageType, mediaMetadata
+    );
+  } else if (isGlobal && msg.fromMe) {
+    // Outbound from global — try to find which broker owns this lead
+    const phoneVariants = getPhoneVariants(phone);
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("broker_id")
+      .in("whatsapp", phoneVariants)
+      .not("broker_id", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lead?.broker_id) {
+      archiveResult = await archiveMessageToConversation(
+        supabase, phone, messageText, "outbound", undefined, msg.pushName, "human",
+        msg.id, resolvedMessageType, mediaMetadata, lead.broker_id as string, "global"
+      );
+    }
+  } else {
+    // Regular broker instance flow
+    archiveResult = await archiveMessageToConversation(
+      supabase, phone, messageText, direction as "inbound" | "outbound",
+      instanceName, msg.pushName, msg.fromMe ? "human" : "lead", msg.id, resolvedMessageType, mediaMetadata
+    );
+  }
 
   // Skip further processing for outbound messages
   if (msg.fromMe) {
@@ -1626,8 +1858,15 @@ async function handleIncomingMessage(
     console.log(`💬 Regular DM from ${phone} (no campaign history, skipping opt-out check)`);
   }
 
-  // Trigger auto-response if ai_mode is active (fire-and-forget, don't block webhook)
-  if (instanceName) {
+  // Trigger auto-response if ai_mode is active
+  const autoResponseBrokerId = archiveResult.brokerId;
+  const autoResponseConvId = archiveResult.conversationId;
+
+  if (autoResponseBrokerId && autoResponseConvId) {
+    handleAutoResponse(supabase, autoResponseBrokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), autoResponseConvId, msg.pushName)
+      .catch(err => console.error("Auto-response background error:", err));
+  } else if (instanceName && !isGlobal) {
+    // Legacy fallback for broker instance
     const { data: inst } = await supabase
       .from("broker_whatsapp_instances")
       .select("broker_id")
@@ -1636,12 +1875,9 @@ async function handleIncomingMessage(
 
     if (inst) {
       const brokerId = (inst as { broker_id: string }).broker_id;
-      const canonicalPhone = getCanonicalPhone(phone);
-      const phoneNorm = getCanonicalPhoneNormalized(phone);
       const convForAuto = await getOrCreateCanonicalConversation(supabase, brokerId, phone);
-
       if (convForAuto) {
-        handleAutoResponse(supabase, brokerId, canonicalPhone, phoneNorm, convForAuto.id, msg.pushName)
+        handleAutoResponse(supabase, brokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), convForAuto.id, msg.pushName)
           .catch(err => console.error("Auto-response background error:", err));
       }
     }

@@ -642,6 +642,7 @@ export type Database = {
           opportunity_score: number | null
           phone: string
           phone_normalized: string
+          source_instance: string | null
           status: string
           temperature: number | null
           unread_count: number
@@ -664,6 +665,7 @@ export type Database = {
           opportunity_score?: number | null
           phone: string
           phone_normalized: string
+          source_instance?: string | null
           status?: string
           temperature?: number | null
           unread_count?: number
@@ -686,6 +688,7 @@ export type Database = {
           opportunity_score?: number | null
           phone?: string
           phone_normalized?: string
+          source_instance?: string | null
           status?: string
           temperature?: number | null
           unread_count?: number
@@ -1561,6 +1564,7 @@ export type Database = {
           timeout_ativo: boolean
           timeout_pausa_fim: string
           timeout_pausa_inicio: string
+          tipo_origem: string
           ultimo_membro_ordem_atribuida: number
           updated_at: string
         }
@@ -1574,6 +1578,7 @@ export type Database = {
           timeout_ativo?: boolean
           timeout_pausa_fim?: string
           timeout_pausa_inicio?: string
+          tipo_origem?: string
           ultimo_membro_ordem_atribuida?: number
           updated_at?: string
         }
@@ -1587,6 +1592,7 @@ export type Database = {
           timeout_ativo?: boolean
           timeout_pausa_fim?: string
           timeout_pausa_inicio?: string
+          tipo_origem?: string
           ultimo_membro_ordem_atribuida?: number
           updated_at?: string
         }
