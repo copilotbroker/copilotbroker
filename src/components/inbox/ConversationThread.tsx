@@ -110,6 +110,7 @@ export function ConversationThread({
   onStartAttendance,
   isStartingAttendance,
   isReadOnly,
+  onTransfer,
 }: ConversationThreadProps) {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
