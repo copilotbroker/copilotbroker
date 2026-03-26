@@ -613,6 +613,9 @@ app.post("/init", async (c) => {
     await saveInstance(returnedName, newToken);
     console.log(`✅ Instância criada: ${returnedName}, token: ${newToken.substring(0, 8)}...`);
 
+    // Configure webhook for incoming messages
+    await configureGlobalWebhook(newToken, returnedName, config.baseUrl);
+
     // Wait for UAZAPI to generate QR
     console.log("⏳ Aguardando 2s para QR Code ser gerado...");
     await new Promise(resolve => setTimeout(resolve, 2000));
