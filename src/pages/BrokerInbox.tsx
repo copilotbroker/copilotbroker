@@ -46,6 +46,14 @@ export default function BrokerInbox() {
     getBrokerId();
   }, [navigate]);
 
+  // Fetch brokers for transfer dialog
+  useEffect(() => {
+    const fetchBrokers = async () => {
+      const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true);
+      if (data) setAllBrokers(data as any);
+    };
+    fetchBrokers();
+
   const isArchived = statusFilter === "archived";
   const showOthersTab = role === "admin" || isLeader;
 
