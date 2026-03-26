@@ -957,6 +957,7 @@ async function getOrCreateCanonicalConversation(
   brokerId: string,
   phone: string,
   leadId?: string | null,
+  sourceInstance?: string | null,
 ): Promise<{ id: string } | null> {
   const canonicalPhone = getCanonicalPhone(phone);
   const canonicalNormalized = getCanonicalPhoneNormalized(phone);
@@ -964,13 +965,13 @@ async function getOrCreateCanonicalConversation(
 
   const { data: existing } = await supabase
     .from("conversations")
-    .select("id, lead_id, ai_mode, created_at, phone, phone_normalized")
+    .select("id, lead_id, ai_mode, created_at, phone, phone_normalized, source_instance")
     .eq("broker_id", brokerId)
     .in("phone_normalized", phoneVariants.map((value) => value.replace(/\D/g, "")))
     .order("created_at", { ascending: true });
 
   if (existing && existing.length > 0) {
-    const primary = existing[0] as { id: string; lead_id: string | null; ai_mode: string; phone: string; phone_normalized: string };
+    const primary = existing[0] as { id: string; lead_id: string | null; ai_mode: string; phone: string; phone_normalized: string; source_instance: string | null };
     const duplicateIds = existing.slice(1).map((conv: any) => conv.id);
 
     if (duplicateIds.length > 0) {
@@ -985,18 +986,20 @@ async function getOrCreateCanonicalConversation(
           phone_normalized: canonicalNormalized,
           ai_mode: primary.ai_mode === "ai_active" ? "ai_active" : "copilot",
           is_archived: false,
+          source_instance: sourceInstance || primary.source_instance || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", primary.id);
 
       await supabase.from("conversations").delete().in("id", duplicateIds);
-    } else if (primary.phone !== canonicalPhone || primary.phone_normalized !== canonicalNormalized || (!primary.lead_id && leadId)) {
+    } else if (primary.phone !== canonicalPhone || primary.phone_normalized !== canonicalNormalized || (!primary.lead_id && leadId) || (sourceInstance && !primary.source_instance)) {
       await supabase
         .from("conversations")
         .update({
           phone: canonicalPhone,
           phone_normalized: canonicalNormalized,
           lead_id: primary.lead_id || leadId || null,
+          source_instance: sourceInstance || primary.source_instance || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", primary.id);
@@ -1014,6 +1017,7 @@ async function getOrCreateCanonicalConversation(
       phone_normalized: canonicalNormalized,
       ai_mode: "copilot",
       status: "active",
+      source_instance: sourceInstance || null,
     })
     .select("id")
     .single();
