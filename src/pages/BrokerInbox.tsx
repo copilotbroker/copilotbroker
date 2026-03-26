@@ -30,6 +30,8 @@ export default function BrokerInbox() {
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
   const [inboxTab, setInboxTab] = useState<InboxTab>("meus");
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
 
   const { role, isLeader } = useUserRole();
   const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
