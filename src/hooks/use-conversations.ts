@@ -166,7 +166,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
 
       if (options.inboxTab === "novos") {
         // Global conversations pending attendance
-        query = query.eq("source_instance", "global").eq("attendance_started" as any, false);
+        query = query.eq("source_instance", "global").eq("attendance_started", false as any);
       } else if (options.inboxTab === "outros") {
         // Team conversations (exclude own)
         if (options.brokerId) {
