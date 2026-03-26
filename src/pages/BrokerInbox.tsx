@@ -5,9 +5,10 @@ import { ConversationList } from "@/components/inbox/ConversationList";
 import { ConversationThread } from "@/components/inbox/ConversationThread";
 import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatModal";
-import { useConversations, useConversationMessages, Conversation } from "@/hooks/use-conversations";
+import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
+import { useUserRole } from "@/hooks/use-user-role";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Lock, Loader2 } from "lucide-react";
@@ -26,62 +27,66 @@ export default function BrokerInbox() {
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
+  const [inboxTab, setInboxTab] = useState<InboxTab>("meus");
+  const [isStartingAttendance, setIsStartingAttendance] = useState(false);
 
+  const { role, isLeader } = useUserRole();
   const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
   useEffect(() => {
     const getBrokerId = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user) {
-        navigate("/auth");
-        return;
-      }
-      const { data } = await supabase
-        .from("brokers")
-        .select("id")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { navigate("/auth"); return; }
+      const { data } = await supabase.from("brokers").select("id").eq("user_id", session.user.id).maybeSingle();
       if (data) setBrokerId((data as any).id);
     };
     getBrokerId();
   }, [navigate]);
 
   const isArchived = statusFilter === "archived";
+  const showOthersTab = role === "admin" || isLeader;
+
+  // Main conversations (meus / outros)
   const {
-    conversations,
-    isLoading,
-    totalUnread,
-    markAsRead,
-    archiveConversation,
-    unarchiveConversation,
-    updateAiMode,
-    updateConversationState,
-  } = useConversations({ brokerId: brokerId || undefined, search, statusFilter: isArchived ? "all" : statusFilter, isArchived });
+    conversations, isLoading, totalUnread, markAsRead, archiveConversation,
+    unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
+  } = useConversations({
+    brokerId: brokerId || undefined,
+    search,
+    statusFilter: isArchived ? "all" : statusFilter,
+    isArchived,
+    inboxTab,
+    userRole: role as "admin" | "leader" | null,
+  });
+
+  // Novos conversations (separate query)
+  const {
+    conversations: novosConversations,
+    isLoading: novosLoading,
+    fetchConversations: fetchNovos,
+  } = useConversations({
+    brokerId: brokerId || undefined,
+    search: inboxTab === "novos" ? search : "",
+    statusFilter: "all",
+    isArchived: false,
+    inboxTab: "novos",
+  });
+
+  const activeConversations = inboxTab === "novos" ? novosConversations : conversations;
+  const activeLoading = inboxTab === "novos" ? novosLoading : isLoading;
 
   const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {
       if (!selectedConversation) return;
-
       updateConversationState(selectedConversation.id, (current) => ({
-        ...current,
-        status: "attending",
-        last_message_at: update.timestamp,
-        last_message_preview: update.preview,
-        last_message_direction: "outbound",
-        last_message_type: update.messageType,
-        updated_at: update.timestamp,
+        ...current, status: "attending", last_message_at: update.timestamp,
+        last_message_preview: update.preview, last_message_direction: "outbound",
+        last_message_type: update.messageType, updated_at: update.timestamp,
       }));
-
       setSelectedConversation((prev) => prev ? {
-        ...prev,
-        status: "attending",
-        last_message_at: update.timestamp,
-        last_message_preview: update.preview,
-        last_message_direction: "outbound",
-        last_message_type: update.messageType,
-        updated_at: update.timestamp,
+        ...prev, status: "attending", last_message_at: update.timestamp,
+        last_message_preview: update.preview, last_message_direction: "outbound",
+        last_message_type: update.messageType, updated_at: update.timestamp,
       } : prev);
     });
 
@@ -89,36 +94,26 @@ export default function BrokerInbox() {
 
   useEffect(() => {
     const convId = searchParams.get("conversationId");
-    if (convId && conversations.length > 0 && !selectedConversation) {
-      const target = conversations.find((c) => c.id === convId);
-      if (target) {
-        setSelectedConversation(target);
-        setSearchParams({}, { replace: true });
-      }
+    if (convId && activeConversations.length > 0 && !selectedConversation) {
+      const target = activeConversations.find((c) => c.id === convId);
+      if (target) { setSelectedConversation(target); setSearchParams({}, { replace: true }); }
     }
-  }, [conversations, searchParams, selectedConversation, setSearchParams]);
+  }, [activeConversations, searchParams, selectedConversation, setSearchParams]);
 
   useEffect(() => {
     if (!selectedConversation) return;
-
-    const refreshedConversation = conversations.find((conversation) => conversation.id === selectedConversation.id);
-    if (!refreshedConversation) return;
-
+    const refreshed = activeConversations.find((c) => c.id === selectedConversation.id);
+    if (!refreshed) return;
     setSelectedConversation((current) => {
       if (!current) return current;
-      const currentSnapshot = JSON.stringify(current);
-      const nextSnapshot = JSON.stringify(refreshedConversation);
-      return currentSnapshot === nextSnapshot ? current : refreshedConversation;
+      return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
     });
-  }, [conversations, selectedConversation?.id]);
+  }, [activeConversations, selectedConversation?.id]);
 
-  const handleSelectConversation = useCallback(
-    (conv: Conversation) => {
-      setSelectedConversation(conv);
-      if (isMobile) setShowLeadPanel(false);
-    },
-    [isMobile]
-  );
+  const handleSelectConversation = useCallback((conv: Conversation) => {
+    setSelectedConversation(conv);
+    if (isMobile) setShowLeadPanel(false);
+  }, [isMobile]);
 
   const handleBack = useCallback(() => {
     setSelectedConversation(null);
@@ -126,104 +121,129 @@ export default function BrokerInbox() {
     setViewingLeadId(null);
   }, []);
 
-  const handleOpenLead = useCallback((leadId: string) => {
-    setViewingLeadId(leadId);
+  const handleOpenLead = useCallback((leadId: string) => setViewingLeadId(leadId), []);
+  const handleBackFromLead = useCallback(() => setViewingLeadId(null), []);
+
+  const handleTabChange = useCallback((tab: InboxTab) => {
+    setInboxTab(tab);
+    setSelectedConversation(null);
+    setShowLeadPanel(false);
   }, []);
 
-  const handleBackFromLead = useCallback(() => {
-    setViewingLeadId(null);
-  }, []);
+  // "Iniciar Atendimento" — claim a global conversation
+  const handleStartAttendance = useCallback(async () => {
+    if (!selectedConversation || !brokerId) return;
+    setIsStartingAttendance(true);
+    try {
+      // 1. Assign broker_id to conversation
+      await supabase.from("conversations").update({ broker_id: brokerId } as any).eq("id", selectedConversation.id);
 
-  const handleRequestSuggestion = useCallback(async () => {
-    if (!selectedConversation) return;
-    const lead = selectedConversation.lead as any;
-
-    const chatHistory = messages.slice(-10).map((m) => ({
-      role: m.direction === "inbound" ? "user" : "assistant",
-      content: m.content,
-    }));
-
-    await generateSuggestion({
-      action: "suggest_response",
-      conversation_id: selectedConversation.id,
-      lead_context: {
-        name: lead?.name,
-        status: lead?.status,
-        origin: lead?.lead_origin,
-        notes: lead?.notes,
-      },
-      messages: chatHistory,
-    });
-  }, [selectedConversation, messages, generateSuggestion]);
-
-  const handleOpenCreateLeadModal = useCallback(() => {
-    setShowCreateLeadModal(true);
-  }, []);
-
-  const handleLeadCreated = useCallback(
-    async (leadName: string, _: string, projectId: string | null) => {
-      if (!selectedConversation || !brokerId) return;
-
+      // 2. Create lead in CRM
+      const displayName = selectedConversation.display_name || selectedConversation.phone;
       const { data: newLead, error: leadError } = await supabase
         .from("leads")
         .insert({
-          name: leadName,
+          name: displayName,
           whatsapp: selectedConversation.phone.replace(/^\+/, ''),
           broker_id: brokerId,
-          project_id: projectId,
           status: "new" as any,
-          source: "whatsapp",
-          lead_origin: "whatsapp_direto",
+          source: "whatsapp_global",
+          lead_origin: "whatsapp_plantao",
         } as any)
         .select("id")
         .single();
 
       if (leadError || !newLead) {
-        toast.error("Erro ao criar card no Kanban");
+        toast.error("Erro ao criar lead no CRM");
         return;
       }
 
-      await supabase
-        .from("conversations")
-        .update({ lead_id: (newLead as any).id } as any)
-        .eq("id", selectedConversation.id);
+      const leadId = (newLead as any).id;
 
+      // 3. Unify lead (dedup)
+      const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
+      const finalLeadId = unifiedId || leadId;
+
+      // 4. Link lead to conversation
+      await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
+
+      // 5. Register interaction
       await supabase.from("lead_interactions").insert({
-        lead_id: (newLead as any).id,
-        interaction_type: "note" as any,
-        notes: "Lead criado a partir da Inbox (WhatsApp direto)",
+        lead_id: finalLeadId,
+        interaction_type: "status_change" as any,
+        notes: "Atendimento iniciado via Inbox (WhatsApp Global)",
         broker_id: brokerId,
-        channel: "system",
+        channel: "whatsapp",
+        new_status: "new",
       } as any);
 
-      toast.success("Card criado no Kanban!");
+      toast.success("Atendimento iniciado! Lead criado no Kanban.");
+
+      // Move to "Meus" tab with the conversation
+      setInboxTab("meus");
       setSelectedConversation({
         ...selectedConversation,
-        lead_id: (newLead as any).id,
-        lead: { id: (newLead as any).id, name: leadName, status: "new", project_id: projectId, notes: null, lead_origin: "whatsapp_direto" },
+        broker_id: brokerId,
+        lead_id: finalLeadId,
+        lead: { id: finalLeadId, name: displayName, status: "new", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
       });
-    },
-    [selectedConversation, brokerId]
-  );
 
-  const handleAdvanceStatus = useCallback(
-    async (newStatus: string) => {
-      const lead = selectedConversation?.lead as any;
-      if (!lead) return;
-      const { error } = await supabase.from("leads").update({ status: newStatus } as any).eq("id", lead.id);
-      if (error) {
-        toast.error("Erro ao atualizar status");
-      } else {
-        toast.success("Status atualizado!");
-      }
-    },
-    [selectedConversation]
-  );
+      // Refresh both lists
+      fetchConversations();
+      fetchNovos();
+    } catch (error) {
+      console.error("Erro ao iniciar atendimento:", error);
+      toast.error("Erro ao iniciar atendimento");
+    } finally {
+      setIsStartingAttendance(false);
+    }
+  }, [selectedConversation, brokerId, fetchConversations, fetchNovos]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
-  };
+  const handleRequestSuggestion = useCallback(async () => {
+    if (!selectedConversation) return;
+    const lead = selectedConversation.lead as any;
+    const chatHistory = messages.slice(-10).map((m) => ({
+      role: m.direction === "inbound" ? "user" : "assistant", content: m.content,
+    }));
+    await generateSuggestion({
+      action: "suggest_response", conversation_id: selectedConversation.id,
+      lead_context: { name: lead?.name, status: lead?.status, origin: lead?.lead_origin, notes: lead?.notes },
+      messages: chatHistory,
+    });
+  }, [selectedConversation, messages, generateSuggestion]);
+
+  const handleOpenCreateLeadModal = useCallback(() => setShowCreateLeadModal(true), []);
+
+  const handleLeadCreated = useCallback(async (leadName: string, _: string, projectId: string | null) => {
+    if (!selectedConversation || !brokerId) return;
+    const { data: newLead, error: leadError } = await supabase
+      .from("leads").insert({
+        name: leadName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
+        broker_id: brokerId, project_id: projectId, status: "new" as any,
+        source: "whatsapp", lead_origin: "whatsapp_direto",
+      } as any).select("id").single();
+    if (leadError || !newLead) { toast.error("Erro ao criar card no Kanban"); return; }
+    await supabase.from("conversations").update({ lead_id: (newLead as any).id } as any).eq("id", selectedConversation.id);
+    await supabase.from("lead_interactions").insert({
+      lead_id: (newLead as any).id, interaction_type: "note" as any,
+      notes: "Lead criado a partir da Inbox (WhatsApp direto)", broker_id: brokerId, channel: "system",
+    } as any);
+    toast.success("Card criado no Kanban!");
+    setSelectedConversation({
+      ...selectedConversation, lead_id: (newLead as any).id,
+      lead: { id: (newLead as any).id, name: leadName, status: "new", project_id: projectId, notes: null, lead_origin: "whatsapp_direto" },
+    });
+  }, [selectedConversation, brokerId]);
+
+  const handleAdvanceStatus = useCallback(async (newStatus: string) => {
+    const lead = selectedConversation?.lead as any;
+    if (!lead) return;
+    const { error } = await supabase.from("leads").update({ status: newStatus } as any).eq("id", lead.id);
+    if (error) toast.error("Erro ao atualizar status");
+    else toast.success("Status atualizado!");
+  }, [selectedConversation]);
+
+  const handleLogout = async () => { await supabase.auth.signOut(); navigate("/auth"); };
 
   if (featuresLoading) {
     return (
@@ -244,10 +264,8 @@ export default function BrokerInbox() {
           <p className="text-sm text-muted-foreground">
             Esta funcionalidade não está habilitada para sua conta. Solicite ao administrador para liberar o acesso.
           </p>
-          <button
-            onClick={() => navigate("/corretor/crm")}
-            className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all"
-          >
+          <button onClick={() => navigate("/corretor/crm")}
+            className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all">
             Voltar ao CRM
           </button>
         </div>
@@ -255,6 +273,8 @@ export default function BrokerInbox() {
     );
   }
 
+  const isNewLeadConversation = inboxTab === "novos" && !!selectedConversation;
+  const isReadOnlyConversation = inboxTab === "outros";
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
   const showContext = showLeadPanel && !isMobile;
@@ -270,17 +290,21 @@ export default function BrokerInbox() {
         {showList && (
           <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0`}>
             <ConversationList
-              conversations={conversations}
+              conversations={activeConversations}
               selectedId={selectedConversation?.id || null}
               onSelect={handleSelectConversation}
               search={search}
               onSearchChange={setSearch}
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
-              isLoading={isLoading}
+              isLoading={activeLoading}
               totalUnread={totalUnread}
               onMarkAsRead={(id) => markAsRead(id)}
               onArchive={(id) => archiveConversation(id)}
+              inboxTab={inboxTab}
+              onTabChange={handleTabChange}
+              showOthersTab={showOthersTab}
+              novosCount={novosConversations.length}
             />
           </div>
         )}
@@ -302,14 +326,8 @@ export default function BrokerInbox() {
                 onCancelScheduledMessage={cancelScheduledMessage}
                 onBack={handleBack}
                 onMarkAsRead={() => markAsRead(selectedConversation!.id)}
-                onArchive={() => {
-                  archiveConversation(selectedConversation!.id);
-                  handleBack();
-                }}
-                onUnarchive={() => {
-                  unarchiveConversation(selectedConversation!.id);
-                  handleBack();
-                }}
+                onArchive={() => { archiveConversation(selectedConversation!.id); handleBack(); }}
+                onUnarchive={() => { unarchiveConversation(selectedConversation!.id); handleBack(); }}
                 onToggleAiMode={(mode) => {
                   updateAiMode(selectedConversation!.id, mode);
                   setSelectedConversation((prev) => (prev ? { ...prev, ai_mode: mode } : prev));
@@ -320,8 +338,12 @@ export default function BrokerInbox() {
                 onInsertSuggestion={() => setSuggestion("")}
                 onDismissSuggestion={() => setSuggestion("")}
                 onOpenLeadPanel={() => setShowLeadPanel(!showLeadPanel)}
-                onCreateLead={!selectedConversation!.lead_id ? handleOpenCreateLeadModal : undefined}
+                onCreateLead={!selectedConversation!.lead_id && !isNewLeadConversation ? handleOpenCreateLeadModal : undefined}
                 onOpenLead={handleOpenLead}
+                isNewLead={isNewLeadConversation}
+                onStartAttendance={handleStartAttendance}
+                isStartingAttendance={isStartingAttendance}
+                isReadOnly={isReadOnlyConversation}
               />
             )}
           </div>
