@@ -56,6 +56,12 @@ interface ConversationThreadProps {
   onOpenLeadPanel: () => void;
   onCreateLead?: () => void;
   onOpenLead?: (leadId: string) => void;
+  /** When true, the conversation is from "Novos" tab — read-only until claimed */
+  isNewLead?: boolean;
+  onStartAttendance?: () => void;
+  isStartingAttendance?: boolean;
+  /** Read-only supervision mode (Outros tab) */
+  isReadOnly?: boolean;
 }
 
 const getMessageStatusIcon = (status?: string) => {
