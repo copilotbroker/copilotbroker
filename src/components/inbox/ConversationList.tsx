@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import {
   Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
   ArrowUpDown, ThermometerSun, Target, MoreVertical, Check, Zap,
-  TrendingUp, Eye, EyeOff, ChevronDown, MessageCircleMore, LayoutGrid, Archive
+  TrendingUp, Eye, EyeOff, ChevronDown, MessageCircleMore, LayoutGrid, Archive,
+  Users, UserPlus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Conversation } from "@/hooks/use-conversations";
+import { Conversation, InboxTab } from "@/hooks/use-conversations";
 import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,10 @@ interface ConversationListProps {
   onMarkAsRead?: (id: string) => void;
   onArchive?: (id: string) => void;
   isAdminView?: boolean;
+  inboxTab?: InboxTab;
+  onTabChange?: (tab: InboxTab) => void;
+  showOthersTab?: boolean;
+  novosCount?: number;
 }
 
 type SortMode = "recent" | "unread" | "temperature" | "opportunity" | "risk" | "idle";
@@ -119,6 +124,10 @@ export function ConversationList({
   onMarkAsRead,
   onArchive,
   isAdminView,
+  inboxTab = "meus",
+  onTabChange,
+  showOthersTab = false,
+  novosCount = 0,
 }: ConversationListProps) {
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [activeKpi, setActiveKpi] = useState<string | null>(null);
@@ -231,11 +240,65 @@ export function ConversationList({
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="space-y-2 px-3 pb-1 pt-3">
+        {/* Inbox Tabs */}
+        {onTabChange && (
+          <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
+            <button
+              onClick={() => onTabChange("novos")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                inboxTab === "novos"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Novos
+              {novosCount > 0 && (
+                <Badge variant={inboxTab === "novos" ? "secondary" : "destructive"} className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
+                  {novosCount}
+                </Badge>
+              )}
+            </button>
+            <button
+              onClick={() => onTabChange("meus")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                inboxTab === "meus"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Meus
+              {totalUnread > 0 && inboxTab !== "meus" && (
+                <Badge variant="destructive" className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
+                  {totalUnread}
+                </Badge>
+              )}
+            </button>
+            {showOthersTab && (
+              <button
+                onClick={() => onTabChange("outros")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  inboxTab === "outros"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Outros
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
             <Inbox className="h-5 w-5 text-primary" />
-            {isAdminView ? "Inbox Admin" : "Inbox"}
-            {totalUnread > 0 && (
+            {inboxTab === "novos" ? "Novos Contatos" : inboxTab === "outros" ? "Equipe" : isAdminView ? "Inbox Admin" : "Inbox"}
+            {totalUnread > 0 && inboxTab === "meus" && (
               <Badge variant="destructive" className="min-w-[20px] px-1.5 py-0 text-xs h-5">
                 {totalUnread}
               </Badge>

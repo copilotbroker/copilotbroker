@@ -66,11 +66,16 @@ export interface OutboundMessagePayload {
   metadata?: Record<string, unknown>;
 }
 
+export type InboxTab = "novos" | "meus" | "outros";
+
 interface UseConversationsOptions {
   brokerId?: string;
   statusFilter?: string;
   search?: string;
   isArchived?: boolean;
+  inboxTab?: InboxTab;
+  /** For "outros" tab: role of the current user */
+  userRole?: "admin" | "leader" | null;
 }
 
 const sortMessagesAsc = (items: ConversationMessage[]) => (
@@ -159,7 +164,20 @@ export function useConversations(options: UseConversationsOptions = {}) {
         .eq("is_archived", options.isArchived ?? false)
         .order("last_message_at", { ascending: false });
 
-      if (options.brokerId) query = query.eq("broker_id", options.brokerId);
+      if (options.inboxTab === "novos") {
+        // Global unassigned conversations
+        query = query.eq("source_instance", "global").is("broker_id", null);
+      } else if (options.inboxTab === "outros") {
+        // Team conversations (exclude own)
+        if (options.brokerId) {
+          query = query.neq("broker_id", options.brokerId);
+        }
+        // RLS will handle visibility (admin sees all, leader sees team)
+      } else {
+        // "meus" or default — own conversations
+        if (options.brokerId) query = query.eq("broker_id", options.brokerId);
+      }
+
       if (options.statusFilter && options.statusFilter !== "all") query = query.eq("status", options.statusFilter);
 
       const { data, error } = await query.limit(CONVERSATION_FETCH_LIMIT);
@@ -318,7 +336,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [options.brokerId, options.statusFilter, options.search, options.isArchived]);
+  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole]);
 
   useEffect(() => {
     fetchConversations();
