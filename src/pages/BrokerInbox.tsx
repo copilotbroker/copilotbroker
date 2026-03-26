@@ -135,8 +135,8 @@ export default function BrokerInbox() {
     if (!selectedConversation || !brokerId) return;
     setIsStartingAttendance(true);
     try {
-      // 1. Assign broker_id to conversation
-      await supabase.from("conversations").update({ broker_id: brokerId } as any).eq("id", selectedConversation.id);
+      // 1. Mark attendance started and assign broker
+      await supabase.from("conversations").update({ broker_id: brokerId, attendance_started: true } as any).eq("id", selectedConversation.id);
 
       // 2. Create lead in CRM
       const displayName = selectedConversation.display_name || selectedConversation.phone;
