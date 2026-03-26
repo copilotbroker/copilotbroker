@@ -1040,22 +1040,28 @@ async function archiveMessageToConversation(
   sentBy: string = "human",
   uazapiMessageId?: string,
   messageType: string = "text",
-  metadata?: Record<string, unknown>
-): Promise<void> {
-  if (!instanceName) return;
+  metadata?: Record<string, unknown>,
+  overrideBrokerId?: string,
+  sourceInstance?: string | null,
+): Promise<{ conversationId?: string; brokerId?: string }> {
+  if (!instanceName && !overrideBrokerId) return {};
 
   try {
-    const { data: inst } = await supabase
-      .from("broker_whatsapp_instances")
-      .select("broker_id")
-      .eq("instance_name", instanceName)
-      .maybeSingle();
+    let brokerId = overrideBrokerId;
 
-    if (!inst) return;
-    const brokerId = (inst as { broker_id: string }).broker_id;
-    const conv = await getOrCreateCanonicalConversation(supabase, brokerId, phone);
+    if (!brokerId) {
+      const { data: inst } = await supabase
+        .from("broker_whatsapp_instances")
+        .select("broker_id")
+        .eq("instance_name", instanceName!)
+        .maybeSingle();
 
-    if (!conv) return;
+      if (!inst) return {};
+      brokerId = (inst as { broker_id: string }).broker_id;
+    }
+
+    const conv = await getOrCreateCanonicalConversation(supabase, brokerId!, phone, undefined, sourceInstance);
+    if (!conv) return {};
 
     await supabase.from("conversation_messages").insert({
       conversation_id: (conv as { id: string }).id,
@@ -1070,8 +1076,10 @@ async function archiveMessageToConversation(
     });
 
     console.log(`📨 Archived ${direction} message to conversation ${(conv as { id: string }).id}`);
+    return { conversationId: (conv as { id: string }).id, brokerId };
   } catch (err) {
     console.error("Error archiving message:", err);
+    return {};
   }
 }
 
