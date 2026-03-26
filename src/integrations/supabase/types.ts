@@ -627,6 +627,7 @@ export type Database = {
       conversations: {
         Row: {
           ai_mode: string
+          attendance_started: boolean
           broker_id: string
           copilot_suggestions_count: number
           created_at: string
@@ -650,6 +651,7 @@ export type Database = {
         }
         Insert: {
           ai_mode?: string
+          attendance_started?: boolean
           broker_id: string
           copilot_suggestions_count?: number
           created_at?: string
@@ -673,6 +675,7 @@ export type Database = {
         }
         Update: {
           ai_mode?: string
+          attendance_started?: boolean
           broker_id?: string
           copilot_suggestions_count?: number
           created_at?: string

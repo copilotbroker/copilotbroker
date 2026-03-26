@@ -155,7 +155,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
 
   const fetchConversations = useCallback(async () => {
     try {
-      let query = supabase
+      let query: any = supabase
         .from("conversations")
         .select(`
           *,
@@ -166,7 +166,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
 
       if (options.inboxTab === "novos") {
         // Global conversations pending attendance
-        query = query.eq("source_instance", "global").eq("attendance_started", false as any);
+        query = query.eq("source_instance", "global").eq("attendance_started", false);
       } else if (options.inboxTab === "outros") {
         // Team conversations (exclude own)
         if (options.brokerId) {
