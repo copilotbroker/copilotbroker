@@ -291,6 +291,17 @@ export function ConversationThread({
           </button>
 
           <div className="flex items-center gap-1">
+            {conversation.lead_id && onTransfer && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onTransfer}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="Transferir lead"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+              </Button>
+            )}
             {conversation.lead_id && (
               <Button
                 variant="ghost"
