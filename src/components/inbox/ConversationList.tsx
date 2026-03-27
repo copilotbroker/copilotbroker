@@ -39,6 +39,7 @@ interface ConversationListProps {
   onTabChange?: (tab: InboxTab) => void;
   showOthersTab?: boolean;
   novosCount?: number;
+  emptyMessage?: string;
 }
 
 type SortMode = "recent" | "unread" | "temperature" | "opportunity" | "risk" | "idle";
