@@ -35,6 +35,7 @@ export function BrokerSidebar({
   const navigationItems = BROKER_ROUTE_TABS.filter((item) => {
     if (item.id === "roletas") return isLeader;
     if (item.id === "inbox") return inboxEnabled;
+    if (item.id === "plantao") return true;
     if (item.id === "copilot") return copilotEnabled;
     return item.id !== "projects" || true;
   });
@@ -85,10 +86,14 @@ export function BrokerSidebar({
                     ? "bg-[#2a2a2e] text-[hsl(145,80%,55%)]"
                     : isCopilot
                       ? "bg-[#2a2a2e] text-blue-400"
-                      : "bg-[#2a2a2e] text-[#FFFF00]"
+                      : item.id === "plantao"
+                        ? "bg-[#2a2a2e] text-orange-400"
+                        : "bg-[#2a2a2e] text-[#FFFF00]"
                   : isInbox
                     ? "text-[hsl(145,80%,55%)]/70 hover:text-[hsl(145,80%,55%)]"
-                    : "text-slate-400 hover:text-white"
+                    : item.id === "plantao"
+                      ? "text-orange-400/70 hover:text-orange-400"
+                      : "text-slate-400 hover:text-white"
               )}
               title={item.label}
             >

@@ -124,6 +124,7 @@ const App = () => (
             <Route path="/admin/copiloto" element={<AdminCopilotConfig />} />
             <Route path="/corretor/roletas" element={<BrokerRoletasPage />} />
             <Route path="/corretor/inbox" element={<BrokerInbox />} />
+            <Route path="/corretor/plantao" element={<BrokerPlantao />} />
             <Route path="/corretor/agenda" element={<BrokerAgenda />} />
             <Route path="/corretor/copiloto" element={<BrokerCopilotConfig />} />
             <Route path="/corretor/lead/:leadId" element={<LeadPage />} />
