@@ -76,6 +76,8 @@ interface UseConversationsOptions {
   inboxTab?: InboxTab;
   /** For "outros" tab: role of the current user */
   userRole?: "admin" | "leader" | null;
+  /** Filter by source instance */
+  sourceInstance?: "global" | "personal";
 }
 
 const sortMessagesAsc = (items: ConversationMessage[]) => (
@@ -176,6 +178,13 @@ export function useConversations(options: UseConversationsOptions = {}) {
       } else {
         // "meus" or default — own conversations
         if (options.brokerId) query = query.eq("broker_id", options.brokerId);
+      }
+
+      // Filter by source instance when specified
+      if (options.sourceInstance === "global") {
+        query = query.eq("source_instance", "global");
+      } else if (options.sourceInstance === "personal") {
+        query = query.or("source_instance.is.null,source_instance.neq.global");
       }
 
       if (options.statusFilter && options.statusFilter !== "all") query = query.eq("status", options.statusFilter);
@@ -336,7 +345,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole]);
+  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance]);
 
   useEffect(() => {
     fetchConversations();
