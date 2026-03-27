@@ -11,6 +11,7 @@ import {
   Sparkles,
   Zap,
   LayoutGrid,
+  Smartphone,
   UserRoundSearch,
   Paperclip,
   FileText,
@@ -65,6 +66,9 @@ interface ConversationThreadProps {
   isReadOnly?: boolean;
   /** Transfer lead to another broker */
   onTransfer?: () => void;
+  /** Pull conversation from global to personal instance */
+  onPullToPersonal?: () => void;
+  isPullingToPersonal?: boolean;
 }
 
 const getMessageStatusIcon = (status?: string) => {
@@ -111,6 +115,8 @@ export function ConversationThread({
   isStartingAttendance,
   isReadOnly,
   onTransfer,
+  onPullToPersonal,
+  isPullingToPersonal,
 }: ConversationThreadProps) {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -291,6 +297,19 @@ export function ConversationThread({
           </button>
 
           <div className="flex items-center gap-1">
+            {onPullToPersonal && (conversation as any).source_instance === "global" && (conversation as any).attendance_started && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onPullToPersonal}
+                disabled={isPullingToPersonal}
+                className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                title="Puxar para meu WhatsApp pessoal"
+              >
+                <Smartphone className="h-4 w-4" />
+                <span className="hidden sm:inline">Meu WhatsApp</span>
+              </Button>
+            )}
             {conversation.lead_id && onTransfer && (
               <Button
                 variant="ghost"

@@ -119,10 +119,10 @@ serve(async (req) => {
       });
     }
 
-    // 1. Get conversation
+    // 1. Get conversation (include source_instance for routing)
     const { data: conv, error: convError } = await supabase
       .from("conversations")
-      .select("id, broker_id, phone, phone_normalized, lead_id")
+      .select("id, broker_id, phone, phone_normalized, lead_id, source_instance")
       .eq("id", conversation_id)
       .single();
 
@@ -133,25 +133,46 @@ serve(async (req) => {
       });
     }
 
-    // 2. Get broker's WhatsApp instance
-    const { data: instance } = await supabase
-      .from("broker_whatsapp_instances")
-      .select("instance_name, instance_token, status")
-      .eq("broker_id", conv.broker_id)
-      .maybeSingle();
+    // 2. Get WhatsApp instance based on source_instance routing
+    let instanceToken: string | null = null;
 
-    if (!instance || instance.status !== "connected") {
-      return new Response(
-        JSON.stringify({ error: "Instância WhatsApp não conectada. Conecte seu WhatsApp primeiro." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (conv.source_instance === "global") {
+      // Route through global instance
+      const { data: globalConfig } = await supabase
+        .from("global_whatsapp_config")
+        .select("instance_token, status")
+        .limit(1)
+        .single();
+
+      if (!globalConfig || globalConfig.status !== "connected") {
+        return new Response(
+          JSON.stringify({ error: "Instância WhatsApp Global não conectada." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      instanceToken = globalConfig.instance_token;
+    } else {
+      // Route through broker's personal instance
+      const { data: instance } = await supabase
+        .from("broker_whatsapp_instances")
+        .select("instance_name, instance_token, status")
+        .eq("broker_id", conv.broker_id)
+        .maybeSingle();
+
+      if (!instance || instance.status !== "connected") {
+        return new Response(
+          JSON.stringify({ error: "Instância WhatsApp não conectada. Conecte seu WhatsApp primeiro." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      instanceToken = instance.instance_token;
     }
 
     const normalizedType = typeof message_type === "string" ? message_type : "text";
 
     // 3. Send via UAZAPI
     const sendResult = await sendViaUAZAPI(
-      instance.instance_token,
+      instanceToken,
       conv.phone_normalized || conv.phone,
       content || "",
       normalizedType,
