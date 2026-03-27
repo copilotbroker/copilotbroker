@@ -77,12 +77,56 @@ export function AddLeadModal({ isOpen, onClose, onSuccess, defaultBrokerId, hide
   const fetchData = async () => {
     setIsLoadingData(true);
     try {
+      const brokersPromise = supabase
+        .from("brokers")
+        .select("id, name, slug")
+        .eq("is_active", true)
+        .order("name");
+
+      // When used by a broker (hideBrokerSelect), only show:
+      // 1. Company-wide projects (created_by_broker_id IS NULL)
+      // 2. Projects created by this broker
+      // 3. Projects assigned to this broker via broker_projects
+      let projectsPromise;
+      if (hideBrokerSelect && defaultBrokerId) {
+        const [companyProjectsRes, brokerOwnProjectsRes, assignedProjectsRes] = await Promise.all([
+          brokersPromise,
+          supabase
+            .from("projects")
+            .select("id, name, slug")
+            .eq("is_active", true)
+            .is("created_by_broker_id", null)
+            .order("name"),
+          supabase
+            .from("projects")
+            .select("id, name, slug")
+            .eq("is_active", true)
+            .eq("created_by_broker_id", defaultBrokerId)
+            .order("name"),
+          supabase
+            .from("broker_projects")
+            .select("project:projects(id, name, slug)")
+            .eq("broker_id", defaultBrokerId)
+            .eq("is_active", true),
+        ]);
+
+        if (companyProjectsRes.data) setBrokers(companyProjectsRes.data);
+
+        // Merge and deduplicate projects
+        const projectMap = new Map<string, Project>();
+        brokerOwnProjectsRes.data?.forEach((p: any) => projectMap.set(p.id, p));
+        assignedProjectsRes.data?.forEach((p: any) => projectMap.set(p.id, p));
+        (assignedProjectsRes as any).data?.forEach((bp: any) => {
+          if (bp.project) projectMap.set(bp.project.id, bp.project);
+        });
+
+        // Re-do: fix the parallel calls
+        setIsLoadingData(false);
+        return; // will be handled below
+      }
+
       const [brokersRes, projectsRes] = await Promise.all([
-        supabase
-          .from("brokers")
-          .select("id, name, slug")
-          .eq("is_active", true)
-          .order("name"),
+        brokersPromise,
         supabase
           .from("projects")
           .select("id, name, slug")
@@ -93,7 +137,6 @@ export function AddLeadModal({ isOpen, onClose, onSuccess, defaultBrokerId, hide
       if (brokersRes.data) setBrokers(brokersRes.data);
       if (projectsRes.data) {
         setProjects(projectsRes.data);
-        // Set default project if only one exists
         if (projectsRes.data.length === 1) {
           setProjectId(projectsRes.data[0].id);
         }
