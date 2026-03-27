@@ -77,20 +77,19 @@ export function AddLeadModal({ isOpen, onClose, onSuccess, defaultBrokerId, hide
   const fetchData = async () => {
     setIsLoadingData(true);
     try {
-      const brokersPromise = supabase
+      const brokersRes = await supabase
         .from("brokers")
         .select("id, name, slug")
         .eq("is_active", true)
         .order("name");
 
-      // When used by a broker (hideBrokerSelect), only show:
-      // 1. Company-wide projects (created_by_broker_id IS NULL)
-      // 2. Projects created by this broker
-      // 3. Projects assigned to this broker via broker_projects
-      let projectsPromise;
+      if (brokersRes.data) setBrokers(brokersRes.data);
+
+      let finalProjects: Project[] = [];
+
       if (hideBrokerSelect && defaultBrokerId) {
-        const [companyProjectsRes, brokerOwnProjectsRes, assignedProjectsRes] = await Promise.all([
-          brokersPromise,
+        // Broker mode: show only company-wide + own + assigned projects
+        const [companyRes, ownRes, assignedRes] = await Promise.all([
           supabase
             .from("projects")
             .select("id, name, slug")
@@ -110,36 +109,26 @@ export function AddLeadModal({ isOpen, onClose, onSuccess, defaultBrokerId, hide
             .eq("is_active", true),
         ]);
 
-        if (companyProjectsRes.data) setBrokers(companyProjectsRes.data);
-
-        // Merge and deduplicate projects
         const projectMap = new Map<string, Project>();
-        brokerOwnProjectsRes.data?.forEach((p: any) => projectMap.set(p.id, p));
-        assignedProjectsRes.data?.forEach((p: any) => projectMap.set(p.id, p));
-        (assignedProjectsRes as any).data?.forEach((bp: any) => {
+        companyRes.data?.forEach((p: any) => projectMap.set(p.id, p));
+        ownRes.data?.forEach((p: any) => projectMap.set(p.id, p));
+        (assignedRes.data as any[])?.forEach((bp: any) => {
           if (bp.project) projectMap.set(bp.project.id, bp.project);
         });
-
-        // Re-do: fix the parallel calls
-        setIsLoadingData(false);
-        return; // will be handled below
-      }
-
-      const [brokersRes, projectsRes] = await Promise.all([
-        brokersPromise,
-        supabase
+        finalProjects = Array.from(projectMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+      } else {
+        // Admin mode: show all active projects
+        const projectsRes = await supabase
           .from("projects")
           .select("id, name, slug")
           .eq("is_active", true)
-          .order("name"),
-      ]);
+          .order("name");
+        finalProjects = (projectsRes.data || []) as Project[];
+      }
 
-      if (brokersRes.data) setBrokers(brokersRes.data);
-      if (projectsRes.data) {
-        setProjects(projectsRes.data);
-        if (projectsRes.data.length === 1) {
-          setProjectId(projectsRes.data[0].id);
-        }
+      setProjects(finalProjects);
+      if (finalProjects.length === 1) {
+        setProjectId(finalProjects[0].id);
       }
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
