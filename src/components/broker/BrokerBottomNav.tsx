@@ -170,7 +170,7 @@ export function BrokerBottomNav({
                 {getActiveIndicator(item.id) && (
                   <div className={cn(
                     "absolute bottom-1.5 w-1 h-1 rounded-full",
-                    item.id === "copilot" ? "bg-blue-400" : "bg-[#FFFF00]"
+                    item.id === "copilot" ? "bg-blue-400" : item.id === "plantao" ? "bg-orange-400" : "bg-[#FFFF00]"
                   )} />
                 )}
               </button>
