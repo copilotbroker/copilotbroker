@@ -300,6 +300,7 @@ export default function BrokerInbox() {
           leadName={(selectedConversation.lead as any)?.name || selectedConversation.display_name || selectedConversation.phone}
           currentBrokerId={brokerId}
           brokers={allBrokers}
+          roletas={activeRoletas}
           isOpen={showTransferDialog}
           onClose={() => setShowTransferDialog(false)}
           onTransferred={handleTransferred}
