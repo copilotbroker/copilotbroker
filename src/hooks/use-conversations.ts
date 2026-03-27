@@ -158,6 +158,12 @@ export function useConversations(options: UseConversationsOptions = {}) {
   };
 
   const fetchConversations = useCallback(async () => {
+    if (options.enabled === false) {
+      setConversations([]);
+      setTotalUnread(0);
+      setIsLoading(false);
+      return;
+    }
     try {
       let query: any = supabase
         .from("conversations")
