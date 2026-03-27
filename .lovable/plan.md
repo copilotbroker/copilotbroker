@@ -1,30 +1,41 @@
 
 
-# Fix: Auth ficando preso em "Verificando autenticação"
+# Roteamento de instância WhatsApp + "Puxar para meu WhatsApp"
 
 ## Problema
-
-A página `/auth` usa **apenas** `onAuthStateChange` para detectar se o usuário já está logado. O problema é que esse listener nem sempre dispara o evento `INITIAL_SESSION` de forma confiável — especialmente quando o usuário navega para `/auth` repetidamente ou quando o token está em processo de refresh. Resultado: `isCheckingAuth` fica `true` para sempre, mostrando o spinner infinito.
-
-A página `/admin` não tem esse problema porque usa o hook `useUserRole`, que tem lógica própria de fallback.
-
-## Diferença entre `/auth` e `/admin`
-
-- `/auth` = tela de login. Verifica se já há sessão para redirecionar automaticamente
-- `/admin` = painel administrativo. Usa `useUserRole()` que já tem proteção contra loading infinito
+Quando um corretor responde a um lead no Plantão (instância global), a mensagem sai pela instância pessoal do corretor. O lead recebe a resposta de um número diferente do que usou para contato.
 
 ## Solução
 
-Adicionar uma chamada explícita a `supabase.auth.getSession()` **antes** do listener, seguindo o padrão recomendado:
+### 1. Edge Function `inbox-send-message` — rotear pela instância correta
 
-1. No `useEffect`, chamar `getSession()` primeiro para resolver o estado inicial
-2. Manter o `onAuthStateChange` para mudanças subsequentes (login/logout)
-3. Adicionar um timeout de segurança (3s) para evitar spinner infinito caso algo falhe
-4. Ignorar evento `INITIAL_SESSION` no listener já que `getSession()` cobre esse caso
+Atualmente (linha 122-148), a function sempre busca `broker_whatsapp_instances` do broker. A mudança:
 
-## Arquivo alterado
+- Incluir `source_instance` no SELECT da conversa (linha 125)
+- Se `source_instance === 'global'`: buscar credenciais da tabela `global_whatsapp_config` em vez de `broker_whatsapp_instances`
+- Se `source_instance` é null ou `'personal'`: manter comportamento atual (instância do broker)
+
+### 2. Botão "Puxar para meu WhatsApp" no `ConversationThread`
+
+Adicionar uma nova prop `onPullToPersonal` ao componente. Quando a conversa é `source_instance = 'global'` e já tem `attendance_started = true`, exibir um botão no header para migrar a conversa para a instância pessoal.
+
+O botão:
+- Atualiza `conversations.source_instance` de `'global'` para `'personal'`
+- A conversa desaparece do Plantão e aparece no Inbox pessoal do corretor
+- A partir daí, mensagens saem pela instância pessoal
+
+### 3. Handler em `BrokerPlantao.tsx`
+
+Implementar `handlePullToPersonal`:
+- `UPDATE conversations SET source_instance = 'personal' WHERE id = ...`
+- Toast de confirmação
+- Navegar para `/corretor/inbox?conversationId=...`
+
+## Arquivos alterados
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/Auth.tsx` | Adicionar `getSession()` antes do listener + timeout de segurança |
+| `supabase/functions/inbox-send-message/index.ts` | Adicionar lógica de roteamento por `source_instance` |
+| `src/components/inbox/ConversationThread.tsx` | Nova prop `onPullToPersonal`, botão no header |
+| `src/pages/BrokerPlantao.tsx` | Handler `handlePullToPersonal` |
 
