@@ -117,6 +117,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
+      console.log("[Auth] Attempting login...");
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -124,14 +125,30 @@ const Auth = () => {
       
       if (error) throw error;
       
+      console.log("[Auth] Login successful, user:", data.user?.id);
       toast.success("Login realizado com sucesso!");
       
       if (data.user) {
         await checkUserRoleAndRedirect(data.user.id);
       }
     } catch (error: any) {
+      console.error("[Auth] Login error:", error);
       if (error.message === "Invalid login credentials") {
         toast.error("Email ou senha incorretos.");
+      } else if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
+        // Preview proxy interference - session may have been created server-side
+        toast.info("Verificando sessão...");
+        // Wait briefly then check if session exists
+        setTimeout(async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            await checkUserRoleAndRedirect(session.user.id);
+          } else {
+            toast.error("Erro de conexão. Tente novamente.");
+            setIsLoading(false);
+          }
+        }, 1500);
+        return; // Don't set isLoading false yet
       } else {
         toast.error(error.message || "Ocorreu um erro. Tente novamente.");
       }
