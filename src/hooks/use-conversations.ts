@@ -353,7 +353,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance]);
+  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance, options.enabled]);
 
   useEffect(() => {
     fetchConversations();
