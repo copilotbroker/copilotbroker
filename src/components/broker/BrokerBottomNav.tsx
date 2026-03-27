@@ -41,7 +41,7 @@ export function BrokerBottomNav({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const activeTab = getBrokerTabFromPath(location.pathname);
 
-  const baseItems = BROKER_ROUTE_TABS.filter((item) => ["crm", "agenda", "copilot"].includes(item.id));
+  const baseItems = BROKER_ROUTE_TABS.filter((item) => ["crm", "agenda", "copilot", "plantao"].includes(item.id));
 
   const navItems: Array<{
     id: string;
@@ -52,7 +52,7 @@ export function BrokerBottomNav({
     { id: "agenda", icon: baseItems.find((item) => item.id === "agenda")!.icon },
     { id: viewMode === "list" ? "leads" : "crm", icon: baseItems.find((item) => item.id === "crm")!.icon },
     { id: "add", icon: Plus, isFab: true },
-    ...(copilotEnabled ? [{ id: "copilot", icon: baseItems.find((item) => item.id === "copilot")!.icon }] : []),
+    { id: "plantao", icon: baseItems.find((item) => item.id === "plantao")!.icon },
     { id: "more", icon: MoreHorizontal },
   ];
 
@@ -67,7 +67,7 @@ export function BrokerBottomNav({
       onViewChange(id === "leads" ? "list" : "kanban");
     } else if (id === "add") {
       onAddLead?.();
-    } else if (id === "agenda" || id === "copilot") {
+    } else if (id === "agenda" || id === "copilot" || id === "plantao") {
       navigate(getBrokerPathByTab(id));
     } else if (id === "more") {
       setIsMoreOpen(true);
@@ -78,8 +78,8 @@ export function BrokerBottomNav({
     setIsMoreOpen(false);
     if (action === "leads") {
       onViewChange("list");
-    } else if (action === "inbox" || action === "projects" || action === "roletas") {
-      navigate(getBrokerPathByTab(action as "inbox" | "projects" | "roletas"));
+    } else if (action === "inbox" || action === "projects" || action === "roletas" || action === "copilot") {
+      navigate(getBrokerPathByTab(action as any));
     } else if (action === "notifications") {
       onNotificationsClick?.();
     } else if (action === "logout") {
@@ -94,6 +94,9 @@ export function BrokerBottomNav({
     if (id === "copilot" && activeTab === "copilot") {
       return "text-blue-400";
     }
+    if (id === "plantao" && activeTab === "plantao") {
+      return "text-orange-400";
+    }
     if (id === "agenda" && activeTab === "agenda") {
       return "text-[#FFFF00]";
     }
@@ -103,12 +106,14 @@ export function BrokerBottomNav({
   const getActiveIndicator = (id: string) => {
     if ((id === "crm" && activeTab === "crm") || (id === "leads" && activeTab === "leads")) return true;
     if (id === "copilot" && activeTab === "copilot") return true;
+    if (id === "plantao" && activeTab === "plantao") return true;
     if (id === "agenda" && activeTab === "agenda") return true;
     return false;
   };
 
   const moreMenuItems = [
-    ...(inboxEnabled ? [{ id: "inbox", label: "Inbox", description: "Conversas e atendimento", badge: inboxUnread }] : []),
+    ...(inboxEnabled ? [{ id: "inbox", label: "Inbox", description: "Conversas pessoais", badge: inboxUnread }] : []),
+    ...(copilotEnabled ? [{ id: "copilot", label: "Copiloto", description: "Assistente e automações" }] : []),
     { id: "leads", label: "Modo Lista", description: "Abrir visão em lista" },
     { id: "notifications", label: "Notificações", description: "Ver notificações", badge: unreadCount },
     ...(isLeader ? [{ id: "roletas", label: "Roletas", description: "Gerenciar roletas da equipe" }] : []),
@@ -165,7 +170,7 @@ export function BrokerBottomNav({
                 {getActiveIndicator(item.id) && (
                   <div className={cn(
                     "absolute bottom-1.5 w-1 h-1 rounded-full",
-                    item.id === "copilot" ? "bg-blue-400" : "bg-[#FFFF00]"
+                    item.id === "copilot" ? "bg-blue-400" : item.id === "plantao" ? "bg-orange-400" : "bg-[#FFFF00]"
                   )} />
                 )}
               </button>

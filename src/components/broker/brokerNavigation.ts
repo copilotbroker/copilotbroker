@@ -1,9 +1,10 @@
-import { Bot, Building2, CalendarDays, Inbox, LayoutDashboard, List, RotateCw } from "lucide-react";
+import { Bot, Building2, CalendarDays, Headset, Inbox, LayoutDashboard, List, RotateCw } from "lucide-react";
 
 export const BROKER_ROUTE_TABS = [
   { id: "crm", label: "Kanban", path: "/corretor/crm", icon: LayoutDashboard },
   { id: "leads", label: "Lista", path: "/corretor/leads", icon: List },
   { id: "inbox", label: "Inbox", path: "/corretor/inbox", icon: Inbox },
+  { id: "plantao", label: "Plantão", path: "/corretor/plantao", icon: Headset },
   { id: "agenda", label: "Agenda", path: "/corretor/agenda", icon: CalendarDays },
   { id: "copilot", label: "Copiloto", path: "/corretor/copiloto", icon: Bot },
   { id: "roletas", label: "Roletas", path: "/corretor/roletas", icon: RotateCw },
@@ -19,6 +20,7 @@ export const BROKER_TAB_BY_SEGMENT: Record<string, BrokerRouteTabId> = {
   crm: "crm",
   leads: "leads",
   inbox: "inbox",
+  plantao: "plantao",
   agenda: "agenda",
   copiloto: "copilot",
   roletas: "roletas",
@@ -29,6 +31,7 @@ export const BROKER_TAB_LABELS: Record<BrokerRouteTabId, { title: string; subtit
   crm: { title: "Meus Leads", subtitle: "Pipeline visual do corretor" },
   leads: { title: "Lista de Leads", subtitle: "Visualização tabular da carteira" },
   inbox: { title: "Inbox", subtitle: "Conversas e atendimento em tempo real" },
+  plantao: { title: "Plantão", subtitle: "Atendimento de leads da instância global" },
   agenda: { title: "Agenda", subtitle: "Compromissos e eventos" },
   copilot: { title: "Copiloto", subtitle: "Conexão, assistente e automações" },
   roletas: { title: "Roletas", subtitle: "Distribuição e regras da equipe" },
