@@ -30,6 +30,7 @@ export default function BrokerPlantao() {
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
+  const [isCheckedInGlobal, setIsCheckedInGlobal] = useState<boolean | null>(null);
 
   const { role, isLeader } = useUserRole();
 
