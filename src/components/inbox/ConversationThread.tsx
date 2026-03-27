@@ -65,6 +65,9 @@ interface ConversationThreadProps {
   isReadOnly?: boolean;
   /** Transfer lead to another broker */
   onTransfer?: () => void;
+  /** Pull conversation from global to personal instance */
+  onPullToPersonal?: () => void;
+  isPullingToPersonal?: boolean;
 }
 
 const getMessageStatusIcon = (status?: string) => {
