@@ -78,6 +78,8 @@ interface UseConversationsOptions {
   userRole?: "admin" | "leader" | null;
   /** Filter by source instance */
   sourceInstance?: "global" | "personal";
+  /** When false, skip fetching entirely */
+  enabled?: boolean;
 }
 
 const sortMessagesAsc = (items: ConversationMessage[]) => (
