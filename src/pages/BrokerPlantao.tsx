@@ -322,6 +322,11 @@ export default function BrokerPlantao() {
               onTabChange={handleTabChange}
               showOthersTab={showOthersTab}
               novosCount={novosConversations.length}
+              emptyMessage={
+                inboxTab === "novos" && isCheckedInGlobal === false
+                  ? "Você precisa fazer check-in na roleta do Plantão para ver novos contatos."
+                  : undefined
+              }
             />
           </div>
         )}
