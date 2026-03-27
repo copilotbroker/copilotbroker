@@ -29,6 +29,7 @@ export default function BrokerPlantao() {
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
+  const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
 
   const { role, isLeader } = useUserRole();
 
