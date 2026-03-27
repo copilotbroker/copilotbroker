@@ -200,6 +200,29 @@ export default function BrokerPlantao() {
     }
   }, [selectedConversation, brokerId, fetchConversations, fetchNovos]);
 
+  const [isPullingToPersonal, setIsPullingToPersonal] = useState(false);
+
+  const handlePullToPersonal = useCallback(async () => {
+    if (!selectedConversation) return;
+    setIsPullingToPersonal(true);
+    try {
+      const { error } = await supabase
+        .from("conversations")
+        .update({ source_instance: "personal" } as any)
+        .eq("id", selectedConversation.id);
+
+      if (error) throw error;
+
+      toast.success("Conversa migrada para seu WhatsApp pessoal!");
+      navigate(`/corretor/inbox?conversationId=${selectedConversation.id}`);
+    } catch (err) {
+      console.error("Erro ao migrar conversa:", err);
+      toast.error("Erro ao migrar conversa");
+    } finally {
+      setIsPullingToPersonal(false);
+    }
+  }, [selectedConversation, navigate]);
+
   const handleTransferFromInbox = useCallback(() => {
     if (selectedConversation?.lead_id) setShowTransferDialog(true);
   }, [selectedConversation]);
@@ -312,7 +335,8 @@ export default function BrokerPlantao() {
                 isStartingAttendance={isStartingAttendance}
                 isReadOnly={isReadOnlyConversation}
                 onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
-              />
+                onPullToPersonal={handlePullToPersonal}
+                isPullingToPersonal={isPullingToPersonal}
             )}
           </div>
         )}
