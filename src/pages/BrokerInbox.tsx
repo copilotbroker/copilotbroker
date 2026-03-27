@@ -48,7 +48,12 @@ export default function BrokerInbox() {
       const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true);
       if (data) setAllBrokers(data as any);
     };
+    const fetchRoletas = async () => {
+      const { data } = await supabase.from("roletas").select("id, nome").eq("ativa", true);
+      if (data) setActiveRoletas(data as any);
+    };
     fetchBrokers();
+    fetchRoletas();
   }, []);
 
   const isArchived = statusFilter === "archived";
