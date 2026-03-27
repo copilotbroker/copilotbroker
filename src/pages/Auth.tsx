@@ -64,9 +64,22 @@ const Auth = () => {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
+    // 1. Check existing session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session) {
+        checkUserRoleAndRedirect(session.user.id);
+      } else {
+        setIsCheckingAuth(false);
+      }
+    });
+
+    // 2. Listen for subsequent auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "TOKEN_REFRESHED") return;
+        if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
 
         if (session) {
           await checkUserRoleAndRedirect(session.user.id);
@@ -76,7 +89,16 @@ const Auth = () => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    // 3. Safety timeout
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) setIsCheckingAuth(false);
+    }, 3000);
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+    };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
