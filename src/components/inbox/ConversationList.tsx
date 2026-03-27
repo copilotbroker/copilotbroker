@@ -129,6 +129,7 @@ export function ConversationList({
   onTabChange,
   showOthersTab = false,
   novosCount = 0,
+  emptyMessage,
 }: ConversationListProps) {
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [activeKpi, setActiveKpi] = useState<string | null>(null);
@@ -376,7 +377,7 @@ export function ConversationList({
           ) : sortedConversations.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               <Inbox className="mx-auto mb-2 h-10 w-10 opacity-40" />
-              <p className="text-sm">Nenhuma conversa encontrada</p>
+              <p className="text-sm">{emptyMessage || "Nenhuma conversa encontrada"}</p>
             </div>
           ) : (
             sortedConversations.map((conv) => {
