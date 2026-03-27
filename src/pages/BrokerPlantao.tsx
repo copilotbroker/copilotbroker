@@ -30,6 +30,7 @@ export default function BrokerPlantao() {
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
+  const [isCheckedInGlobal, setIsCheckedInGlobal] = useState<boolean | null>(null);
 
   const { role, isLeader } = useUserRole();
 
@@ -56,6 +57,24 @@ export default function BrokerPlantao() {
     fetchRoletas();
   }, []);
 
+  // Check if broker has active check-in in a whatsapp_global roulette
+  useEffect(() => {
+    if (!brokerId) return;
+    const checkGlobalCheckin = async () => {
+      const { data } = await (supabase
+        .from("roletas_membros" as any)
+        .select("id, roleta:roletas!inner(id, tipo_origem)")
+        .eq("corretor_id", brokerId)
+        .eq("ativo", true)
+        .eq("status_checkin", true)
+        .eq("roleta.tipo_origem", "whatsapp_global") as any);
+      setIsCheckedInGlobal((data as any[] || []).length > 0);
+    };
+    checkGlobalCheckin();
+    const interval = setInterval(checkGlobalCheckin, 15000);
+    return () => clearInterval(interval);
+  }, [brokerId]);
+
   const isArchived = statusFilter === "archived";
   const showOthersTab = role === "admin" || isLeader;
 
@@ -73,7 +92,7 @@ export default function BrokerPlantao() {
     sourceInstance: "global",
   });
 
-  // Novos conversations (separate query)
+  // Novos conversations (separate query) — only fetch if checked in to a whatsapp_global roulette
   const {
     conversations: novosConversations,
     isLoading: novosLoading,
@@ -85,6 +104,7 @@ export default function BrokerPlantao() {
     isArchived: false,
     inboxTab: "novos",
     sourceInstance: "global",
+    enabled: isCheckedInGlobal === true,
   });
 
   const activeConversations = inboxTab === "novos" ? novosConversations : conversations;
@@ -302,6 +322,11 @@ export default function BrokerPlantao() {
               onTabChange={handleTabChange}
               showOthersTab={showOthersTab}
               novosCount={novosConversations.length}
+              emptyMessage={
+                inboxTab === "novos" && isCheckedInGlobal === false
+                  ? "Você precisa fazer check-in na roleta do Plantão para ver novos contatos."
+                  : undefined
+              }
             />
           </div>
         )}

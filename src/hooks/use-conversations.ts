@@ -78,6 +78,8 @@ interface UseConversationsOptions {
   userRole?: "admin" | "leader" | null;
   /** Filter by source instance */
   sourceInstance?: "global" | "personal";
+  /** When false, skip fetching entirely */
+  enabled?: boolean;
 }
 
 const sortMessagesAsc = (items: ConversationMessage[]) => (
@@ -156,6 +158,12 @@ export function useConversations(options: UseConversationsOptions = {}) {
   };
 
   const fetchConversations = useCallback(async () => {
+    if (options.enabled === false) {
+      setConversations([]);
+      setTotalUnread(0);
+      setIsLoading(false);
+      return;
+    }
     try {
       let query: any = supabase
         .from("conversations")
@@ -345,7 +353,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance]);
+  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance, options.enabled]);
 
   useEffect(() => {
     fetchConversations();
