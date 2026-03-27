@@ -337,6 +337,7 @@ export default function BrokerPlantao() {
                 onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
                 onPullToPersonal={handlePullToPersonal}
                 isPullingToPersonal={isPullingToPersonal}
+              />
             )}
           </div>
         )}
