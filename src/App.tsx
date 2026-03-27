@@ -32,6 +32,7 @@ import BrokerSignup from "./pages/BrokerSignup";
 import BrokerRoletasPage from "./pages/BrokerRoletasPage";
 import BrokerProjectLanding from "./pages/BrokerProjectLanding";
 import BrokerInbox from "./pages/BrokerInbox";
+import BrokerPlantao from "./pages/BrokerPlantao";
 import BrokerCopilotConfig from "./pages/BrokerCopilotConfig";
 import AdminInbox from "./pages/AdminInbox";
 import AdminCopilotConfig from "./pages/AdminCopilotConfig";
