@@ -92,7 +92,7 @@ export default function BrokerPlantao() {
     sourceInstance: "global",
   });
 
-  // Novos conversations (separate query)
+  // Novos conversations (separate query) — only fetch if checked in to a whatsapp_global roulette
   const {
     conversations: novosConversations,
     isLoading: novosLoading,
@@ -104,6 +104,7 @@ export default function BrokerPlantao() {
     isArchived: false,
     inboxTab: "novos",
     sourceInstance: "global",
+    enabled: isCheckedInGlobal === true,
   });
 
   const activeConversations = inboxTab === "novos" ? novosConversations : conversations;
