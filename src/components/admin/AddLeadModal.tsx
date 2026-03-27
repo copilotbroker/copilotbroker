@@ -77,26 +77,58 @@ export function AddLeadModal({ isOpen, onClose, onSuccess, defaultBrokerId, hide
   const fetchData = async () => {
     setIsLoadingData(true);
     try {
-      const [brokersRes, projectsRes] = await Promise.all([
-        supabase
-          .from("brokers")
-          .select("id, name, slug")
-          .eq("is_active", true)
-          .order("name"),
-        supabase
+      const brokersRes = await supabase
+        .from("brokers")
+        .select("id, name, slug")
+        .eq("is_active", true)
+        .order("name");
+
+      if (brokersRes.data) setBrokers(brokersRes.data);
+
+      let finalProjects: Project[] = [];
+
+      if (hideBrokerSelect && defaultBrokerId) {
+        // Broker mode: show only company-wide + own + assigned projects
+        const [companyRes, ownRes, assignedRes] = await Promise.all([
+          supabase
+            .from("projects")
+            .select("id, name, slug")
+            .eq("is_active", true)
+            .is("created_by_broker_id", null)
+            .order("name"),
+          supabase
+            .from("projects")
+            .select("id, name, slug")
+            .eq("is_active", true)
+            .eq("created_by_broker_id", defaultBrokerId)
+            .order("name"),
+          supabase
+            .from("broker_projects")
+            .select("project:projects(id, name, slug)")
+            .eq("broker_id", defaultBrokerId)
+            .eq("is_active", true),
+        ]);
+
+        const projectMap = new Map<string, Project>();
+        companyRes.data?.forEach((p: any) => projectMap.set(p.id, p));
+        ownRes.data?.forEach((p: any) => projectMap.set(p.id, p));
+        (assignedRes.data as any[])?.forEach((bp: any) => {
+          if (bp.project) projectMap.set(bp.project.id, bp.project);
+        });
+        finalProjects = Array.from(projectMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+      } else {
+        // Admin mode: show all active projects
+        const projectsRes = await supabase
           .from("projects")
           .select("id, name, slug")
           .eq("is_active", true)
-          .order("name"),
-      ]);
+          .order("name");
+        finalProjects = (projectsRes.data || []) as Project[];
+      }
 
-      if (brokersRes.data) setBrokers(brokersRes.data);
-      if (projectsRes.data) {
-        setProjects(projectsRes.data);
-        // Set default project if only one exists
-        if (projectsRes.data.length === 1) {
-          setProjectId(projectsRes.data[0].id);
-        }
+      setProjects(finalProjects);
+      if (finalProjects.length === 1) {
+        setProjectId(finalProjects[0].id);
       }
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
