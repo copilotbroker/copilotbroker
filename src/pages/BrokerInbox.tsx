@@ -29,6 +29,7 @@ export default function BrokerInbox() {
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
+  const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
 
   const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
@@ -47,7 +48,12 @@ export default function BrokerInbox() {
       const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true);
       if (data) setAllBrokers(data as any);
     };
+    const fetchRoletas = async () => {
+      const { data } = await supabase.from("roletas").select("id, nome").eq("ativa", true);
+      if (data) setActiveRoletas(data as any);
+    };
     fetchBrokers();
+    fetchRoletas();
   }, []);
 
   const isArchived = statusFilter === "archived";
@@ -294,6 +300,7 @@ export default function BrokerInbox() {
           leadName={(selectedConversation.lead as any)?.name || selectedConversation.display_name || selectedConversation.phone}
           currentBrokerId={brokerId}
           brokers={allBrokers}
+          roletas={activeRoletas}
           isOpen={showTransferDialog}
           onClose={() => setShowTransferDialog(false)}
           onTransferred={handleTransferred}
