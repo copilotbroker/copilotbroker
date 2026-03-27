@@ -1,24 +1,30 @@
 
 
-# Limpeza de leads de teste — telefone (51) 997010323
+# Fix: Auth ficando preso em "Verificando autenticação"
 
-## Situação atual
+## Problema
 
-- **21 leads** encontrados com o WhatsApp `5551997010323` espalhados por vários corretores
-- **2 conversas** vinculadas a esse número (uma no plantão global sem atendimento, outra atribuída)
-- Registros dependentes existem em: `lead_interactions`, `lead_documents`, `lead_attribution`, `whatsapp_campaigns`, `conversations`, etc.
+A página `/auth` usa **apenas** `onAuthStateChange` para detectar se o usuário já está logado. O problema é que esse listener nem sempre dispara o evento `INITIAL_SESSION` de forma confiável — especialmente quando o usuário navega para `/auth` repetidamente ou quando o token está em processo de refresh. Resultado: `isCheckingAuth` fica `true` para sempre, mostrando o spinner infinito.
 
-## O que será feito
+A página `/admin` não tem esse problema porque usa o hook `useUserRole`, que tem lógica própria de fallback.
 
-Executar DELETE em cascata para limpar todos os dados de teste:
+## Diferença entre `/auth` e `/admin`
 
-1. **Deletar registros dependentes** (na ordem correta para respeitar FKs):
-   - `conversation_messages` das 2 conversas
-   - `conversations` com esse telefone
-   - `lead_documents`, `lead_interactions`, `lead_attribution`, `propostas`/`proposta_parcelas`, `whatsapp_campaigns`/`whatsapp_message_queue`, `notifications` vinculados aos 21 lead IDs
-2. **Deletar os 21 leads** da tabela `leads`
+- `/auth` = tela de login. Verifica se já há sessão para redirecionar automaticamente
+- `/admin` = painel administrativo. Usa `useUserRole()` que já tem proteção contra loading infinito
 
-## Nenhum arquivo de código será alterado
+## Solução
 
-Apenas operações de DELETE no banco de dados.
+Adicionar uma chamada explícita a `supabase.auth.getSession()` **antes** do listener, seguindo o padrão recomendado:
+
+1. No `useEffect`, chamar `getSession()` primeiro para resolver o estado inicial
+2. Manter o `onAuthStateChange` para mudanças subsequentes (login/logout)
+3. Adicionar um timeout de segurança (3s) para evitar spinner infinito caso algo falhe
+4. Ignorar evento `INITIAL_SESSION` no listener já que `getSession()` cobre esse caso
+
+## Arquivo alterado
+
+| Arquivo | Alteração |
+|---|---|
+| `src/pages/Auth.tsx` | Adicionar `getSession()` antes do listener + timeout de segurança |
 
