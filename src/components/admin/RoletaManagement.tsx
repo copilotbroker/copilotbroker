@@ -77,6 +77,7 @@ const RoletaManagement = () => {
   const [formPausaFim, setFormPausaFim] = useState("09:00");
   const [formSelectedProjects, setFormSelectedProjects] = useState<string[]>([]);
   const [formTipoOrigem, setFormTipoOrigem] = useState<RoletaTipoOrigem>("landing_page");
+  const [formModoDistribuicao, setFormModoDistribuicao] = useState<"fila" | "disputa">("fila");
 
   // Add member state
   const [addMemberRoletaId, setAddMemberRoletaId] = useState<string | null>(null);
