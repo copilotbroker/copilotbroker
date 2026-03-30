@@ -113,6 +113,7 @@ const RoletaManagement = () => {
       timeout_pausa_inicio: formPausaInicio,
       timeout_pausa_fim: formPausaFim,
       tipo_origem: formTipoOrigem,
+      modo_distribuicao: formModoDistribuicao,
     } as any);
     if (roletaId) {
       // Vincular empreendimentos selecionados (only for landing_page type)
@@ -130,6 +131,7 @@ const RoletaManagement = () => {
       setFormPausaFim("09:00");
       setFormSelectedProjects([]);
       setFormTipoOrigem("landing_page");
+      setFormModoDistribuicao("fila");
     }
   };
 
