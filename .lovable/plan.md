@@ -1,56 +1,86 @@
 
+Corrigir o envio de áudio da inbox para que ele chegue no WhatsApp como áudio real, e não como texto “Audio”.
 
-# Fix: Áudio outbound sem processamento de mídia
+## Diagnóstico
 
-## Problema
+O problema está em dois pontos do fluxo atual:
 
-Quando a Kely envia um áudio pelo WhatsApp do celular (não pelo inbox), o webhook registra a mensagem como `outbound` mas **não processa a mídia** — a URL do WhatsApp CDN (`mmg.whatsapp.net`) expira em poucas horas e o áudio fica com "Aguardando processamento da mídia para visualização inline".
+1. `src/components/inbox/ConversationThread.tsx`
+- o gravador prioriza `audio/webm;codecs=opus`
+- esse formato funciona no navegador, mas costuma não ser o formato mais compatível para envio como áudio/voz no WhatsApp
 
-A causa está na linha 1824 do webhook:
-```typescript
-if (!msg.fromMe) {  // ← só processa mídia para inbound
-    mediaMetadata = await persistInboundMediaIfNeeded(...);
-}
-```
+2. `supabase/functions/inbox-send-message/index.ts`
+- o envio de mídia de áudio usa o mesmo fluxo genérico de mídia
+- o payload inclui `text/caption` mesmo para áudio
+- pelos sintomas e pelo comportamento da UAZAPI, isso faz o provedor tratar a requisição como mensagem textual/anexo inadequado, em vez de áudio reproduzível
 
-Mensagens outbound vindas do celular ficam sem `storage_path` e `is_inline_ready`.
+Também encontrei um indício forte no histórico:
+- os áudios recebidos do WhatsApp e arquivados pelo webhook chegam como `audio/ogg; codecs=opus`
+- já os áudios gravados no sistema estão sendo enviados como `audio/webm;codecs=opus`
 
-## Solução
+## Ajustes propostos
 
-### 1. Webhook: processar mídia também para outbound (arquivo principal)
+### 1) Padronizar gravação para formato compatível com WhatsApp
+Arquivo: `src/components/inbox/ConversationThread.tsx`
 
-**`supabase/functions/whatsapp-webhook/index.ts`**
+- inverter a prioridade do `MediaRecorder` para preferir `audio/ogg;codecs=opus`
+- usar `audio/webm` apenas como fallback
+- manter extensão e `mime_type` coerentes com o blob gerado
 
-Remover a condição `if (!msg.fromMe)` e chamar `persistInboundMediaIfNeeded` para TODAS as mensagens que tenham mídia, independente da direção. A mudança é simples — trocar:
+Objetivo:
+- produzir um arquivo mais próximo do formato que o WhatsApp já usa e o webhook já processa corretamente
 
-```typescript
-if (!msg.fromMe) {
-    mediaMetadata = await persistInboundMediaIfNeeded(supabase, payload, phone, resolvedMessageType, mediaMetadata);
-}
-```
+### 2) Tratar áudio separado das demais mídias no edge function
+Arquivo: `supabase/functions/inbox-send-message/index.ts`
 
-Por:
+Criar uma ramificação específica para `messageType === "audio"`:
 
-```typescript
-if (resolvedMessageType !== "text") {
-    mediaMetadata = await persistInboundMediaIfNeeded(supabase, payload, phone, resolvedMessageType, mediaMetadata);
-}
-```
+- tentar primeiro endpoint específico de áudio, se suportado pela API
+- se continuar usando `/send/media`, enviar corpo próprio para áudio
+- não mandar `caption`/`text` para áudio gravado
+- não usar conteúdo `"🎤 Áudio"` como texto efetivo no envio externo
+- enviar apenas os campos de arquivo necessários (`number`, `file` ou `url`, tipo correto, `mimetype`, etc.)
 
-Isso garante que áudios, imagens, vídeos e documentos enviados pelo celular da corretora também sejam persistidos no bucket antes de serem arquivados na conversa.
+Objetivo:
+- evitar que a API interprete o áudio como mensagem textual
 
-### 2. Nenhuma mudança no frontend
+### 3) Separar “texto de preview” do conteúdo real enviado
+Arquivos:
+- `src/components/inbox/ConversationThread.tsx`
+- `supabase/functions/inbox-send-message/index.ts`
 
-O `MessageMedia.tsx` já funciona corretamente — ele verifica `storage_path` ou `is_inline_ready` para renderizar o player inline. Com a mídia sendo persistida no backend, o frontend passa a funcionar automaticamente.
+Hoje o conteúdo `"🎤 Áudio"` está sendo reutilizado no fluxo inteiro. Vou separar isso em:
+- conteúdo real do envio externo: vazio para áudio
+- preview interno da inbox/timeline: `"Áudio"` ou nome do arquivo
 
-## Impacto
+Objetivo:
+- manter boa UX interna sem contaminar o payload enviado ao WhatsApp
 
-- Todas as mídias outbound futuras serão persistidas no bucket
-- Mensagens já existentes com URLs expiradas continuarão sem preview (não há re-processamento retroativo)
+### 4) Preservar exibição e persistência no inbox
+Arquivos:
+- `supabase/functions/inbox-send-message/index.ts`
+- sem necessidade de alterar `MessageMedia.tsx`
 
-## Arquivo alterado
+Após o envio:
+- continuar salvando `message_type: "audio"`
+- continuar salvando `metadata.file_url`, `mime_type`, `storage_path`, `file_name`
+- ajustar apenas o `content` persistido para preview amigável, sem depender do texto enviado ao provedor
+
+## Resultado esperado
+
+Depois da correção:
+- o corretor grava no inbox
+- o sistema envia um arquivo de áudio compatível
+- o destinatário recebe um áudio reproduzível no WhatsApp
+- no inbox interno continua aparecendo como mensagem de áudio, com player e histórico corretos
+
+## Arquivos a alterar
 
 | Arquivo | Alteração |
 |---|---|
-| `supabase/functions/whatsapp-webhook/index.ts` | Chamar `persistInboundMediaIfNeeded` para mensagens de mídia em ambas as direções |
+| `src/components/inbox/ConversationThread.tsx` | Priorizar gravação em OGG/Opus e separar preview de conteúdo enviado |
+| `supabase/functions/inbox-send-message/index.ts` | Criar payload específico para áudio e evitar envio de `text/caption` em mensagens de áudio |
 
+## Observação importante
+
+Se a UAZAPI dessa conta exigir um tipo específico além de `audio` (por exemplo `ptt`/`myaudio`), a estrutura já ficará pronta para ajustar isso no mesmo ponto central do edge function, sem mexer de novo no frontend.
