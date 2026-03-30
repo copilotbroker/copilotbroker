@@ -1821,7 +1821,7 @@ async function handleIncomingMessage(
   let mediaMetadata = extractMediaMetadata(msg, payload);
   const messageText = msg.text || mediaMetadata.caption || "";
   const resolvedMessageType = inferMessageType(messageText, typeof mediaMetadata.mime_type === "string" ? mediaMetadata.mime_type : undefined, typeof mediaMetadata.raw_type === "string" ? mediaMetadata.raw_type : undefined);
-  if (!msg.fromMe) {
+  if (resolvedMessageType !== "text") {
     mediaMetadata = await persistInboundMediaIfNeeded(supabase, payload, phone, resolvedMessageType, mediaMetadata);
   }
   const direction = msg.fromMe ? "outbound" : "inbound";
