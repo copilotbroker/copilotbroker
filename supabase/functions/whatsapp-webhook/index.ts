@@ -1612,7 +1612,7 @@ async function handleGlobalInstanceMessage(
   const { data: roleta } = await supabase
     .from("roletas")
     .select(`
-      id, lider_id, tempo_reserva_minutos, ultimo_membro_ordem_atribuida,
+      id, lider_id, tempo_reserva_minutos, ultimo_membro_ordem_atribuida, modo_distribuicao,
       membros:roletas_membros(id, corretor_id, ordem, status_checkin, ativo)
     `)
     .eq("ativa", true)
@@ -1625,20 +1625,28 @@ async function handleGlobalInstanceMessage(
     return {};
   }
 
-  // Round-robin: find next available member
+  const modoDistribuicao = (roleta as any).modo_distribuicao || "fila";
   const membros = ((roleta as any).membros || [])
     .filter((m: any) => m.ativo && m.status_checkin)
     .sort((a: any, b: any) => a.ordem - b.ordem);
 
   let assignedBrokerId: string;
-  if (membros.length === 0) {
-    console.log(`⚠️ No checked-in members → fallback to leader ${roleta.lider_id}`);
+
+  if (modoDistribuicao === "disputa") {
+    // Disputa mode: assign to leader as placeholder; all checked-in brokers will see it
     assignedBrokerId = roleta.lider_id as string;
+    console.log(`🏁 Disputa mode: assigning to leader ${assignedBrokerId} as placeholder`);
   } else {
-    const lastOrdem = (roleta.ultimo_membro_ordem_atribuida as number) || 0;
-    const nextMembro = membros.find((m: any) => m.ordem > lastOrdem) || membros[0];
-    assignedBrokerId = nextMembro.corretor_id;
-    await supabase.from("roletas").update({ ultimo_membro_ordem_atribuida: nextMembro.ordem }).eq("id", roleta.id);
+    // Fila mode: round-robin to specific broker
+    if (membros.length === 0) {
+      console.log(`⚠️ No checked-in members → fallback to leader ${roleta.lider_id}`);
+      assignedBrokerId = roleta.lider_id as string;
+    } else {
+      const lastOrdem = (roleta.ultimo_membro_ordem_atribuida as number) || 0;
+      const nextMembro = membros.find((m: any) => m.ordem > lastOrdem) || membros[0];
+      assignedBrokerId = nextMembro.corretor_id;
+      await supabase.from("roletas").update({ ultimo_membro_ordem_atribuida: nextMembro.ordem }).eq("id", roleta.id);
+    }
   }
 
   // Archive message — creates conversation with source_instance='global', attendance_started=false (default)
@@ -1647,15 +1655,20 @@ async function handleGlobalInstanceMessage(
     uazapiMessageId, messageType, metadata, assignedBrokerId, "global"
   );
 
+  // Set roleta_modo on the conversation so the frontend knows the distribution mode
+  if (result.conversationId) {
+    await supabase.from("conversations").update({ roleta_modo: modoDistribuicao }).eq("id", result.conversationId);
+  }
+
   // Log distribution (no lead_id yet)
   await supabase.from("roletas_log").insert({
     roleta_id: roleta.id,
     para_corretor_id: assignedBrokerId,
     acao: "atribuicao_inicial",
-    motivo: "Distribuição via roleta WhatsApp Global (pendente atendimento)",
+    motivo: `Distribuição via roleta WhatsApp Global - modo ${modoDistribuicao} (pendente atendimento)`,
   });
 
-  console.log(`✅ Global msg distributed: phone=${phone} → broker=${assignedBrokerId} (pending attendance)`);
+  console.log(`✅ Global msg distributed (${modoDistribuicao}): phone=${phone} → broker=${assignedBrokerId} (pending attendance)`);
   return { brokerId: assignedBrokerId, conversationId: result.conversationId };
 }
 

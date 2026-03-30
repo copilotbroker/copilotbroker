@@ -643,6 +643,7 @@ export type Database = {
           opportunity_score: number | null
           phone: string
           phone_normalized: string
+          roleta_modo: string | null
           source_instance: string | null
           status: string
           temperature: number | null
@@ -667,6 +668,7 @@ export type Database = {
           opportunity_score?: number | null
           phone: string
           phone_normalized: string
+          roleta_modo?: string | null
           source_instance?: string | null
           status?: string
           temperature?: number | null
@@ -691,6 +693,7 @@ export type Database = {
           opportunity_score?: number | null
           phone?: string
           phone_normalized?: string
+          roleta_modo?: string | null
           source_instance?: string | null
           status?: string
           temperature?: number | null
@@ -1562,6 +1565,7 @@ export type Database = {
           created_at: string
           id: string
           lider_id: string
+          modo_distribuicao: string
           nome: string
           tempo_reserva_minutos: number
           timeout_ativo: boolean
@@ -1576,6 +1580,7 @@ export type Database = {
           created_at?: string
           id?: string
           lider_id: string
+          modo_distribuicao?: string
           nome: string
           tempo_reserva_minutos?: number
           timeout_ativo?: boolean
@@ -1590,6 +1595,7 @@ export type Database = {
           created_at?: string
           id?: string
           lider_id?: string
+          modo_distribuicao?: string
           nome?: string
           tempo_reserva_minutos?: number
           timeout_ativo?: boolean
