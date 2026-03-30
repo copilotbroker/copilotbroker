@@ -192,6 +192,7 @@ const RoletaManagement = () => {
             setFormPausaFim("09:00");
             setFormSelectedProjects([]);
             setFormTipoOrigem("landing_page");
+            setFormModoDistribuicao("fila");
           }
         }}>
           <DialogTrigger asChild>
