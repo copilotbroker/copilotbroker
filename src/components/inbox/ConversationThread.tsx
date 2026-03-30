@@ -694,9 +694,33 @@ export function ConversationThread({
                 </Button>
               </PopoverContent>
             </Popover>
-            <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
-              <Send className="h-4 w-4" />
-            </Button>
+            {isRecording ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
+                  </span>
+                  <span className="text-xs font-medium text-foreground tabular-nums">
+                    {Math.floor(recordingDuration / 60).toString().padStart(2, "0")}:{(recordingDuration % 60).toString().padStart(2, "0")}
+                  </span>
+                </div>
+                <Button size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-destructive hover:text-destructive" onClick={cancelRecording} title="Cancelar gravação">
+                  <X className="h-4 w-4" />
+                </Button>
+                <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={stopAndSendRecording} title="Enviar áudio">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (!inputValue.trim() && !pendingFile) ? (
+              <Button size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={startRecording} disabled={isSending} title="Gravar áudio">
+                <Mic className="h-5 w-5" />
+              </Button>
+            ) : (
+              <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
+                <Send className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       )}
