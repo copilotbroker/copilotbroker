@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRightLeft,
@@ -22,6 +22,8 @@ import {
   CheckCheck,
   Clock3,
   CalendarClock,
+  X,
+  Square,
 } from "lucide-react";
 import { CadenceCountdown } from "./CadenceCountdown";
 import { MessageMedia } from "./MessageMedia";
@@ -125,12 +127,128 @@ export function ConversationThread({
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>(new Date());
   const [scheduleTime, setScheduleTime] = useState(() => format(new Date(Date.now() + 60 * 60 * 1000), "HH:mm"));
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+
+  const cleanupRecording = useCallback(() => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    mediaRecorderRef.current = null;
+    audioChunksRef.current = [];
+    setIsRecording(false);
+    setRecordingDuration(0);
+  }, []);
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+        ? "audio/ogg;codecs=opus"
+        : "audio/webm";
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration((d) => d + 1);
+      }, 1000);
+    } catch {
+      toast.error("Não foi possível acessar o microfone");
+    }
+  }, []);
+
+  const cancelRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+    }
+    cleanupRecording();
+  }, [cleanupRecording]);
+
+  const stopAndSendRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === "inactive") return;
+
+    recorder.onstop = async () => {
+      const mimeType = recorder.mimeType || "audio/webm";
+      const ext = mimeType.includes("ogg") ? "ogg" : "webm";
+      const blob = new Blob(audioChunksRef.current, { type: mimeType });
+      const file = new File([blob], `audio-${Date.now()}.${ext}`, { type: mimeType });
+
+      cleanupRecording();
+      setPendingFile(file);
+
+      // Auto-send the audio immediately
+      const path = `inbox/${conversation.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      setIsSending(true);
+      try {
+        const { error: uploadError } = await supabase.storage.from("project-media").upload(path, file, {
+          contentType: file.type,
+          cacheControl: "3600",
+          upsert: false,
+        });
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
+        await onSendMessage({
+          content: "🎤 Áudio",
+          messageType: "audio",
+          metadata: {
+            file_url: urlData.publicUrl,
+            file_name: file.name,
+            mime_type: file.type,
+            storage_path: path,
+            size_bytes: file.size,
+          },
+        });
+        setPendingFile(null);
+      } catch (error) {
+        console.error("Erro ao enviar áudio:", error);
+        toast.error("Não foi possível enviar o áudio");
+        setPendingFile(null);
+      } finally {
+        setIsSending(false);
+      }
+    };
+
+    recorder.stop();
+  }, [conversation.id, onSendMessage, cleanupRecording]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
 
   const leadName = conversation.display_name || (conversation.lead as any)?.name || conversation.phone;
   const isAiActive = conversation.ai_mode === "ai_active";
@@ -576,9 +694,33 @@ export function ConversationThread({
                 </Button>
               </PopoverContent>
             </Popover>
-            <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
-              <Send className="h-4 w-4" />
-            </Button>
+            {isRecording ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
+                  </span>
+                  <span className="text-xs font-medium text-foreground tabular-nums">
+                    {Math.floor(recordingDuration / 60).toString().padStart(2, "0")}:{(recordingDuration % 60).toString().padStart(2, "0")}
+                  </span>
+                </div>
+                <Button size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-destructive hover:text-destructive" onClick={cancelRecording} title="Cancelar gravação">
+                  <X className="h-4 w-4" />
+                </Button>
+                <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={stopAndSendRecording} title="Enviar áudio">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (!inputValue.trim() && !pendingFile) ? (
+              <Button size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={startRecording} disabled={isSending} title="Gravar áudio">
+                <Mic className="h-5 w-5" />
+              </Button>
+            ) : (
+              <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
+                <Send className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       )}
