@@ -61,7 +61,7 @@ async function sendViaUAZAPI(
           body: JSON.stringify(request.body),
         });
 
-        if (res.status === 401 || res.status === 404) {
+        if (res.status === 401 || res.status === 404 || res.status === 405) {
           await res.text();
           continue;
         }
