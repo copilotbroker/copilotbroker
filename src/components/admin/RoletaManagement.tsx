@@ -417,6 +417,17 @@ const RoletaManagement = () => {
                           Landing Pages
                         </Badge>
                       )}
+                      {(roleta as any).tipo_origem === "whatsapp_global" && (
+                        <Badge variant="outline" className={cn(
+                          "text-xs",
+                          (roleta as any).modo_distribuicao === "disputa"
+                            ? "border-amber-500/40 text-amber-400"
+                            : "border-cyan-500/40 text-cyan-400"
+                        )}>
+                          <Target className="w-3 h-3 mr-1" />
+                          {(roleta as any).modo_distribuicao === "disputa" ? "Disputa" : "Fila"}
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="text-xs">
                         <Clock className="w-3 h-3 mr-1" />
                         {(roleta as any).timeout_ativo !== false ? `${roleta.tempo_reserva_minutos}min` : "Sem timeout"}
