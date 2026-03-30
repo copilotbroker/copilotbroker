@@ -237,6 +237,8 @@ serve(async (req) => {
 
     const previewText = normalizedType === "text"
       ? content
+      : normalizedType === "audio"
+      ? "🎤 Áudio"
       : (typeof metadata?.file_name === "string" ? `📎 ${metadata.file_name}` : "[Mídia]");
 
     // 4. Save message in conversation_messages

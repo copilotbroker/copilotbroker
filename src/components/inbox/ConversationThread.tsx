@@ -219,7 +219,7 @@ export function ConversationThread({
 
         const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
         await onSendMessage({
-          content: "🎤 Áudio",
+          content: "",
           messageType: "audio",
           metadata: {
             file_url: urlData.publicUrl,
