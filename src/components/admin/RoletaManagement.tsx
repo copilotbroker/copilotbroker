@@ -525,8 +525,36 @@ const RoletaManagement = () => {
                         </>
                       )}
                     </div>
+                    {/* Distribution Mode (only for whatsapp_global) */}
+                    {(roleta as any).tipo_origem === "whatsapp_global" && (
+                      <div className="bg-[#141417] rounded-lg p-3 space-y-2">
+                        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                          <Target className="w-4 h-4 text-primary" />
+                          Modo de distribuição
+                        </Label>
+                        <RadioGroup
+                          value={(roleta as any).modo_distribuicao || "fila"}
+                          onValueChange={(v) => updateRoleta(roleta.id, { modo_distribuicao: v } as any)}
+                          className="mt-1"
+                        >
+                          <label className="flex items-start gap-2 cursor-pointer">
+                            <RadioGroupItem value="fila" className="mt-0.5" />
+                            <div>
+                              <span className="text-xs text-foreground font-medium">Fila (round-robin)</span>
+                              <p className="text-[10px] text-muted-foreground">Lead aparece apenas para o corretor da vez.</p>
+                            </div>
+                          </label>
+                          <label className="flex items-start gap-2 cursor-pointer mt-1">
+                            <RadioGroupItem value="disputa" className="mt-0.5" />
+                            <div>
+                              <span className="text-xs text-foreground font-medium">Disputa (quem pegar primeiro)</span>
+                              <p className="text-[10px] text-muted-foreground">Lead aparece para todos os corretores online.</p>
+                            </div>
+                          </label>
+                        </RadioGroup>
+                      </div>
+                    )}
 
-                    {/* Actions */}
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
