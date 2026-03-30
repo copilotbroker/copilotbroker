@@ -117,6 +117,11 @@ async function sendViaUAZAPI(
 
         const responseText = await res.text();
         if (!res.ok) {
+          // For 500 errors, try next endpoint/auth combo instead of giving up
+          if (res.status === 500) {
+            console.warn(`⚠️ 500 on ${request.endpoint}: ${responseText.substring(0, 200)}`);
+            continue;
+          }
           return { success: false, error: `HTTP ${res.status}: ${responseText}` };
         }
 
