@@ -145,8 +145,10 @@ export default function AdminInbox() {
       const { data: newLead, error: leadError } = await supabase
         .from("leads").insert({
           name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
-          broker_id: myBrokerId, status: "new" as any,
+          broker_id: myBrokerId, status: "info_sent" as any,
           source: "whatsapp_global", lead_origin: "whatsapp_plantao",
+          atendimento_iniciado_em: new Date().toISOString(),
+          status_distribuicao: "atendimento_iniciado" as any,
         } as any).select("id").single();
 
       if (leadError || !newLead) { toast.error("Erro ao criar lead no CRM"); return; }
