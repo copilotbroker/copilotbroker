@@ -179,9 +179,11 @@ export default function BrokerPlantao() {
           name: displayName,
           whatsapp: selectedConversation.phone.replace(/^\+/, ''),
           broker_id: brokerId,
-          status: "new" as any,
+          status: "info_sent" as any,
           source: "whatsapp_global",
           lead_origin: "whatsapp_plantao",
+          atendimento_iniciado_em: new Date().toISOString(),
+          status_distribuicao: "atendimento_iniciado" as any,
         } as any)
         .select("id")
         .single();
