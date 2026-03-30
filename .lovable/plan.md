@@ -1,41 +1,30 @@
 
 
-# Roteamento de instância WhatsApp + "Puxar para meu WhatsApp"
+# Fix: Lead deve ir para "Atendimento" ao iniciar atendimento no Plantão
 
 ## Problema
-Quando um corretor responde a um lead no Plantão (instância global), a mensagem sai pela instância pessoal do corretor. O lead recebe a resposta de um número diferente do que usou para contato.
+
+Quando o corretor clica em "Iniciar Atendimento" no inbox do Plantão, o lead é criado com `status: "new"` (Pré Atendimento). Deveria ser criado já como `status: "info_sent"` (Atendimento), pois o ato de iniciar atendimento implica que o corretor já está em contato.
+
+O mesmo problema existe no `AdminInbox.handleLeadCreated` — cria com `status: "new"`.
 
 ## Solução
 
-### 1. Edge Function `inbox-send-message` — rotear pela instância correta
+### `src/pages/BrokerPlantao.tsx` — `handleStartAttendance`
 
-Atualmente (linha 122-148), a function sempre busca `broker_whatsapp_instances` do broker. A mudança:
+- Alterar o insert do lead de `status: "new"` para `status: "info_sent"`
+- Adicionar `atendimento_iniciado_em: new Date().toISOString()` e `status_distribuicao: "atendimento_iniciado"`
+- Corrigir a interaction para `new_status: "info_sent"` e `interaction_type: "atendimento_iniciado"`
+- Atualizar o estado local para refletir `status: "info_sent"`
 
-- Incluir `source_instance` no SELECT da conversa (linha 125)
-- Se `source_instance === 'global'`: buscar credenciais da tabela `global_whatsapp_config` em vez de `broker_whatsapp_instances`
-- Se `source_instance` é null ou `'personal'`: manter comportamento atual (instância do broker)
+### `src/pages/AdminInbox.tsx` — `handleStartAttendance`
 
-### 2. Botão "Puxar para meu WhatsApp" no `ConversationThread`
-
-Adicionar uma nova prop `onPullToPersonal` ao componente. Quando a conversa é `source_instance = 'global'` e já tem `attendance_started = true`, exibir um botão no header para migrar a conversa para a instância pessoal.
-
-O botão:
-- Atualiza `conversations.source_instance` de `'global'` para `'personal'`
-- A conversa desaparece do Plantão e aparece no Inbox pessoal do corretor
-- A partir daí, mensagens saem pela instância pessoal
-
-### 3. Handler em `BrokerPlantao.tsx`
-
-Implementar `handlePullToPersonal`:
-- `UPDATE conversations SET source_instance = 'personal' WHERE id = ...`
-- Toast de confirmação
-- Navegar para `/corretor/inbox?conversationId=...`
+Aplicar a mesma correção se existir lógica equivalente.
 
 ## Arquivos alterados
 
 | Arquivo | Alteração |
 |---|---|
-| `supabase/functions/inbox-send-message/index.ts` | Adicionar lógica de roteamento por `source_instance` |
-| `src/components/inbox/ConversationThread.tsx` | Nova prop `onPullToPersonal`, botão no header |
-| `src/pages/BrokerPlantao.tsx` | Handler `handlePullToPersonal` |
+| `src/pages/BrokerPlantao.tsx` | Criar lead como `info_sent` + campos de atendimento |
+| `src/pages/AdminInbox.tsx` | Mesma correção no `handleStartAttendance` (se aplicável) e no `handleLeadCreated` |
 
