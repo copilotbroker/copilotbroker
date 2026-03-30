@@ -158,9 +158,9 @@ export default function AdminInbox() {
 
       await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
       await supabase.from("lead_interactions").insert({
-        lead_id: finalLeadId, interaction_type: "status_change" as any,
+        lead_id: finalLeadId, interaction_type: "atendimento_iniciado" as any,
         notes: "Atendimento iniciado via Inbox Admin (WhatsApp Global)",
-        broker_id: myBrokerId, channel: "whatsapp", new_status: "new",
+        broker_id: myBrokerId, channel: "whatsapp", new_status: "info_sent",
       } as any);
 
       toast.success("Atendimento iniciado! Lead criado no Kanban.");
