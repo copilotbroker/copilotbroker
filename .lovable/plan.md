@@ -1,30 +1,29 @@
 
 
-# Fix: Lead deve ir para "Atendimento" ao iniciar atendimento no Plantão
+# Gravação de Áudio na Inbox
 
-## Problema
+## Resumo
 
-Quando o corretor clica em "Iniciar Atendimento" no inbox do Plantão, o lead é criado com `status: "new"` (Pré Atendimento). Deveria ser criado já como `status: "info_sent"` (Atendimento), pois o ato de iniciar atendimento implica que o corretor já está em contato.
+Adicionar um botão de gravação de áudio (microfone) no composer da inbox, permitindo gravar e enviar áudios diretamente, estilo WhatsApp. O botão aparece quando o campo de texto está vazio; ao pressionar, inicia a gravação com `MediaRecorder API`, mostrando um timer e botões de cancelar/enviar.
 
-O mesmo problema existe no `AdminInbox.handleLeadCreated` — cria com `status: "new"`.
+## Comportamento
 
-## Solução
+1. Quando o input de texto está vazio e não há arquivo pendente, o botão de enviar (Send) é substituído por um botão de microfone
+2. Ao clicar no microfone, inicia gravação — o composer muda para um "modo gravação" com timer, botão cancelar (X) e botão enviar (check)
+3. Ao confirmar, o áudio (webm/ogg) é enviado pelo mesmo pipeline de mídia existente (upload para `project-media` + `onSendMessage` com `messageType: "audio"`)
+4. Ao cancelar, volta ao estado normal sem enviar nada
 
-### `src/pages/BrokerPlantao.tsx` — `handleStartAttendance`
-
-- Alterar o insert do lead de `status: "new"` para `status: "info_sent"`
-- Adicionar `atendimento_iniciado_em: new Date().toISOString()` e `status_distribuicao: "atendimento_iniciado"`
-- Corrigir a interaction para `new_status: "info_sent"` e `interaction_type: "atendimento_iniciado"`
-- Atualizar o estado local para refletir `status: "info_sent"`
-
-### `src/pages/AdminInbox.tsx` — `handleStartAttendance`
-
-Aplicar a mesma correção se existir lógica equivalente.
-
-## Arquivos alterados
+## Arquivo alterado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/BrokerPlantao.tsx` | Criar lead como `info_sent` + campos de atendimento |
-| `src/pages/AdminInbox.tsx` | Mesma correção no `handleStartAttendance` (se aplicável) e no `handleLeadCreated` |
+| `src/components/inbox/ConversationThread.tsx` | Adicionar estado de gravação (`isRecording`, `mediaRecorder`, `recordingDuration`), lógica de start/stop/cancel com `MediaRecorder`, timer visual, e trocar botão Send por Mic quando input vazio |
+
+## Detalhes técnicos
+
+- Usar `navigator.mediaDevices.getUserMedia({ audio: true })` para capturar áudio
+- `MediaRecorder` com `mimeType: "audio/webm"` (fallback para `audio/ogg`)
+- Timer incrementado via `setInterval` a cada segundo
+- O áudio gravado vira um `File` que passa pelo mesmo fluxo de `pendingFile` → upload → `onSendMessage`
+- Nenhuma mudança no backend — o edge function `inbox-send-message` já suporta envio de áudio via UAZAPI
 
