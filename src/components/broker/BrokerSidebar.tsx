@@ -43,6 +43,7 @@ export function BrokerSidebar({
   const handleTabClick = (tabId: "crm" | "leads") => {
     const mode = tabId === "leads" ? "list" : "kanban";
     onViewChange(mode);
+    navigate(getBrokerPathByTab(tabId));
   };
 
   return (
