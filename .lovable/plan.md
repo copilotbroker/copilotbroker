@@ -1,29 +1,56 @@
 
 
-# Gravação de Áudio na Inbox
+# Fix: Áudio outbound sem processamento de mídia
 
-## Resumo
+## Problema
 
-Adicionar um botão de gravação de áudio (microfone) no composer da inbox, permitindo gravar e enviar áudios diretamente, estilo WhatsApp. O botão aparece quando o campo de texto está vazio; ao pressionar, inicia a gravação com `MediaRecorder API`, mostrando um timer e botões de cancelar/enviar.
+Quando a Kely envia um áudio pelo WhatsApp do celular (não pelo inbox), o webhook registra a mensagem como `outbound` mas **não processa a mídia** — a URL do WhatsApp CDN (`mmg.whatsapp.net`) expira em poucas horas e o áudio fica com "Aguardando processamento da mídia para visualização inline".
 
-## Comportamento
+A causa está na linha 1824 do webhook:
+```typescript
+if (!msg.fromMe) {  // ← só processa mídia para inbound
+    mediaMetadata = await persistInboundMediaIfNeeded(...);
+}
+```
 
-1. Quando o input de texto está vazio e não há arquivo pendente, o botão de enviar (Send) é substituído por um botão de microfone
-2. Ao clicar no microfone, inicia gravação — o composer muda para um "modo gravação" com timer, botão cancelar (X) e botão enviar (check)
-3. Ao confirmar, o áudio (webm/ogg) é enviado pelo mesmo pipeline de mídia existente (upload para `project-media` + `onSendMessage` com `messageType: "audio"`)
-4. Ao cancelar, volta ao estado normal sem enviar nada
+Mensagens outbound vindas do celular ficam sem `storage_path` e `is_inline_ready`.
+
+## Solução
+
+### 1. Webhook: processar mídia também para outbound (arquivo principal)
+
+**`supabase/functions/whatsapp-webhook/index.ts`**
+
+Remover a condição `if (!msg.fromMe)` e chamar `persistInboundMediaIfNeeded` para TODAS as mensagens que tenham mídia, independente da direção. A mudança é simples — trocar:
+
+```typescript
+if (!msg.fromMe) {
+    mediaMetadata = await persistInboundMediaIfNeeded(supabase, payload, phone, resolvedMessageType, mediaMetadata);
+}
+```
+
+Por:
+
+```typescript
+if (resolvedMessageType !== "text") {
+    mediaMetadata = await persistInboundMediaIfNeeded(supabase, payload, phone, resolvedMessageType, mediaMetadata);
+}
+```
+
+Isso garante que áudios, imagens, vídeos e documentos enviados pelo celular da corretora também sejam persistidos no bucket antes de serem arquivados na conversa.
+
+### 2. Nenhuma mudança no frontend
+
+O `MessageMedia.tsx` já funciona corretamente — ele verifica `storage_path` ou `is_inline_ready` para renderizar o player inline. Com a mídia sendo persistida no backend, o frontend passa a funcionar automaticamente.
+
+## Impacto
+
+- Todas as mídias outbound futuras serão persistidas no bucket
+- Mensagens já existentes com URLs expiradas continuarão sem preview (não há re-processamento retroativo)
 
 ## Arquivo alterado
 
 | Arquivo | Alteração |
 |---|---|
-| `src/components/inbox/ConversationThread.tsx` | Adicionar estado de gravação (`isRecording`, `mediaRecorder`, `recordingDuration`), lógica de start/stop/cancel com `MediaRecorder`, timer visual, e trocar botão Send por Mic quando input vazio |
-
-## Detalhes técnicos
-
-- Usar `navigator.mediaDevices.getUserMedia({ audio: true })` para capturar áudio
-- `MediaRecorder` com `mimeType: "audio/webm"` (fallback para `audio/ogg`)
-- Timer incrementado via `setInterval` a cada segundo
-- O áudio gravado vira um `File` que passa pelo mesmo fluxo de `pendingFile` → upload → `onSendMessage`
-- Nenhuma mudança no backend — o edge function `inbox-send-message` já suporta envio de áudio via UAZAPI
+| `supabase/functions/whatsapp-webhook/index.ts` | Chamar `persistInboundMediaIfNeeded` para mensagens de mídia em ambas as direções |
 
