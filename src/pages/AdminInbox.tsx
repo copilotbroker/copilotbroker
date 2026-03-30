@@ -167,7 +167,7 @@ export default function AdminInbox() {
       setInboxTab("meus");
       setSelectedConversation({
         ...selectedConversation, broker_id: myBrokerId, lead_id: finalLeadId,
-        lead: { id: finalLeadId, name: displayName, status: "new", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
+        lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
       });
       fetchConversations();
       fetchNovos();

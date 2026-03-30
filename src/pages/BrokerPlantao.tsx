@@ -215,7 +215,7 @@ export default function BrokerPlantao() {
         ...selectedConversation,
         broker_id: brokerId,
         lead_id: finalLeadId,
-        lead: { id: finalLeadId, name: displayName, status: "new", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
+        lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
       });
 
       fetchConversations();
