@@ -201,11 +201,11 @@ export default function BrokerPlantao() {
 
       await supabase.from("lead_interactions").insert({
         lead_id: finalLeadId,
-        interaction_type: "status_change" as any,
+        interaction_type: "atendimento_iniciado" as any,
         notes: "Atendimento iniciado via Plantão (WhatsApp Global)",
         broker_id: brokerId,
         channel: "whatsapp",
-        new_status: "new",
+        new_status: "info_sent",
       } as any);
 
       toast.success("Atendimento iniciado! Lead criado no Kanban.");
