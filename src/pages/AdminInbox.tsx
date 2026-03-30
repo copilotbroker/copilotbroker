@@ -145,8 +145,10 @@ export default function AdminInbox() {
       const { data: newLead, error: leadError } = await supabase
         .from("leads").insert({
           name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
-          broker_id: myBrokerId, status: "new" as any,
+          broker_id: myBrokerId, status: "info_sent" as any,
           source: "whatsapp_global", lead_origin: "whatsapp_plantao",
+          atendimento_iniciado_em: new Date().toISOString(),
+          status_distribuicao: "atendimento_iniciado" as any,
         } as any).select("id").single();
 
       if (leadError || !newLead) { toast.error("Erro ao criar lead no CRM"); return; }
@@ -156,16 +158,16 @@ export default function AdminInbox() {
 
       await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
       await supabase.from("lead_interactions").insert({
-        lead_id: finalLeadId, interaction_type: "status_change" as any,
+        lead_id: finalLeadId, interaction_type: "atendimento_iniciado" as any,
         notes: "Atendimento iniciado via Inbox Admin (WhatsApp Global)",
-        broker_id: myBrokerId, channel: "whatsapp", new_status: "new",
+        broker_id: myBrokerId, channel: "whatsapp", new_status: "info_sent",
       } as any);
 
       toast.success("Atendimento iniciado! Lead criado no Kanban.");
       setInboxTab("meus");
       setSelectedConversation({
         ...selectedConversation, broker_id: myBrokerId, lead_id: finalLeadId,
-        lead: { id: finalLeadId, name: displayName, status: "new", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
+        lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
       });
       fetchConversations();
       fetchNovos();
