@@ -43,7 +43,7 @@ const MonacoCTASection = () => {
               <span className="text-gold-gradient">COM VOCÊ MESMO</span>
             </h2>
 
-            <p className="text-lg text-muted-foreground mb-8">
+            <p className="text-lg text-white/80 mb-8 drop-shadow-md">
               Projetos com:
             </p>
 
@@ -51,18 +51,22 @@ const MonacoCTASection = () => {
               {features.map((feature, index) => (
                 <div
                   key={feature.text}
-                  className={`flex items-center gap-2 px-4 py-2 bg-card rounded-full border border-primary/30 transition-all duration-500 ${
+                  className={`flex items-center gap-2 px-5 py-2.5 bg-card/90 backdrop-blur-sm rounded-full border border-primary/40 transition-all duration-500 ${
                     isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                   }`}
                   style={{ transitionDelay: `${index * 100}ms` }}
                 >
                   <feature.icon className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">{feature.text}</span>
+                  <span className="text-sm font-semibold text-white">{feature.text}</span>
                 </div>
               ))}
             </div>
 
-            <p className="text-muted-foreground">
+            <p className="text-xl sm:text-2xl font-serif font-bold text-white drop-shadow-lg mb-4">
+              Lotes a partir de R$850.000
+            </p>
+
+            <p className="text-white/70 drop-shadow-md">
               <span className="text-primary">👉</span>{" "}
               Não ficam disponíveis por muito tempo.
             </p>
