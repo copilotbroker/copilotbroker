@@ -20,6 +20,25 @@ const getAuthHeaders = (token: string) => [
   { Authorization: `Bearer ${token}` },
 ];
 
+async function fetchFileAsBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buffer = await res.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    const CHUNK_SIZE = 8192;
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      const chunk = bytes.subarray(i, i + CHUNK_SIZE);
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    return btoa(binary);
+  } catch (e) {
+    console.warn("⚠️ Failed to fetch file for base64:", (e as Error).message);
+    return null;
+  }
+}
+
 async function sendViaUAZAPI(
   instanceToken: string | null,
   phone: string,
@@ -40,14 +59,28 @@ async function sendViaUAZAPI(
   const mimeType = typeof metadata?.mime_type === "string" ? metadata.mime_type : undefined;
   const caption = content || "";
 
+  // For media messages, try to fetch the file as base64 for APIs that require it
+  let fileBase64: string | null = null;
+  if (messageType !== "text" && mediaUrl) {
+    fileBase64 = await fetchFileAsBase64(mediaUrl);
+  }
+
   const requests = messageType === "text"
     ? [
         { endpoint: "/send/text", body: { number: cleanPhone, text: content } },
         { endpoint: "/chat/send/text", body: { number: cleanPhone, text: content } },
       ]
     : [
+        // Try URL-based first
         { endpoint: `/send/${messageType}`, body: { number: cleanPhone, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
         { endpoint: `/chat/send/${messageType}`, body: { number: cleanPhone, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
+        // Try with base64 file field
+        ...(fileBase64 ? [
+          { endpoint: `/send/${messageType}`, body: { number: cleanPhone, file: `data:${mimeType || "application/octet-stream"};base64,${fileBase64}`, text: caption, caption, fileName, mimetype: mimeType } },
+          { endpoint: "/send/media", body: { number: cleanPhone, mediatype: messageType, file: `data:${mimeType || "application/octet-stream"};base64,${fileBase64}`, text: caption, caption, fileName, mimetype: mimeType } },
+          { endpoint: "/chat/send/media", body: { number: cleanPhone, mediatype: messageType, file: `data:${mimeType || "application/octet-stream"};base64,${fileBase64}`, text: caption, caption, fileName, mimetype: mimeType } },
+        ] : []),
+        // Fallback URL-based media endpoints
         { endpoint: "/send/media", body: { number: cleanPhone, mediatype: messageType, media: mediaUrl, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
         { endpoint: "/chat/send/media", body: { number: cleanPhone, mediatype: messageType, media: mediaUrl, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
       ];
