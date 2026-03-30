@@ -1668,6 +1668,44 @@ async function handleGlobalInstanceMessage(
     motivo: `Distribuição via roleta WhatsApp Global - modo ${modoDistribuicao} (pendente atendimento)`,
   });
 
+  // Notify assigned broker via WhatsApp (fila mode only, no lead data)
+  if (modoDistribuicao === "fila") {
+    try {
+      const { data: globalCfg } = await supabase
+        .from("global_whatsapp_config")
+        .select("instance_token")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const { data: brokerData } = await supabase
+        .from("brokers")
+        .select("whatsapp")
+        .eq("id", assignedBrokerId)
+        .single();
+
+      if (globalCfg?.instance_token && brokerData?.whatsapp) {
+        const envUrl = Deno.env.get("UAZAPI_INSTANCE_URL") || "";
+        let baseUrl: string;
+        try { baseUrl = new URL(envUrl).origin; } catch { baseUrl = envUrl.replace(/\/[^\/]+\/?$/, ""); }
+
+        if (baseUrl) {
+          const cleanPhone = (brokerData.whatsapp as string).replace(/\D/g, "");
+          const alertMsg = `🔔 *Nova conversa no Plantão*\n\nVocê tem um novo contato aguardando atendimento na aba "Novos" do Plantão.\n\n⚡ Acesse o CRM para iniciar o atendimento.`;
+
+          await fetch(`${baseUrl}/send/text`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "token": globalCfg.instance_token as string },
+            body: JSON.stringify({ number: cleanPhone, text: alertMsg }),
+          });
+          console.log(`📲 WhatsApp notification sent to broker ${assignedBrokerId} (fila mode)`);
+        }
+      }
+    } catch (notifyErr) {
+      console.error("WhatsApp fila notification failed (non-critical):", notifyErr);
+    }
+  }
+
   console.log(`✅ Global msg distributed (${modoDistribuicao}): phone=${phone} → broker=${assignedBrokerId} (pending attendance)`);
   return { brokerId: assignedBrokerId, conversationId: result.conversationId };
 }
