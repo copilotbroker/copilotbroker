@@ -65,22 +65,38 @@ async function sendViaUAZAPI(
     fileBase64 = await fetchFileAsBase64(mediaUrl);
   }
 
+  // Audio messages: no caption/text — send as PTT (push-to-talk) for WhatsApp playback
+  const isAudio = messageType === "audio";
+  const dataUri = fileBase64 ? `data:${mimeType || "application/octet-stream"};base64,${fileBase64}` : undefined;
+
   const requests = messageType === "text"
     ? [
         { endpoint: "/send/text", body: { number: cleanPhone, text: content } },
         { endpoint: "/chat/send/text", body: { number: cleanPhone, text: content } },
       ]
+    : isAudio
+    ? [
+        // PTT-specific endpoints (no text/caption)
+        ...(dataUri ? [
+          { endpoint: "/send/audio", body: { number: cleanPhone, file: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
+          { endpoint: "/send/ptt", body: { number: cleanPhone, file: dataUri, mimetype: mimeType || "audio/ogg" } },
+          { endpoint: "/send/media", body: { number: cleanPhone, mediatype: "ptt", file: dataUri, mimetype: mimeType || "audio/ogg" } },
+          { endpoint: "/chat/send/audio", body: { number: cleanPhone, file: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
+        ] : []),
+        // URL-based audio fallbacks (no text/caption)
+        { endpoint: "/send/audio", body: { number: cleanPhone, url: mediaUrl, mimetype: mimeType || "audio/ogg", ptt: true } },
+        { endpoint: "/send/ptt", body: { number: cleanPhone, url: mediaUrl, mimetype: mimeType || "audio/ogg" } },
+        { endpoint: "/send/media", body: { number: cleanPhone, mediatype: "ptt", media: mediaUrl, url: mediaUrl, mimetype: mimeType || "audio/ogg" } },
+      ]
     : [
-        // Try URL-based first
+        // Generic media (image, video, document) — keep caption
         { endpoint: `/send/${messageType}`, body: { number: cleanPhone, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
         { endpoint: `/chat/send/${messageType}`, body: { number: cleanPhone, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
-        // Try with base64 file field
-        ...(fileBase64 ? [
-          { endpoint: `/send/${messageType}`, body: { number: cleanPhone, file: `data:${mimeType || "application/octet-stream"};base64,${fileBase64}`, text: caption, caption, fileName, mimetype: mimeType } },
-          { endpoint: "/send/media", body: { number: cleanPhone, mediatype: messageType, file: `data:${mimeType || "application/octet-stream"};base64,${fileBase64}`, text: caption, caption, fileName, mimetype: mimeType } },
-          { endpoint: "/chat/send/media", body: { number: cleanPhone, mediatype: messageType, file: `data:${mimeType || "application/octet-stream"};base64,${fileBase64}`, text: caption, caption, fileName, mimetype: mimeType } },
+        ...(dataUri ? [
+          { endpoint: `/send/${messageType}`, body: { number: cleanPhone, file: dataUri, text: caption, caption, fileName, mimetype: mimeType } },
+          { endpoint: "/send/media", body: { number: cleanPhone, mediatype: messageType, file: dataUri, text: caption, caption, fileName, mimetype: mimeType } },
+          { endpoint: "/chat/send/media", body: { number: cleanPhone, mediatype: messageType, file: dataUri, text: caption, caption, fileName, mimetype: mimeType } },
         ] : []),
-        // Fallback URL-based media endpoints
         { endpoint: "/send/media", body: { number: cleanPhone, mediatype: messageType, media: mediaUrl, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
         { endpoint: "/chat/send/media", body: { number: cleanPhone, mediatype: messageType, media: mediaUrl, url: mediaUrl, text: caption, caption, fileName, mimetype: mimeType } },
       ];
@@ -221,6 +237,8 @@ serve(async (req) => {
 
     const previewText = normalizedType === "text"
       ? content
+      : normalizedType === "audio"
+      ? "🎤 Áudio"
       : (typeof metadata?.file_name === "string" ? `📎 ${metadata.file_name}` : "[Mídia]");
 
     // 4. Save message in conversation_messages
