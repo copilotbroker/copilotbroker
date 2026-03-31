@@ -43,7 +43,7 @@ function getPreviousRange(period: Period): { from: Date; to: Date } | null {
   return null;
 }
 
-interface BrokerRow { id: string; name: string }
+interface BrokerRow { id: string; name: string; lider_id?: string | null }
 
 const CHART_COLORS = ["#FFFF00", "#22d3ee", "#a78bfa", "#f97316", "#34d399", "#f472b6", "#60a5fa", "#fbbf24"];
 
