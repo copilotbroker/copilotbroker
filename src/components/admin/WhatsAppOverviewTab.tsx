@@ -250,7 +250,8 @@ export function WhatsAppOverviewTab({
                 </div>
               ))}
             </div>
-          )}
+            </>
+          )
         </CardContent>
       </Card>
 
