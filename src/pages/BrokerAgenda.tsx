@@ -34,7 +34,7 @@ const BrokerAgenda = () => {
         <BrokerSidebar
           viewMode="kanban"
           onViewChange={() => {}}
-          onLogout={() => { supabase.auth.signOut(); navigate("/auth"); }}
+          onLogout={useLogout({ silent: true })}
         />
       )}
       <main className="flex-1 overflow-auto pb-20 md:pb-0">
