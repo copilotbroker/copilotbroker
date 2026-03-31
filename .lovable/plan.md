@@ -1,86 +1,54 @@
 
-Corrigir o envio de áudio da inbox para que ele chegue no WhatsApp como áudio real, e não como texto “Audio”.
 
-## Diagnóstico
+## Unificação Visual: Campanhas + Fila + Demais Abas WhatsApp
 
-O problema está em dois pontos do fluxo atual:
+### Diagnóstico
 
-1. `src/components/inbox/ConversationThread.tsx`
-- o gravador prioriza `audio/webm;codecs=opus`
-- esse formato funciona no navegador, mas costuma não ser o formato mais compatível para envio como áudio/voz no WhatsApp
+As duas abas usam tokens de cor ligeiramente diferentes e estruturas de layout distintas:
 
-2. `supabase/functions/inbox-send-message/index.ts`
-- o envio de mídia de áudio usa o mesmo fluxo genérico de mídia
-- o payload inclui `text/caption` mesmo para áudio
-- pelos sintomas e pelo comportamento da UAZAPI, isso faz o provedor tratar a requisição como mensagem textual/anexo inadequado, em vez de áudio reproduzível
+| Aspecto | Campanhas | Fila |
+|---------|-----------|------|
+| Background cards | `#111114` | `#1a1a1d` |
+| Border | `#1e1e22` | `#2a2a2e` |
+| Header | Ícone em box + título + subtítulo | Título inline sem ícone em box |
+| Stats | Cards inline compactos (icon + número) | Cards centrados grandes (número + label) |
+| Collapsibles | Trigger com dot colorido + badge | Trigger com ícone + badge |
+| Empty state | Card elegante com steps | Card simples |
 
-Também encontrei um indício forte no histórico:
-- os áudios recebidos do WhatsApp e arquivados pelo webhook chegam como `audio/ogg; codecs=opus`
-- já os áudios gravados no sistema estão sendo enviados como `audio/webm;codecs=opus`
+O Campanhas está mais alinhado ao design system "Dark Professional" (`#111114` / `#1e1e22`), enquanto a Fila usa tons mais claros (`#1a1a1d` / `#2a2a2e`). A sugestão é **padronizar ambas no estilo do Campanhas**, que você preferiu, e adaptar os tokens para usar as CSS variables do tema (`bg-card`, `border-border`) para que "conversem" com o resto da plataforma.
 
-## Ajustes propostos
+### Plano
 
-### 1) Padronizar gravação para formato compatível com WhatsApp
-Arquivo: `src/components/inbox/ConversationThread.tsx`
+#### 1. Padronizar tokens de cor na QueueTab
+- Trocar `bg-[#1a1a1d]` → `bg-[#111114]` e `border-[#2a2a2e]` → `border-[#1e1e22]` em todo o arquivo
+- Aplicar o mesmo nos sub-componentes `PendingMessageCard`, `HistoryMessageCard`, `QueueStats`
 
-- inverter a prioridade do `MediaRecorder` para preferir `audio/ogg;codecs=opus`
-- usar `audio/webm` apenas como fallback
-- manter extensão e `mime_type` coerentes com o blob gerado
+#### 2. Redesign do Header da Fila (espelhar Campanhas)
+- Adicionar ícone em box (`Send` dentro de div com `bg-primary/10 rounded-lg`)
+- Título + subtítulo empilhados, igual ao Campanhas
+- Mover seletor de corretor para o lado direito
+- Mover o "Próximo envio" para um badge inline no header (não uma linha separada)
 
-Objetivo:
-- produzir um arquivo mais próximo do formato que o WhatsApp já usa e o webhook já processa corretamente
+#### 3. Unificar Stats Cards (estilo Campanhas)
+- Substituir os 5 cards centrados grandes por cards inline compactos: ícone + número + label, no mesmo grid `grid-cols-2 sm:grid-cols-5`
+- Usar a mesma estrutura: `flex items-center gap-3 p-3 rounded-xl bg-[#111114] border border-[#1e1e22]`
 
-### 2) Tratar áudio separado das demais mídias no edge function
-Arquivo: `supabase/functions/inbox-send-message/index.ts`
+#### 4. Unificar Collapsible Triggers
+- Adotar o padrão do Campanhas: `ChevronRight` que rotaciona 90°, dot colorido, label, badge à direita
+- Substituir o `ChevronDown` + rotate-180 atual da Fila
 
-Criar uma ramificação específica para `messageType === "audio"`:
+#### 5. Refinar Empty State da Fila
+- Espelhar o padrão do Campanhas: ícone em box arredondado com `bg-primary/10`, texto mais refinado
 
-- tentar primeiro endpoint específico de áudio, se suportado pela API
-- se continuar usando `/send/media`, enviar corpo próprio para áudio
-- não mandar `caption`/`text` para áudio gravado
-- não usar conteúdo `"🎤 Áudio"` como texto efetivo no envio externo
-- enviar apenas os campos de arquivo necessários (`number`, `file` ou `url`, tipo correto, `mimetype`, etc.)
+#### 6. Message Cards (PendingMessageCard / HistoryMessageCard)
+- Ajustar backgrounds para `bg-[#111114]` e borders para `border-[#1e1e22]`
+- Manter a estrutura funcional intacta (expandir, cancelar, retry)
 
-Objetivo:
-- evitar que a API interprete o áudio como mensagem textual
+### Arquivos alterados
+- `src/components/whatsapp/QueueTab.tsx` — redesign visual completo (tokens, header, stats, collapsibles, empty state, message cards)
 
-### 3) Separar “texto de preview” do conteúdo real enviado
-Arquivos:
-- `src/components/inbox/ConversationThread.tsx`
-- `supabase/functions/inbox-send-message/index.ts`
+### O que NÃO muda
+- Toda a lógica funcional (hooks, mutations, paginação, filtros)
+- CampaignsTab permanece como está
+- CampaignCard permanece como está
 
-Hoje o conteúdo `"🎤 Áudio"` está sendo reutilizado no fluxo inteiro. Vou separar isso em:
-- conteúdo real do envio externo: vazio para áudio
-- preview interno da inbox/timeline: `"Áudio"` ou nome do arquivo
-
-Objetivo:
-- manter boa UX interna sem contaminar o payload enviado ao WhatsApp
-
-### 4) Preservar exibição e persistência no inbox
-Arquivos:
-- `supabase/functions/inbox-send-message/index.ts`
-- sem necessidade de alterar `MessageMedia.tsx`
-
-Após o envio:
-- continuar salvando `message_type: "audio"`
-- continuar salvando `metadata.file_url`, `mime_type`, `storage_path`, `file_name`
-- ajustar apenas o `content` persistido para preview amigável, sem depender do texto enviado ao provedor
-
-## Resultado esperado
-
-Depois da correção:
-- o corretor grava no inbox
-- o sistema envia um arquivo de áudio compatível
-- o destinatário recebe um áudio reproduzível no WhatsApp
-- no inbox interno continua aparecendo como mensagem de áudio, com player e histórico corretos
-
-## Arquivos a alterar
-
-| Arquivo | Alteração |
-|---|---|
-| `src/components/inbox/ConversationThread.tsx` | Priorizar gravação em OGG/Opus e separar preview de conteúdo enviado |
-| `supabase/functions/inbox-send-message/index.ts` | Criar payload específico para áudio e evitar envio de `text/caption` em mensagens de áudio |
-
-## Observação importante
-
-Se a UAZAPI dessa conta exigir um tipo específico além de `audio` (por exemplo `ptt`/`myaudio`), a estrutura já ficará pronta para ajustar isso no mesmo ponto central do edge function, sem mexer de novo no frontend.
