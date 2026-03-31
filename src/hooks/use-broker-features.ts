@@ -1,30 +1,28 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useBrokerFeatures(brokerId: string | null) {
-  const [inboxEnabled, setInboxEnabled] = useState(false);
-  const [copilotEnabled, setCopilotEnabled] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!brokerId) return; // keep isLoading=true until brokerId arrives
-
-    const fetch = async () => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["broker-features", brokerId],
+    queryFn: async () => {
       const { data } = await supabase
         .from("brokers")
         .select("inbox_enabled, copilot_enabled")
-        .eq("id", brokerId)
+        .eq("id", brokerId!)
         .single();
 
-      if (data) {
-        setInboxEnabled((data as any).inbox_enabled ?? false);
-        setCopilotEnabled((data as any).copilot_enabled ?? false);
-      }
-      setIsLoading(false);
-    };
+      return {
+        inboxEnabled: (data as any)?.inbox_enabled ?? false,
+        copilotEnabled: (data as any)?.copilot_enabled ?? false,
+      };
+    },
+    enabled: !!brokerId,
+    staleTime: 5 * 60 * 1000,
+  });
 
-    fetch();
-  }, [brokerId]);
-
-  return { inboxEnabled, copilotEnabled, isLoading };
+  return {
+    inboxEnabled: data?.inboxEnabled ?? false,
+    copilotEnabled: data?.copilotEnabled ?? false,
+    isLoading,
+  };
 }
