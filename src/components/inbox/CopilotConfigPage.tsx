@@ -278,7 +278,7 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="bg-muted border-border text-foreground hover:bg-secondary">Cancelar</AlertDialogCancel>
+              <AlertDialogCancel className="bg-[#1e1e22] border-[#1e1e22] text-foreground hover:bg-[#2a2a2e]">Cancelar</AlertDialogCancel>
               <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700 text-foreground">Excluir</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
