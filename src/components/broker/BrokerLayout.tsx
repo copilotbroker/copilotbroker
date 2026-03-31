@@ -29,6 +29,7 @@ interface BrokerLayoutProps {
   inboxEnabled?: boolean;
   copilotEnabled?: boolean;
   collapsibleContent?: ReactNode;
+  brokerId?: string;
 }
 
 
