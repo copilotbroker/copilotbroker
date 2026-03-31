@@ -197,50 +197,24 @@ export function ConversationThread({
     const recorder = mediaRecorderRef.current;
     if (!recorder || recorder.state === "inactive") return;
 
-    recorder.onstop = async () => {
+    recorder.onstop = () => {
       const mimeType = recorder.mimeType || "audio/webm";
       const ext = mimeType.includes("ogg") ? "ogg" : "webm";
       const blob = new Blob(audioChunksRef.current, { type: mimeType });
       const file = new File([blob], `audio-${Date.now()}.${ext}`, { type: mimeType });
 
       cleanupRecording();
-      setPendingFile(file);
 
-      // Auto-send the audio immediately
-      const path = `inbox/${conversation.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      setIsSending(true);
-      try {
-        const { error: uploadError } = await supabase.storage.from("project-media").upload(path, file, {
-          contentType: file.type,
-          cacheControl: "3600",
-          upsert: false,
-        });
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
-        await onSendMessage({
-          content: "",
-          messageType: "audio",
-          metadata: {
-            file_url: urlData.publicUrl,
-            file_name: file.name,
-            mime_type: file.type,
-            storage_path: path,
-            size_bytes: file.size,
-          },
-        });
-        setPendingFile(null);
-      } catch (error) {
-        console.error("Erro ao enviar áudio:", error);
-        toast.error("Não foi possível enviar o áudio");
-        setPendingFile(null);
-      } finally {
-        setIsSending(false);
-      }
+      // Fire-and-forget: hook handles upload + optimistic display
+      onSendMessage({
+        content: "",
+        messageType: "audio",
+        file,
+      });
     };
 
     recorder.stop();
-  }, [conversation.id, onSendMessage, cleanupRecording]);
+  }, [onSendMessage, cleanupRecording]);
 
   // Cleanup on unmount
   useEffect(() => {
