@@ -35,7 +35,7 @@ const BrokerAgenda = () => {
         <BrokerSidebar
           viewMode="kanban"
           onViewChange={() => {}}
-          onLogout={useLogout({ silent: true })}
+          onLogout={handleLogout}
         />
       )}
       <main className="flex-1 overflow-auto pb-20 md:pb-0">
