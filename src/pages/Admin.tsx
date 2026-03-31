@@ -386,11 +386,7 @@ const Admin = () => {
     navigate(`/corretor/lead/${lead.id}`);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logout realizado com sucesso!");
-    navigate("/auth");
-  };
+  const handleLogout = useLogout();
 
   const handleAddLead = () => {
     setIsAddLeadOpen(true);
