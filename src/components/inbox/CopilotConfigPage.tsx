@@ -154,8 +154,19 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
 
   return (
     <div className="max-w-2xl mx-auto pb-24 px-4 space-y-4 pt-6">
+      {/* Section header */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Sparkles className="w-4 h-4 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-sm font-bold text-foreground">Copiloto IA</h2>
+          <p className="text-xs text-muted-foreground">Configuração e status do assistente inteligente</p>
+        </div>
+      </div>
+
       {/* Hero card with avatar, name, and power switch */}
-      <div className="relative overflow-hidden rounded-2xl bg-card border border-border">
+      <div className="relative overflow-hidden rounded-2xl bg-[#111114] border border-[#1e1e22]">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-primary/[0.02] pointer-events-none" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
@@ -171,7 +182,7 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
                 <Bot className={cn("w-7 h-7", config.is_active ? "text-primary" : "text-muted-foreground")} />
               </div>
               <div className={cn(
-                "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card",
+                "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#111114]",
                 config.is_active ? "bg-green-500 shadow-[0_0_8px_hsl(142_71%_45%/0.5)]" : "bg-muted-foreground"
               )} />
             </div>
