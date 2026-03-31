@@ -244,7 +244,7 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
       </div>
 
       {/* Features toggles — compact pills */}
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="rounded-2xl border border-[#1e1e22] bg-[#111114] p-4">
         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-3">Recursos Ativos</p>
         <div className="flex flex-wrap gap-2">
           <FeaturePill label="Gatilhos mentais" active={config.use_mental_triggers} />
