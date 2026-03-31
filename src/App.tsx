@@ -121,6 +121,7 @@ const App = () => (
             
             <Route path="/admin/whatsapp" element={<Navigate to="/admin/copiloto" replace />} />
             <Route path="/admin/inbox" element={<AdminInbox />} />
+            <Route path="/admin/plantao" element={<AdminPlantao />} />
             <Route path="/admin/agenda" element={<AdminAgenda />} />
             <Route path="/admin/copiloto" element={<AdminCopilotConfig />} />
             <Route path="/corretor/roletas" element={<BrokerRoletasPage />} />
