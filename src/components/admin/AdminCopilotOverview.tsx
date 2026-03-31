@@ -285,7 +285,7 @@ function BrokerEmptyCard({ broker, onSelect }: { broker: BrokerWithCopilot; onSe
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-background px-2 py-2 text-center">
+    <div className="bg-[#0d0d0f] px-2 py-2 text-center">
       <p className="text-xs font-bold text-foreground">{value}</p>
       <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{label}</p>
     </div>
