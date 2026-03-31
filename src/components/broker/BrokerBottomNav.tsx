@@ -88,18 +88,15 @@ export function BrokerBottomNav({
   };
 
   const getItemColor = (id: string) => {
-    if ((id === "crm" && activeTab === "crm") || (id === "leads" && activeTab === "leads")) {
-      return "text-[#FFFF00]";
-    }
-    if (id === "copilot" && activeTab === "copilot") {
-      return "text-blue-400";
-    }
-    if (id === "plantao" && activeTab === "plantao") {
-      return "text-orange-400";
-    }
-    if (id === "agenda" && activeTab === "agenda") {
-      return "text-[#FFFF00]";
-    }
+    const isActive = getActiveIndicator(id);
+    // Plantão always orange
+    if (id === "plantao") return isActive ? "text-orange-400" : "text-orange-400/70";
+    // Inbox always green
+    if (id === "inbox") return isActive ? "text-[hsl(145,80%,55%)]" : "text-[hsl(145,80%,55%)]/70";
+    // Copilot always blue
+    if (id === "copilot") return isActive ? "text-blue-400" : "text-blue-400/70";
+    // Default primary
+    if (isActive) return "text-[#FFFF00]";
     return "text-slate-500 active:text-slate-300";
   };
 
