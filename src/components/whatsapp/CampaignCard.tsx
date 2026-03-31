@@ -1,16 +1,17 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Play, 
-  Pause, 
-  XCircle, 
+import {
+  Play,
+  Pause,
+  XCircle,
   CheckCircle,
   Clock,
-  AlertTriangle,
   Eye,
   Copy,
-  Trash2
+  Trash2,
+  Send,
+  MessageSquare,
+  AlertTriangle,
 } from "lucide-react";
 import { WhatsAppCampaign, CampaignStatus } from "@/types/whatsapp";
 import { cn } from "@/lib/utils";
@@ -27,183 +28,248 @@ interface CampaignCardProps {
   onDelete?: (id: string) => void;
 }
 
-const STATUS_CONFIG: Record<CampaignStatus, { 
-  label: string; 
-  color: string; 
-  icon: React.ComponentType<{ className?: string }>;
-}> = {
-  draft: { label: "Rascunho", color: "text-slate-400", icon: Clock },
-  scheduled: { label: "Agendada", color: "text-blue-400", icon: Clock },
-  running: { label: "Em andamento", color: "text-green-400", icon: Play },
-  paused: { label: "Pausada", color: "text-yellow-400", icon: Pause },
-  completed: { label: "Concluída", color: "text-emerald-400", icon: CheckCircle },
-  cancelled: { label: "Cancelada", color: "text-red-400", icon: XCircle },
+const STATUS_CONFIG: Record<
+  CampaignStatus,
+  {
+    label: string;
+    dotClass: string;
+    textClass: string;
+    bgClass: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }
+> = {
+  draft: {
+    label: "Rascunho",
+    dotClass: "bg-slate-400",
+    textClass: "text-slate-400",
+    bgClass: "bg-slate-400/10",
+    icon: Clock,
+  },
+  scheduled: {
+    label: "Agendada",
+    dotClass: "bg-blue-400",
+    textClass: "text-blue-400",
+    bgClass: "bg-blue-400/10",
+    icon: Clock,
+  },
+  running: {
+    label: "Enviando",
+    dotClass: "bg-emerald-400 animate-pulse",
+    textClass: "text-emerald-400",
+    bgClass: "bg-emerald-400/10",
+    icon: Play,
+  },
+  paused: {
+    label: "Pausada",
+    dotClass: "bg-yellow-400",
+    textClass: "text-yellow-400",
+    bgClass: "bg-yellow-400/10",
+    icon: Pause,
+  },
+  completed: {
+    label: "Concluída",
+    dotClass: "bg-blue-400",
+    textClass: "text-blue-400",
+    bgClass: "bg-blue-400/10",
+    icon: CheckCircle,
+  },
+  cancelled: {
+    label: "Cancelada",
+    dotClass: "bg-red-400",
+    textClass: "text-red-400",
+    bgClass: "bg-red-400/10",
+    icon: XCircle,
+  },
 };
 
-export function CampaignCard({ campaign, onPause, onResume, onCancel, onViewDetail, onDuplicate, onDelete }: CampaignCardProps) {
+export function CampaignCard({
+  campaign,
+  onPause,
+  onResume,
+  onCancel,
+  onViewDetail,
+  onDuplicate,
+  onDelete,
+}: CampaignCardProps) {
   const rawStatus = campaign.status as CampaignStatus;
-  
-  // Derive visual status: if running but all sent, show as completed
-  const status: CampaignStatus = 
-    rawStatus === "running" && campaign.sent_count >= campaign.total_leads && campaign.total_leads > 0
+
+  const status: CampaignStatus =
+    rawStatus === "running" &&
+    campaign.sent_count >= campaign.total_leads &&
+    campaign.total_leads > 0
       ? "completed"
       : rawStatus;
-  
+
   const config = STATUS_CONFIG[status];
-  const StatusIcon = config.icon;
-  
-  const progress = campaign.total_leads > 0 
-    ? Math.round((campaign.sent_count / campaign.total_leads) * 100)
-    : 0;
-  
-  const showProgress = status === "running" || status === "paused" || status === "completed";
-  const canPause = rawStatus === "running" && campaign.sent_count < campaign.total_leads;
+
+  const progress =
+    campaign.total_leads > 0
+      ? Math.round((campaign.sent_count / campaign.total_leads) * 100)
+      : 0;
+
+  const showProgress =
+    status === "running" || status === "paused" || status === "completed";
+  const canPause =
+    rawStatus === "running" && campaign.sent_count < campaign.total_leads;
   const canResume = rawStatus === "paused";
-  const canCancel = rawStatus === "running" || rawStatus === "paused" || rawStatus === "scheduled";
+  const canCancel =
+    rawStatus === "running" ||
+    rawStatus === "paused" ||
+    rawStatus === "scheduled";
 
   return (
-    <Card className="bg-[#1a1a1d] border-[#2a2a2e] overflow-hidden">
-      <CardContent className="p-4">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <StatusIcon className={cn("w-4 h-4", config.color)} />
-              <span className={cn("text-xs font-medium", config.color)}>
+    <div
+      className="group rounded-xl bg-[#111114] border border-[#1e1e22] hover:border-[#2a2a2e] transition-all overflow-hidden cursor-pointer"
+      onClick={() => onViewDetail(campaign)}
+    >
+      <div className="p-4">
+        {/* ── Row 1: Status + Name + Actions ── */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", config.dotClass)} />
+              <span
+                className={cn(
+                  "text-[10px] font-semibold uppercase tracking-wider",
+                  config.textClass
+                )}
+              >
                 {config.label}
               </span>
             </div>
-            <h3 className="text-white font-medium mt-1">{campaign.name}</h3>
+            <h3 className="text-sm font-semibold text-slate-100 truncate">
+              {campaign.name}
+            </h3>
             {(campaign.project || campaign.broker) && (
-              <p className="text-xs text-slate-500 mt-0.5 truncate">
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">
                 {campaign.project?.name}
                 {campaign.project && campaign.broker && " · "}
-                {campaign.broker && `por ${campaign.broker.name}`}
+                {campaign.broker && campaign.broker.name}
               </p>
             )}
           </div>
-          
+
           {/* Actions */}
-          <div className="flex gap-1">
+          <div
+            className="flex items-center gap-0.5 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
-              onClick={() => onViewDetail(campaign)}
-              title="Ver detalhes"
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 text-slate-400 hover:bg-[#2a2a2e] hover:text-white"
+              className="h-7 w-7 text-slate-500 hover:text-white hover:bg-[#1e1e22]"
               onClick={() => onDuplicate(campaign)}
-              title="Duplicar campanha"
+              title="Duplicar"
             >
-              <Copy className="w-4 h-4" />
+              <Copy className="w-3.5 h-3.5" />
             </Button>
             {canPause && (
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 text-yellow-400 hover:bg-yellow-500/10"
+                className="h-7 w-7 text-yellow-400/70 hover:text-yellow-400 hover:bg-yellow-400/10"
                 onClick={() => onPause(campaign.id)}
+                title="Pausar"
               >
-                <Pause className="w-4 h-4" />
+                <Pause className="w-3.5 h-3.5" />
               </Button>
             )}
             {canResume && (
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 text-green-400 hover:bg-green-500/10"
+                className="h-7 w-7 text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-400/10"
                 onClick={() => onResume(campaign.id)}
+                title="Retomar"
               >
-                <Play className="w-4 h-4" />
+                <Play className="w-3.5 h-3.5" />
               </Button>
             )}
             {canCancel && (
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 text-red-400 hover:bg-red-500/10"
+                className="h-7 w-7 text-red-400/70 hover:text-red-400 hover:bg-red-400/10"
                 onClick={() => onCancel(campaign.id)}
+                title="Cancelar"
               >
-                <XCircle className="w-4 h-4" />
+                <XCircle className="w-3.5 h-3.5" />
               </Button>
             )}
             {onDelete && (
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 text-red-400 hover:bg-red-500/10"
+                className="h-7 w-7 text-red-400/70 hover:text-red-400 hover:bg-red-400/10"
                 onClick={() => {
-                  if (window.confirm("Tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita.")) {
+                  if (
+                    window.confirm(
+                      "Tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita."
+                    )
+                  ) {
                     onDelete(campaign.id);
                   }
                 }}
-                title="Excluir campanha"
+                title="Excluir"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </Button>
             )}
           </div>
         </div>
 
-        {/* Progress */}
+        {/* ── Progress Bar ── */}
         {showProgress && (
-          <div className="mb-3">
-            <div className="flex justify-between text-xs text-slate-400 mb-1">
-              <span>{campaign.sent_count} de {campaign.total_leads} enviados</span>
-              <span>{progress}%</span>
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1.5">
+              <span>
+                {campaign.sent_count}/{campaign.total_leads} enviados
+              </span>
+              <span className={cn("font-semibold", config.textClass)}>
+                {progress}%
+              </span>
             </div>
-            <Progress value={progress} className="h-1.5" />
+            <Progress value={progress} className="h-1" />
           </div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="p-2 rounded bg-[#0f0f11]">
-            <p className="text-lg font-semibold text-white">{campaign.total_leads}</p>
-            <p className="text-xs text-slate-500">Total</p>
+        {/* ── Stats Row ── */}
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#1e1e22]">
+          <div className="flex items-center gap-1.5">
+            <Send className="w-3 h-3 text-emerald-400/60" />
+            <span className="text-xs text-slate-400">
+              <span className="font-semibold text-slate-200">{campaign.sent_count}</span>{" "}
+              enviados
+            </span>
           </div>
-          <div className="p-2 rounded bg-[#0f0f11]">
-            <p className="text-lg font-semibold text-green-400">{campaign.sent_count}</p>
-            <p className="text-xs text-slate-500">Enviados</p>
+          <div className="flex items-center gap-1.5">
+            <MessageSquare className="w-3 h-3 text-blue-400/60" />
+            <span className="text-xs text-slate-400">
+              <span className="font-semibold text-slate-200">{campaign.reply_count}</span>{" "}
+              respostas
+            </span>
           </div>
-          <div className="p-2 rounded bg-[#0f0f11]">
-            <p className="text-lg font-semibold text-red-400">{campaign.failed_count}</p>
-            <p className="text-xs text-slate-500">Falhas</p>
-          </div>
-          <div className="p-2 rounded bg-[#0f0f11]">
-            <p className="text-lg font-semibold text-blue-400">{campaign.reply_count}</p>
-            <p className="text-xs text-slate-500">Respostas</p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-3 pt-3 border-t border-[#2a2a2e] flex items-center justify-between">
-          <span className="text-xs text-slate-500">
-            {campaign.started_at 
-              ? `Iniciada ${formatDistanceToNow(new Date(campaign.started_at), { 
-                  addSuffix: true, 
-                  locale: ptBR 
-                })}`
-              : `Criada ${formatDistanceToNow(new Date(campaign.created_at), { 
-                  addSuffix: true, 
-                  locale: ptBR 
-                })}`
-            }
-          </span>
           {campaign.failed_count > 0 && (
-            <div className="flex items-center gap-1 text-yellow-400">
-              <AlertTriangle className="w-3 h-3" />
-              <span className="text-xs">{campaign.failed_count} falhas</span>
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3 h-3 text-red-400/60" />
+              <span className="text-xs text-red-400">
+                <span className="font-semibold">{campaign.failed_count}</span> falhas
+              </span>
             </div>
           )}
+          <span className="ml-auto text-[10px] text-slate-600">
+            {campaign.started_at
+              ? formatDistanceToNow(new Date(campaign.started_at), {
+                  addSuffix: true,
+                  locale: ptBR,
+                })
+              : formatDistanceToNow(new Date(campaign.created_at), {
+                  addSuffix: true,
+                  locale: ptBR,
+                })}
+          </span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
