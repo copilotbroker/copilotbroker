@@ -231,13 +231,13 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
       </div>
 
       {/* Performance dials */}
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="rounded-2xl border border-[#1e1e22] bg-[#111114] p-4">
         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-3">Calibragem do Copiloto</p>
         <div className="space-y-3">
           <DialRow label="Persuasão" value={config.persuasion_level} />
           <DialRow label="Objetividade" value={config.objectivity_level} />
         </div>
-        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+        <div className="mt-3 pt-3 border-t border-[#1e1e22] flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Autonomia</span>
           <span className="text-xs font-semibold text-primary">{AUTONOMY_LABELS[config.max_autonomy] || "—"}</span>
         </div>
