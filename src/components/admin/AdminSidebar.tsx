@@ -114,6 +114,10 @@ export function AdminSidebar({ activeTab, onLogout, onAddLead }: AdminSidebarPro
                         {inboxUnread > 99 ? "99+" : inboxUnread}
                       </span>
                     )}
+                    {item.id === "plantao" && plantaoNovosCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-md shadow-red-500/50">
+                        {plantaoNovosCount > 99 ? "99+" : plantaoNovosCount}
+                      </span>
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="bg-card border-border text-foreground">
