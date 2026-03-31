@@ -76,19 +76,20 @@ async function sendViaUAZAPI(
       ]
     : isAudio
     ? [
-        // PTT-specific endpoints with base64 (no text/caption)
+        // UAZAPI audio field is "audio" (not "file") — base64 data URI or URL
         ...(dataUri ? [
+          { endpoint: "/send/audio", body: { number: cleanPhone, audio: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
+          { endpoint: "/send/ptt", body: { number: cleanPhone, audio: dataUri, mimetype: mimeType || "audio/ogg" } },
+          { endpoint: "/chat/send/audio", body: { number: cleanPhone, audio: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
+          // Also try with "file" field name as fallback
           { endpoint: "/send/audio", body: { number: cleanPhone, file: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
-          { endpoint: "/send/ptt", body: { number: cleanPhone, file: dataUri, mimetype: mimeType || "audio/ogg" } },
-          { endpoint: "/chat/send/audio", body: { number: cleanPhone, file: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
-          // /send/media requires text field — use single space to satisfy validation
-          { endpoint: "/send/media", body: { number: cleanPhone, mediatype: "ptt", file: dataUri, mimetype: mimeType || "audio/ogg", text: " " } },
         ] : []),
-        // URL-based audio fallbacks
-        { endpoint: "/send/audio", body: { number: cleanPhone, url: mediaUrl, mimetype: mimeType || "audio/ogg", ptt: true } },
-        { endpoint: "/send/ptt", body: { number: cleanPhone, url: mediaUrl, mimetype: mimeType || "audio/ogg" } },
-        // /send/media with URL needs file field — pass URL as file, plus text for validation
-        { endpoint: "/send/media", body: { number: cleanPhone, mediatype: "ptt", file: mediaUrl, mimetype: mimeType || "audio/ogg", text: " " } },
+        // URL-based audio
+        { endpoint: "/send/audio", body: { number: cleanPhone, audio: mediaUrl, mimetype: mimeType || "audio/ogg", ptt: true } },
+        { endpoint: "/send/ptt", body: { number: cleanPhone, audio: mediaUrl, mimetype: mimeType || "audio/ogg" } },
+        { endpoint: "/chat/send/audio", body: { number: cleanPhone, audio: mediaUrl, mimetype: mimeType || "audio/ogg", ptt: true } },
+        // Last resort: /send/media with audio field
+        { endpoint: "/send/media", body: { number: cleanPhone, mediatype: "audio", audio: mediaUrl, mimetype: mimeType || "audio/ogg", ptt: true } },
       ]
     : [
         // Generic media (image, video, document) — keep caption
