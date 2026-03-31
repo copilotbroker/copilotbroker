@@ -1,10 +1,11 @@
-import { Building2, CalendarDays, LayoutDashboard, MessageCircle, Shuffle, Users, Bot, BarChart3 } from "lucide-react";
+import { Building2, CalendarDays, LayoutDashboard, MessageCircle, Shuffle, Users, Bot, BarChart3, Radio } from "lucide-react";
 
 export const ADMIN_ROUTE_TABS = [
   { id: "dashboard", label: "Dashboard", path: "/admin/dashboard", icon: BarChart3 },
   { id: "crm", label: "CRM", path: "/admin/crm", icon: LayoutDashboard },
   { id: "leads", label: "Leads", path: "/admin/leads", icon: Users },
   { id: "inbox", label: "Inbox", path: "/admin/inbox", icon: MessageCircle },
+  { id: "plantao", label: "Plantão", path: "/admin/plantao", icon: Radio },
   { id: "agenda", label: "Agenda", path: "/admin/agenda", icon: CalendarDays },
   { id: "brokers", label: "Corretores", path: "/admin/corretores", icon: Users },
   { id: "roletas", label: "Roletas", path: "/admin/roletas", icon: Shuffle },
@@ -19,6 +20,7 @@ export const ADMIN_TAB_LABELS: Record<AdminRouteTabId, { title: string; subtitle
   crm: { title: "CRM", subtitle: "Gerencie seus leads e pipeline de vendas" },
   leads: { title: "Leads", subtitle: "Visualize e exporte todos os leads" },
   inbox: { title: "Inbox", subtitle: "Gerencie conversas e atendimento em tempo real" },
+  plantao: { title: "Plantão", subtitle: "Conversas da instância global de multi-atendimento" },
   agenda: { title: "Agenda", subtitle: "Gerencie compromissos e eventos" },
   brokers: { title: "Corretores", subtitle: "Cadastre e gerencie corretores parceiros" },
   roletas: { title: "Roletas", subtitle: "Gerencie distribuição e regras de atendimento" },
@@ -36,6 +38,7 @@ export const ADMIN_TAB_BY_SEGMENT: Record<string, AdminRouteTabId> = {
   roletas: "roletas",
   empreendimentos: "projects",
   inbox: "inbox",
+  plantao: "plantao",
   agenda: "agenda",
   copiloto: "copilot",
 };

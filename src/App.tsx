@@ -35,6 +35,7 @@ import BrokerInbox from "./pages/BrokerInbox";
 import BrokerPlantao from "./pages/BrokerPlantao";
 import BrokerCopilotConfig from "./pages/BrokerCopilotConfig";
 import AdminInbox from "./pages/AdminInbox";
+import AdminPlantao from "./pages/AdminPlantao";
 import AdminCopilotConfig from "./pages/AdminCopilotConfig";
 import AdminAgenda from "./pages/AdminAgenda";
 import BrokerAgenda from "./pages/BrokerAgenda";
