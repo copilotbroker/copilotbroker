@@ -1,39 +1,39 @@
 
 
-## Acelerar Carregamento das Cadências Salvas
+## Acelerar Carregamento dos Botões da Sidebar (Inbox, Copiloto)
 
 ### Diagnóstico
 
-O hook `useUserRole()` usa `useState` + `useEffect` com auth listener — cada componente que o chama inicia com `brokerId: null` e `isLoading: true`. Isso atrasa o início da query de cadências porque ela tem `enabled: !!brokerId`.
+O hook `useBrokerFeatures` usa `useState` + `useEffect` manual. Cada vez que um componente monta, ele começa com `inboxEnabled=false` e `copilotEnabled=false`, fazendo os botões de Inbox e Copiloto ficarem invisíveis até a query completar (~300-500ms). Isso causa o "atraso" visível na aparição desses botões.
 
-A sequência atual é:
-1. Componente monta → `brokerId = null` (query desabilitada)
-2. Auth listener dispara → busca role + broker no Supabase (~200-500ms)
-3. `brokerId` resolve → query de cadências inicia → busca regras + contagem de steps (~300-500ms)
-4. Total: ~500ms-1s de spinner antes dos dados aparecerem
+O mesmo problema afeta `useInboxUnread` — também usa `useState` + `useEffect` sem cache.
 
 ### Solução
 
-Migrar `useUserRole` para React Query, tornando o `brokerId` disponível instantaneamente (via cache) em qualquer componente após a primeira resolução.
+Migrar ambos os hooks para React Query, garantindo que os dados fiquem em cache entre navegações.
 
-### Arquivo: `src/hooks/use-user-role.ts`
+### Arquivo 1: `src/hooks/use-broker-features.ts`
+- Substituir `useState`/`useEffect` por `useQuery` com `queryKey: ["broker-features", brokerId]`
+- `staleTime: 5 * 60 * 1000` (features raramente mudam)
+- `enabled: !!brokerId`
+- Valores default enquanto carrega: `inboxEnabled: false, copilotEnabled: false`
 
-1. Substituir `useState` + `useEffect` + auth listener por `useQuery` com:
-   - `queryKey: ["user-role"]`
-   - `staleTime: 5 * 60 * 1000` (5 min — role raramente muda)
-   - `queryFn` que faz `supabase.auth.getUser()` e depois busca roles + broker em paralelo (mesma lógica atual)
-2. Manter o auth listener apenas para invalidar o cache em `SIGNED_IN` / `SIGNED_OUT` (não para refetch completo)
-3. Retornar a mesma interface `{ role, isLoading, brokerId, isLeader }`
+### Arquivo 2: `src/hooks/use-inbox-unread.ts`
+- Substituir `useState`/`useEffect` por `useQuery` com `queryKey: ["inbox-unread"]`
+- `staleTime: 30_000` (30s)
+- `refetchInterval: 30_000` (substitui o realtime channel por polling leve)
+- Manter o realtime channel apenas para invalidar o cache (não para fetch manual)
 
 ### Resultado esperado
-- Na primeira visita: comportamento igual ao atual
-- Em visitas subsequentes (troca de aba e volta): `brokerId` disponível instantaneamente do cache → query de cadências dispara imediatamente com dados cacheados → **zero spinner**
+- Primeira visita: comportamento igual ao atual
+- Navegações subsequentes: botões Inbox e Copiloto aparecem instantaneamente do cache, sem flicker
 
 ### Arquivos alterados
-- `src/hooks/use-user-role.ts` — migrar para React Query
+- `src/hooks/use-broker-features.ts`
+- `src/hooks/use-inbox-unread.ts`
 
 ### O que NÃO muda
-- Interface pública do hook (mesmos campos retornados)
-- Todos os componentes consumidores continuam funcionando sem alteração
-- Lógica de roles e permissões
+- Interface pública dos hooks
+- Componentes consumidores (BrokerBottomNav, BrokerSidebar, BrokerLayout)
+- Lógica de realtime para notificações
 
