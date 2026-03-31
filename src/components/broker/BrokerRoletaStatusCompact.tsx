@@ -65,25 +65,25 @@ export function BrokerRoletaStatusCompact({ brokerId }: { brokerId: string }) {
 
   if (statuses.length === 0) return null;
 
+  const allOnline = statuses.every((s) => s.myCheckin);
+  const onlineCount = statuses.filter((s) => s.myCheckin).length;
+  const offlineCount = statuses.length - onlineCount;
+
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-      {statuses.map((s) => (
-        <div
-          key={s.id}
-          className="flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-full bg-[#1e1e22] border border-[#2a2a2e]"
-        >
-          <span
-            className={cn(
-              "w-1.5 h-1.5 rounded-full shrink-0",
-              s.myCheckin ? "bg-emerald-400" : "bg-slate-500"
-            )}
-          />
-          <span className="text-[10px] font-medium text-slate-300 whitespace-nowrap max-w-[60px] truncate">
-            {s.nome}
-          </span>
-          <span className="text-[9px] text-slate-500">{s.onlineCount}</span>
+    <div className="flex items-center gap-1.5">
+      {allOnline ? (
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[10px] font-semibold text-emerald-400">Online</span>
         </div>
-      ))}
+      ) : (
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 border border-red-500/30">
+          <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+          <span className="text-[10px] font-semibold text-red-400">
+            {offlineCount === statuses.length ? "Offline" : `${offlineCount} offline`}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
