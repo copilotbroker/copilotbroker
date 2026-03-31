@@ -736,10 +736,11 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
               key={label}
               onClick={() => setStep(i)}
               className={cn(
-                "text-[10px] font-medium transition-colors",
+                "flex items-center gap-1.5 text-[10px] font-medium transition-colors",
                 i <= step ? "text-primary" : "text-muted-foreground/50"
               )}
             >
+              <span className={cn("w-1.5 h-1.5 rounded-full", i <= step ? "bg-primary" : "bg-[#1e1e22]")} />
               {label}
             </button>
           ))}
