@@ -1,59 +1,45 @@
 
 
-## Unificação Visual: Conexão, Copiloto, Segurança e Follow-up
+## Redesign da Página Copiloto
 
-### Resumo
-Aplicar o mesmo padrão "Dark Professional" das abas Campanhas e Fila (tokens `#111114` / `#1e1e22`, headers com ícone em box, stats inline, collapsibles padronizados) nas 4 abas restantes: **Conexão**, **Copiloto (Summary)**, **Segurança** e **Follow-up**. As mudanças se aplicam tanto ao contexto do corretor quanto ao admin/líder (os componentes são compartilhados).
+### Objetivo
+Aplicar o padrão "Dark Professional" (`#111114` / `#1e1e22`) na `CopilotConfigPage`, harmonizando com Campanhas e Fila, e elevando a experiência visual tanto no **Summary** quanto no **Wizard**.
 
-### Arquivos a alterar
+### Arquivo: `src/components/inbox/CopilotConfigPage.tsx`
 
-#### 1. `src/components/whatsapp/ConnectionTab.tsx`
-- Trocar todos `bg-[#1a1a1d]` → `bg-[#111114]` e `border-[#2a2a2e]` → `border-[#1e1e22]`
-- Adicionar header com ícone em box (`Wifi` dentro de `bg-green-500/10 rounded-lg`) + título + subtítulo
-- Init card (sem instância): atualizar tokens de cor
-- Action buttons: atualizar borders para `border-[#1e1e22]` e hovers para `hover:bg-[#1e1e22]`
-- AlertDialog: atualizar tokens
+#### A. CopilotSummary (tela principal quando já configurado)
 
-#### 2. `src/components/whatsapp/HealthScoreCard.tsx`
-- Trocar `bg-[#1a1a1d]` → `bg-[#111114]`, `border-[#2a2a2e]` → `border-[#1e1e22]`
-- Progress bars bg: `bg-[#2a2a2e]` → `bg-[#1e1e22]`
-- Score circle gradient: atualizar tons
+1. **Header padronizado**: Adicionar header com ícone em box (`Sparkles` dentro de `bg-primary/10 rounded-lg`) + título "Copiloto IA" + subtítulo, antes do hero card — alinhando com as demais abas
+2. **Hero card**: Trocar `bg-card border-border` → `bg-[#111114] border-[#1e1e22]`; manter gradient overlay e status dot
+3. **Capability cards (2x2)**: Trocar para `bg-[#111114] border-[#1e1e22]`
+4. **Calibragem do Copiloto (dials)**: Mesmos tokens; progress bars bg `bg-[#1e1e22]`
+5. **Recursos Ativos**: Card com tokens unificados; pills mantêm estilo atual
+6. **Botões de ação**: "Editar" mantém `bg-primary`; botão "Excluir" → `border-[#1e1e22]`; AlertDialog → `bg-[#111114] border-[#1e1e22]`
 
-#### 3. `src/components/whatsapp/ConnectionStatusCard.tsx`
-- Atualizar tokens de border/background se aplicável
+#### B. Wizard (criação/edição — 5 steps)
 
-#### 4. `src/components/whatsapp/SecurityTab.tsx`
-- Trocar todos `bg-[#1a1a1d]` → `bg-[#111114]` e `border-[#2a2a2e]` → `border-[#1e1e22]`
-- Adicionar header padronizado com ícone em box (`Shield` dentro de `bg-blue-500/10 rounded-lg`) + título + subtítulo, antes do grid de limites
-- Input bg: `bg-[#0d0d0f]` pode permanecer (é mais escuro, funciona)
-- Kill Switch card: atualizar tokens para o estado não-pausado
-- Warmup card e Anti-Spam card: atualizar tokens
+7. **Header do wizard**: Ícone box com gradient mantém; fundo geral já usa `bg-background` (ok)
+8. **Progress bar**: Trocar `Progress` bg para `h-1 bg-[#1e1e22]` com indicador `bg-primary`; step labels com dot indicators em vez de apenas cor
+9. **SelectionCard**: Trocar `bg-card` → `bg-[#111114]`, `border-border` → `border-[#1e1e22]`, selected state mantém `border-primary bg-primary/10`
+10. **Inputs e Selects**: `bg-background` já funciona (mais escuro); borders → `border-[#1e1e22]`
+11. **Follow-up card (StepStrategy)**: `bg-card` → `bg-[#111114] border-[#1e1e22]`
+12. **StepAdvanced textarea**: Border → `border-[#1e1e22]`
+13. **Bottom nav bar**: `bg-background/95 border-border` → `bg-[#0d0d0f]/95 border-[#1e1e22]`
 
-#### 5. `src/components/whatsapp/AutoCadenciaSection.tsx` (Follow-up)
-- Trocar `bg-[#1a1a1d]` → `bg-[#111114]` e `border-[#2a2a2e]` → `border-[#1e1e22]`
-- Cadence rule cards: `bg-[#141417]` → `bg-[#111114]`
-- AlertDialog: atualizar tokens
-- Empty state: atualizar tokens para o padrão refinado (ícone em box arredondado)
+#### C. AdminCopilotOverview
 
-#### 6. `src/components/whatsapp/GlobalConnectionTab.tsx` (Admin)
-- Mesmas substituições de tokens: `bg-[#1a1a1d]` → `bg-[#111114]`, `border-[#2a2a2e]` → `border-[#1e1e22]`
-- Init card e action buttons: atualizar
-
-#### 7. `src/components/inbox/CopilotConfigPage.tsx`
-- Na `CopilotSummary`: verificar e atualizar tokens para `#111114` / `#1e1e22` nos cards de configuração (se usar `#1a1a1d`)
+14. **Arquivo**: `src/components/admin/AdminCopilotOverview.tsx`
+15. **StatCards**: `bg-card border-border` → `bg-[#111114] border-[#1e1e22]`
+16. **BrokerCopilotCard**: Mesma substituição + hover `hover:border-primary/30`
+17. **BrokerEmptyCard**: Border dashed → `border-[#1e1e22]`, bg → `bg-[#111114]/50`
+18. **MiniStat**: `bg-background` → `bg-[#0d0d0f]`
 
 ### O que NÃO muda
-- Toda a lógica funcional (hooks, mutations, queries)
-- CampaignsTab e QueueTab (já unificadas)
-- CopilotConfigPage wizard steps (já usam variáveis semânticas do tema)
-- Estrutura de tabs no AdminCopilotConfig e BrokerCopilotConfig
+- Toda a lógica funcional (save, delete, toggle, steps, navigation)
+- Hooks (`useCopilotConfig`, `useCopilotSuggestion`)
+- Estrutura de tabs nos pages (`BrokerCopilotConfig`, `AdminCopilotConfig`)
 
-### Token de referência (padrão Campanhas/Fila)
-```text
-Surface:     bg-[#111114]
-Border:      border-[#1e1e22]
-Input bg:    bg-[#0d0d0f]
-Hover:       hover:bg-[#1e1e22]
-Header:      Ícone em box (bg-{color}-500/10 rounded-lg) + título + subtítulo
-```
+### Arquivos alterados
+- `src/components/inbox/CopilotConfigPage.tsx`
+- `src/components/admin/AdminCopilotOverview.tsx`
 
