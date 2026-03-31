@@ -178,13 +178,13 @@ function StatCard({ label, value, icon, highlight, warning }: {
   warning?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-[#1e1e22] bg-[#111114] p-4">
       <div className="flex items-center gap-2 mb-2">
         <div className={cn(
           "w-7 h-7 rounded-lg flex items-center justify-center",
           highlight ? "bg-primary/15 text-primary" :
           warning ? "bg-orange-500/15 text-orange-400" :
-          "bg-muted text-muted-foreground"
+          "bg-[#1e1e22] text-muted-foreground"
         )}>
           {icon}
         </div>
