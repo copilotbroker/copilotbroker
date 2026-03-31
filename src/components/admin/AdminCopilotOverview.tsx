@@ -221,7 +221,7 @@ function BrokerCopilotCard({ broker, onSelect }: { broker: BrokerWithCopilot; on
                 <Bot className="w-5 h-5 text-primary" />
               </div>
               <div className={cn(
-                "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card",
+                "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#111114]",
                 isOnline ? "bg-green-500" : "bg-muted-foreground"
               )} />
             </div>
