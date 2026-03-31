@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, Lock, Download, Share, Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import logoEnove from "@/assets/logo-enove.png";
 
 const Auth = () => {
