@@ -5,6 +5,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
 import { AgendaModule } from "@/components/agenda/AgendaModule";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLogout } from "@/hooks/use-logout";
 
 const AdminAgenda = () => {
   const navigate = useNavigate();
