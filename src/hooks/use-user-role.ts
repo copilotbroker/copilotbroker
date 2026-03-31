@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 type AppRole = "admin" | "broker" | null;
 
@@ -10,82 +11,68 @@ interface UserRoleState {
   isLeader: boolean;
 }
 
-export const useUserRole = () => {
-  const [state, setState] = useState<UserRoleState>({
-    role: null,
-    isLoading: true,
-    brokerId: null,
-    isLeader: false,
+const fetchUserRole = async (): Promise<Omit<UserRoleState, "isLoading">> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { role: null, brokerId: null, isLeader: false };
+
+  const [rolesResult, brokerResult] = await Promise.all([
+    supabase
+      .from("user_roles" as any)
+      .select("role")
+      .eq("user_id", user.id) as any,
+    supabase
+      .from("brokers" as any)
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle() as any,
+  ]);
+
+  if (rolesResult.error) {
+    console.error("Erro ao buscar role:", rolesResult.error);
+    return { role: null, brokerId: null, isLeader: false };
+  }
+
+  const roles = (rolesResult.data || []).map((r: { role: string }) => r.role);
+  const isLeader = roles.includes("leader");
+
+  let role: AppRole = null;
+  if (roles.includes("admin")) {
+    role = "admin";
+  } else if (roles.includes("broker") || roles.includes("leader")) {
+    role = "broker";
+  }
+
+  const brokerId = brokerResult.data?.id || null;
+  return { role, brokerId, isLeader };
+};
+
+export const useUserRole = (): UserRoleState => {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["user-role"],
+    queryFn: fetchUserRole,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
   });
 
-  const isFetchingRef = useRef(false);
-  const cachedUserIdRef = useRef<string | null>(null);
-
   useEffect(() => {
-    const fetchUserRole = async (userId: string) => {
-      // Skip if already fetching or cached for same user
-      if (isFetchingRef.current) return;
-      if (cachedUserIdRef.current === userId && !state.isLoading) return;
-
-      isFetchingRef.current = true;
-
-      try {
-        // Parallel fetch: roles + broker info at the same time
-        const [rolesResult, brokerResult] = await Promise.all([
-          supabase
-            .from("user_roles" as any)
-            .select("role")
-            .eq("user_id", userId) as any,
-          supabase
-            .from("brokers" as any)
-            .select("id")
-            .eq("user_id", userId)
-            .maybeSingle() as any,
-        ]);
-
-        if (rolesResult.error) {
-          console.error("Erro ao buscar role:", rolesResult.error);
-          setState({ role: null, isLoading: false, brokerId: null, isLeader: false });
-          return;
-        }
-
-        const roles = (rolesResult.data || []).map((r: { role: string }) => r.role);
-        const isLeader = roles.includes("leader");
-
-        let role: AppRole = null;
-        if (roles.includes("admin")) {
-          role = "admin";
-        } else if (roles.includes("broker") || roles.includes("leader")) {
-          role = "broker";
-        }
-
-        const brokerId = brokerResult.data?.id || null;
-
-        cachedUserIdRef.current = userId;
-        setState({ role, isLoading: false, brokerId, isLeader });
-      } catch (error) {
-        console.error("Erro ao verificar role:", error);
-        setState({ role: null, isLoading: false, brokerId: null, isLeader: false });
-      } finally {
-        isFetchingRef.current = false;
-      }
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Only react to meaningful auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "TOKEN_REFRESHED") return;
-
-      if (!session?.user) {
-        cachedUserIdRef.current = null;
-        setState({ role: null, isLoading: false, brokerId: null, isLeader: false });
-        return;
+      if (event === "SIGNED_OUT") {
+        queryClient.setQueryData(["user-role"], { role: null, brokerId: null, isLeader: false });
+      } else if (event === "SIGNED_IN") {
+        queryClient.invalidateQueries({ queryKey: ["user-role"] });
       }
-
-      fetchUserRole(session.user.id);
     });
-
     return () => subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
-  return state;
+  return {
+    role: data?.role ?? null,
+    isLoading,
+    brokerId: data?.brokerId ?? null,
+    isLeader: data?.isLeader ?? false,
+  };
 };
