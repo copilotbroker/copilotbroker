@@ -120,7 +120,7 @@ function SelectionCard({
         "relative p-4 rounded-xl border text-left transition-all duration-200",
         selected
           ? "border-primary bg-primary/10 shadow-[0_0_20px_hsl(var(--primary)/0.08)]"
-          : "border-border bg-card hover:border-primary/30 hover:bg-primary/5",
+          : "border-[#1e1e22] bg-[#111114] hover:border-primary/30 hover:bg-primary/5",
         className,
       )}
     >
