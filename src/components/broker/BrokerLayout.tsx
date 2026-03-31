@@ -102,6 +102,7 @@ export function BrokerLayout({
           onSearchChange={onSearchChange}
           collapsibleContent={collapsibleContent}
           onAddLead={onAddLead}
+          brokerId={brokerId}
         />
         <WhatsAppDisconnectedBanner />
         <main className={viewMode === "kanban"
