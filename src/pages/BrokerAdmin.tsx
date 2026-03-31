@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, RefreshCw, FileSpreadsheet } from "lucide-react";
+import { useLogout } from "@/hooks/use-logout";
 import { Input } from "@/components/ui/input";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
