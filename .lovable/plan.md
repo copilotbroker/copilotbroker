@@ -1,45 +1,45 @@
 
 
-## Redesign da Página Copiloto
+## Melhorar Percepção de Carregamento das Abas Copiloto
 
-### Objetivo
-Aplicar o padrão "Dark Professional" (`#111114` / `#1e1e22`) na `CopilotConfigPage`, harmonizando com Campanhas e Fila, e elevando a experiência visual tanto no **Summary** quanto no **Wizard**.
+### Diagnóstico
 
-### Arquivo: `src/components/inbox/CopilotConfigPage.tsx`
+As abas **Campanhas** e **Fila** usam React Query (`useQuery`), que mantém os dados em cache. Ao trocar de aba e voltar, os dados aparecem instantaneamente (cache) enquanto revalida em background — experiência "já carregada".
 
-#### A. CopilotSummary (tela principal quando já configurado)
+As abas **Conexão**, **Copiloto**, **Segurança** e **Follow-up** usam hooks manuais (`useState` + `useEffect` + fetch), que:
+- Resetam o estado toda vez que o componente monta
+- Mostram spinner de loading do zero a cada visita
+- Não possuem cache
 
-1. **Header padronizado**: Adicionar header com ícone em box (`Sparkles` dentro de `bg-primary/10 rounded-lg`) + título "Copiloto IA" + subtítulo, antes do hero card — alinhando com as demais abas
-2. **Hero card**: Trocar `bg-card border-border` → `bg-[#111114] border-[#1e1e22]`; manter gradient overlay e status dot
-3. **Capability cards (2x2)**: Trocar para `bg-[#111114] border-[#1e1e22]`
-4. **Calibragem do Copiloto (dials)**: Mesmos tokens; progress bars bg `bg-[#1e1e22]`
-5. **Recursos Ativos**: Card com tokens unificados; pills mantêm estilo atual
-6. **Botões de ação**: "Editar" mantém `bg-primary`; botão "Excluir" → `border-[#1e1e22]`; AlertDialog → `bg-[#111114] border-[#1e1e22]`
+### Solução
 
-#### B. Wizard (criação/edição — 5 steps)
+Migrar os 3 hooks problemáticos para React Query, ganhando cache automático + `staleTime` + revalidação em background.
 
-7. **Header do wizard**: Ícone box com gradient mantém; fundo geral já usa `bg-background` (ok)
-8. **Progress bar**: Trocar `Progress` bg para `h-1 bg-[#1e1e22]` com indicador `bg-primary`; step labels com dot indicators em vez de apenas cor
-9. **SelectionCard**: Trocar `bg-card` → `bg-[#111114]`, `border-border` → `border-[#1e1e22]`, selected state mantém `border-primary bg-primary/10`
-10. **Inputs e Selects**: `bg-background` já funciona (mais escuro); borders → `border-[#1e1e22]`
-11. **Follow-up card (StepStrategy)**: `bg-card` → `bg-[#111114] border-[#1e1e22]`
-12. **StepAdvanced textarea**: Border → `border-[#1e1e22]`
-13. **Bottom nav bar**: `bg-background/95 border-border` → `bg-[#0d0d0f]/95 border-[#1e1e22]`
+#### 1. Refatorar `use-whatsapp-instance.ts`
+- Extrair o fetch de status para um `useQuery` com `queryKey: ["whatsapp-instance"]` e `staleTime: 30_000` (30s)
+- As mutations (init, logout, restart, delete, togglePause, updateSettings) continuam como funções que invalidam o cache via `queryClient.invalidateQueries(["whatsapp-instance"])`
+- O QR code e pairing code permanecem em `useState` local (são efêmeros)
+- Resultado: aba Conexão e Segurança carregam instantaneamente na segunda visita
 
-#### C. AdminCopilotOverview
+#### 2. Refatorar `use-copilot.ts` (`useCopilotConfig`)
+- Trocar `useState` + `useEffect` + `fetchConfig()` por `useQuery({ queryKey: ["copilot-config", brokerId], staleTime: 60_000 })`
+- `saveConfig` e `deleteConfig` invalidam `["copilot-config", brokerId]`
+- Resultado: aba Copiloto carrega instantaneamente na segunda visita
 
-14. **Arquivo**: `src/components/admin/AdminCopilotOverview.tsx`
-15. **StatCards**: `bg-card border-border` → `bg-[#111114] border-[#1e1e22]`
-16. **BrokerCopilotCard**: Mesma substituição + hover `hover:border-primary/30`
-17. **BrokerEmptyCard**: Border dashed → `border-[#1e1e22]`, bg → `bg-[#111114]/50`
-18. **MiniStat**: `bg-background` → `bg-[#0d0d0f]`
-
-### O que NÃO muda
-- Toda a lógica funcional (save, delete, toggle, steps, navigation)
-- Hooks (`useCopilotConfig`, `useCopilotSuggestion`)
-- Estrutura de tabs nos pages (`BrokerCopilotConfig`, `AdminCopilotConfig`)
+#### 3. Refatorar `use-auto-cadencia-rules.ts`
+- Trocar `useState` + `useEffect` + `fetchRules()` por `useQuery({ queryKey: ["auto-cadencia-rules", brokerId], staleTime: 30_000 })`
+- Mutations (toggle, delete, create, update) invalidam o cache
+- Resultado: aba Follow-up carrega instantaneamente na segunda visita
 
 ### Arquivos alterados
-- `src/components/inbox/CopilotConfigPage.tsx`
-- `src/components/admin/AdminCopilotOverview.tsx`
+- `src/hooks/use-whatsapp-instance.ts` — migrar fetch de status para React Query
+- `src/hooks/use-copilot.ts` — migrar para React Query
+- `src/hooks/use-auto-cadencia-rules.ts` — migrar para React Query
+- `src/components/whatsapp/ConnectionTab.tsx` — ajustar referência ao loading (minor)
+- `src/components/whatsapp/SecurityTab.tsx` — remover query redundante de broker (já vem do hook)
+
+### O que NÃO muda
+- Toda a lógica funcional e UI existente
+- As abas Campanhas e Fila (já otimizadas)
+- A estrutura de tabs nos pages
 
