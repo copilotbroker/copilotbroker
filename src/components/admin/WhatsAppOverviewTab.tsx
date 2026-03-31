@@ -158,6 +158,7 @@ export function WhatsAppOverviewTab({
               Nenhuma instância WhatsApp configurada
             </p>
           ) : (
+            <>
             {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
