@@ -133,6 +133,10 @@ async function sendViaUAZAPI(
         if (result.error) return { success: false, error: String(result.error) };
 
         const messageId = String(result.id || result.messageid || (result.key as Record<string, unknown>)?.id || "");
+        if (!messageId && isAudio && request.endpoint === "/send/media") {
+          console.warn(`⚠️ /send/media respondeu sem messageId para áudio. Corpo: ${responseText.substring(0, 200)}`);
+          continue;
+        }
         console.log(`✅ Mensagem ${messageType} enviada via ${request.endpoint} para ${cleanPhone}`);
         return { success: true, messageId };
       } catch (err) {
