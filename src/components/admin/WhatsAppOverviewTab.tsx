@@ -158,7 +158,8 @@ export function WhatsAppOverviewTab({
               Nenhuma instância WhatsApp configurada
             </p>
           ) : (
-            <div className="overflow-x-auto">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[#2a2a2e]">
@@ -216,6 +217,37 @@ export function WhatsAppOverviewTab({
                   ))}
                 </tbody>
               </table>
+            </div>
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-2">
+              {instances.map((instance) => (
+                <div key={instance.id} className="p-3 rounded-lg bg-[#2a2a2e]/30 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{instance.broker?.name || "N/A"}</p>
+                      <p className="text-xs text-slate-400 font-mono">{formatPhone(instance.phone_number)}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {getStatusBadge(instance.status, instance.is_paused)}
+                      {instance.status === "connected" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-7 w-7 ${instance.is_paused ? "text-green-500" : "text-yellow-500"}`}
+                          onClick={() => onTogglePause(instance.id, !instance.is_paused)}
+                        >
+                          {instance.is_paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-slate-400">
+                    <span>{instance.daily_sent_count}/{instance.daily_limit} msgs</span>
+                    <span>·</span>
+                    <span>Dia {instance.warmup_day}/14</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
