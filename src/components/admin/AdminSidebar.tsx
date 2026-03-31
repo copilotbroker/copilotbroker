@@ -7,6 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import logoEnove from "@/assets/logo-enove-mini.png";
 import { useInboxUnread } from "@/hooks/use-inbox-unread";
+import { usePlantaoNovosCount } from "@/hooks/use-plantao-novos-count";
 import {
   Tooltip,
   TooltipContent,
