@@ -177,13 +177,13 @@ function HistoryMessageCard({ message, onRetry }: { message: any; onRetry: (id: 
   return (
     <div
       className={cn(
-        "px-3 py-2.5 rounded-xl border cursor-pointer select-none transition-colors",
+        "px-3 py-2.5 rounded-xl border cursor-pointer select-none transition-colors overflow-hidden",
         isFailed ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" : "bg-[#111114] border-[#1e1e22] hover:bg-[#161619]"
       )}
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-center gap-2 min-w-0">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {message.status === "sent" ? (
             <CheckCircle className="w-4 h-4 text-emerald-400" />
           ) : isFailed ? (
@@ -192,23 +192,21 @@ function HistoryMessageCard({ message, onRetry }: { message: any; onRetry: (id: 
             <XCircle className="w-4 h-4 text-slate-400" />
           )}
         </div>
-        <span className="text-sm text-slate-200 font-medium truncate flex-shrink-0 max-w-[120px]">
+        <span className="text-sm text-slate-200 font-medium truncate min-w-0 flex-1">
           {message.lead?.name || message.phone}
         </span>
-        {message.message && (
-          <span className="text-xs text-slate-500 italic truncate flex-1 min-w-0">
-            · "{truncateMessage(message.message)}"
-          </span>
-        )}
         {message.sent_at && (
-          <span className="text-xs text-slate-500 flex-shrink-0">
-            {format(new Date(message.sent_at), "dd/MM/yyyy HH:mm")}
+          <span className="text-[10px] text-slate-500 shrink-0">
+            {format(new Date(message.sent_at), "dd/MM HH:mm")}
           </span>
         )}
-        <Badge variant={statusConfig.variant} className="text-[10px] flex-shrink-0">
+        <Badge variant={statusConfig.variant} className="text-[10px] shrink-0">
           {statusConfig.label}
         </Badge>
       </div>
+      {message.message && (
+        <p className="text-xs text-slate-500 italic truncate mt-1">"{truncateMessage(message.message, 60)}"</p>
+      )}
 
       {expanded && (
         <div className="mt-2 pt-2 border-t border-[#1e1e22] space-y-2" onClick={(e) => e.stopPropagation()}>
