@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface GlobalInstanceState {
   status: "connected" | "disconnected" | "connecting" | "qr_pending";
@@ -12,135 +13,98 @@ interface GlobalInstanceState {
 }
 
 const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-global-instance-manager`;
+const QUERY_KEY = ["whatsapp-global-instance"];
+
+const getAuthHeaders = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("No active session");
+  }
+  return {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${session.access_token}`,
+  };
+};
+
+const fetchGlobalStatus = async (): Promise<GlobalInstanceState> => {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${FUNCTION_URL}/status`, { headers });
+  const data = await response.json();
+
+  if (data.error && !data.status) {
+    return {
+      status: "disconnected",
+      phoneNumber: null,
+      instanceName: null,
+      lastSeenAt: null,
+      error: data.error,
+      needsInit: data.needsInit || false,
+    };
+  }
+
+  return {
+    status: data.status as GlobalInstanceState["status"],
+    phoneNumber: data.phoneNumber || null,
+    instanceName: data.instanceName || null,
+    lastSeenAt: data.lastSeenAt || null,
+    error: data.error || null,
+    needsInit: data.needsInit || false,
+  };
+};
 
 export function useWhatsAppGlobalInstance() {
-  const [state, setState] = useState<GlobalInstanceState>({
-    status: "connected",
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [isLoadingQR, setIsLoadingQR] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: state, isLoading: isQueryLoading } = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: fetchGlobalStatus,
+    staleTime: 30_000,
+    refetchInterval: (query) => {
+      const s = query.state.data;
+      if (!s) return false;
+      if (s.status === "qr_pending" || s.status === "connecting") return 5000;
+      if (s.status === "connected") return 60000;
+      return 15000;
+    },
+  });
+
+  const currentState = state ?? {
+    status: "disconnected" as const,
     phoneNumber: null,
     instanceName: null,
     lastSeenAt: null,
     error: null,
     needsInit: false,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [pairingCode, setPairingCode] = useState<string | null>(null);
-  const [isLoadingQR, setIsLoadingQR] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
+  };
 
-  const getAuthHeaders = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      throw new Error("No active session");
-    }
-    return {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${session.access_token}`,
-    };
-  }, []);
+  // Clear QR when connected
+  if (currentState.status === "connected" && (qrCode || pairingCode)) {
+    setQrCode(null);
+    setPairingCode(null);
+  }
 
   const refreshStatus = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const headers = await getAuthHeaders();
-      
-      const response = await fetch(`${FUNCTION_URL}/status`, { headers });
-      const data = await response.json();
+    await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+  }, [queryClient]);
 
-      if (data.error && !data.status) {
-        setState(prev => ({
-          ...prev,
-          status: "disconnected",
-          error: data.error,
-          needsInit: data.needsInit || false,
-        }));
-        return;
-      }
-
-      const newStatus = data.status as GlobalInstanceState["status"];
-      
-      // Clear QR code if connected
-      if (newStatus === "connected" && (qrCode || pairingCode)) {
-        setQrCode(null);
-        setPairingCode(null);
-      }
-
-      setState({
-        status: newStatus,
-        phoneNumber: data.phoneNumber || null,
-        instanceName: data.instanceName || null,
-        lastSeenAt: data.lastSeenAt || null,
-        error: data.error || null,
-        needsInit: data.needsInit || false,
-      });
-    } catch (error) {
-      console.error("Failed to refresh global instance status:", error);
-      setState(prev => ({
-        ...prev,
-        error: error instanceof Error ? error.message : "Erro ao verificar status",
-        needsInit: true,
-      }));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [getAuthHeaders, qrCode, pairingCode]);
-
-  const initInstance = useCallback(async () => {
-    try {
-      setIsInitializing(true);
-      const headers = await getAuthHeaders();
-      
-      toast.info("Criando nova instância...");
-      
-      const response = await fetch(`${FUNCTION_URL}/init`, {
-        method: "POST",
-        headers,
-      });
-      const data = await response.json();
-
-      if (data.error) {
-        toast.error(data.error);
-        return false;
-      }
-
-      toast.success("Instância criada! Gerando QR Code...");
-      
-      // If QR code was returned, set it
-      if (data.qrCode) {
-        setQrCode(data.qrCode);
-        setPairingCode(data.pairingCode || null);
-        setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
-      } else if (data.pairingCode) {
-        setPairingCode(data.pairingCode);
-        setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
-      } else {
-        // Fetch QR code separately
-        await fetchQRCode();
-      }
-      
-      return true;
-    } catch (error) {
-      console.error("Failed to init instance:", error);
-      toast.error("Erro ao criar instância");
-      return false;
-    } finally {
-      setIsInitializing(false);
-    }
-  }, [getAuthHeaders]);
-
-  const fetchQRCode = useCallback(async () => {
+  const fetchQRCodeInternal = async () => {
     try {
       setIsLoadingQR(true);
       const headers = await getAuthHeaders();
-      
       const response = await fetch(`${FUNCTION_URL}/qrcode`, { headers });
       const data = await response.json();
 
       if (data.error) {
-        // If needs init, show specific message
         if (data.needsInit) {
           toast.error("Instância não existe. Clique em 'Criar Nova Instância' primeiro.");
-          setState(prev => ({ ...prev, needsInit: true }));
+          queryClient.setQueryData(QUERY_KEY, (prev: GlobalInstanceState | undefined) =>
+            prev ? { ...prev, needsInit: true } : prev
+          );
         } else {
           toast.error(data.error);
         }
@@ -150,12 +114,15 @@ export function useWhatsAppGlobalInstance() {
       if (data.qrCode) {
         setQrCode(data.qrCode);
         setPairingCode(data.pairingCode || null);
-        setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
+        queryClient.setQueryData(QUERY_KEY, (prev: GlobalInstanceState | undefined) =>
+          prev ? { ...prev, status: "qr_pending" as const, needsInit: false } : prev
+        );
       } else if (data.pairingCode) {
         setPairingCode(data.pairingCode);
         setQrCode(null);
-        setState(prev => ({ ...prev, status: "qr_pending", needsInit: false }));
-        
+        queryClient.setQueryData(QUERY_KEY, (prev: GlobalInstanceState | undefined) =>
+          prev ? { ...prev, status: "qr_pending" as const, needsInit: false } : prev
+        );
         if (data.newInstance) {
           toast.success("Nova instância criada! Escaneie o QR Code.");
         }
@@ -168,17 +135,58 @@ export function useWhatsAppGlobalInstance() {
     } finally {
       setIsLoadingQR(false);
     }
-  }, [getAuthHeaders]);
+  };
+
+  const initInstance = useCallback(async () => {
+    try {
+      setIsInitializing(true);
+      const headers = await getAuthHeaders();
+      toast.info("Criando nova instância...");
+
+      const response = await fetch(`${FUNCTION_URL}/init`, { method: "POST", headers });
+      const data = await response.json();
+
+      if (data.error) {
+        toast.error(data.error);
+        return false;
+      }
+
+      toast.success("Instância criada! Gerando QR Code...");
+
+      if (data.qrCode) {
+        setQrCode(data.qrCode);
+        setPairingCode(data.pairingCode || null);
+        queryClient.setQueryData(QUERY_KEY, (prev: GlobalInstanceState | undefined) =>
+          prev ? { ...prev, status: "qr_pending" as const, needsInit: false } : prev
+        );
+      } else if (data.pairingCode) {
+        setPairingCode(data.pairingCode);
+        queryClient.setQueryData(QUERY_KEY, (prev: GlobalInstanceState | undefined) =>
+          prev ? { ...prev, status: "qr_pending" as const, needsInit: false } : prev
+        );
+      } else {
+        await fetchQRCodeInternal();
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Failed to init instance:", error);
+      toast.error("Erro ao criar instância");
+      return false;
+    } finally {
+      setIsInitializing(false);
+    }
+  }, [queryClient]);
+
+  const fetchQRCode = useCallback(async () => {
+    await fetchQRCodeInternal();
+  }, [queryClient]);
 
   const logout = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setIsMutating(true);
       const headers = await getAuthHeaders();
-      
-      const response = await fetch(`${FUNCTION_URL}/logout`, {
-        method: "POST",
-        headers,
-      });
+      const response = await fetch(`${FUNCTION_URL}/logout`, { method: "POST", headers });
       const data = await response.json();
 
       if (data.error) {
@@ -189,24 +197,20 @@ export function useWhatsAppGlobalInstance() {
       toast.success("Instância desconectada");
       setQrCode(null);
       setPairingCode(null);
-      await refreshStatus();
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     } catch (error) {
       console.error("Failed to logout:", error);
       toast.error("Erro ao desconectar");
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
-  }, [getAuthHeaders, refreshStatus]);
+  }, [queryClient]);
 
   const restart = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setIsMutating(true);
       const headers = await getAuthHeaders();
-      
-      const response = await fetch(`${FUNCTION_URL}/restart`, {
-        method: "POST",
-        headers,
-      });
+      const response = await fetch(`${FUNCTION_URL}/restart`, { method: "POST", headers });
       const data = await response.json();
 
       if (data.error) {
@@ -215,24 +219,20 @@ export function useWhatsAppGlobalInstance() {
       }
 
       toast.success("Instância reiniciada");
-      await refreshStatus();
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     } catch (error) {
       console.error("Failed to restart:", error);
       toast.error("Erro ao reiniciar");
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
-  }, [getAuthHeaders, refreshStatus]);
+  }, [queryClient]);
 
   const clearSession = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setIsMutating(true);
       const headers = await getAuthHeaders();
-      
-      const response = await fetch(`${FUNCTION_URL}/clear-session`, {
-        method: "POST",
-        headers,
-      });
+      const response = await fetch(`${FUNCTION_URL}/clear-session`, { method: "POST", headers });
       const data = await response.json();
 
       if (data.error) {
@@ -243,7 +243,7 @@ export function useWhatsAppGlobalInstance() {
       toast.success("Sessão limpa com sucesso");
       setQrCode(null);
       setPairingCode(null);
-      setState({
+      queryClient.setQueryData(QUERY_KEY, {
         status: "disconnected",
         phoneNumber: null,
         instanceName: null,
@@ -255,39 +255,18 @@ export function useWhatsAppGlobalInstance() {
       console.error("Failed to clear session:", error);
       toast.error("Erro ao limpar sessão");
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
-  }, [getAuthHeaders]);
-
-  // Initial status fetch
-  useEffect(() => {
-    refreshStatus();
-  }, [refreshStatus]);
-
-  // Adaptive polling based on status
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-
-    const pollInterval = 
-      state.status === "qr_pending" || state.status === "connecting" 
-        ? 5000 
-        : state.status === "connected" 
-          ? 60000 
-          : 15000;
-
-    interval = setInterval(refreshStatus, pollInterval);
-
-    return () => clearInterval(interval);
-  }, [state.status, refreshStatus]);
+  }, [queryClient]);
 
   return {
-    status: state.status,
-    phoneNumber: state.phoneNumber,
-    instanceName: state.instanceName,
-    lastSeenAt: state.lastSeenAt,
-    error: state.error,
-    needsInit: state.needsInit,
-    isLoading,
+    status: currentState.status,
+    phoneNumber: currentState.phoneNumber,
+    instanceName: currentState.instanceName,
+    lastSeenAt: currentState.lastSeenAt,
+    error: currentState.error,
+    needsInit: currentState.needsInit,
+    isLoading: isQueryLoading || isMutating,
     qrCode,
     pairingCode,
     isLoadingQR,
