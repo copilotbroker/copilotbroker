@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, LayoutDashboard, MessageCircle, Shuffle, Users, Bot, BarChart3, Radio } from "lucide-react";
+import { Building2, CalendarDays, LayoutDashboard, Inbox, Users, Bot, BarChart3, Headset, List, RotateCw } from "lucide-react";
 
 export const ADMIN_ROUTE_TABS = [
   { id: "dashboard", label: "Dashboard", path: "/admin/dashboard", icon: BarChart3 },
