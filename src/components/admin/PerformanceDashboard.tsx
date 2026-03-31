@@ -42,14 +42,20 @@ export default function PerformanceDashboard() {
   const { from: dateFrom } = getDateRange(period);
 
   // Fetch brokers
-  const { data: brokers = [] } = useQuery<BrokerRow[]>({
+  const { data: allBrokersRaw = [] } = useQuery<BrokerRow[]>({
     queryKey: ["perf-brokers"],
     queryFn: async () => {
-      const { data } = await supabase.from("brokers").select("id, name, lider_id").eq("is_active", true).not("lider_id", "is", null).order("name");
+      const { data } = await supabase.from("brokers").select("id, name, lider_id").eq("is_active", true).order("name");
       return (data || []) as BrokerRow[];
     },
     staleTime: 5 * 60_000,
   });
+
+  // Include brokers who belong to a team (have lider_id) AND leaders who manage a team
+  const brokers = useMemo(() => {
+    const leaderIds = new Set(allBrokersRaw.filter(b => b.lider_id).map(b => b.lider_id!));
+    return allBrokersRaw.filter(b => b.lider_id !== null || leaderIds.has(b.id));
+  }, [allBrokersRaw]);
 
   const brokerMap = useMemo(() => {
     const m: Record<string, string> = {};
