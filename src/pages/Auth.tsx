@@ -74,6 +74,8 @@ const Auth = () => {
       if (session) {
         checkUserRoleAndRedirect(session.user.id);
       } else {
+        // Clear any stale data from previous user session
+        queryClient.clear();
         setIsCheckingAuth(false);
       }
     });
