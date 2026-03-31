@@ -58,8 +58,6 @@ const BrokerProjects = () => {
   }, [broker?.slug]);
 
   const handleLogout = useLogout();
-    navigate("/auth");
-  };
 
   const copyUrl = async (url: string) => {
     const fullUrl = `${window.location.origin}${url}`;

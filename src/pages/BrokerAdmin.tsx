@@ -126,7 +126,6 @@ const BrokerAdmin = () => {
   };
 
   const handleLogout = useLogout();
-  };
 
   const handleViewChange = useCallback(
     (mode: "kanban" | "list") => {
