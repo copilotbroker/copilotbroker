@@ -25,7 +25,7 @@ import {
   X,
   Square,
 } from "lucide-react";
-import { CadenceCountdown } from "./CadenceCountdown";
+import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
 import { MessageMedia } from "./MessageMedia";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
