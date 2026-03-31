@@ -24,7 +24,7 @@ interface AgendaModuleProps {
 }
 
 export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
-  const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(brokerId);
   const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
@@ -53,6 +53,13 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
     goPrev,
     refetch,
   } = useCalendarEvents({ brokerId, isAdmin, selectedBrokerId });
+
+  // Default to own agenda when brokerId arrives
+  useEffect(() => {
+    if (isAdmin && brokerId && selectedBrokerId === null) {
+      setSelectedBrokerId(brokerId);
+    }
+  }, [brokerId, isAdmin]);
 
   // Handle mobile redirect return from Google OAuth
   useEffect(() => {
