@@ -120,7 +120,7 @@ function SelectionCard({
         "relative p-4 rounded-xl border text-left transition-all duration-200",
         selected
           ? "border-primary bg-primary/10 shadow-[0_0_20px_hsl(var(--primary)/0.08)]"
-          : "border-border bg-card hover:border-primary/30 hover:bg-primary/5",
+          : "border-[#1e1e22] bg-[#111114] hover:border-primary/30 hover:bg-primary/5",
         className,
       )}
     >
@@ -154,8 +154,19 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
 
   return (
     <div className="max-w-2xl mx-auto pb-24 px-4 space-y-4 pt-6">
+      {/* Section header */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Sparkles className="w-4 h-4 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-sm font-bold text-foreground">Copiloto IA</h2>
+          <p className="text-xs text-muted-foreground">Configuração e status do assistente inteligente</p>
+        </div>
+      </div>
+
       {/* Hero card with avatar, name, and power switch */}
-      <div className="relative overflow-hidden rounded-2xl bg-card border border-border">
+      <div className="relative overflow-hidden rounded-2xl bg-[#111114] border border-[#1e1e22]">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-primary/[0.02] pointer-events-none" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
@@ -171,7 +182,7 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
                 <Bot className={cn("w-7 h-7", config.is_active ? "text-primary" : "text-muted-foreground")} />
               </div>
               <div className={cn(
-                "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card",
+                "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#111114]",
                 config.is_active ? "bg-green-500 shadow-[0_0_8px_hsl(142_71%_45%/0.5)]" : "bg-muted-foreground"
               )} />
             </div>
@@ -220,20 +231,20 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
       </div>
 
       {/* Performance dials */}
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="rounded-2xl border border-[#1e1e22] bg-[#111114] p-4">
         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-3">Calibragem do Copiloto</p>
         <div className="space-y-3">
           <DialRow label="Persuasão" value={config.persuasion_level} />
           <DialRow label="Objetividade" value={config.objectivity_level} />
         </div>
-        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+        <div className="mt-3 pt-3 border-t border-[#1e1e22] flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Autonomia</span>
           <span className="text-xs font-semibold text-primary">{AUTONOMY_LABELS[config.max_autonomy] || "—"}</span>
         </div>
       </div>
 
       {/* Features toggles — compact pills */}
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="rounded-2xl border border-[#1e1e22] bg-[#111114] p-4">
         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-3">Recursos Ativos</p>
         <div className="flex flex-wrap gap-2">
           <FeaturePill label="Gatilhos mentais" active={config.use_mental_triggers} />
@@ -255,11 +266,11 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" className="h-12 w-12 rounded-xl border-border text-muted-foreground hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 p-0">
+            <Button variant="outline" className="h-12 w-12 rounded-xl border-[#1e1e22] bg-[#111114] text-muted-foreground hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 p-0">
               <Trash2 className="w-4 h-4" />
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="bg-card border-border">
+          <AlertDialogContent className="bg-[#111114] border-[#1e1e22]">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-foreground">Excluir Copiloto</AlertDialogTitle>
               <AlertDialogDescription className="text-muted-foreground">
@@ -267,7 +278,7 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="bg-muted border-border text-foreground hover:bg-secondary">Cancelar</AlertDialogCancel>
+              <AlertDialogCancel className="bg-[#1e1e22] border-[#1e1e22] text-foreground hover:bg-[#2a2a2e]">Cancelar</AlertDialogCancel>
               <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700 text-foreground">Excluir</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -279,7 +290,7 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
 
 function CapabilityCard({ icon: Icon, label, value, active }: { icon: React.ElementType; label: string; value: string; active?: boolean }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+    <div className="rounded-xl border border-[#1e1e22] bg-[#111114] p-3.5 space-y-2">
       <div className="flex items-center gap-2">
         <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
           <Icon className="w-3.5 h-3.5 text-primary" />
@@ -298,7 +309,7 @@ function DialRow({ label, value }: { label: string; value: number }) {
         <span className="text-xs text-muted-foreground">{label}</span>
         <span className="text-xs font-bold text-foreground">{value}%</span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+      <div className="h-1.5 w-full rounded-full bg-[#1e1e22] overflow-hidden">
         <div
           className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-500"
           style={{ width: `${value}%` }}
@@ -499,7 +510,7 @@ function StepStrategy({ form, update }: { form: Partial<CopilotConfig>; update: 
       </div>
 
       {/* Follow-up por inatividade — controle real */}
-      <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+      <div className="rounded-xl border border-[#1e1e22] bg-[#111114] p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <Label className="text-sm text-foreground font-semibold">Follow-up por inatividade</Label>
@@ -725,15 +736,18 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
               key={label}
               onClick={() => setStep(i)}
               className={cn(
-                "text-[10px] font-medium transition-colors",
+                "flex items-center gap-1.5 text-[10px] font-medium transition-colors",
                 i <= step ? "text-primary" : "text-muted-foreground/50"
               )}
             >
+              <span className={cn("w-1.5 h-1.5 rounded-full", i <= step ? "bg-primary" : "bg-[#1e1e22]")} />
               {label}
             </button>
           ))}
         </div>
-        <Progress value={progress} className="h-1.5" />
+        <div className="h-1 w-full rounded-full bg-[#1e1e22] overflow-hidden">
+          <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+        </div>
       </div>
 
       {/* Step Content */}
@@ -742,7 +756,7 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
       </div>
 
       {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur border-t border-border lg:static lg:bg-transparent lg:border-0 lg:p-0 lg:mt-6">
+      <div className="fixed bottom-0 left-0 right-0 p-3 bg-[#0d0d0f]/95 backdrop-blur border-t border-[#1e1e22] lg:static lg:bg-transparent lg:border-0 lg:p-0 lg:mt-6">
         <div className="flex gap-3">
           {step > 0 ? (
             <Button

@@ -178,13 +178,13 @@ function StatCard({ label, value, icon, highlight, warning }: {
   warning?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-[#1e1e22] bg-[#111114] p-4">
       <div className="flex items-center gap-2 mb-2">
         <div className={cn(
           "w-7 h-7 rounded-lg flex items-center justify-center",
           highlight ? "bg-primary/15 text-primary" :
           warning ? "bg-orange-500/15 text-orange-400" :
-          "bg-muted text-muted-foreground"
+          "bg-[#1e1e22] text-muted-foreground"
         )}>
           {icon}
         </div>
@@ -209,7 +209,7 @@ function BrokerCopilotCard({ broker, onSelect }: { broker: BrokerWithCopilot; on
   return (
     <button
       onClick={onSelect}
-      className="w-full text-left rounded-xl border border-border bg-card hover:border-primary/30 transition-all duration-200 group"
+      className="w-full text-left rounded-xl border border-[#1e1e22] bg-[#111114] hover:border-primary/30 transition-all duration-200 group"
     >
       <div className="p-4">
         {/* Header row */}
@@ -221,7 +221,7 @@ function BrokerCopilotCard({ broker, onSelect }: { broker: BrokerWithCopilot; on
                 <Bot className="w-5 h-5 text-primary" />
               </div>
               <div className={cn(
-                "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card",
+                "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#111114]",
                 isOnline ? "bg-green-500" : "bg-muted-foreground"
               )} />
             </div>
@@ -250,7 +250,7 @@ function BrokerCopilotCard({ broker, onSelect }: { broker: BrokerWithCopilot; on
         </div>
 
         {/* Metrics row */}
-        <div className="grid grid-cols-3 gap-px rounded-lg overflow-hidden border border-border">
+        <div className="grid grid-cols-3 gap-px rounded-lg overflow-hidden border border-[#1e1e22]">
           <MiniStat label="Persuasão" value={`${copilot.persuasion_level}%`} />
           <MiniStat label="Objetividade" value={`${copilot.objectivity_level}%`} />
           <MiniStat label="Autonomia" value={AUTONOMY_MAP[copilot.max_autonomy] || "—"} />
@@ -264,7 +264,7 @@ function BrokerEmptyCard({ broker, onSelect }: { broker: BrokerWithCopilot; onSe
   return (
     <button
       onClick={onSelect}
-      className="w-full text-left rounded-xl border border-dashed border-border bg-card/50 hover:border-primary/30 hover:bg-card transition-all duration-200 group p-4"
+      className="w-full text-left rounded-xl border border-dashed border-[#1e1e22] bg-[#111114]/50 hover:border-primary/30 hover:bg-[#111114] transition-all duration-200 group p-4"
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -285,7 +285,7 @@ function BrokerEmptyCard({ broker, onSelect }: { broker: BrokerWithCopilot; onSe
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-background px-2 py-2 text-center">
+    <div className="bg-[#0d0d0f] px-2 py-2 text-center">
       <p className="text-xs font-bold text-foreground">{value}</p>
       <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{label}</p>
     </div>
