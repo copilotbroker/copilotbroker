@@ -26,7 +26,6 @@ export function AutoCadenciaSection() {
   const [showAutoActivateDialog, setShowAutoActivateDialog] = useState(false);
   const [lastCreatedRuleId, setLastCreatedRuleId] = useState<string | null>(null);
 
-  // Campaign detail
   const [detailCampaign, setDetailCampaign] = useState<WhatsAppCampaign | null>(null);
   const [showArchived, setShowArchived] = useState(false);
 
@@ -62,7 +61,6 @@ export function AutoCadenciaSection() {
 
   const loading = isLoading || isLoadingCampaigns;
 
-  // Only show user-created bulk campaigns (those with target_status filters)
   const bulkCampaigns = campaigns.filter(c => c.target_status && c.target_status.length > 0);
   const activeCampaigns = bulkCampaigns.filter(c => !["completed", "cancelled"].includes(c.status));
   const archivedCampaigns = bulkCampaigns.filter(c => ["completed", "cancelled"].includes(c.status));
@@ -98,11 +96,13 @@ export function AutoCadenciaSection() {
 
       {/* Empty state */}
       {!hasContent && (
-        <div className="text-center py-8 bg-[#1a1a1d] rounded-xl border border-[#2a2a2e]">
-          <Zap className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+        <div className="text-center py-8 bg-[#111114] rounded-xl border border-[#1e1e22]">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-3">
+            <Zap className="w-6 h-6 text-emerald-400" />
+          </div>
           <h3 className="text-base font-medium text-white mb-1">Nenhuma cadência configurada</h3>
           <p className="text-slate-400 text-sm mb-4 px-4">Crie uma cadência de follow-up para engajar seus leads</p>
-          <Button onClick={handleCreateNew} variant="outline" className="gap-2">
+          <Button onClick={handleCreateNew} variant="outline" className="gap-2 border-[#1e1e22] hover:bg-[#1e1e22]">
             <Plus className="w-4 h-4" />
             Criar Primeira Cadência
           </Button>
@@ -117,7 +117,7 @@ export function AutoCadenciaSection() {
               key={rule.id}
               className={cn(
                 "p-3 sm:p-4 rounded-xl border transition-all cursor-pointer active:scale-[0.99]",
-                rule.is_active ? "bg-[#1a1a1d] border-emerald-500/30" : "bg-[#141417] border-[#2a2a2e] opacity-60"
+                rule.is_active ? "bg-[#111114] border-emerald-500/30" : "bg-[#111114] border-[#1e1e22] opacity-60"
               )}
               onClick={() => handleEdit(rule)}
             >
@@ -208,7 +208,7 @@ export function AutoCadenciaSection() {
       {archivedCampaigns.length > 0 && (
         <Collapsible open={showArchived} onOpenChange={setShowArchived}>
           <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#1a1a1d] mt-2">
+            <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#111114] mt-2">
               <Archive className="w-4 h-4" />
               Histórico ({archivedCampaigns.length})
             </Button>
@@ -255,7 +255,7 @@ export function AutoCadenciaSection() {
 
       {/* Auto-activate dialog */}
       <AlertDialog open={showAutoActivateDialog} onOpenChange={setShowAutoActivateDialog}>
-        <AlertDialogContent className="bg-[#1a1a1d] border-[#2a2a2e]">
+        <AlertDialogContent className="bg-[#111114] border-[#1e1e22]">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Ativar sequência automática?</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-400">
@@ -263,7 +263,7 @@ export function AutoCadenciaSection() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleSkipActivate} className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]">Não, depois</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleSkipActivate} className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]">Não, depois</AlertDialogCancel>
             <AlertDialogAction onClick={handleAutoActivate} className="bg-emerald-600 hover:bg-emerald-700">Sim, ativar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -10,39 +10,14 @@ interface HealthScoreCardProps {
 
 export function HealthScoreCard({ instance }: HealthScoreCardProps) {
   const score = instance.risk_score;
-  const healthScore = 100 - score; // Invert risk to health
+  const healthScore = 100 - score;
   
   const getScoreConfig = (score: number) => {
-    if (score >= 80) return { 
-      label: "Excelente", 
-      color: "text-green-400", 
-      bgColor: "bg-green-500",
-      icon: TrendingUp 
-    };
-    if (score >= 60) return { 
-      label: "Bom", 
-      color: "text-emerald-400", 
-      bgColor: "bg-emerald-500",
-      icon: TrendingUp 
-    };
-    if (score >= 40) return { 
-      label: "Regular", 
-      color: "text-yellow-400", 
-      bgColor: "bg-yellow-500",
-      icon: Activity 
-    };
-    if (score >= 20) return { 
-      label: "Atenção", 
-      color: "text-yellow-400", 
-      bgColor: "bg-yellow-500",
-      icon: TrendingDown 
-    };
-    return { 
-      label: "Crítico", 
-      color: "text-red-400", 
-      bgColor: "bg-red-500",
-      icon: TrendingDown 
-    };
+    if (score >= 80) return { label: "Excelente", color: "text-green-400", bgColor: "bg-green-500", icon: TrendingUp };
+    if (score >= 60) return { label: "Bom", color: "text-emerald-400", bgColor: "bg-emerald-500", icon: TrendingUp };
+    if (score >= 40) return { label: "Regular", color: "text-yellow-400", bgColor: "bg-yellow-500", icon: Activity };
+    if (score >= 20) return { label: "Atenção", color: "text-yellow-400", bgColor: "bg-yellow-500", icon: TrendingDown };
+    return { label: "Crítico", color: "text-red-400", bgColor: "bg-red-500", icon: TrendingDown };
   };
 
   const config = getScoreConfig(healthScore);
@@ -52,7 +27,7 @@ export function HealthScoreCard({ instance }: HealthScoreCardProps) {
   const hourlyProgress = (instance.hourly_sent_count / instance.hourly_limit) * 100;
 
   return (
-    <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
+    <Card className="bg-[#111114] border-[#1e1e22]">
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
           <Activity className="w-5 h-5" />
@@ -65,7 +40,7 @@ export function HealthScoreCard({ instance }: HealthScoreCardProps) {
           <div className={cn(
             "w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold",
             config.color,
-            "bg-gradient-to-br from-[#2a2a2e] to-[#1a1a1d] border-2",
+            "bg-gradient-to-br from-[#1e1e22] to-[#111114] border-2",
             healthScore >= 60 ? "border-green-500/30" : 
             healthScore >= 40 ? "border-yellow-500/30" : "border-red-500/30"
           )}>
@@ -94,7 +69,7 @@ export function HealthScoreCard({ instance }: HealthScoreCardProps) {
           </div>
           <Progress 
             value={Math.min(dailyProgress, 100)} 
-            className="h-2 bg-[#2a2a2e]"
+            className="h-2 bg-[#1e1e22]"
           />
         </div>
 
@@ -108,7 +83,7 @@ export function HealthScoreCard({ instance }: HealthScoreCardProps) {
           </div>
           <Progress 
             value={Math.min(hourlyProgress, 100)} 
-            className="h-2 bg-[#2a2a2e]"
+            className="h-2 bg-[#1e1e22]"
           />
         </div>
 
