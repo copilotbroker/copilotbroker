@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Megaphone, Loader2 } from "lucide-react";
+import { Plus, Megaphone, Loader2, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useWhatsAppCampaigns } from "@/hooks/use-whatsapp-campaigns";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useQuery } from "@tanstack/react-query";
