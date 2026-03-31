@@ -11,6 +11,7 @@ const BrokerAgenda = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [brokerId, setBrokerId] = useState<string | null>(null);
+  const handleLogout = useLogout({ silent: true });
 
   useEffect(() => {
     const checkAuth = async () => {
