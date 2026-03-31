@@ -41,18 +41,20 @@ export function BrokerBottomNav({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const activeTab = getBrokerTabFromPath(location.pathname);
 
-  const baseItems = BROKER_ROUTE_TABS.filter((item) => ["crm", "agenda", "copilot", "plantao"].includes(item.id));
+  const inboxTab = BROKER_ROUTE_TABS.find((item) => item.id === "inbox");
+  const plantaoTab = BROKER_ROUTE_TABS.find((item) => item.id === "plantao");
+  const crmTab = BROKER_ROUTE_TABS.find((item) => item.id === "crm");
 
   const navItems: Array<{
     id: string;
-    icon: (typeof baseItems)[number]["icon"] | typeof Plus | typeof MoreHorizontal;
+    icon: (typeof BROKER_ROUTE_TABS)[number]["icon"] | typeof Plus | typeof MoreHorizontal;
     isFab?: boolean;
     badge?: number;
   }> = [
-    { id: "agenda", icon: baseItems.find((item) => item.id === "agenda")!.icon },
-    { id: viewMode === "list" ? "leads" : "crm", icon: baseItems.find((item) => item.id === "crm")!.icon },
+    ...(inboxEnabled && inboxTab ? [{ id: "inbox", icon: inboxTab.icon, badge: inboxUnread }] : []),
+    { id: "plantao", icon: plantaoTab!.icon },
     { id: "add", icon: Plus, isFab: true },
-    { id: "plantao", icon: baseItems.find((item) => item.id === "plantao")!.icon },
+    { id: viewMode === "list" ? "leads" : "crm", icon: crmTab!.icon },
     { id: "more", icon: MoreHorizontal },
   ];
 
