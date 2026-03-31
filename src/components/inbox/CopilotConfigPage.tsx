@@ -270,7 +270,7 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
               <Trash2 className="w-4 h-4" />
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="bg-card border-border">
+          <AlertDialogContent className="bg-[#111114] border-[#1e1e22]">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-foreground">Excluir Copiloto</AlertDialogTitle>
               <AlertDialogDescription className="text-muted-foreground">
