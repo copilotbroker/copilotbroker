@@ -753,7 +753,7 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
       </div>
 
       {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur border-t border-border lg:static lg:bg-transparent lg:border-0 lg:p-0 lg:mt-6">
+      <div className="fixed bottom-0 left-0 right-0 p-3 bg-[#0d0d0f]/95 backdrop-blur border-t border-[#1e1e22] lg:static lg:bg-transparent lg:border-0 lg:p-0 lg:mt-6">
         <div className="flex gap-3">
           {step > 0 ? (
             <Button
