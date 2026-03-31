@@ -621,19 +621,40 @@ export function useConversationMessages(
           sentBy: payload.sentBy || sentBy,
           messageType: payload.messageType || "text",
           metadata: payload.metadata,
+          file: payload.file,
         };
 
+    const fileToUpload = normalizedPayload.file;
     const createdAt = new Date().toISOString();
     const clientId = `client-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    // Build optimistic preview for the message content
+    let optimisticContent = normalizedPayload.content;
+    if (fileToUpload && !optimisticContent) {
+      const msgType = normalizedPayload.messageType || "text";
+      if (msgType === "audio") optimisticContent = "🎤 Áudio";
+      else if (msgType === "image") optimisticContent = `📷 ${fileToUpload.name}`;
+      else if (msgType === "video") optimisticContent = `🎬 ${fileToUpload.name}`;
+      else optimisticContent = `📎 ${fileToUpload.name}`;
+    }
+
+    // Generate local preview URL for images
+    const localPreviewUrl = fileToUpload && normalizedPayload.messageType === "image"
+      ? URL.createObjectURL(fileToUpload)
+      : undefined;
+
     const optimisticMetadata: Record<string, unknown> = {
       ...(normalizedPayload.metadata || {}),
       client_id: clientId,
+      ...(fileToUpload ? { file_name: fileToUpload.name, mime_type: fileToUpload.type, size_bytes: fileToUpload.size } : {}),
+      ...(localPreviewUrl ? { file_url: localPreviewUrl, _local_preview: true } : {}),
     };
+
     const optimisticMessage: ConversationMessage = {
       id: `temp:${clientId}`,
       conversation_id: conversationId,
       direction: "outbound",
-      content: normalizedPayload.content,
+      content: optimisticContent,
       sent_by: normalizedPayload.sentBy || "human",
       message_type: normalizedPayload.messageType || "text",
       metadata: optimisticMetadata,
@@ -643,6 +664,7 @@ export function useConversationMessages(
       created_at: createdAt,
     };
 
+    // Immediately show the optimistic message
     setMessages((prev) => mergeMessages(prev, [optimisticMessage]));
     onConversationPreviewUpdate?.({
       preview: normalizedPayload.messageType === "text"
@@ -652,15 +674,42 @@ export function useConversationMessages(
       timestamp: createdAt,
     });
 
+    // Fire-and-forget: upload file (if any) then call edge function
     void (async () => {
       try {
+        let finalMetadata = { ...optimisticMetadata };
+        // Remove local-only keys
+        delete finalMetadata._local_preview;
+
+        // Upload file to storage if present
+        if (fileToUpload) {
+          const ext = fileToUpload.name.split(".").pop() || "bin";
+          const storagePath = `inbox/${conversationId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+          const { error: uploadError } = await supabase.storage.from("project-media").upload(storagePath, fileToUpload, {
+            contentType: fileToUpload.type,
+            cacheControl: "3600",
+            upsert: false,
+          });
+          if (uploadError) throw uploadError;
+
+          const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(storagePath);
+          finalMetadata = {
+            ...finalMetadata,
+            file_url: urlData.publicUrl,
+            storage_path: storagePath,
+          };
+
+          // Revoke local blob URL
+          if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
+        }
+
         const { data, error } = await supabase.functions.invoke("inbox-send-message", {
           body: {
             conversation_id: conversationId,
-            content: normalizedPayload.content,
+            content: normalizedPayload.content || optimisticContent,
             sent_by: normalizedPayload.sentBy,
             message_type: normalizedPayload.messageType,
-            metadata: optimisticMetadata,
+            metadata: finalMetadata,
           },
         });
 
@@ -671,16 +720,18 @@ export function useConversationMessages(
             ...optimisticMessage,
             id: data.message_id,
             status: "sent",
+            metadata: finalMetadata,
             uazapi_message_id: data.uazapi_message_id || null,
           }]));
           return;
         }
 
-        setMessages((prev) => mergeMessages(prev, [{ ...optimisticMessage, status: "sent" }]));
+        setMessages((prev) => mergeMessages(prev, [{ ...optimisticMessage, status: "sent", metadata: finalMetadata }]));
       } catch (err) {
         console.error("Erro ao enviar mensagem:", err);
         setMessages((prev) => mergeMessages(prev, [{ ...optimisticMessage, status: "failed" }]));
         toast.error("Falha ao enviar mensagem");
+        if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
       }
     })();
 
