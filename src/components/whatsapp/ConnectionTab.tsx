@@ -47,7 +47,7 @@ export function ConnectionTab() {
   // No instance yet - show init button
   if (!instance) {
     return (
-      <Card className="bg-[#1a1a1d] border-[#2a2a2e] max-w-lg mx-auto">
+      <Card className="bg-[#111114] border-[#1e1e22] max-w-lg mx-auto">
         <CardHeader className="text-center">
           <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-4">
             <Wifi className="w-8 h-8 text-green-500" />
@@ -80,6 +80,17 @@ export function ConnectionTab() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-green-500/10 shrink-0">
+          <Wifi className="w-5 h-5 text-green-400" />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Conexão WhatsApp</h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Gerencie a conexão do seu número</p>
+        </div>
+      </div>
+
       {/* Error Alert */}
       {error && (
         <Alert variant="destructive" className="border-red-500/30 bg-red-500/10">
@@ -103,7 +114,7 @@ export function ConnectionTab() {
       {/* Main Connection Card */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Status Card */}
-        <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
+        <Card className="bg-[#111114] border-[#1e1e22]">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Wifi className="w-5 h-5" />
@@ -141,14 +152,14 @@ export function ConnectionTab() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-2 pt-3 border-t border-[#2a2a2e]">
+            <div className="flex flex-wrap gap-2 pt-3 border-t border-[#1e1e22]">
               {needsQR && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => fetchQRCode()}
                   disabled={isLoadingQR}
-                  className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]"
+                  className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]"
                 >
                   {isLoadingQR ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -166,7 +177,7 @@ export function ConnectionTab() {
                     size="sm"
                     onClick={restart}
                     disabled={isLoading}
-                    className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]"
+                    className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]"
                   >
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Reiniciar
@@ -193,7 +204,7 @@ export function ConnectionTab() {
                         Deletar
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-[#1a1a1d] border-[#2a2a2e]">
+                    <AlertDialogContent className="bg-[#111114] border-[#1e1e22]">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-white">Deletar instância?</AlertDialogTitle>
                         <AlertDialogDescription className="text-slate-400">
@@ -202,7 +213,7 @@ export function ConnectionTab() {
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]">
+                        <AlertDialogCancel className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]">
                           Cancelar
                         </AlertDialogCancel>
                         <AlertDialogAction

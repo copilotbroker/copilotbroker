@@ -19,24 +19,16 @@ export function SecurityTab() {
   const [workStart, setWorkStart] = useState(instance?.working_hours_start || "09:00");
   const [workEnd, setWorkEnd] = useState(instance?.working_hours_end || "21:00");
 
-  // Fetch broker ID
   const { data: broker } = useQuery({
     queryKey: ["current-broker-security"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      
-      const { data } = await supabase
-        .from("brokers")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-      
+      const { data } = await supabase.from("brokers").select("id").eq("user_id", user.id).single();
       return data;
     },
   });
 
-  // Update local state when instance loads
   useEffect(() => {
     if (instance) {
       setHourlyLimit(instance.hourly_limit || 30);
@@ -47,9 +39,7 @@ export function SecurityTab() {
   }, [instance]);
 
   const handleKillSwitch = async () => {
-    if (instance) {
-      await togglePause(!instance.is_paused);
-    }
+    if (instance) await togglePause(!instance.is_paused);
   };
 
   const handleSaveSettings = async () => {
@@ -65,11 +55,21 @@ export function SecurityTab() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-blue-500/10 shrink-0">
+          <Shield className="w-5 h-5 text-blue-400" />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Segurança & Limites</h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Configure limites de envio e regras anti-spam</p>
+        </div>
+      </div>
+
       {/* Top Grid: Limits (3/4) + Kill Switch (1/4) */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Limits - 3/4 */}
         <div className="lg:col-span-3">
-          <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
+          <Card className="bg-[#111114] border-[#1e1e22]">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Clock className="w-5 h-5" />
@@ -95,18 +95,17 @@ export function SecurityTab() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-slate-400">Horário de envio</span>
-                <Input type="time" value={workStart} onChange={(e) => setWorkStart(e.target.value)} className="bg-[#0d0d0f] border-[#2a2a2e] text-white w-32" />
+                <Input type="time" value={workStart} onChange={(e) => setWorkStart(e.target.value)} className="bg-[#0d0d0f] border-[#1e1e22] text-white w-32" />
                 <span className="text-slate-400 text-sm">até</span>
-                <Input type="time" value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} className="bg-[#0d0d0f] border-[#2a2a2e] text-white w-32" />
+                <Input type="time" value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} className="bg-[#0d0d0f] border-[#1e1e22] text-white w-32" />
               </div>
               <Button onClick={handleSaveSettings} className="w-full md:w-auto">Salvar Configurações</Button>
             </CardContent>
           </Card>
         </div>
 
-        {/* Kill Switch - 1/4 */}
         <div className="lg:col-span-1">
-          <Card className={`h-full flex flex-col ${instance?.is_paused ? "bg-destructive/10 border-destructive/30" : "bg-[#1a1a1d] border-[#2a2a2e]"}`}>
+          <Card className={`h-full flex flex-col ${instance?.is_paused ? "bg-destructive/10 border-destructive/30" : "bg-[#111114] border-[#1e1e22]"}`}>
             <CardHeader className="pb-2">
               <CardTitle className="text-white flex items-center gap-2 text-base">
                 <AlertOctagon className="w-4 h-4 text-destructive" />
@@ -125,13 +124,8 @@ export function SecurityTab() {
         </div>
       </div>
 
-      {/* Daily Stats Chart */}
       {broker?.id && <DailyStatsChart brokerId={broker.id} />}
-
-      {/* Opt-outs List */}
       <OptoutsList />
-
-      {/* Error Logs */}
       {broker?.id && <ErrorLogsCard brokerId={broker.id} />}
 
       {/* Warmup Progress */}
@@ -143,9 +137,7 @@ export function SecurityTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">
-              Dia {instance?.warmup_day || 1} de 14
-            </span>
+            <span className="text-slate-400">Dia {instance?.warmup_day || 1} de 14</span>
             <span className="text-yellow-400">
               {instance?.warmup_stage === "normal" ? "Completo" : "Em andamento"}
             </span>
@@ -158,7 +150,7 @@ export function SecurityTab() {
       </Card>
 
       {/* Active Rules */}
-      <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
+      <Card className="bg-[#111114] border-[#1e1e22]">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <Shield className="w-5 h-5 text-green-400" />

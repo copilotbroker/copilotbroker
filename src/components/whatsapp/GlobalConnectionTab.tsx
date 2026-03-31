@@ -26,31 +26,12 @@ import { ptBR } from "date-fns/locale";
 
 export function GlobalConnectionTab() {
   const {
-    status,
-    phoneNumber,
-    instanceName,
-    lastSeenAt,
-    error,
-    needsInit,
-    isLoading,
-    qrCode,
-    pairingCode,
-    isLoadingQR,
-    isInitializing,
-    refreshStatus,
-    initInstance,
-    fetchQRCode,
-    logout,
-    restart,
-    clearSession,
+    status, phoneNumber, instanceName, lastSeenAt, error, needsInit,
+    isLoading, qrCode, pairingCode, isLoadingQR, isInitializing,
+    refreshStatus, initInstance, fetchQRCode, logout, restart, clearSession,
   } = useWhatsAppGlobalInstance();
 
-  const {
-    totals,
-    dailyStats,
-    recentErrors,
-    extractErrorMessage,
-  } = useGlobalWhatsAppStats();
+  const { totals, dailyStats, recentErrors, extractErrorMessage } = useGlobalWhatsAppStats();
 
   if (isLoading) {
     return (
@@ -63,10 +44,9 @@ export function GlobalConnectionTab() {
   const isConnected = status === "connected";
   const needsQR = status === "qr_pending" || status === "disconnected";
 
-  // No instance yet - show init card
   if (needsInit && !qrCode) {
     return (
-      <Card className="bg-[#1a1a1d] border-[#2a2a2e] max-w-lg mx-auto">
+      <Card className="bg-[#111114] border-[#1e1e22] max-w-lg mx-auto">
         <CardHeader className="text-center">
           <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
             <Globe className="w-8 h-8 text-blue-500" />
@@ -77,16 +57,8 @@ export function GlobalConnectionTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Button
-            onClick={initInstance}
-            disabled={isInitializing}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isInitializing ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <Wifi className="w-4 h-4 mr-2" />
-            )}
+          <Button onClick={initInstance} disabled={isInitializing} className="bg-blue-600 hover:bg-blue-700">
+            {isInitializing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wifi className="w-4 h-4 mr-2" />}
             Iniciar Conexão
           </Button>
         </CardContent>
@@ -96,19 +68,24 @@ export function GlobalConnectionTab() {
 
   return (
     <div className="space-y-6">
-      {/* Error Alert */}
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-blue-500/10 shrink-0">
+          <Globe className="w-5 h-5 text-blue-400" />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Conexão Global</h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Instância global para notificações de leads</p>
+        </div>
+      </div>
+
       {error && (
         <Alert variant="destructive" className="border-red-500/30 bg-red-500/10">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Erro ao verificar status</AlertTitle>
           <AlertDescription className="flex items-center justify-between">
             <span>{error}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refreshStatus}
-              className="ml-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
-            >
+            <Button variant="outline" size="sm" onClick={refreshStatus} className="ml-2 border-red-500/30 text-red-400 hover:bg-red-500/10">
               <RefreshCw className="w-3 h-3 mr-1" />
               Atualizar
             </Button>
@@ -116,28 +93,18 @@ export function GlobalConnectionTab() {
         </Alert>
       )}
 
-      {/* Metrics Cards (top row) */}
       {isConnected && (
-        <GlobalMetricsCards
-          total={totals.total}
-          sent={totals.sent}
-          failed={totals.failed}
-          successRate={totals.successRate}
-        />
+        <GlobalMetricsCards total={totals.total} sent={totals.sent} failed={totals.failed} successRate={totals.successRate} />
       )}
 
-      {/* Connection Status + Health Score / QR Code */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Status Card */}
-        <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
+        <Card className="bg-[#111114] border-[#1e1e22]">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Globe className="w-5 h-5 text-blue-400" />
               Status da Conexão Global
             </CardTitle>
-            {instanceName && (
-              <CardDescription>Instância: {instanceName}</CardDescription>
-            )}
+            {instanceName && <CardDescription>Instância: {instanceName}</CardDescription>}
           </CardHeader>
           <CardContent className="space-y-4">
             <ConnectionStatusCard status={status} />
@@ -152,67 +119,36 @@ export function GlobalConnectionTab() {
             {lastSeenAt && (
               <div className="text-sm text-slate-400">
                 <span className="text-slate-500">Última verificação:</span>{" "}
-                {formatDistanceToNow(new Date(lastSeenAt), {
-                  locale: ptBR,
-                  addSuffix: true,
-                })}
+                {formatDistanceToNow(new Date(lastSeenAt), { locale: ptBR, addSuffix: true })}
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-2 pt-3 border-t border-[#2a2a2e]">
+            <div className="flex flex-wrap gap-2 pt-3 border-t border-[#1e1e22]">
               {needsQR && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fetchQRCode()}
-                  disabled={isLoadingQR}
-                  className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]"
-                >
-                  {isLoadingQR ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                  )}
+                <Button variant="outline" size="sm" onClick={() => fetchQRCode()} disabled={isLoadingQR} className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]">
+                  {isLoadingQR ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
                   Novo QR Code
                 </Button>
               )}
 
               {isConnected && (
                 <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={restart}
-                    disabled={isLoading}
-                    className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]"
-                  >
+                  <Button variant="outline" size="sm" onClick={restart} disabled={isLoading} className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]">
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Reiniciar
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={logout}
-                    disabled={isLoading}
-                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                  >
+                  <Button variant="outline" size="sm" onClick={logout} disabled={isLoading} className="border-red-500/30 text-red-400 hover:bg-red-500/10">
                     <Power className="w-4 h-4 mr-2" />
                     Desconectar
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={isLoading}
-                        className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                      >
+                      <Button variant="outline" size="sm" disabled={isLoading} className="border-red-500/30 text-red-400 hover:bg-red-500/10">
                         <Trash2 className="w-4 h-4 mr-2" />
                         Limpar Sessão
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-[#1a1a1d] border-[#2a2a2e]">
+                    <AlertDialogContent className="bg-[#111114] border-[#1e1e22]">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-white">Limpar sessão global?</AlertDialogTitle>
                         <AlertDialogDescription className="text-slate-400">
@@ -221,15 +157,8 @@ export function GlobalConnectionTab() {
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel className="border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e]">
-                          Cancelar
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={clearSession}
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          Limpar Sessão
-                        </AlertDialogAction>
+                        <AlertDialogCancel className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={clearSession} className="bg-red-600 hover:bg-red-700 text-white">Limpar Sessão</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -239,31 +168,17 @@ export function GlobalConnectionTab() {
           </CardContent>
         </Card>
 
-        {/* Right side: QR Code or Health Score */}
         {needsQR ? (
-          <QRCodeDisplay
-            qrCode={qrCode}
-            pairingCode={pairingCode}
-            isLoading={isLoadingQR}
-            onRefresh={fetchQRCode}
-          />
+          <QRCodeDisplay qrCode={qrCode} pairingCode={pairingCode} isLoading={isLoadingQR} onRefresh={fetchQRCode} />
         ) : (
-          <GlobalHealthScore
-            successRate={totals.successRate}
-            totalSent={totals.sent}
-            totalFailed={totals.failed}
-          />
+          <GlobalHealthScore successRate={totals.successRate} totalSent={totals.sent} totalFailed={totals.failed} />
         )}
       </div>
 
-      {/* Chart + Recent Errors (bottom row) - only when connected */}
       {isConnected && (
         <div className="grid gap-6 md:grid-cols-2">
           <GlobalDailyChart dailyStats={dailyStats} />
-          <GlobalRecentErrors
-            errors={recentErrors}
-            extractErrorMessage={extractErrorMessage}
-          />
+          <GlobalRecentErrors errors={recentErrors} extractErrorMessage={extractErrorMessage} />
         </div>
       )}
     </div>
