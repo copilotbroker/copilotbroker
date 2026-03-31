@@ -7,6 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import logoEnove from "@/assets/logo-enove-mini.png";
 import { useInboxUnread } from "@/hooks/use-inbox-unread";
+import { usePlantaoNovosCount } from "@/hooks/use-plantao-novos-count";
 import {
   Tooltip,
   TooltipContent,
@@ -30,6 +31,7 @@ export function AdminSidebar({ activeTab, onLogout, onAddLead }: AdminSidebarPro
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [userInitial, setUserInitial] = useState("A");
   const { unreadCount: inboxUnread } = useInboxUnread();
+  const { count: plantaoNovosCount } = usePlantaoNovosCount();
 
   useEffect(() => {
     const fetchUserInitial = async () => {
@@ -110,6 +112,11 @@ export function AdminSidebar({ activeTab, onLogout, onAddLead }: AdminSidebarPro
                     {item.id === "inbox" && inboxUnread > 0 && (
                       <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-md shadow-red-500/50">
                         {inboxUnread > 99 ? "99+" : inboxUnread}
+                      </span>
+                    )}
+                    {item.id === "plantao" && plantaoNovosCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-md shadow-red-500/50">
+                        {plantaoNovosCount > 99 ? "99+" : plantaoNovosCount}
                       </span>
                     )}
                   </button>
