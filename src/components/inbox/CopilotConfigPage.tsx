@@ -744,7 +744,9 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
             </button>
           ))}
         </div>
-        <Progress value={progress} className="h-1.5" />
+        <div className="h-1 w-full rounded-full bg-[#1e1e22] overflow-hidden">
+          <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+        </div>
       </div>
 
       {/* Step Content */}
