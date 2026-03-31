@@ -55,14 +55,6 @@ export function BrokerHeader({
             <Search className="w-5 h-5" />
           </button>
         )}
-        {collapsibleContent && (
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-md text-slate-400 hover:text-slate-200 hover:bg-[#2a2a2e] transition-colors"
-          >
-            <Search className="w-5 h-5" />
-          </button>
-        )}
       </div>
 
       {/* Collapsible content - mobile only (always mounted for portal targets, hidden via CSS) */}
