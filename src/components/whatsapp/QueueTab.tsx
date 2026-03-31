@@ -343,7 +343,7 @@ export function QueueTab() {
         <div className="flex items-center gap-2">
           {role === "admin" && (
             <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-              <SelectTrigger className="w-[180px] bg-[#111114] border-[#1e1e22] text-slate-300 h-9 text-xs">
+              <SelectTrigger className="w-full sm:w-[180px] bg-[#111114] border-[#1e1e22] text-slate-300 h-9 text-xs">
                 <SelectValue placeholder="Todos os corretores" />
               </SelectTrigger>
               <SelectContent className="bg-[#111114] border-[#1e1e22]">
