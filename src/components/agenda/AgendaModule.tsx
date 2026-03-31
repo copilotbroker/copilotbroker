@@ -54,6 +54,13 @@ export function AgendaModule({ brokerId, isAdmin }: AgendaModuleProps) {
     refetch,
   } = useCalendarEvents({ brokerId, isAdmin, selectedBrokerId });
 
+  // Default to own agenda when brokerId arrives
+  useEffect(() => {
+    if (isAdmin && brokerId && selectedBrokerId === null) {
+      setSelectedBrokerId(brokerId);
+    }
+  }, [brokerId, isAdmin]);
+
   // Handle mobile redirect return from Google OAuth
   useEffect(() => {
     const googleStatus = searchParams.get("google");
