@@ -121,26 +121,25 @@ export function BrokerRoletaStatusCompact({ brokerId }: { brokerId: string }) {
       {/* Dots */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 p-1 rounded-md active:bg-white/5 transition-colors"
+        className="flex items-center gap-1.5 p-1.5 rounded-md active:bg-white/5 transition-colors"
       >
-        {onlineCount > 0 && (
-          <span className="relative flex items-center justify-center w-4 h-4">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-            {onlineCount > 1 && (
-              <span className="absolute -top-1 -right-1 min-w-[12px] h-[12px] rounded-full bg-emerald-500 text-[8px] font-bold text-white flex items-center justify-center">
-                {onlineCount}
-              </span>
-            )}
-          </span>
-        )}
+        <span className="relative flex items-center justify-center w-4 h-4">
+          <span className={cn(
+            "w-2.5 h-2.5 rounded-full",
+            onlineCount > 0 ? "bg-emerald-400" : "bg-emerald-400/20 border border-emerald-400/30"
+          )} />
+          {onlineCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[12px] h-[12px] rounded-full bg-emerald-500 text-[8px] font-bold text-white flex items-center justify-center">
+              {onlineCount}
+            </span>
+          )}
+        </span>
         {offlineCount > 0 && (
           <span className="relative flex items-center justify-center w-4 h-4">
             <span className="w-2.5 h-2.5 rounded-full bg-red-400 animate-pulse" />
-            {offlineCount > 1 && (
-              <span className="absolute -top-1 -right-1 min-w-[12px] h-[12px] rounded-full bg-red-500 text-[8px] font-bold text-white flex items-center justify-center">
-                {offlineCount}
-              </span>
-            )}
+            <span className="absolute -top-1 -right-1 min-w-[12px] h-[12px] rounded-full bg-red-500 text-[8px] font-bold text-white flex items-center justify-center">
+              {offlineCount}
+            </span>
           </span>
         )}
       </button>
