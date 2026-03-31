@@ -43,7 +43,7 @@ function getPreviousRange(period: Period): { from: Date; to: Date } | null {
   return null;
 }
 
-interface BrokerRow { id: string; name: string }
+interface BrokerRow { id: string; name: string; lider_id?: string | null }
 
 const CHART_COLORS = ["#FFFF00", "#22d3ee", "#a78bfa", "#f97316", "#34d399", "#f472b6", "#60a5fa", "#fbbf24"];
 
@@ -70,14 +70,19 @@ export default function IntelligenceDashboard() {
   const prevRange = getPreviousRange(period);
 
   // === Data fetching ===
-  const { data: brokers = [] } = useQuery<BrokerRow[]>({
+  const { data: allBrokersRaw = [] } = useQuery<BrokerRow[]>({
     queryKey: ["intel-brokers"],
     queryFn: async () => {
-      const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true).not("lider_id", "is", null).order("name");
+      const { data } = await supabase.from("brokers").select("id, name, lider_id").eq("is_active", true).order("name");
       return (data || []) as BrokerRow[];
     },
     staleTime: 5 * 60_000,
   });
+
+  const brokers = useMemo(() => {
+    const leaderIds = new Set(allBrokersRaw.filter(b => b.lider_id).map(b => b.lider_id!));
+    return allBrokersRaw.filter(b => b.lider_id !== null || leaderIds.has(b.id));
+  }, [allBrokersRaw]);
 
   const brokerMap = useMemo(() => {
     const m: Record<string, string> = {};
