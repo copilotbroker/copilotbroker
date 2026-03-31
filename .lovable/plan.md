@@ -1,39 +1,37 @@
 
 
-## Acelerar Carregamento dos Botões da Sidebar (Inbox, Copiloto)
+## Fix: Lista de Corretores Aparece Embaixo da Roleta Errada
 
 ### Diagnóstico
 
-O hook `useBrokerFeatures` usa `useState` + `useEffect` manual. Cada vez que um componente monta, ele começa com `inboxEnabled=false` e `copilotEnabled=false`, fazendo os botões de Inbox e Copiloto ficarem invisíveis até a query completar (~300-500ms). Isso causa o "atraso" visível na aparição desses botões.
+No `BrokerRoletas.tsx`, o componente renderiza **dois loops separados**:
 
-O mesmo problema afeta `useInboxUnread` — também usa `useState` + `useEffect` sem cache.
+1. **Linhas 175-226**: Loop dos headers (nome da roleta + botão In/Out)
+2. **Linhas 230-272**: Loop dos painéis expandidos (lista de corretores)
+
+Como os painéis expandidos ficam em um segundo `.map()` fora do primeiro, a lista de corretores de "Plantão Enove" aparece sempre **após todas as roletas** (incluindo "Sharks"), causando confusão visual.
+
+```text
+Atual:                          Corrigido:
+┌─────────────────────┐         ┌─────────────────────┐
+│ Plantão Enove  [In] │         │ Plantão Enove  [In] │
+├─────────────────────┤         │  ├ Márcio #1         │
+│ Sharks         [In] │         │  ├ Davi #2           │
+├─────────────────────┤         ├─────────────────────┤
+│ Lista do Plantão ←? │         │ Sharks         [In] │
+└─────────────────────┘         └─────────────────────┘
+```
 
 ### Solução
 
-Migrar ambos os hooks para React Query, garantindo que os dados fiquem em cache entre navegações.
+Mover o painel expandido para **dentro** do primeiro loop, logo abaixo do header de cada roleta. Remover o segundo `.map()`.
 
-### Arquivo 1: `src/hooks/use-broker-features.ts`
-- Substituir `useState`/`useEffect` por `useQuery` com `queryKey: ["broker-features", brokerId]`
-- `staleTime: 5 * 60 * 1000` (features raramente mudam)
-- `enabled: !!brokerId`
-- Valores default enquanto carrega: `inboxEnabled: false, copilotEnabled: false`
+### Arquivo: `src/components/broker/BrokerRoletas.tsx`
 
-### Arquivo 2: `src/hooks/use-inbox-unread.ts`
-- Substituir `useState`/`useEffect` por `useQuery` com `queryKey: ["inbox-unread"]`
-- `staleTime: 30_000` (30s)
-- `refetchInterval: 30_000` (substitui o realtime channel por polling leve)
-- Manter o realtime channel apenas para invalidar o cache (não para fetch manual)
-
-### Resultado esperado
-- Primeira visita: comportamento igual ao atual
-- Navegações subsequentes: botões Inbox e Copiloto aparecem instantaneamente do cache, sem flicker
-
-### Arquivos alterados
-- `src/hooks/use-broker-features.ts`
-- `src/hooks/use-inbox-unread.ts`
+- Dentro do `groups.map` (linha 175), após o `div` do header (linha 223), inserir o bloco de membros expandidos (atualmente nas linhas 236-271) condicionado a `isExpanded`
+- Remover o segundo loop (linhas 229-272)
 
 ### O que NÃO muda
-- Interface pública dos hooks
-- Componentes consumidores (BrokerBottomNav, BrokerSidebar, BrokerLayout)
-- Lógica de realtime para notificações
+- Lógica de check-in/out, realtime, fetch
+- Visual dos items e badges
 
