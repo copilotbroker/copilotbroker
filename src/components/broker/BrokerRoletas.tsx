@@ -179,97 +179,92 @@ export function BrokerRoletas({ brokerId }: { brokerId: string }) {
           const isNext = myMembro.id === nextId;
 
           return (
-            <div key={myMembro.id} className="px-3 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  onClick={() => toggleExpanded(roleta.id)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors min-w-0"
-                >
-                  <span
-                    className={cn(
-                      "w-2 h-2 rounded-full shrink-0",
-                      myMembro.status_checkin ? "bg-emerald-400" : "bg-red-400"
+            <div key={myMembro.id}>
+              <div className="px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => toggleExpanded(roleta.id)}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors min-w-0"
+                  >
+                    <span
+                      className={cn(
+                        "w-2 h-2 rounded-full shrink-0",
+                        myMembro.status_checkin ? "bg-emerald-400" : "bg-red-400"
+                      )}
+                    />
+                    <span className="font-medium text-foreground truncate">{roleta.nome}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">({onlineCount})</span>
+                    {isNext && myMembro.status_checkin && (
+                      <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] px-1 py-0 leading-tight shrink-0">
+                        Próximo
+                      </Badge>
                     )}
-                  />
-                  <span className="font-medium text-foreground truncate">{roleta.nome}</span>
-                  <span className="text-[10px] text-muted-foreground shrink-0">({onlineCount})</span>
-                  {isNext && myMembro.status_checkin && (
-                    <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] px-1 py-0 leading-tight shrink-0">
-                      Próximo
-                    </Badge>
-                  )}
-                  {isExpanded ? (
-                    <ChevronUp className="w-3 h-3 shrink-0" />
-                  ) : (
-                    <ChevronDown className="w-3 h-3 shrink-0" />
-                  )}
-                </button>
-                <Button
-                  size="sm"
-                  variant={myMembro.status_checkin ? "destructive" : "default"}
-                  disabled={togglingId === myMembro.id}
-                  onClick={() => handleToggleCheckin(myMembro)}
-                  className={cn(
-                    "h-6 text-[10px] px-2 shrink-0",
-                    !myMembro.status_checkin && "bg-emerald-600 hover:bg-emerald-700"
-                  )}
-                >
-                  {myMembro.status_checkin ? (
-                    <><LogOut className="w-3 h-3 mr-1" />Out</>
-                  ) : (
-                    <><LogIn className="w-3 h-3 mr-1" />In</>
-                  )}
-                </Button>
+                    {isExpanded ? (
+                      <ChevronUp className="w-3 h-3 shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-3 h-3 shrink-0" />
+                    )}
+                  </button>
+                  <Button
+                    size="sm"
+                    variant={myMembro.status_checkin ? "destructive" : "default"}
+                    disabled={togglingId === myMembro.id}
+                    onClick={() => handleToggleCheckin(myMembro)}
+                    className={cn(
+                      "h-6 text-[10px] px-2 shrink-0",
+                      !myMembro.status_checkin && "bg-emerald-600 hover:bg-emerald-700"
+                    )}
+                  >
+                    {myMembro.status_checkin ? (
+                      <><LogOut className="w-3 h-3 mr-1" />Out</>
+                    ) : (
+                      <><LogIn className="w-3 h-3 mr-1" />In</>
+                    )}
+                  </Button>
+                </div>
               </div>
+
+              {isExpanded && (
+                <div className="border-t border-border px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground mb-1">
+                    Fila: {roleta.nome} — {onlineCount} online
+                  </p>
+                  <div className="space-y-0.5">
+                    {allMembros.filter((m) => m.status_checkin).map((m) => {
+                      const isMe = m.corretor_id === brokerId;
+                      const isMNext = m.id === nextId;
+                      const corretorName = (m.corretor as any)?.name || "Corretor";
+
+                      return (
+                        <div
+                          key={m.id}
+                          className={cn(
+                            "flex items-center justify-between py-0.5 px-1.5 rounded text-[11px]",
+                            isMe && "bg-accent/50"
+                          )}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                            <span className="text-muted-foreground w-4">#{m.ordem}</span>
+                            <span className={cn("text-foreground", isMe && "font-semibold")}>
+                              {isMe ? "Você" : corretorName}
+                            </span>
+                          </div>
+                          {isMNext && (
+                            <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] px-1 py-0">
+                              Próximo
+                            </Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
-
-      {/* Expanded queue panels */}
-      {groups.map(({ roleta, myMembro, allMembros }) => {
-        const isExpanded = expandedRoletas.has(roleta.id);
-        const nextId = getNextMembro(allMembros, roleta.ultimo_membro_ordem_atribuida);
-        if (!isExpanded) return null;
-
-        return (
-          <div key={`queue-${roleta.id}`} className="border-t border-border px-3 py-2">
-            <p className="text-[10px] text-muted-foreground mb-1">
-              Fila: {roleta.nome} — {allMembros.filter((m) => m.status_checkin).length} online
-            </p>
-            <div className="space-y-0.5">
-              {allMembros.filter((m) => m.status_checkin).map((m) => {
-                const isMe = m.corretor_id === brokerId;
-                const isNext = m.id === nextId;
-                const corretorName = (m.corretor as any)?.name || "Corretor";
-
-                return (
-                  <div
-                    key={m.id}
-                    className={cn(
-                      "flex items-center justify-between py-0.5 px-1.5 rounded text-[11px]",
-                      isMe && "bg-accent/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                      <span className="text-muted-foreground w-4">#{m.ordem}</span>
-                      <span className={cn("text-foreground", isMe && "font-semibold")}>
-                        {isMe ? "Você" : corretorName}
-                      </span>
-                    </div>
-                    {isNext && (
-                      <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] px-1 py-0">
-                        Próximo
-                      </Badge>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }
