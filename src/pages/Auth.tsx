@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, Lock, Download, Share, Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import logoEnove from "@/assets/logo-enove.png";
 
 const Auth = () => {
@@ -14,6 +15,7 @@ const Auth = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -72,6 +74,8 @@ const Auth = () => {
       if (session) {
         checkUserRoleAndRedirect(session.user.id);
       } else {
+        // Clear any stale data from previous user session
+        queryClient.clear();
         setIsCheckingAuth(false);
       }
     });

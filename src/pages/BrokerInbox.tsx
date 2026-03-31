@@ -8,6 +8,7 @@ import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatMo
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation } from "@/hooks/use-conversations";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
+import { useLogout } from "@/hooks/use-logout";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -173,7 +174,7 @@ export default function BrokerInbox() {
     else toast.success("Status atualizado!");
   }, [selectedConversation]);
 
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate("/auth"); };
+  const handleLogout = useLogout({ silent: true });
 
   if (featuresLoading) {
     return (

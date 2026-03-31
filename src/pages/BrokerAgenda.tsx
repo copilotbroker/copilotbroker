@@ -5,11 +5,13 @@ import { BrokerSidebar } from "@/components/broker/BrokerSidebar";
 import { BrokerBottomNav } from "@/components/broker/BrokerBottomNav";
 import { AgendaModule } from "@/components/agenda/AgendaModule";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLogout } from "@/hooks/use-logout";
 
 const BrokerAgenda = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [brokerId, setBrokerId] = useState<string | null>(null);
+  const handleLogout = useLogout({ silent: true });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -33,7 +35,7 @@ const BrokerAgenda = () => {
         <BrokerSidebar
           viewMode="kanban"
           onViewChange={() => {}}
-          onLogout={() => { supabase.auth.signOut(); navigate("/auth"); }}
+          onLogout={handleLogout}
         />
       )}
       <main className="flex-1 overflow-auto pb-20 md:pb-0">

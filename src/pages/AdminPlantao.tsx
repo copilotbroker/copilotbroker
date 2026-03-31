@@ -8,6 +8,7 @@ import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { toast } from "sonner";
+import { useLogout } from "@/hooks/use-logout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
@@ -225,7 +226,7 @@ export default function AdminPlantao() {
     else toast.success("Status atualizado!");
   }, [selectedConversation]);
 
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate("/auth"); };
+  const handleLogout = useLogout({ silent: true });
 
   const isNewLeadConversation = inboxTab === "novos" && !!selectedConversation;
   const isReadOnlyConversation = inboxTab === "outros";

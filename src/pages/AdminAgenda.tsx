@@ -5,11 +5,13 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
 import { AgendaModule } from "@/components/agenda/AgendaModule";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLogout } from "@/hooks/use-logout";
 
 const AdminAgenda = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [brokerId, setBrokerId] = useState<string | null>(null);
+  const handleLogout = useLogout({ silent: true });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -36,7 +38,7 @@ const AdminAgenda = () => {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {!isMobile && (
-        <AdminSidebar activeTab="agenda" onLogout={() => { supabase.auth.signOut(); navigate("/auth"); }} />
+        <AdminSidebar activeTab="agenda" onLogout={handleLogout} />
       )}
       <main className="flex-1 overflow-auto pb-20 md:pb-0">
         <div className="p-4 md:p-6 max-w-7xl mx-auto">
