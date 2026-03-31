@@ -201,10 +201,7 @@ export default function AdminCopilotConfig() {
     };
   });
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
-  };
+  const handleLogout = useLogout({ silent: true });
 
   if (roleLoading) {
     return (

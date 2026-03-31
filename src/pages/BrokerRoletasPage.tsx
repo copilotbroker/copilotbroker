@@ -35,11 +35,7 @@ const BrokerRoletasPage = () => {
     }
   }, [isRoleLoading, isLeader, navigate, role]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logout realizado com sucesso!");
-    navigate("/auth");
-  };
+  const handleLogout = useLogout();
 
   if (isRoleLoading) {
     return (

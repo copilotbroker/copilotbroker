@@ -424,6 +424,8 @@ const Admin = () => {
 
   if (role !== "admin") {
     const doLogout = async () => {
+      const queryClient = new (await import("@tanstack/react-query")).QueryClient();
+      queryClient.clear();
       await supabase.auth.signOut();
       navigate("/auth");
     };

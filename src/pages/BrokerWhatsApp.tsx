@@ -42,10 +42,7 @@ export default function BrokerWhatsApp() {
     fetchBrokerInfo();
   }, [brokerId]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
-  };
+  const handleLogout = useLogout({ silent: true });
 
   if (roleLoading) {
     return (

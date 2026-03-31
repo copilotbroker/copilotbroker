@@ -125,10 +125,7 @@ const BrokerAdmin = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logout realizado com sucesso!");
-    navigate("/auth");
+  const handleLogout = useLogout();
   };
 
   const handleViewChange = useCallback(

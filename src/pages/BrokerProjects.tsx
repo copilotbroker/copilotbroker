@@ -57,9 +57,7 @@ const BrokerProjects = () => {
     if (broker?.slug) setEditingSlug(broker.slug);
   }, [broker?.slug]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logout realizado com sucesso!");
+  const handleLogout = useLogout();
     navigate("/auth");
   };
 

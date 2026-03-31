@@ -283,7 +283,7 @@ export default function BrokerPlantao() {
     else toast.success("Status atualizado!");
   }, [selectedConversation]);
 
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate("/auth"); };
+  const handleLogout = useLogout({ silent: true });
 
   if (!brokerId) {
     return (

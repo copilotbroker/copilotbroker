@@ -39,10 +39,7 @@ export default function BrokerCopilotConfig() {
     fetchBrokerInfo();
   }, [brokerId]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
-  };
+  const handleLogout = useLogout({ silent: true });
 
   if (roleLoading || featuresLoading) {
     return (

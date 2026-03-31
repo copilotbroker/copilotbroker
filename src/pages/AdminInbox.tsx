@@ -224,7 +224,7 @@ export default function AdminInbox() {
     else toast.success("Status atualizado!");
   }, [selectedConversation]);
 
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate("/auth"); };
+  const handleLogout = useLogout({ silent: true });
 
   const isNewLeadConversation = inboxTab === "novos" && !!selectedConversation;
   const isReadOnlyConversation = inboxTab === "outros";

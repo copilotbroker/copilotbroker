@@ -173,7 +173,7 @@ export default function BrokerInbox() {
     else toast.success("Status atualizado!");
   }, [selectedConversation]);
 
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate("/auth"); };
+  const handleLogout = useLogout({ silent: true });
 
   if (featuresLoading) {
     return (
