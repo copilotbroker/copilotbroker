@@ -3,6 +3,7 @@ import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { BROKER_TAB_LABELS, getBrokerTabFromPath } from "./brokerNavigation";
 import { cn } from "@/lib/utils";
+import { BrokerRoletaStatusCompact } from "./BrokerRoletaStatusCompact";
 
 interface BrokerHeaderProps {
   brokerName?: string;
