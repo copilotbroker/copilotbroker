@@ -474,31 +474,10 @@ export function ConversationThread({
         </div>
       )}
 
-      {conversation.lead_id && <CadenceCountdown leadId={conversation.lead_id} brokerId={conversation.broker_id} />}
-
-      {scheduledMessages.length > 0 && (
-        <div className="border-b border-border bg-card/60 px-3 py-2">
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium text-foreground">
-            <CalendarClock className="h-3.5 w-3.5 text-primary" /> Mensagens programadas desta conversa
-          </div>
-          <div className="space-y-2">
-            {scheduledMessages.map((item) => (
-              <div key={item.id} className="flex items-start justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2">
-                <div className="min-w-0">
-                  <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary" className="text-[10px]">{item.status}</Badge>
-                    <span className="text-[10px] text-muted-foreground">{formatScheduledAt(item.scheduled_at)}</span>
-                  </div>
-                  <p className="text-sm text-foreground whitespace-pre-wrap break-words">{item.message}</p>
-                </div>
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => onCancelScheduledMessage(item.id)}>
-                  Cancelar
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <ScheduledMessagesPanel
+        scheduledMessages={scheduledMessages}
+        onCancelScheduledMessage={onCancelScheduledMessage}
+      />
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3">
         {isLoading ? (
