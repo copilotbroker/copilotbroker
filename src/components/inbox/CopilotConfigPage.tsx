@@ -266,7 +266,7 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" className="h-12 w-12 rounded-xl border-border text-muted-foreground hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 p-0">
+            <Button variant="outline" className="h-12 w-12 rounded-xl border-[#1e1e22] bg-[#111114] text-muted-foreground hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 p-0">
               <Trash2 className="w-4 h-4" />
             </Button>
           </AlertDialogTrigger>
