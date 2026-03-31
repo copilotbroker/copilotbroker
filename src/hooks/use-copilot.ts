@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface CopilotConfig {
   id: string;
@@ -34,29 +35,26 @@ export interface CopilotConfig {
   updated_at: string;
 }
 
+const fetchCopilotConfig = async (brokerId: string): Promise<CopilotConfig | null> => {
+  const { data, error } = await supabase
+    .from("copilot_configs")
+    .select("*")
+    .eq("broker_id", brokerId)
+    .maybeSingle();
+  if (error) throw error;
+  return data as unknown as CopilotConfig | null;
+};
+
 export function useCopilotConfig(brokerId: string | null) {
-  const [config, setConfig] = useState<CopilotConfig | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const queryKey = ["copilot-config", brokerId];
 
-  const fetchConfig = useCallback(async () => {
-    if (!brokerId) return;
-    try {
-      const { data, error } = await supabase
-        .from("copilot_configs")
-        .select("*")
-        .eq("broker_id", brokerId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setConfig(data as unknown as CopilotConfig | null);
-    } catch (error) {
-      console.error("Erro ao buscar config do copiloto:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [brokerId]);
-
-  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+  const { data: config = null, isLoading } = useQuery({
+    queryKey,
+    queryFn: () => fetchCopilotConfig(brokerId!),
+    enabled: !!brokerId,
+    staleTime: 60_000,
+  });
 
   const saveConfig = useCallback(async (updates: Partial<CopilotConfig>) => {
     if (!brokerId) return false;
@@ -73,7 +71,7 @@ export function useCopilotConfig(brokerId: string | null) {
           .insert({ broker_id: brokerId, ...updates } as any);
         if (error) throw error;
       }
-      await fetchConfig();
+      await queryClient.invalidateQueries({ queryKey });
       toast.success("Configurações do Copiloto salvas!");
       return true;
     } catch (error) {
@@ -81,7 +79,11 @@ export function useCopilotConfig(brokerId: string | null) {
       toast.error("Erro ao salvar configurações");
       return false;
     }
-  }, [brokerId, config, fetchConfig]);
+  }, [brokerId, config, queryClient, queryKey]);
+
+  const fetchConfig = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey });
+  }, [queryClient, queryKey]);
 
   return { config, isLoading, saveConfig, fetchConfig };
 }
@@ -107,14 +109,12 @@ export function useCopilotSuggestion() {
 
       if (error) throw error;
 
-      // Non-streaming response
       if (data?.suggestion) {
         setSuggestion(data.suggestion);
         setIsGenerating(false);
         return data.suggestion;
       }
 
-      // If streaming, we need to handle differently
       setSuggestion(data?.suggestion || "Não foi possível gerar sugestão.");
       setIsGenerating(false);
       return data?.suggestion;

@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BrokerWhatsAppInstance } from "@/types/whatsapp";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-instance-manager`;
+
+const QUERY_KEY = ["whatsapp-instance"];
 
 interface UseWhatsAppInstanceReturn {
   instance: BrokerWhatsAppInstance | null;
@@ -22,257 +25,181 @@ interface UseWhatsAppInstanceReturn {
   updateSettings: (settings: Partial<Pick<BrokerWhatsAppInstance, 'hourly_limit' | 'daily_limit' | 'working_hours_start' | 'working_hours_end'>>) => Promise<void>;
 }
 
+const getAuthHeaders = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("No active session");
+  }
+  return {
+    "Authorization": `Bearer ${session.access_token}`,
+    "Content-Type": "application/json",
+  };
+};
+
+const fetchInstanceStatus = async (): Promise<BrokerWhatsAppInstance | null> => {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${FUNCTION_URL}/status`, {
+    method: "GET",
+    headers,
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to get status");
+  }
+  return data.instance ?? null;
+};
+
 export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
-  const [instance, setInstance] = useState<BrokerWhatsAppInstance | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [qrCode, setQRCode] = useState<string | null>(null);
   const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [isLoadingQR, setIsLoadingQR] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isMutating, setIsMutating] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const getAuthHeaders = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      throw new Error("No active session");
-    }
-    return {
-      "Authorization": `Bearer ${session.access_token}`,
-      "Content-Type": "application/json",
-    };
-  };
+  const { data: instance = null, isLoading: isQueryLoading, error: queryError } = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: fetchInstanceStatus,
+    staleTime: 30_000,
+    refetchInterval: (query) => {
+      const inst = query.state.data;
+      if (!inst) return false;
+      if (inst.status === "qr_pending" || inst.status === "connecting") return 5000;
+      if (inst.status === "disconnected") return 10000;
+      if (inst.status === "connected") return 60000;
+      return false;
+    },
+  });
+
+  // Clear QR when connected
+  if (instance?.status === "connected" && (qrCode || pairingCode)) {
+    setQRCode(null);
+    setPairingCode(null);
+  }
 
   const refreshStatus = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${FUNCTION_URL}/status`, {
-        method: "GET",
-        headers,
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to get status");
-      }
-
-      setInstance(data.instance);
-      
-      // Clear QR code when connected
-      if (data.instance?.status === "connected") {
-        setQRCode(null);
-        setPairingCode(null);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      setError(message);
-      console.error("Status error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+  }, [queryClient]);
 
   const initInstance = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-
+      setIsMutating(true);
       const headers = await getAuthHeaders();
       const response = await fetch(`${FUNCTION_URL}/init`, {
         method: "POST",
         headers,
       });
-
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to initialize instance");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to initialize instance");
 
-      setInstance(data.instance);
+      queryClient.setQueryData(QUERY_KEY, data.instance);
       toast({
         title: "Instância criada",
         description: "Escaneie o QR Code para conectar seu WhatsApp.",
       });
-
       // Auto-fetch QR code after init
-      await fetchQRCode();
+      await fetchQRCodeInternal();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      setError(message);
-      toast({
-        title: "Erro ao criar instância",
-        description: message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao criar instância", description: message, variant: "destructive" });
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
-  }, [toast]);
+  }, [toast, queryClient]);
 
-  const fetchQRCode = useCallback(async (phoneNumber?: string) => {
+  const fetchQRCodeInternal = async (phoneNumber?: string) => {
     try {
       setIsLoadingQR(true);
       setQRCode(null);
       setPairingCode(null);
-
       const headers = await getAuthHeaders();
       const params = phoneNumber ? `?number=${encodeURIComponent(phoneNumber.replace(/\D/g, ""))}` : "";
-      const response = await fetch(`${FUNCTION_URL}/qrcode${params}`, {
-        method: "GET",
-        headers,
-      });
-
+      const response = await fetch(`${FUNCTION_URL}/qrcode${params}`, { method: "GET", headers });
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to get QR code");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to get QR code");
 
       const nextQrCode = data.qrcode || null;
       const nextPairingCode = data.pairingCode || null;
-
       setQRCode(nextQrCode);
       setPairingCode(nextPairingCode);
 
       if (data.message) {
-        toast({
-          title: nextPairingCode ? "Código gerado" : "Pareamento disponível",
-          description: data.message,
-        });
+        toast({ title: nextPairingCode ? "Código gerado" : "Pareamento disponível", description: data.message });
       } else if (phoneNumber && nextPairingCode) {
-        toast({
-          title: "Código gerado",
-          description: "Digite o código no WhatsApp para concluir o pareamento.",
-        });
+        toast({ title: "Código gerado", description: "Digite o código no WhatsApp para concluir o pareamento." });
       } else if (phoneNumber && nextQrCode && !nextPairingCode) {
-        toast({
-          title: "Código numérico indisponível",
-          description: "Seu provedor não retornou o código agora. Use o QR Code como alternativa.",
-        });
+        toast({ title: "Código numérico indisponível", description: "Seu provedor não retornou o código agora. Use o QR Code como alternativa." });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       console.error("QR Code error:", err);
-      toast({
-        title: "Erro ao obter QR Code",
-        description: message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao obter QR Code", description: message, variant: "destructive" });
     } finally {
       setIsLoadingQR(false);
     }
+  };
+
+  const fetchQRCode = useCallback(async (phoneNumber?: string) => {
+    await fetchQRCodeInternal(phoneNumber);
   }, [toast]);
 
   const logout = useCallback(async () => {
     try {
-      setIsLoading(true);
-
+      setIsMutating(true);
       const headers = await getAuthHeaders();
-      const response = await fetch(`${FUNCTION_URL}/logout`, {
-        method: "POST",
-        headers,
-      });
-
+      const response = await fetch(`${FUNCTION_URL}/logout`, { method: "POST", headers });
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to logout");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to logout");
 
       setQRCode(null);
       setPairingCode(null);
-      await refreshStatus();
-      
-      toast({
-        title: "Desconectado",
-        description: "WhatsApp desconectado com sucesso.",
-      });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast({ title: "Desconectado", description: "WhatsApp desconectado com sucesso." });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      toast({
-        title: "Erro ao desconectar",
-        description: message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao desconectar", description: message, variant: "destructive" });
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
-  }, [refreshStatus, toast]);
+  }, [queryClient, toast]);
 
   const restart = useCallback(async () => {
     try {
-      setIsLoading(true);
-
+      setIsMutating(true);
       const headers = await getAuthHeaders();
-      const response = await fetch(`${FUNCTION_URL}/restart`, {
-        method: "POST",
-        headers,
-      });
-
+      const response = await fetch(`${FUNCTION_URL}/restart`, { method: "POST", headers });
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to restart");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to restart");
 
-      await refreshStatus();
-      
-      toast({
-        title: "Reiniciando",
-        description: "Instância sendo reiniciada...",
-      });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast({ title: "Reiniciando", description: "Instância sendo reiniciada..." });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      toast({
-        title: "Erro ao reiniciar",
-        description: message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao reiniciar", description: message, variant: "destructive" });
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
-  }, [refreshStatus, toast]);
+  }, [queryClient, toast]);
 
   const deleteInstance = useCallback(async () => {
     try {
-      setIsLoading(true);
-
+      setIsMutating(true);
       const headers = await getAuthHeaders();
-      const response = await fetch(`${FUNCTION_URL}/delete`, {
-        method: "DELETE",
-        headers,
-      });
-
+      const response = await fetch(`${FUNCTION_URL}/delete`, { method: "DELETE", headers });
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete instance");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to delete instance");
 
-      // Clear local state
-      setInstance(null);
+      queryClient.setQueryData(QUERY_KEY, null);
       setQRCode(null);
       setPairingCode(null);
-      
-      toast({
-        title: "Instância deletada",
-        description: "A instância WhatsApp foi removida completamente.",
-      });
+      toast({ title: "Instância deletada", description: "A instância WhatsApp foi removida completamente." });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      toast({
-        title: "Erro ao deletar",
-        description: message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao deletar", description: message, variant: "destructive" });
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
-  }, [toast]);
+  }, [queryClient, toast]);
 
   const togglePause = useCallback(async (pause: boolean, reason?: string) => {
     try {
@@ -282,28 +209,19 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
         headers,
         body: JSON.stringify({ pause, reason }),
       });
-
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to toggle pause");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to toggle pause");
 
-      setInstance(data.instance);
-      
+      queryClient.setQueryData(QUERY_KEY, data.instance);
       toast({
         title: pause ? "Envios pausados" : "Envios retomados",
         description: pause ? "Todos os envios foram pausados." : "Os envios foram retomados.",
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      toast({
-        title: "Erro",
-        description: message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: message, variant: "destructive" });
     }
-  }, [toast]);
+  }, [queryClient, toast]);
 
   const updateSettings = useCallback(async (settings: Partial<Pick<BrokerWhatsAppInstance, 'hourly_limit' | 'daily_limit' | 'working_hours_start' | 'working_hours_end'>>) => {
     try {
@@ -313,66 +231,24 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
         headers,
         body: JSON.stringify(settings),
       });
-
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update settings");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to update settings");
 
-      setInstance(data.instance);
-      
-      toast({
-        title: "Configurações salvas",
-        description: "As configurações foram atualizadas.",
-      });
+      queryClient.setQueryData(QUERY_KEY, data.instance);
+      toast({ title: "Configurações salvas", description: "As configurações foram atualizadas." });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      toast({
-        title: "Erro ao salvar",
-        description: message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao salvar", description: message, variant: "destructive" });
     }
-  }, [toast]);
-
-  // Initial load
-  useEffect(() => {
-    refreshStatus();
-  }, [refreshStatus]);
-
-  // Auto-refresh status - adaptive polling based on connection state
-  useEffect(() => {
-    if (!instance) return;
-    
-    let pollInterval: number;
-    
-    // During QR pending/connecting, poll every 5 seconds for fast updates
-    if (instance.status === "qr_pending" || instance.status === "connecting") {
-      pollInterval = 5000;
-    }
-    // When disconnected, poll every 10 seconds to catch reconnections
-    else if (instance.status === "disconnected") {
-      pollInterval = 10000;
-    }
-    // When connected, poll every 60 seconds for health monitoring
-    else if (instance.status === "connected") {
-      pollInterval = 60000;
-    } else {
-      return; // Unknown status, don't poll
-    }
-    
-    const interval = setInterval(refreshStatus, pollInterval);
-    return () => clearInterval(interval);
-  }, [instance?.status, refreshStatus]);
+  }, [queryClient, toast]);
 
   return {
     instance,
-    isLoading,
+    isLoading: isQueryLoading || isMutating,
     qrCode,
     pairingCode,
     isLoadingQR,
-    error,
+    error: queryError ? (queryError instanceof Error ? queryError.message : "Unknown error") : null,
     initInstance,
     refreshStatus,
     fetchQRCode,
