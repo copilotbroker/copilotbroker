@@ -290,7 +290,7 @@ function CopilotSummary({ config, onEdit, onDelete, onRefresh }: { config: Copil
 
 function CapabilityCard({ icon: Icon, label, value, active }: { icon: React.ElementType; label: string; value: string; active?: boolean }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+    <div className="rounded-xl border border-[#1e1e22] bg-[#111114] p-3.5 space-y-2">
       <div className="flex items-center gap-2">
         <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
           <Icon className="w-3.5 h-3.5 text-primary" />
