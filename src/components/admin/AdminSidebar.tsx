@@ -31,6 +31,7 @@ export function AdminSidebar({ activeTab, onLogout, onAddLead }: AdminSidebarPro
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [userInitial, setUserInitial] = useState("A");
   const { unreadCount: inboxUnread } = useInboxUnread();
+  const { count: plantaoNovosCount } = usePlantaoNovosCount();
 
   useEffect(() => {
     const fetchUserInitial = async () => {
