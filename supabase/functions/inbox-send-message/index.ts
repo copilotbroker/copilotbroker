@@ -76,20 +76,20 @@ async function sendViaUAZAPI(
       ]
     : isAudio
     ? [
-        // UAZAPI audio field is "audio" (not "file") — base64 data URI or URL
+        // Official UAZAPI shape for media is /send/media with { number, type, file, caption? }
         ...(dataUri ? [
-          { endpoint: "/send/audio", body: { number: cleanPhone, audio: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
-          { endpoint: "/send/ptt", body: { number: cleanPhone, audio: dataUri, mimetype: mimeType || "audio/ogg" } },
-          { endpoint: "/chat/send/audio", body: { number: cleanPhone, audio: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
-          // Also try with "file" field name as fallback
-          { endpoint: "/send/audio", body: { number: cleanPhone, file: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
+          { endpoint: "/send/media", body: { number: cleanPhone, type: "ptt", file: dataUri } },
+          { endpoint: "/send/media", body: { number: cleanPhone, type: "audio", file: dataUri } },
         ] : []),
-        // URL-based audio
-        { endpoint: "/send/audio", body: { number: cleanPhone, audio: mediaUrl, mimetype: mimeType || "audio/ogg", ptt: true } },
-        { endpoint: "/send/ptt", body: { number: cleanPhone, audio: mediaUrl, mimetype: mimeType || "audio/ogg" } },
-        { endpoint: "/chat/send/audio", body: { number: cleanPhone, audio: mediaUrl, mimetype: mimeType || "audio/ogg", ptt: true } },
-        // Last resort: /send/media with audio field
-        { endpoint: "/send/media", body: { number: cleanPhone, mediatype: "audio", audio: mediaUrl, mimetype: mimeType || "audio/ogg", ptt: true } },
+        ...(mediaUrl ? [
+          { endpoint: "/send/media", body: { number: cleanPhone, type: "ptt", file: mediaUrl } },
+          { endpoint: "/send/media", body: { number: cleanPhone, type: "audio", file: mediaUrl } },
+        ] : []),
+        // Legacy fallbacks for installations exposing dedicated audio routes
+        ...(dataUri ? [
+          { endpoint: "/send/audio", body: { number: cleanPhone, file: dataUri, mimetype: mimeType || "audio/ogg", ptt: true } },
+          { endpoint: "/send/ptt", body: { number: cleanPhone, file: dataUri, mimetype: mimeType || "audio/ogg" } },
+        ] : []),
       ]
     : [
         // Generic media (image, video, document) — keep caption
@@ -133,6 +133,10 @@ async function sendViaUAZAPI(
         if (result.error) return { success: false, error: String(result.error) };
 
         const messageId = String(result.id || result.messageid || (result.key as Record<string, unknown>)?.id || "");
+        if (!messageId && isAudio && request.endpoint === "/send/media") {
+          console.warn(`⚠️ /send/media respondeu sem messageId para áudio. Corpo: ${responseText.substring(0, 200)}`);
+          continue;
+        }
         console.log(`✅ Mensagem ${messageType} enviada via ${request.endpoint} para ${cleanPhone}`);
         return { success: true, messageId };
       } catch (err) {
