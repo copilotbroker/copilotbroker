@@ -93,11 +93,13 @@ export function SecurityTab() {
                   <Slider value={[dailyLimit]} onValueChange={([v]) => setDailyLimit(v)} min={30} max={300} step={10} className="w-full" />
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="space-y-2">
                 <span className="text-sm text-slate-400">Horário de envio</span>
-                <Input type="time" value={workStart} onChange={(e) => setWorkStart(e.target.value)} className="bg-[#0d0d0f] border-[#1e1e22] text-white w-32" />
-                <span className="text-slate-400 text-sm">até</span>
-                <Input type="time" value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} className="bg-[#0d0d0f] border-[#1e1e22] text-white w-32" />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Input type="time" value={workStart} onChange={(e) => setWorkStart(e.target.value)} className="bg-[#0d0d0f] border-[#1e1e22] text-white w-28" />
+                  <span className="text-slate-400 text-sm">até</span>
+                  <Input type="time" value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} className="bg-[#0d0d0f] border-[#1e1e22] text-white w-28" />
+                </div>
               </div>
               <Button onClick={handleSaveSettings} className="w-full md:w-auto">Salvar Configurações</Button>
             </CardContent>
