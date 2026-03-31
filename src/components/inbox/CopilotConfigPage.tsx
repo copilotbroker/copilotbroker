@@ -309,7 +309,7 @@ function DialRow({ label, value }: { label: string; value: number }) {
         <span className="text-xs text-muted-foreground">{label}</span>
         <span className="text-xs font-bold text-foreground">{value}%</span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+      <div className="h-1.5 w-full rounded-full bg-[#1e1e22] overflow-hidden">
         <div
           className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-500"
           style={{ width: `${value}%` }}
