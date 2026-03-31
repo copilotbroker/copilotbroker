@@ -3,6 +3,7 @@ import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { BROKER_TAB_LABELS, getBrokerTabFromPath } from "./brokerNavigation";
 import { cn } from "@/lib/utils";
+import { BrokerRoletaStatusCompact } from "./BrokerRoletaStatusCompact";
 
 interface BrokerHeaderProps {
   brokerName?: string;
@@ -10,6 +11,7 @@ interface BrokerHeaderProps {
   onSearchChange?: (value: string) => void;
   collapsibleContent?: ReactNode;
   onAddLead?: () => void;
+  brokerId?: string;
 }
 
 export function BrokerHeader({
@@ -18,6 +20,7 @@ export function BrokerHeader({
   onSearchChange,
   collapsibleContent,
   onAddLead,
+  brokerId,
 }: BrokerHeaderProps) {
   const location = useLocation();
   const activeTab = getBrokerTabFromPath(location.pathname);
@@ -27,8 +30,8 @@ export function BrokerHeader({
   return (
     <header className="sticky top-0 z-30 bg-[#141417]/95 backdrop-blur-sm border-b border-[#2a2a2e] pt-safe">
       {/* Mobile header */}
-      <div className="lg:hidden flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
+      <div className="lg:hidden flex items-center justify-between px-4 py-3 gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <h1 className="text-lg font-bold text-white">{copy.title}</h1>
           {collapsibleContent && (
             <button
@@ -39,6 +42,19 @@ export function BrokerHeader({
             </button>
           )}
         </div>
+        {brokerId && (
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <BrokerRoletaStatusCompact brokerId={brokerId} />
+          </div>
+        )}
+        {collapsibleContent && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-2 rounded-md text-slate-400 hover:text-slate-200 hover:bg-[#2a2a2e] transition-colors shrink-0"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+        )}
         {collapsibleContent && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}

@@ -180,6 +180,7 @@ const BrokerAdmin = () => {
         isLeader={isLeader}
         inboxEnabled={inboxEnabled}
         copilotEnabled={copilotEnabled}
+        brokerId={brokerId || undefined}
           collapsibleContent={
           viewMode === "kanban" && brokerId ? (
             <div className="space-y-2">
