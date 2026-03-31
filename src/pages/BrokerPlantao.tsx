@@ -9,6 +9,7 @@ import { useConversations, useConversationMessages, Conversation, InboxTab } fro
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useUserRole } from "@/hooks/use-user-role";
 import { toast } from "sonner";
+import { useLogout } from "@/hooks/use-logout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Loader2 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";

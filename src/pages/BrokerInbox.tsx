@@ -8,6 +8,7 @@ import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatMo
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation } from "@/hooks/use-conversations";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
+import { useLogout } from "@/hooks/use-logout";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Users, Calendar, Phone, RefreshCw, UserCog, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useUserRole } from "@/hooks/use-user-role";
+import { useLogout } from "@/hooks/use-logout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import LeadsTable from "@/components/admin/LeadsTable";
 import ExportButton from "@/components/admin/ExportButton";

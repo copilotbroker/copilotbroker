@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useBrokerProjects } from "@/hooks/use-broker-projects";
 import { toast } from "sonner";
+import { useLogout } from "@/hooks/use-logout";
 import {
   Building2, Copy, Check, Trash2, Plus, EyeOff,
   Link as LinkIcon, RefreshCw, ArrowLeft, Save, ClipboardList,

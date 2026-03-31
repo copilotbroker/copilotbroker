@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RefreshCw } from "lucide-react";
 import { useUserRole } from "@/hooks/use-user-role";
+import { useLogout } from "@/hooks/use-logout";
 import { BrokerLayout } from "@/components/broker";
 import RoletaManagement from "@/components/admin/RoletaManagement";
 
