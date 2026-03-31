@@ -171,9 +171,7 @@ export function BrokerRoletas({ brokerId }: { brokerId: string }) {
 
   return (
     <div className="bg-card border border-border rounded-lg">
-      {/* Compact horizontal row */}
-      <div className="flex items-center gap-2 p-2 overflow-x-auto">
-        <RotateCw className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+      <div className="flex flex-col divide-y divide-border">
         {groups.map(({ roleta, myMembro, allMembros }) => {
           const onlineCount = allMembros.filter((m) => m.status_checkin).length;
           const isExpanded = expandedRoletas.has(roleta.id);
@@ -181,29 +179,29 @@ export function BrokerRoletas({ brokerId }: { brokerId: string }) {
           const isNext = myMembro.id === nextId;
 
           return (
-            <div key={myMembro.id} className="shrink-0">
-              <div className="flex items-center gap-1.5">
+            <div key={myMembro.id} className="px-3 py-2">
+              <div className="flex items-center justify-between gap-2">
                 <button
                   onClick={() => toggleExpanded(roleta.id)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors min-w-0"
                 >
                   <span
                     className={cn(
                       "w-2 h-2 rounded-full shrink-0",
-                      myMembro.status_checkin ? "bg-emerald-400" : "bg-muted-foreground/40"
+                      myMembro.status_checkin ? "bg-emerald-400" : "bg-red-400"
                     )}
                   />
-                  <span className="font-medium text-foreground whitespace-nowrap">{roleta.nome}</span>
-                  <span className="text-[10px] text-muted-foreground">({onlineCount})</span>
+                  <span className="font-medium text-foreground truncate">{roleta.nome}</span>
+                  <span className="text-[10px] text-muted-foreground shrink-0">({onlineCount})</span>
                   {isNext && myMembro.status_checkin && (
-                    <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] px-1 py-0 leading-tight">
+                    <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] px-1 py-0 leading-tight shrink-0">
                       Próximo
                     </Badge>
                   )}
                   {isExpanded ? (
-                    <ChevronUp className="w-3 h-3" />
+                    <ChevronUp className="w-3 h-3 shrink-0" />
                   ) : (
-                    <ChevronDown className="w-3 h-3" />
+                    <ChevronDown className="w-3 h-3 shrink-0" />
                   )}
                 </button>
                 <Button
@@ -212,7 +210,7 @@ export function BrokerRoletas({ brokerId }: { brokerId: string }) {
                   disabled={togglingId === myMembro.id}
                   onClick={() => handleToggleCheckin(myMembro)}
                   className={cn(
-                    "h-6 text-[10px] px-2",
+                    "h-6 text-[10px] px-2 shrink-0",
                     !myMembro.status_checkin && "bg-emerald-600 hover:bg-emerald-700"
                   )}
                 >
