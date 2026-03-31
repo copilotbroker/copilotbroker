@@ -43,8 +43,8 @@ export function BrokerHeader({
           )}
         </div>
         {brokerId && (
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <BrokerRoletaStatusCompact brokerId={brokerId} />
+          <div className="flex-1 min-w-0 overflow-hidden" onClick={() => collapsibleContent && setIsExpanded(!isExpanded)}>
+            <BrokerRoletaStatusCompact brokerId={brokerId} onDotsClick={() => collapsibleContent && setIsExpanded(!isExpanded)} />
           </div>
         )}
         {collapsibleContent && (
