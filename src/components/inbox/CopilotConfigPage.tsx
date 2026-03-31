@@ -510,7 +510,7 @@ function StepStrategy({ form, update }: { form: Partial<CopilotConfig>; update: 
       </div>
 
       {/* Follow-up por inatividade — controle real */}
-      <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+      <div className="rounded-xl border border-[#1e1e22] bg-[#111114] p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <Label className="text-sm text-foreground font-semibold">Follow-up por inatividade</Label>
