@@ -209,7 +209,7 @@ function BrokerCopilotCard({ broker, onSelect }: { broker: BrokerWithCopilot; on
   return (
     <button
       onClick={onSelect}
-      className="w-full text-left rounded-xl border border-border bg-card hover:border-primary/30 transition-all duration-200 group"
+      className="w-full text-left rounded-xl border border-[#1e1e22] bg-[#111114] hover:border-primary/30 transition-all duration-200 group"
     >
       <div className="p-4">
         {/* Header row */}
