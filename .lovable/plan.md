@@ -1,45 +1,39 @@
 
 
-## Melhorar Percepção de Carregamento das Abas Copiloto
+## Acelerar Carregamento das Cadências Salvas
 
 ### Diagnóstico
 
-As abas **Campanhas** e **Fila** usam React Query (`useQuery`), que mantém os dados em cache. Ao trocar de aba e voltar, os dados aparecem instantaneamente (cache) enquanto revalida em background — experiência "já carregada".
+O hook `useUserRole()` usa `useState` + `useEffect` com auth listener — cada componente que o chama inicia com `brokerId: null` e `isLoading: true`. Isso atrasa o início da query de cadências porque ela tem `enabled: !!brokerId`.
 
-As abas **Conexão**, **Copiloto**, **Segurança** e **Follow-up** usam hooks manuais (`useState` + `useEffect` + fetch), que:
-- Resetam o estado toda vez que o componente monta
-- Mostram spinner de loading do zero a cada visita
-- Não possuem cache
+A sequência atual é:
+1. Componente monta → `brokerId = null` (query desabilitada)
+2. Auth listener dispara → busca role + broker no Supabase (~200-500ms)
+3. `brokerId` resolve → query de cadências inicia → busca regras + contagem de steps (~300-500ms)
+4. Total: ~500ms-1s de spinner antes dos dados aparecerem
 
 ### Solução
 
-Migrar os 3 hooks problemáticos para React Query, ganhando cache automático + `staleTime` + revalidação em background.
+Migrar `useUserRole` para React Query, tornando o `brokerId` disponível instantaneamente (via cache) em qualquer componente após a primeira resolução.
 
-#### 1. Refatorar `use-whatsapp-instance.ts`
-- Extrair o fetch de status para um `useQuery` com `queryKey: ["whatsapp-instance"]` e `staleTime: 30_000` (30s)
-- As mutations (init, logout, restart, delete, togglePause, updateSettings) continuam como funções que invalidam o cache via `queryClient.invalidateQueries(["whatsapp-instance"])`
-- O QR code e pairing code permanecem em `useState` local (são efêmeros)
-- Resultado: aba Conexão e Segurança carregam instantaneamente na segunda visita
+### Arquivo: `src/hooks/use-user-role.ts`
 
-#### 2. Refatorar `use-copilot.ts` (`useCopilotConfig`)
-- Trocar `useState` + `useEffect` + `fetchConfig()` por `useQuery({ queryKey: ["copilot-config", brokerId], staleTime: 60_000 })`
-- `saveConfig` e `deleteConfig` invalidam `["copilot-config", brokerId]`
-- Resultado: aba Copiloto carrega instantaneamente na segunda visita
+1. Substituir `useState` + `useEffect` + auth listener por `useQuery` com:
+   - `queryKey: ["user-role"]`
+   - `staleTime: 5 * 60 * 1000` (5 min — role raramente muda)
+   - `queryFn` que faz `supabase.auth.getUser()` e depois busca roles + broker em paralelo (mesma lógica atual)
+2. Manter o auth listener apenas para invalidar o cache em `SIGNED_IN` / `SIGNED_OUT` (não para refetch completo)
+3. Retornar a mesma interface `{ role, isLoading, brokerId, isLeader }`
 
-#### 3. Refatorar `use-auto-cadencia-rules.ts`
-- Trocar `useState` + `useEffect` + `fetchRules()` por `useQuery({ queryKey: ["auto-cadencia-rules", brokerId], staleTime: 30_000 })`
-- Mutations (toggle, delete, create, update) invalidam o cache
-- Resultado: aba Follow-up carrega instantaneamente na segunda visita
+### Resultado esperado
+- Na primeira visita: comportamento igual ao atual
+- Em visitas subsequentes (troca de aba e volta): `brokerId` disponível instantaneamente do cache → query de cadências dispara imediatamente com dados cacheados → **zero spinner**
 
 ### Arquivos alterados
-- `src/hooks/use-whatsapp-instance.ts` — migrar fetch de status para React Query
-- `src/hooks/use-copilot.ts` — migrar para React Query
-- `src/hooks/use-auto-cadencia-rules.ts` — migrar para React Query
-- `src/components/whatsapp/ConnectionTab.tsx` — ajustar referência ao loading (minor)
-- `src/components/whatsapp/SecurityTab.tsx` — remover query redundante de broker (já vem do hook)
+- `src/hooks/use-user-role.ts` — migrar para React Query
 
 ### O que NÃO muda
-- Toda a lógica funcional e UI existente
-- As abas Campanhas e Fila (já otimizadas)
-- A estrutura de tabs nos pages
+- Interface pública do hook (mesmos campos retornados)
+- Todos os componentes consumidores continuam funcionando sem alteração
+- Lógica de roles e permissões
 
