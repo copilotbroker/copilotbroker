@@ -250,7 +250,7 @@ function BrokerCopilotCard({ broker, onSelect }: { broker: BrokerWithCopilot; on
         </div>
 
         {/* Metrics row */}
-        <div className="grid grid-cols-3 gap-px rounded-lg overflow-hidden border border-border">
+        <div className="grid grid-cols-3 gap-px rounded-lg overflow-hidden border border-[#1e1e22]">
           <MiniStat label="Persuasão" value={`${copilot.persuasion_level}%`} />
           <MiniStat label="Objetividade" value={`${copilot.objectivity_level}%`} />
           <MiniStat label="Autonomia" value={AUTONOMY_MAP[copilot.max_autonomy] || "—"} />
