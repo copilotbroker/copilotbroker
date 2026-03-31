@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Megaphone, Loader2 } from "lucide-react";
+import { Plus, Megaphone, Loader2, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useWhatsAppCampaigns } from "@/hooks/use-whatsapp-campaigns";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useQuery } from "@tanstack/react-query";
@@ -182,20 +183,67 @@ export function CampaignsTab() {
           </div>
         </>
       ) : (
-        /* Campaign List */
-        <div className="space-y-4">
-          {campaigns.map((campaign) => (
-            <CampaignCard
-              key={campaign.id}
-              campaign={campaign}
-              onPause={pauseCampaign}
-              onResume={resumeCampaign}
-              onCancel={cancelCampaign}
-              onViewDetail={(c) => setDetailCampaign(c)}
-              onDuplicate={(c) => handleDuplicateFromCard(c)}
-            />
-          ))}
-        </div>
+        (() => {
+          const active = campaigns.filter(c => ["draft", "scheduled", "running", "paused"].includes(c.status));
+          const completed = campaigns.filter(c => c.status === "completed");
+          const cancelled = campaigns.filter(c => c.status === "cancelled");
+
+          const renderCards = (list: WhatsAppCampaign[]) => (
+            <div className="space-y-4">
+              {list.map((campaign) => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  onPause={pauseCampaign}
+                  onResume={resumeCampaign}
+                  onCancel={cancelCampaign}
+                  onViewDetail={(c) => setDetailCampaign(c)}
+                  onDuplicate={(c) => handleDuplicateFromCard(c)}
+                />
+              ))}
+            </div>
+          );
+
+          return (
+            <div className="space-y-4">
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                  <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-data-[state=closed]:-rotate-90" />
+                  <span className="text-sm font-semibold text-white">Em andamento ({active.length})</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  {active.length > 0 ? renderCards(active) : (
+                    <p className="text-xs text-slate-500 pl-6">Nenhuma campanha em andamento.</p>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                  <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-data-[state=closed]:-rotate-90" />
+                  <span className="text-sm font-semibold text-white">Concluídas ({completed.length})</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  {completed.length > 0 ? renderCards(completed) : (
+                    <p className="text-xs text-slate-500 pl-6">Nenhuma campanha concluída.</p>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                  <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-data-[state=closed]:-rotate-90" />
+                  <span className="text-sm font-semibold text-white">Canceladas ({cancelled.length})</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  {cancelled.length > 0 ? renderCards(cancelled) : (
+                    <p className="text-xs text-slate-500 pl-6">Nenhuma campanha cancelada.</p>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          );
+        })()
       )}
 
       <CampaignDetailSheet
