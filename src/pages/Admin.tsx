@@ -14,6 +14,7 @@ import BrokerManagement from "@/components/admin/BrokerManagement";
 import ProjectManagement from "@/components/admin/ProjectManagement";
 import DashboardOverview from "@/components/admin/DashboardOverview";
 import IntelligenceDashboard from "@/components/admin/IntelligenceDashboard";
+import PerformanceDashboard from "@/components/admin/PerformanceDashboard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -475,11 +476,15 @@ const Admin = () => {
         brokers={brokers}
       >
       {activeTab === "dashboard" ? (
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue="performance" className="w-full">
           <TabsList className="bg-[#1e1e22] border border-[#2a2a2e] mb-4">
+            <TabsTrigger value="performance" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Performance</TabsTrigger>
             <TabsTrigger value="overview" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Overview</TabsTrigger>
             <TabsTrigger value="intelligence" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Inteligência</TabsTrigger>
           </TabsList>
+          <TabsContent value="performance">
+            <PerformanceDashboard />
+          </TabsContent>
           <TabsContent value="overview">
             <DashboardOverview />
           </TabsContent>
