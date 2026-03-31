@@ -258,7 +258,7 @@ export function ConversationThread({
     return nextDate;
   };
 
-  const handleSend = async () => {
+  const handleSend = () => {
     const text = inputValue.trim();
     if ((!text && !pendingFile) || isSending) return;
 
@@ -270,39 +270,16 @@ export function ConversationThread({
     if (fileInputRef.current) fileInputRef.current.value = "";
     inputRef.current?.focus();
 
-    setIsSending(true);
-    try {
-      if (fileToSend && fileTypeToSend) {
-        const ext = fileToSend.name.split(".").pop() || "bin";
-        const path = `inbox/${conversation.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from("project-media").upload(path, fileToSend, {
-          contentType: fileToSend.type,
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage.from("project-media").getPublicUrl(path);
-        await onSendMessage({
-          content: text || `📎 ${fileToSend.name}`,
-          messageType: fileTypeToSend,
-          metadata: {
-            file_url: urlData.publicUrl,
-            file_name: fileToSend.name,
-            mime_type: fileToSend.type,
-            storage_path: path,
-            size_bytes: fileToSend.size,
-          },
-        });
-      } else {
-        await onSendMessage(text);
-      }
-    } catch (error) {
-      console.error("Erro ao enviar mídia:", error);
-      toast.error("Não foi possível enviar o anexo");
-    } finally {
-      setIsSending(false);
+    if (fileToSend && fileTypeToSend) {
+      // Pass file to hook — it handles optimistic + background upload
+      onSendMessage({
+        content: text || "",
+        messageType: fileTypeToSend,
+        file: fileToSend,
+      });
+    } else {
+      // Text-only: fire-and-forget (hook handles optimistic)
+      onSendMessage(text);
     }
   };
 
