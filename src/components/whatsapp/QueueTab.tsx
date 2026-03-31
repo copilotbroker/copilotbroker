@@ -108,11 +108,11 @@ function PendingMessageCard({ message, onCancel }: { message: any; onCancel: (id
 
   return (
     <div
-      className="px-3 py-2.5 rounded-xl bg-[#111114] border border-[#1e1e22] cursor-pointer select-none transition-colors hover:bg-[#161619]"
+      className="px-3 py-2.5 rounded-xl bg-[#111114] border border-[#1e1e22] cursor-pointer select-none transition-colors hover:bg-[#161619] overflow-hidden"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-xs text-slate-500 flex-shrink-0">
+        <span className="text-xs text-slate-500 shrink-0">
           {message.status === "paused_by_system" ? (
             <>
               <AlertTriangle className="w-3 h-3 inline mr-0.5 text-orange-400" />
@@ -121,30 +121,28 @@ function PendingMessageCard({ message, onCancel }: { message: any; onCancel: (id
           ) : (
             <>
               <Clock className="w-3 h-3 inline mr-0.5" />
-              Envio: {format(new Date(message.scheduled_at), "dd/MM HH:mm")}
+              {format(new Date(message.scheduled_at), "dd/MM HH:mm")}
             </>
           )}
         </span>
-        <span className="text-sm text-slate-200 font-medium truncate flex-shrink-0 max-w-[120px]">
+        <span className="text-sm text-slate-200 font-medium truncate min-w-0 flex-1">
           {message.lead?.name || message.phone}
         </span>
-        {message.message && (
-          <span className="text-xs text-slate-500 italic truncate flex-1 min-w-0">
-            · "{truncateMessage(message.message)}"
-          </span>
-        )}
-        <Badge variant={statusConfig.variant} className="text-[10px] flex-shrink-0">
+        <Badge variant={statusConfig.variant} className="text-[10px] shrink-0">
           {statusConfig.label}
         </Badge>
         <Button
           size="sm"
           variant="ghost"
-          className="h-6 px-1.5 text-slate-400 hover:text-red-400 flex-shrink-0"
+          className="h-6 w-6 p-0 text-slate-400 hover:text-red-400 shrink-0"
           onClick={(e) => { e.stopPropagation(); onCancel(message.id); }}
         >
           <XCircle className="w-3.5 h-3.5" />
         </Button>
       </div>
+      {message.message && (
+        <p className="text-xs text-slate-500 italic truncate mt-1">"{truncateMessage(message.message, 60)}"</p>
+      )}
 
       {expanded && (
         <div className="mt-2 pt-2 border-t border-[#1e1e22] space-y-2" onClick={(e) => e.stopPropagation()}>
