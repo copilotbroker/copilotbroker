@@ -78,6 +78,7 @@ export function AdminSidebar({ activeTab, onLogout, onAddLead }: AdminSidebarPro
             const isActive = activeTab === item.id;
             const Icon = item.icon;
             const isInbox = item.id === "inbox";
+            const isPlantao = item.id === "plantao";
 
             return (
               <Tooltip key={item.id}>
@@ -90,15 +91,19 @@ export function AdminSidebar({ activeTab, onLogout, onAddLead }: AdminSidebarPro
                         ? isActive
                           ? "bg-[hsl(145,80%,42%)]/20 text-[hsl(145,80%,55%)] shadow-[0_0_12px_hsl(145,80%,42%,0.3)]"
                           : "text-[hsl(145,80%,55%)]/70 hover:text-[hsl(145,80%,55%)] hover:bg-[hsl(145,80%,42%)]/10 hover:shadow-[0_0_8px_hsl(145,80%,42%,0.15)]"
-                        : isActive
-                          ? "bg-primary/20 text-primary"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        : isPlantao
+                          ? isActive
+                            ? "bg-orange-400/20 text-orange-400 shadow-[0_0_12px_hsl(30,90%,50%,0.3)]"
+                            : "text-orange-400/70 hover:text-orange-400 hover:bg-orange-400/10"
+                          : isActive
+                            ? "bg-primary/20 text-primary"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     )}
                   >
                     {isActive && (
                       <div className={cn(
                         "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full",
-                        isInbox ? "bg-[hsl(145,80%,55%)]" : "bg-primary"
+                        isInbox ? "bg-[hsl(145,80%,55%)]" : isPlantao ? "bg-orange-400" : "bg-primary"
                       )} />
                     )}
                     <Icon className="w-5 h-5" />
