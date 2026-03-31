@@ -15,7 +15,11 @@ import {
   Hash,
   RotateCw,
   Calendar,
-  ChevronDown
+  ChevronRight,
+  ChevronDown,
+  BarChart3,
+  Pause,
+  MessageSquare,
 } from "lucide-react";
 import { useWhatsAppQueue } from "@/hooks/use-whatsapp-queue";
 import { useUserRole } from "@/hooks/use-user-role";
@@ -72,38 +76,28 @@ function DetailRow({ icon: Icon, label, value }: { icon: any; label: string; val
 }
 
 function QueueStats({ stats }: { stats: { queued: number; sent: number; failed: number; replies: number; paused: number } }) {
+  const items = [
+    { label: "Na fila", value: stats.queued, icon: Clock, accent: "text-slate-300" },
+    { label: "Pausados", value: stats.paused, icon: Pause, accent: "text-orange-400" },
+    { label: "Enviados", value: stats.sent, icon: Send, accent: "text-emerald-400" },
+    { label: "Falhas", value: stats.failed, icon: AlertTriangle, accent: "text-red-400" },
+    { label: "Respostas", value: stats.replies, icon: MessageSquare, accent: "text-blue-400" },
+  ];
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4">
-      <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-        <CardContent className="py-3 sm:py-4 text-center">
-          <p className="text-2xl font-bold text-white">{stats.queued}</p>
-          <p className="text-xs text-slate-500">Na fila</p>
-        </CardContent>
-      </Card>
-      <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-        <CardContent className="py-3 sm:py-4 text-center">
-          <p className="text-2xl font-bold text-yellow-400">{stats.paused}</p>
-          <p className="text-xs text-slate-500">Pausados</p>
-        </CardContent>
-      </Card>
-      <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-        <CardContent className="py-3 sm:py-4 text-center">
-          <p className="text-2xl font-bold text-green-400">{stats.sent}</p>
-          <p className="text-xs text-slate-500">Enviados</p>
-        </CardContent>
-      </Card>
-      <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-        <CardContent className="py-3 sm:py-4 text-center">
-          <p className="text-2xl font-bold text-red-400">{stats.failed}</p>
-          <p className="text-xs text-slate-500">Falhas</p>
-        </CardContent>
-      </Card>
-      <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-        <CardContent className="py-3 sm:py-4 text-center">
-          <p className="text-2xl font-bold text-blue-400">{stats.replies}</p>
-          <p className="text-xs text-slate-500">Responderam</p>
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      {items.map((s) => (
+        <div
+          key={s.label}
+          className="flex items-center gap-3 p-3 rounded-xl bg-[#111114] border border-[#1e1e22]"
+        >
+          <s.icon className={cn("w-4 h-4 shrink-0", s.accent)} />
+          <div className="min-w-0">
+            <p className={cn("text-lg font-bold leading-none", s.accent)}>{s.value}</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">{s.label}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -114,14 +108,14 @@ function PendingMessageCard({ message, onCancel }: { message: any; onCancel: (id
 
   return (
     <div
-      className="px-3 py-2 rounded-lg bg-[#1a1a1d] border border-[#2a2a2e] cursor-pointer select-none"
+      className="px-3 py-2.5 rounded-xl bg-[#111114] border border-[#1e1e22] cursor-pointer select-none transition-colors hover:bg-[#161619]"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-xs text-slate-500 flex-shrink-0">
           {message.status === "paused_by_system" ? (
             <>
-              <AlertTriangle className="w-3 h-3 inline mr-0.5 text-yellow-500" />
+              <AlertTriangle className="w-3 h-3 inline mr-0.5 text-orange-400" />
               Pausado
             </>
           ) : (
@@ -131,7 +125,7 @@ function PendingMessageCard({ message, onCancel }: { message: any; onCancel: (id
             </>
           )}
         </span>
-        <span className="text-sm text-white font-medium truncate flex-shrink-0 max-w-[120px]">
+        <span className="text-sm text-slate-200 font-medium truncate flex-shrink-0 max-w-[120px]">
           {message.lead?.name || message.phone}
         </span>
         {message.message && (
@@ -153,7 +147,7 @@ function PendingMessageCard({ message, onCancel }: { message: any; onCancel: (id
       </div>
 
       {expanded && (
-        <div className="mt-2 pt-2 border-t border-[#2a2a2e] space-y-2" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-2 pt-2 border-t border-[#1e1e22] space-y-2" onClick={(e) => e.stopPropagation()}>
           {message.message && (
             <p className="text-xs text-slate-300 whitespace-pre-wrap">{message.message}</p>
           )}
@@ -168,7 +162,7 @@ function PendingMessageCard({ message, onCancel }: { message: any; onCancel: (id
               <DetailRow icon={Calendar} label="Envio programado" value={format(new Date(message.scheduled_at), "dd/MM/yyyy HH:mm:ss")} />
             )}
             {message.status === "paused_by_system" && (
-              <p className="text-xs text-yellow-500">Horário será recalculado quando a campanha for retomada</p>
+              <p className="text-xs text-orange-400">Horário será recalculado quando a campanha for retomada</p>
             )}
           </div>
         </div>
@@ -185,22 +179,22 @@ function HistoryMessageCard({ message, onRetry }: { message: any; onRetry: (id: 
   return (
     <div
       className={cn(
-        "px-3 py-2 rounded-lg border cursor-pointer select-none",
-        isFailed ? "bg-red-500/5 border-red-500/20" : "bg-[#1a1a1d] border-[#2a2a2e]"
+        "px-3 py-2.5 rounded-xl border cursor-pointer select-none transition-colors",
+        isFailed ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" : "bg-[#111114] border-[#1e1e22] hover:bg-[#161619]"
       )}
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-center gap-2 min-w-0">
         <div className="flex-shrink-0">
           {message.status === "sent" ? (
-            <CheckCircle className="w-4 h-4 text-green-400" />
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
           ) : isFailed ? (
             <AlertTriangle className="w-4 h-4 text-red-400" />
           ) : (
             <XCircle className="w-4 h-4 text-slate-400" />
           )}
         </div>
-        <span className="text-sm text-white font-medium truncate flex-shrink-0 max-w-[120px]">
+        <span className="text-sm text-slate-200 font-medium truncate flex-shrink-0 max-w-[120px]">
           {message.lead?.name || message.phone}
         </span>
         {message.message && (
@@ -219,7 +213,7 @@ function HistoryMessageCard({ message, onRetry }: { message: any; onRetry: (id: 
       </div>
 
       {expanded && (
-        <div className="mt-2 pt-2 border-t border-[#2a2a2e] space-y-2" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-2 pt-2 border-t border-[#1e1e22] space-y-2" onClick={(e) => e.stopPropagation()}>
           {message.message && (
             <p className="text-xs text-slate-300 whitespace-pre-wrap">{message.message}</p>
           )}
@@ -260,6 +254,22 @@ function HistoryMessageCard({ message, onRetry }: { message: any; onRetry: (id: 
     </div>
   );
 }
+
+/* ─── Section definitions ─── */
+interface SectionDef {
+  key: string;
+  label: string;
+  dotClass: string;
+  defaultOpen: boolean;
+  iconFallback: React.ComponentType<{ className?: string }>;
+  accentClass: string;
+}
+
+const SECTIONS: SectionDef[] = [
+  { key: "pending", label: "Pendentes", dotClass: "bg-orange-400", defaultOpen: true, iconFallback: Clock, accentClass: "text-orange-400" },
+  { key: "sent", label: "Enviados", dotClass: "bg-emerald-400", defaultOpen: false, iconFallback: CheckCircle, accentClass: "text-emerald-400" },
+  { key: "failed", label: "Cancelados / Falhas", dotClass: "bg-red-400", defaultOpen: false, iconFallback: XCircle, accentClass: "text-red-400" },
+];
 
 export function QueueTab() {
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
@@ -303,24 +313,44 @@ export function QueueTab() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-7 h-7 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6 pb-20 sm:pb-0">
+      {/* ── Header Row ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-white">Fila de Envio</h2>
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Send className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground leading-tight">Fila de Envio</h2>
+            <p className="text-xs text-muted-foreground">
+              {allPaused ? (
+                <span className="text-orange-400">Campanha pausada</span>
+              ) : (
+                <>
+                  Próximo envio em{" "}
+                  <span className="font-mono text-primary font-medium">
+                    {formatNextSendIn()}
+                    {nextScheduledAt && ` (${format(new Date(nextScheduledAt), "HH:mm")})`}
+                  </span>
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
           {role === "admin" && (
             <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-              <SelectTrigger className="w-[200px] bg-[#1a1a1d] border-[#2a2a2e] text-slate-300 h-9">
+              <SelectTrigger className="w-[180px] bg-[#111114] border-[#1e1e22] text-slate-300 h-9 text-xs">
                 <SelectValue placeholder="Todos os corretores" />
               </SelectTrigger>
-              <SelectContent className="bg-[#1a1a1d] border-[#2a2a2e]">
+              <SelectContent className="bg-[#111114] border-[#1e1e22]">
                 <SelectItem value="all">Todos os corretores</SelectItem>
                 {brokersList.map((b) => (
                   <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
@@ -329,49 +359,57 @@ export function QueueTab() {
             </Select>
           )}
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-400 bg-[#1a1a1d] border border-[#2a2a2e] rounded-full px-3 py-1.5 w-fit">
-          <Timer className="w-4 h-4 animate-pulse text-primary" />
-          <span>Próximo envio em:</span>
-          {allPaused ? (
-            <span className="text-yellow-400 font-medium">Campanha pausada</span>
-          ) : (
-            <span className="font-mono text-primary font-medium">
-              {formatNextSendIn()}
-              {nextScheduledAt && ` (${format(new Date(nextScheduledAt), "HH:mm")})`}
-            </span>
-          )}
-        </div>
       </div>
 
-      {/* Stats */}
+      {/* ── Quick Stats ── */}
       <QueueStats stats={stats} />
 
+      {/* ── Content ── */}
       {isEmpty ? (
-        <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-          <CardContent className="py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-[#2a2a2e] flex items-center justify-center mx-auto mb-4">
-              <Send className="w-8 h-8 text-slate-500" />
+        <Card className="bg-[#111114] border-[#1e1e22]">
+          <CardContent className="py-16 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+              <Send className="w-7 h-7 text-primary" />
             </div>
-            <h3 className="text-white font-medium mb-2">Fila vazia</h3>
-            <p className="text-slate-400 text-sm max-w-sm mx-auto">
+            <h3 className="text-base font-semibold text-foreground mb-1.5">Fila vazia</h3>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
               Quando você iniciar uma campanha, as mensagens aparecerão aqui com o status de cada envio.
             </p>
+
+            <div className="grid gap-3 sm:grid-cols-3 mt-10 text-left">
+              {[
+                { step: "1", title: "Crie uma campanha", desc: "Defina os leads alvo e monte as mensagens de cada etapa." },
+                { step: "2", title: "Acompanhe a fila", desc: "Veja cada mensagem agendada, pausada ou pronta para envio." },
+                { step: "3", title: "Monitore os resultados", desc: "Acompanhe envios, falhas e respostas em tempo real." },
+              ].map((item) => (
+                <div key={item.step} className="p-4 rounded-xl bg-[#0a0a0f] border border-[#1e1e22]">
+                  <div className="w-6 h-6 rounded-md bg-primary/10 text-primary text-xs font-bold flex items-center justify-center mb-2.5">
+                    {item.step}
+                  </div>
+                  <p className="text-xs font-medium text-slate-200 mb-1">{item.title}</p>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
-          {/* Pendentes - Collapsible */}
+          {/* Pendentes */}
           {pendingQueue.length > 0 && (
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg bg-[#1a1a1d] border border-[#2a2a2e] hover:bg-[#222225] transition-colors group">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-yellow-400" />
-                  <span className="text-sm font-medium text-white">Pendentes</span>
-                  <Badge variant="secondary" className="text-[10px]">{stats.queued}</Badge>
-                </div>
-                <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex items-center gap-3 w-full group py-3 px-4 rounded-xl bg-[#111114] hover:bg-[#161619] border border-[#1e1e22] transition-all">
+                <ChevronRight className="w-4 h-4 text-slate-500 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                <div className="w-2 h-2 rounded-full bg-orange-400" />
+                <span className="text-sm font-medium text-slate-200">Pendentes</span>
+                <Badge
+                  variant="secondary"
+                  className="ml-auto text-[10px] px-2 py-0 h-5 font-semibold bg-[#1e1e22] text-slate-300"
+                >
+                  {stats.queued + stats.paused}
+                </Badge>
               </CollapsibleTrigger>
-              <CollapsibleContent className="mt-1 space-y-1">
+              <CollapsibleContent className="pt-3 pl-4 space-y-1.5">
                 {pendingQueue.map((message) => (
                   <PendingMessageCard key={message.id} message={message} onCancel={cancelMessage} />
                 ))}
@@ -389,18 +427,21 @@ export function QueueTab() {
             </Collapsible>
           )}
 
-          {/* Enviados - Collapsible */}
+          {/* Enviados */}
           {sentMessages.length > 0 && (
             <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg bg-[#1a1a1d] border border-[#2a2a2e] hover:bg-[#222225] transition-colors group">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span className="text-sm font-medium text-white">Enviados</span>
-                  <Badge variant="default" className="text-[10px]">{stats.sent}</Badge>
-                </div>
-                <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
+              <CollapsibleTrigger className="flex items-center gap-3 w-full group py-3 px-4 rounded-xl bg-[#111114] hover:bg-[#161619] border border-[#1e1e22] transition-all">
+                <ChevronRight className="w-4 h-4 text-slate-500 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="text-sm font-medium text-slate-200">Enviados</span>
+                <Badge
+                  variant="secondary"
+                  className="ml-auto text-[10px] px-2 py-0 h-5 font-semibold bg-[#1e1e22] text-slate-300"
+                >
+                  {stats.sent}
+                </Badge>
               </CollapsibleTrigger>
-              <CollapsibleContent className="mt-1 space-y-1">
+              <CollapsibleContent className="pt-3 pl-4 space-y-1.5">
                 {sentMessages.map((message) => (
                   <HistoryMessageCard key={message.id} message={message} onRetry={retryMessage} />
                 ))}
@@ -408,18 +449,24 @@ export function QueueTab() {
             </Collapsible>
           )}
 
-          {/* Cancelados / Falhas - Collapsible */}
+          {/* Cancelados / Falhas */}
           {cancelledAndFailedMessages.length > 0 && (
             <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg bg-[#1a1a1d] border border-[#2a2a2e] hover:bg-[#222225] transition-colors group">
-                <div className="flex items-center gap-2">
-                  <XCircle className="w-4 h-4 text-red-400" />
-                  <span className="text-sm font-medium text-white">Cancelados / Falhas</span>
-                  <Badge variant="destructive" className="text-[10px]">{cancelledAndFailedMessages.length}</Badge>
-                </div>
-                <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
+              <CollapsibleTrigger className="flex items-center gap-3 w-full group py-3 px-4 rounded-xl bg-[#111114] hover:bg-[#161619] border border-[#1e1e22] transition-all">
+                <ChevronRight className="w-4 h-4 text-slate-500 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                <div className="w-2 h-2 rounded-full bg-red-400" />
+                <span className="text-sm font-medium text-slate-200">Cancelados / Falhas</span>
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    "ml-auto text-[10px] px-2 py-0 h-5 font-semibold",
+                    cancelledAndFailedMessages.length > 0 ? "bg-[#1e1e22] text-slate-300" : "bg-[#1e1e22]/50 text-slate-600"
+                  )}
+                >
+                  {cancelledAndFailedMessages.length}
+                </Badge>
               </CollapsibleTrigger>
-              <CollapsibleContent className="mt-1 space-y-1">
+              <CollapsibleContent className="pt-3 pl-4 space-y-1.5">
                 {cancelledAndFailedMessages.map((message) => (
                   <HistoryMessageCard key={message.id} message={message} onRetry={retryMessage} />
                 ))}
