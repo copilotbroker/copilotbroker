@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "./use-user-role";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface AutoCadenciaStep {
   messageContent: string;
@@ -24,53 +25,45 @@ export interface BrokerAutoCadenciaRule {
   steps_count?: number;
 }
 
+const fetchRulesForBroker = async (brokerId: string): Promise<BrokerAutoCadenciaRule[]> => {
+  const { data, error } = await (supabase
+    .from("broker_auto_cadencia_rules") as any)
+    .select(`*, project:projects(id, name)`)
+    .eq("broker_id", brokerId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const rulesData = (data as BrokerAutoCadenciaRule[]) || [];
+  if (rulesData.length > 0) {
+    const ruleIds = rulesData.map(r => r.id);
+    const { data: stepsData } = await (supabase
+      .from("auto_cadencia_steps") as any)
+      .select("rule_id")
+      .in("rule_id", ruleIds);
+
+    const countMap: Record<string, number> = {};
+    (stepsData || []).forEach((s: any) => {
+      countMap[s.rule_id] = (countMap[s.rule_id] || 0) + 1;
+    });
+    rulesData.forEach(r => { r.steps_count = countMap[r.id] || 0; });
+  }
+
+  return rulesData;
+};
+
 export function useAutoCadenciaRules() {
   const { brokerId } = useUserRole();
-  const [rules, setRules] = useState<BrokerAutoCadenciaRule[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const queryKey = ["auto-cadencia-rules", brokerId];
 
-  const fetchRules = useCallback(async () => {
-    if (!brokerId) return;
-    setIsLoading(true);
-    try {
-      const { data, error } = await (supabase
-        .from("broker_auto_cadencia_rules") as any)
-        .select(`*, project:projects(id, name)`)
-        .eq("broker_id", brokerId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch step counts for each rule
-      const rulesData = (data as BrokerAutoCadenciaRule[]) || [];
-      if (rulesData.length > 0) {
-        const ruleIds = rulesData.map(r => r.id);
-        const { data: stepsData } = await (supabase
-          .from("auto_cadencia_steps") as any)
-          .select("rule_id")
-          .in("rule_id", ruleIds);
-
-        const countMap: Record<string, number> = {};
-        (stepsData || []).forEach((s: any) => {
-          countMap[s.rule_id] = (countMap[s.rule_id] || 0) + 1;
-        });
-        rulesData.forEach(r => { r.steps_count = countMap[r.id] || 0; });
-      }
-
-      setRules(rulesData);
-    } catch (error) {
-      console.error("Error fetching cadencia rules:", error);
-      toast.error("Erro ao carregar regras de cadência");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [brokerId]);
-
-  useEffect(() => {
-    if (brokerId) fetchRules();
-  }, [brokerId, fetchRules]);
-
+  const { data: rules = [], isLoading } = useQuery({
+    queryKey,
+    queryFn: () => fetchRulesForBroker(brokerId!),
+    enabled: !!brokerId,
+    staleTime: 30_000,
+  });
 
   const saveSteps = async (ruleId: string, steps: AutoCadenciaStep[]) => {
     await (supabase.from("auto_cadencia_steps") as any)
@@ -109,7 +102,6 @@ export function useAutoCadenciaRules() {
     if (!brokerId) return null;
     setIsSaving(true);
     try {
-
       const { data: newRule, error } = await (supabase
         .from("broker_auto_cadencia_rules") as any)
         .insert({
@@ -124,12 +116,8 @@ export function useAutoCadenciaRules() {
 
       if (error) throw error;
 
-      // Save steps
       await saveSteps(newRule.id, data.steps);
-
-      const rule = newRule as BrokerAutoCadenciaRule;
-      rule.steps_count = data.steps.length;
-      setRules(prev => [rule, ...prev]);
+      await queryClient.invalidateQueries({ queryKey });
       toast.success("Cadência de follow-up criada!");
       return newRule;
     } catch (error: any) {
@@ -160,9 +148,7 @@ export function useAutoCadenciaRules() {
         await saveSteps(id, steps);
       }
 
-      const rule = updated as BrokerAutoCadenciaRule;
-      rule.steps_count = steps ? steps.length : undefined;
-      setRules(prev => prev.map(r => r.id === id ? { ...r, ...rule, steps_count: steps ? steps.length : r.steps_count } : r));
+      await queryClient.invalidateQueries({ queryKey });
       toast.success("Regra atualizada!");
       return updated;
     } catch (error) {
@@ -181,7 +167,7 @@ export function useAutoCadenciaRules() {
         .eq("id", id);
 
       if (error) throw error;
-      setRules(prev => prev.filter(r => r.id !== id));
+      await queryClient.invalidateQueries({ queryKey });
       toast.success("Regra excluída!");
       return true;
     } catch (error) {
@@ -193,6 +179,10 @@ export function useAutoCadenciaRules() {
   const toggleRuleActive = async (id: string, is_active: boolean) => {
     return updateRule(id, { is_active });
   };
+
+  const fetchRules = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey });
+  }, [queryClient, queryKey]);
 
   return { rules, isLoading, isSaving, fetchRules, fetchRuleSteps, createRule, updateRule, deleteRule, toggleRuleActive };
 }
