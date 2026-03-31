@@ -156,10 +156,14 @@ export function MobileBottomNav({
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors",
                     isActive
-                      ? item.id === "inbox" ? "bg-[hsl(145,80%,42%)]/20 text-[hsl(145,80%,55%)] shadow-[0_0_12px_hsl(145,80%,42%,0.3)]" : "bg-primary/20 text-primary"
+                      ? item.id === "inbox" ? "bg-[hsl(145,80%,42%)]/20 text-[hsl(145,80%,55%)] shadow-[0_0_12px_hsl(145,80%,42%,0.3)]"
+                        : item.id === "plantao" ? "bg-orange-400/20 text-orange-400"
+                        : "bg-primary/20 text-primary"
                       : item.id === "inbox"
                         ? "text-[hsl(145,80%,55%)]/70 active:bg-[hsl(145,80%,42%)]/10"
-                        : "text-muted-foreground active:bg-card"
+                        : item.id === "plantao"
+                          ? "text-orange-400/70 active:bg-orange-400/10"
+                          : "text-muted-foreground active:bg-card"
                   )}
                 >
                   <div className="relative">
