@@ -227,42 +227,6 @@ export default function AdminCopilotConfig() {
         onLogout={handleLogout}
       >
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Hero Header */}
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
-            {/* Gradient accent bar */}
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-primary/60 to-transparent" />
-            
-            <div className="p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {/* Animated robot avatar */}
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
-                    <Bot className="w-7 h-7 text-primary" />
-                  </div>
-                  {/* Online pulse */}
-                  <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-card">
-                    <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-xl font-semibold text-foreground tracking-tight">
-                      Central de Inteligência
-                    </h1>
-                    <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-primary/15 text-primary border border-primary/20">
-                      Pro
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    Copiloto IA, automações e gestão de comunicação
-                  </p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
           {/* Tab Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="rounded-xl border border-border bg-card p-1.5">
