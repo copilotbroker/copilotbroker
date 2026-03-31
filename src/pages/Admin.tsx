@@ -14,6 +14,7 @@ import BrokerManagement from "@/components/admin/BrokerManagement";
 import ProjectManagement from "@/components/admin/ProjectManagement";
 import DashboardOverview from "@/components/admin/DashboardOverview";
 import IntelligenceDashboard from "@/components/admin/IntelligenceDashboard";
+import PerformanceDashboard from "@/components/admin/PerformanceDashboard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
