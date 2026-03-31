@@ -234,39 +234,32 @@ export function CampaignCard({
         )}
 
         {/* ── Stats Row ── */}
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#1e1e22]">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 pt-3 border-t border-[#1e1e22]">
           <div className="flex items-center gap-1.5">
             <Send className="w-3 h-3 text-emerald-400/60" />
             <span className="text-xs text-slate-400">
-              <span className="font-semibold text-slate-200">{campaign.sent_count}</span>{" "}
-              enviados
+              <span className="font-semibold text-slate-200">{campaign.sent_count}</span> env.
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <MessageSquare className="w-3 h-3 text-blue-400/60" />
             <span className="text-xs text-slate-400">
-              <span className="font-semibold text-slate-200">{campaign.reply_count}</span>{" "}
-              respostas
+              <span className="font-semibold text-slate-200">{campaign.reply_count}</span> resp.
             </span>
           </div>
           {campaign.failed_count > 0 && (
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="w-3 h-3 text-red-400/60" />
               <span className="text-xs text-red-400">
-                <span className="font-semibold">{campaign.failed_count}</span> falhas
+                <span className="font-semibold">{campaign.failed_count}</span>
               </span>
             </div>
           )}
           <span className="ml-auto text-[10px] text-slate-600">
-            {campaign.started_at
-              ? formatDistanceToNow(new Date(campaign.started_at), {
-                  addSuffix: true,
-                  locale: ptBR,
-                })
-              : formatDistanceToNow(new Date(campaign.created_at), {
-                  addSuffix: true,
-                  locale: ptBR,
-                })}
+            {formatDistanceToNow(
+              new Date(campaign.started_at || campaign.created_at),
+              { addSuffix: true, locale: ptBR }
+            )}
           </span>
         </div>
       </div>

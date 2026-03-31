@@ -121,16 +121,16 @@ export function AutoCadenciaSection() {
               )}
               onClick={() => handleEdit(rule)}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                   <span className={cn(
-                    "px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide truncate max-w-[200px]",
+                    "px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide truncate max-w-[160px] sm:max-w-[200px]",
                     rule.project_id ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-500/20 text-slate-300"
                   )}>
                     {rule.name || rule.project?.name || "Cadência"}
                   </span>
                   <span className={cn(
-                    "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                    "px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0",
                     rule.cadence_type === "automatic" ? "bg-amber-500/20 text-amber-400" : "bg-blue-500/20 text-blue-400"
                   )}>
                     {rule.cadence_type === "automatic" ? "⚡ Auto" : "📋 Manual"}

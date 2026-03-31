@@ -85,7 +85,7 @@ function QueueStats({ stats }: { stats: { queued: number; sent: number; failed: 
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
       {items.map((s) => (
         <div
           key={s.label}
@@ -108,11 +108,11 @@ function PendingMessageCard({ message, onCancel }: { message: any; onCancel: (id
 
   return (
     <div
-      className="px-3 py-2.5 rounded-xl bg-[#111114] border border-[#1e1e22] cursor-pointer select-none transition-colors hover:bg-[#161619]"
+      className="px-3 py-2.5 rounded-xl bg-[#111114] border border-[#1e1e22] cursor-pointer select-none transition-colors hover:bg-[#161619] overflow-hidden"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-xs text-slate-500 flex-shrink-0">
+        <span className="text-xs text-slate-500 shrink-0">
           {message.status === "paused_by_system" ? (
             <>
               <AlertTriangle className="w-3 h-3 inline mr-0.5 text-orange-400" />
@@ -121,30 +121,28 @@ function PendingMessageCard({ message, onCancel }: { message: any; onCancel: (id
           ) : (
             <>
               <Clock className="w-3 h-3 inline mr-0.5" />
-              Envio: {format(new Date(message.scheduled_at), "dd/MM HH:mm")}
+              {format(new Date(message.scheduled_at), "dd/MM HH:mm")}
             </>
           )}
         </span>
-        <span className="text-sm text-slate-200 font-medium truncate flex-shrink-0 max-w-[120px]">
+        <span className="text-sm text-slate-200 font-medium truncate min-w-0 flex-1">
           {message.lead?.name || message.phone}
         </span>
-        {message.message && (
-          <span className="text-xs text-slate-500 italic truncate flex-1 min-w-0">
-            · "{truncateMessage(message.message)}"
-          </span>
-        )}
-        <Badge variant={statusConfig.variant} className="text-[10px] flex-shrink-0">
+        <Badge variant={statusConfig.variant} className="text-[10px] shrink-0">
           {statusConfig.label}
         </Badge>
         <Button
           size="sm"
           variant="ghost"
-          className="h-6 px-1.5 text-slate-400 hover:text-red-400 flex-shrink-0"
+          className="h-6 w-6 p-0 text-slate-400 hover:text-red-400 shrink-0"
           onClick={(e) => { e.stopPropagation(); onCancel(message.id); }}
         >
           <XCircle className="w-3.5 h-3.5" />
         </Button>
       </div>
+      {message.message && (
+        <p className="text-xs text-slate-500 italic truncate mt-1">"{truncateMessage(message.message, 60)}"</p>
+      )}
 
       {expanded && (
         <div className="mt-2 pt-2 border-t border-[#1e1e22] space-y-2" onClick={(e) => e.stopPropagation()}>
@@ -179,13 +177,13 @@ function HistoryMessageCard({ message, onRetry }: { message: any; onRetry: (id: 
   return (
     <div
       className={cn(
-        "px-3 py-2.5 rounded-xl border cursor-pointer select-none transition-colors",
+        "px-3 py-2.5 rounded-xl border cursor-pointer select-none transition-colors overflow-hidden",
         isFailed ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" : "bg-[#111114] border-[#1e1e22] hover:bg-[#161619]"
       )}
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-center gap-2 min-w-0">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {message.status === "sent" ? (
             <CheckCircle className="w-4 h-4 text-emerald-400" />
           ) : isFailed ? (
@@ -194,23 +192,21 @@ function HistoryMessageCard({ message, onRetry }: { message: any; onRetry: (id: 
             <XCircle className="w-4 h-4 text-slate-400" />
           )}
         </div>
-        <span className="text-sm text-slate-200 font-medium truncate flex-shrink-0 max-w-[120px]">
+        <span className="text-sm text-slate-200 font-medium truncate min-w-0 flex-1">
           {message.lead?.name || message.phone}
         </span>
-        {message.message && (
-          <span className="text-xs text-slate-500 italic truncate flex-1 min-w-0">
-            · "{truncateMessage(message.message)}"
-          </span>
-        )}
         {message.sent_at && (
-          <span className="text-xs text-slate-500 flex-shrink-0">
-            {format(new Date(message.sent_at), "dd/MM/yyyy HH:mm")}
+          <span className="text-[10px] text-slate-500 shrink-0">
+            {format(new Date(message.sent_at), "dd/MM HH:mm")}
           </span>
         )}
-        <Badge variant={statusConfig.variant} className="text-[10px] flex-shrink-0">
+        <Badge variant={statusConfig.variant} className="text-[10px] shrink-0">
           {statusConfig.label}
         </Badge>
       </div>
+      {message.message && (
+        <p className="text-xs text-slate-500 italic truncate mt-1">"{truncateMessage(message.message, 60)}"</p>
+      )}
 
       {expanded && (
         <div className="mt-2 pt-2 border-t border-[#1e1e22] space-y-2" onClick={(e) => e.stopPropagation()}>
@@ -347,7 +343,7 @@ export function QueueTab() {
         <div className="flex items-center gap-2">
           {role === "admin" && (
             <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-              <SelectTrigger className="w-[180px] bg-[#111114] border-[#1e1e22] text-slate-300 h-9 text-xs">
+              <SelectTrigger className="w-full sm:w-[180px] bg-[#111114] border-[#1e1e22] text-slate-300 h-9 text-xs">
                 <SelectValue placeholder="Todos os corretores" />
               </SelectTrigger>
               <SelectContent className="bg-[#111114] border-[#1e1e22]">
