@@ -64,6 +64,8 @@ export interface OutboundMessagePayload {
   sentBy?: string;
   messageType?: "text" | "image" | "audio" | "video" | "document";
   metadata?: Record<string, unknown>;
+  /** Pass a File to have the hook upload it in background (optimistic msg appears instantly) */
+  file?: File;
 }
 
 export type InboxTab = "novos" | "meus" | "outros";
