@@ -15,6 +15,7 @@ const Auth = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
