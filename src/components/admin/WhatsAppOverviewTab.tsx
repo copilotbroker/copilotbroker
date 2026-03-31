@@ -120,62 +120,27 @@ export function WhatsAppOverviewTab({
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Smartphone className="w-6 h-6 text-primary" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { icon: Smartphone, color: "bg-primary/10 text-primary", label: "Instâncias", value: totalInstances },
+          { icon: Users, color: "bg-green-500/10 text-green-500", label: "Online", value: connectedInstances },
+          { icon: Send, color: "bg-blue-500/10 text-blue-500", label: "Enviados", value: globalTotals.sent },
+          { icon: MessageSquare, color: "bg-purple-500/10 text-purple-500", label: "Taxa Resp.", value: `${replyRate}%` },
+        ].map((item) => (
+          <Card key={item.label} className="bg-[#1a1a1d] border-[#2a2a2e]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${item.color.split(" ")[0]} flex items-center justify-center shrink-0`}>
+                  <item.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${item.color.split(" ")[1]}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-slate-400 truncate">{item.label}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-white">{item.value}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-slate-400">Instâncias</p>
-                <p className="text-2xl font-bold text-white">{totalInstances}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                <Users className="w-6 h-6 text-green-500" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Online</p>
-                <p className="text-2xl font-bold text-white">{connectedInstances}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <Send className="w-6 h-6 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Enviados</p>
-                <p className="text-2xl font-bold text-white">{globalTotals.sent}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#1a1a1d] border-[#2a2a2e]">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Taxa Resp.</p>
-                <p className="text-2xl font-bold text-white">{replyRate}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Instances Table */}
