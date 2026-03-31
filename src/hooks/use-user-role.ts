@@ -1,3 +1,4 @@
+// React Query cached user role hook
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
