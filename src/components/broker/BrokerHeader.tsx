@@ -10,6 +10,7 @@ interface BrokerHeaderProps {
   onSearchChange?: (value: string) => void;
   collapsibleContent?: ReactNode;
   onAddLead?: () => void;
+  brokerId?: string;
 }
 
 export function BrokerHeader({
