@@ -74,6 +74,7 @@ const MCFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = 
     setShowBrokerSelect(!showBrokerSelect);
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
