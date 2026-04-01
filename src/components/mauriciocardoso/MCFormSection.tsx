@@ -216,8 +216,41 @@ const MCFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = 
                 />
               </div>
 
-              <div className="flex items-start gap-3">
-                <Checkbox
+              {allowBrokerSelection && !brokerId && (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleToggleBrokerSelect}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                  >
+                    {showBrokerSelect ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    Já sou atendido por um corretor
+                  </button>
+                  {showBrokerSelect && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Select
+                        value={selectedBrokerId || "none"}
+                        onValueChange={(value) => setSelectedBrokerId(value === "none" ? "" : value)}
+                      >
+                        <SelectTrigger className="w-full bg-background border-border text-muted-foreground">
+                          <SelectValue placeholder="Nenhum / Não encontrei meu corretor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhum / Não encontrei meu corretor</SelectItem>
+                          {loadingBrokers ? (
+                            <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                          ) : (
+                            brokers.map((broker) => (
+                              <SelectItem key={broker.id} value={broker.id}>{broker.name}</SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              )}
+
                   id="mc-terms"
                   checked={acceptedTerms}
                   onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
