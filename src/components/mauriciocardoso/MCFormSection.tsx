@@ -31,6 +31,11 @@ const MCFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = 
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [showBrokerSelect, setShowBrokerSelect] = useState(false);
+  const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
+  const [loadingBrokers, setLoadingBrokers] = useState(false);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {

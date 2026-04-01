@@ -31,6 +31,11 @@ const MonacoFormSection = ({ projectId, brokerId, submitted, allowBrokerSelectio
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [showBrokerSelect, setShowBrokerSelect] = useState(false);
+  const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
+  const [loadingBrokers, setLoadingBrokers] = useState(false);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
