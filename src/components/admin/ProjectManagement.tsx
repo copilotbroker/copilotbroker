@@ -194,6 +194,26 @@ export default function ProjectManagement() {
   const [showWizard, setShowWizard] = useState(false);
   const [editLandingProject, setEditLandingProject] = useState<Project | null>(null);
 
+  const [brokerNames, setBrokerNames] = useState<Record<string, string>>({});
+
+  // Fetch broker names for broker-created projects
+  useEffect(() => {
+    const brokerIds = [...new Set(projects.filter(p => p.created_by_broker_id).map(p => p.created_by_broker_id!))];
+    if (brokerIds.length === 0) return;
+
+    supabase
+      .from("brokers")
+      .select("id, name")
+      .in("id", brokerIds)
+      .then(({ data }) => {
+        if (data) {
+          const map: Record<string, string> = {};
+          data.forEach((b: any) => { map[b.id] = b.name; });
+          setBrokerNames(map);
+        }
+      });
+  }, [projects]);
+
   const { companyActive, companyDraft, companyInactive, brokerActive, brokerDraft, brokerInactive } = useMemo(() => {
     const result = {
       companyActive: [] as Project[],
