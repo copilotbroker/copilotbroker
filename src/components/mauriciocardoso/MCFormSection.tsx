@@ -47,7 +47,33 @@ const MCFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = 
     return () => observer.disconnect();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const fetchBrokers = async () => {
+    if (brokers.length > 0 || !projectId) return;
+    setLoadingBrokers(true);
+    try {
+      const { data, error } = await supabase
+        .from("broker_projects")
+        .select("broker:brokers(id, name)")
+        .eq("project_id", projectId)
+        .eq("is_active", true);
+      if (error) throw error;
+      const activeBrokers = data
+        ?.map((bp) => bp.broker)
+        .filter((b): b is { id: string; name: string } => b !== null)
+        .sort((a, b) => a.name.localeCompare(b.name)) || [];
+      setBrokers(activeBrokers);
+    } catch (error) {
+      console.error("Erro ao buscar corretores:", error);
+    } finally {
+      setLoadingBrokers(false);
+    }
+  };
+
+  const handleToggleBrokerSelect = () => {
+    if (!showBrokerSelect) fetchBrokers();
+    setShowBrokerSelect(!showBrokerSelect);
+  };
+
     e.preventDefault();
 
     if (!name.trim()) {
