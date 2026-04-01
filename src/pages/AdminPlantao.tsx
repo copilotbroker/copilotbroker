@@ -103,6 +103,7 @@ export default function AdminPlantao() {
     isArchived: false,
     inboxTab: "novos",
     sourceInstance: "global",
+    enabled: isInitialized,
   });
 
   const activeConversations = inboxTab === "novos" ? novosConversations : conversations;
