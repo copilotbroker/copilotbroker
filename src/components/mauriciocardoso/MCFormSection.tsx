@@ -21,7 +21,7 @@ interface MCFormSectionProps {
   allowBrokerSelection?: boolean;
 }
 
-const MCFormSection = ({ projectId, brokerId, submitted }: MCFormSectionProps) => {
+const MCFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = true }: MCFormSectionProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);

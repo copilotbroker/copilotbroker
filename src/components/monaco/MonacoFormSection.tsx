@@ -21,7 +21,7 @@ interface MonacoFormSectionProps {
   allowBrokerSelection?: boolean;
 }
 
-const MonacoFormSection = ({ projectId, brokerId, submitted }: MonacoFormSectionProps) => {
+const MonacoFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = true }: MonacoFormSectionProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
