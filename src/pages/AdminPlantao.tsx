@@ -63,6 +63,7 @@ export default function AdminPlantao() {
         setAllBrokers(brokersRes.data as any);
       }
       setSelectedBrokerId(brokerIdFound || "all");
+      setIsInitialized(true);
     };
     init();
   }, [navigate]);
