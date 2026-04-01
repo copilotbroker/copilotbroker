@@ -251,6 +251,8 @@ const MCFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = 
                 </div>
               )}
 
+              <div className="flex items-start gap-3">
+                <Checkbox
                   id="mc-terms"
                   checked={acceptedTerms}
                   onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
