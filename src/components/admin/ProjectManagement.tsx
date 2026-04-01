@@ -399,6 +399,7 @@ export default function ProjectManagement() {
         })}
       </div>
     );
+  };
 
   const renderTabContent = (active: Project[], draft: Project[], inactive: Project[]) => {
     if (active.length === 0 && draft.length === 0 && inactive.length === 0) {
