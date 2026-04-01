@@ -483,7 +483,8 @@ export default function ProjectManagement() {
           </TabsContent>
 
           <TabsContent value="corretores" className="space-y-6">
-            {renderTabContent(brokerActive, brokerDraft, brokerInactive)}
+            {renderBrokerTabGrouped()}
+          </TabsContent>
           </TabsContent>
         </Tabs>
       )}
