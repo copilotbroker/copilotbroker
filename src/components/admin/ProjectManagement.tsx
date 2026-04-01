@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useProjects, useProjectStats } from "@/hooks/use-projects";
 import { Project, PROJECT_STATUS_CONFIG, ProjectStatus } from "@/types/project";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -193,6 +194,26 @@ export default function ProjectManagement() {
   const [showWizard, setShowWizard] = useState(false);
   const [editLandingProject, setEditLandingProject] = useState<Project | null>(null);
 
+  const [brokerNames, setBrokerNames] = useState<Record<string, string>>({});
+
+  // Fetch broker names for broker-created projects
+  useEffect(() => {
+    const brokerIds = [...new Set(projects.filter(p => p.created_by_broker_id).map(p => p.created_by_broker_id!))];
+    if (brokerIds.length === 0) return;
+
+    supabase
+      .from("brokers")
+      .select("id, name")
+      .in("id", brokerIds)
+      .then(({ data }) => {
+        if (data) {
+          const map: Record<string, string> = {};
+          data.forEach((b: any) => { map[b.id] = b.name; });
+          setBrokerNames(map);
+        }
+      });
+  }, [projects]);
+
   const { companyActive, companyDraft, companyInactive, brokerActive, brokerDraft, brokerInactive } = useMemo(() => {
     const result = {
       companyActive: [] as Project[],
@@ -320,6 +341,62 @@ export default function ProjectManagement() {
             />
           ))}
         </div>
+      </div>
+    );
+  };
+
+  const renderBrokerTabGrouped = () => {
+    const allBrokerProjects = [...brokerActive, ...brokerDraft, ...brokerInactive];
+    if (allBrokerProjects.length === 0) {
+      return (
+        <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
+          <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Nenhuma landing page de corretor encontrada</p>
+        </div>
+      );
+    }
+
+    // Group by broker
+    const grouped: Record<string, Project[]> = {};
+    allBrokerProjects.forEach((p) => {
+      const brokerId = p.created_by_broker_id!;
+      if (!grouped[brokerId]) grouped[brokerId] = [];
+      grouped[brokerId].push(p);
+    });
+
+    // Sort brokers alphabetically by name
+    const sortedBrokerIds = Object.keys(grouped).sort((a, b) => {
+      const nameA = (brokerNames[a] || "").toLowerCase();
+      const nameB = (brokerNames[b] || "").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    return (
+      <div className="space-y-6">
+        {sortedBrokerIds.map((brokerId) => {
+          const brokerProjects = grouped[brokerId];
+          const name = brokerNames[brokerId] || "Corretor desconhecido";
+          return (
+            <div key={brokerId} className="space-y-3">
+              <div className="flex items-center gap-2 border-b border-border/40 pb-2">
+                <Users className="w-4 h-4 text-cyan-400" />
+                <p className="text-sm font-semibold text-foreground">{name}</p>
+                <span className="text-xs text-muted-foreground">({brokerProjects.length} {brokerProjects.length === 1 ? 'página' : 'páginas'})</span>
+              </div>
+              <div className="grid gap-3 pl-2">
+                {brokerProjects.map((project) => (
+                  <ProjectListCard
+                    key={project.id}
+                    project={project}
+                    onEdit={handleOpenDialog}
+                    onEditLanding={setEditLandingProject}
+                    onToggleStatus={toggleProjectStatus}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -462,7 +539,7 @@ export default function ProjectManagement() {
           </TabsContent>
 
           <TabsContent value="corretores" className="space-y-6">
-            {renderTabContent(brokerActive, brokerDraft, brokerInactive)}
+            {renderBrokerTabGrouped()}
           </TabsContent>
         </Tabs>
       )}
