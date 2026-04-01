@@ -257,6 +257,12 @@ const MonacoFormSection = ({ projectId, brokerId, submitted, allowBrokerSelectio
                 </div>
               )}
 
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="monaco-terms"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                  className="mt-0.5"
                   disabled={isSubmitting}
                 />
                 <label htmlFor="monaco-terms" className="text-sm text-foreground/80 leading-relaxed cursor-pointer">
