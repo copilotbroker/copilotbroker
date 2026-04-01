@@ -90,6 +90,7 @@ export default function AdminPlantao() {
     inboxTab,
     userRole: "admin",
     sourceInstance: "global",
+    enabled: selectedBrokerId !== "_loading",
   });
 
   const {
