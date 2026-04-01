@@ -98,7 +98,7 @@ const MCFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = 
         name: name.trim(),
         whatsapp,
         project_id: projectId || null,
-        broker_id: brokerId || null,
+        broker_id: brokerId || selectedBrokerId || null,
         source: brokerId ? "broker_landing" : "landing_page",
         lead_origin: getLeadOriginFromUTM(),
         lead_origin_detail: getLeadOriginDetailFromUTM(),
