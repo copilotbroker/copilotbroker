@@ -1,16 +1,24 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { WhatsAppInput, isValidBrazilianWhatsApp } from "@/components/ui/whatsapp-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-page-tracking";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MCFormSectionProps {
   projectId?: string;
   brokerId?: string;
   submitted?: boolean;
+  allowBrokerSelection?: boolean;
 }
 
 const MCFormSection = ({ projectId, brokerId, submitted }: MCFormSectionProps) => {
