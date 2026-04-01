@@ -36,6 +36,7 @@ export default function AdminPlantao() {
   const [myBrokerId, setMyBrokerId] = useState<string | null>(null);
   const [inboxTab, setInboxTab] = useState<InboxTab>("novos");
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
