@@ -540,7 +540,6 @@ export default function ProjectManagement() {
           <TabsContent value="corretores" className="space-y-6">
             {renderBrokerTabGrouped()}
           </TabsContent>
-          </TabsContent>
         </Tabs>
       )}
     </div>
