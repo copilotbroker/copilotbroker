@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useProjects, useProjectStats } from "@/hooks/use-projects";
 import { Project, PROJECT_STATUS_CONFIG, ProjectStatus } from "@/types/project";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
