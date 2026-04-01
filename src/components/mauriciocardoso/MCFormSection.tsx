@@ -1,19 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { WhatsAppInput, isValidBrazilianWhatsApp } from "@/components/ui/whatsapp-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-page-tracking";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MCFormSectionProps {
   projectId?: string;
   brokerId?: string;
   submitted?: boolean;
+  allowBrokerSelection?: boolean;
 }
 
-const MCFormSection = ({ projectId, brokerId, submitted }: MCFormSectionProps) => {
+const MCFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = true }: MCFormSectionProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
@@ -22,6 +30,11 @@ const MCFormSection = ({ projectId, brokerId, submitted }: MCFormSectionProps) =
   const [whatsapp, setWhatsapp] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [showBrokerSelect, setShowBrokerSelect] = useState(false);
+  const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
+  const [loadingBrokers, setLoadingBrokers] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -33,6 +46,33 @@ const MCFormSection = ({ projectId, brokerId, submitted }: MCFormSectionProps) =
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
+
+  const fetchBrokers = async () => {
+    if (brokers.length > 0 || !projectId) return;
+    setLoadingBrokers(true);
+    try {
+      const { data, error } = await supabase
+        .from("broker_projects")
+        .select("broker:brokers(id, name)")
+        .eq("project_id", projectId)
+        .eq("is_active", true);
+      if (error) throw error;
+      const activeBrokers = data
+        ?.map((bp) => bp.broker)
+        .filter((b): b is { id: string; name: string } => b !== null)
+        .sort((a, b) => a.name.localeCompare(b.name)) || [];
+      setBrokers(activeBrokers);
+    } catch (error) {
+      console.error("Erro ao buscar corretores:", error);
+    } finally {
+      setLoadingBrokers(false);
+    }
+  };
+
+  const handleToggleBrokerSelect = () => {
+    if (!showBrokerSelect) fetchBrokers();
+    setShowBrokerSelect(!showBrokerSelect);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +98,7 @@ const MCFormSection = ({ projectId, brokerId, submitted }: MCFormSectionProps) =
         name: name.trim(),
         whatsapp,
         project_id: projectId || null,
-        broker_id: brokerId || null,
+        broker_id: brokerId || selectedBrokerId || null,
         source: brokerId ? "broker_landing" : "landing_page",
         lead_origin: getLeadOriginFromUTM(),
         lead_origin_detail: getLeadOriginDetailFromUTM(),
@@ -175,6 +215,41 @@ const MCFormSection = ({ projectId, brokerId, submitted }: MCFormSectionProps) =
                   disabled={isSubmitting}
                 />
               </div>
+
+              {allowBrokerSelection && !brokerId && (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleToggleBrokerSelect}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                  >
+                    {showBrokerSelect ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    Já sou atendido por um corretor
+                  </button>
+                  {showBrokerSelect && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Select
+                        value={selectedBrokerId || "none"}
+                        onValueChange={(value) => setSelectedBrokerId(value === "none" ? "" : value)}
+                      >
+                        <SelectTrigger className="w-full bg-background border-border text-muted-foreground">
+                          <SelectValue placeholder="Nenhum / Não encontrei meu corretor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhum / Não encontrei meu corretor</SelectItem>
+                          {loadingBrokers ? (
+                            <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                          ) : (
+                            brokers.map((broker) => (
+                              <SelectItem key={broker.id} value={broker.id}>{broker.name}</SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-start gap-3">
                 <Checkbox
