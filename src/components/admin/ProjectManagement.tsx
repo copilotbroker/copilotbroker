@@ -345,6 +345,61 @@ export default function ProjectManagement() {
     );
   };
 
+  const renderBrokerTabGrouped = () => {
+    const allBrokerProjects = [...brokerActive, ...brokerDraft, ...brokerInactive];
+    if (allBrokerProjects.length === 0) {
+      return (
+        <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-lg p-8 text-center">
+          <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Nenhuma landing page de corretor encontrada</p>
+        </div>
+      );
+    }
+
+    // Group by broker
+    const grouped: Record<string, Project[]> = {};
+    allBrokerProjects.forEach((p) => {
+      const brokerId = p.created_by_broker_id!;
+      if (!grouped[brokerId]) grouped[brokerId] = [];
+      grouped[brokerId].push(p);
+    });
+
+    // Sort brokers alphabetically by name
+    const sortedBrokerIds = Object.keys(grouped).sort((a, b) => {
+      const nameA = (brokerNames[a] || "").toLowerCase();
+      const nameB = (brokerNames[b] || "").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    return (
+      <div className="space-y-6">
+        {sortedBrokerIds.map((brokerId) => {
+          const brokerProjects = grouped[brokerId];
+          const name = brokerNames[brokerId] || "Corretor desconhecido";
+          return (
+            <div key={brokerId} className="space-y-3">
+              <div className="flex items-center gap-2 border-b border-border/40 pb-2">
+                <Users className="w-4 h-4 text-cyan-400" />
+                <p className="text-sm font-semibold text-foreground">{name}</p>
+                <span className="text-xs text-muted-foreground">({brokerProjects.length} {brokerProjects.length === 1 ? 'página' : 'páginas'})</span>
+              </div>
+              <div className="grid gap-3 pl-2">
+                {brokerProjects.map((project) => (
+                  <ProjectListCard
+                    key={project.id}
+                    project={project}
+                    onEdit={handleOpenDialog}
+                    onEditLanding={setEditLandingProject}
+                    onToggleStatus={toggleProjectStatus}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+
   const renderTabContent = (active: Project[], draft: Project[], inactive: Project[]) => {
     if (active.length === 0 && draft.length === 0 && inactive.length === 0) {
       return (
