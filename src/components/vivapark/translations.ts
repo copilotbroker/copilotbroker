@@ -11,6 +11,7 @@ export const translations: Record<Lang, {
   s1_p3: string;
   s2_title: string;
   s2_items: string[];
+  s2_descs: string[];
   s2_footer: string;
   s3_title: string;
   s3_intro: string;
