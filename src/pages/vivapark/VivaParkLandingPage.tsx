@@ -26,6 +26,7 @@ import nightPanoImg from "@/assets/vivapark/51.jpg";
 import personImg from "@/assets/vivapark/1.jpg";
 import badge1Img from "@/assets/vivapark/6.png";
 import badge2Img from "@/assets/vivapark/7.png";
+import leedBadgeImg from "@/assets/vivapark/leed-badge.png";
 
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
 
@@ -243,7 +244,7 @@ const VivaParkLandingPage = () => {
 
             {/* DNA Paris Design Awards */}
             <div className="card-luxury flex flex-col items-center text-center p-6 gap-4 border border-primary/20 hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_hsl(var(--gold)/0.12)]">
-              <div className="w-28 h-28 rounded-full overflow-hidden bg-white/5 flex items-center justify-center p-3">
+              <div className="w-28 h-28 rounded-full overflow-hidden bg-white flex items-center justify-center p-3">
                 <img src={badge2Img} alt="DNA Paris Design Awards" className="w-full h-full object-contain" loading="lazy" />
               </div>
               <h3 className="font-serif text-foreground font-semibold text-base">{t.s2_items[0]}</h3>
@@ -252,8 +253,8 @@ const VivaParkLandingPage = () => {
 
             {/* LEED Platinum */}
             <div className="card-luxury flex flex-col items-center text-center p-6 gap-4 border border-primary/20 hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_hsl(var(--gold)/0.12)]">
-              <div className="w-28 h-28 rounded-full overflow-hidden bg-white/5 flex items-center justify-center">
-                <span className="text-3xl font-bold text-gold-gradient font-serif">LEED</span>
+              <div className="w-28 h-28 rounded-full overflow-hidden bg-white/5 flex items-center justify-center p-3">
+                <img src={leedBadgeImg} alt="LEED Platinum Certification" className="w-full h-full object-contain" loading="lazy" />
               </div>
               <h3 className="font-serif text-foreground font-semibold text-base">{t.s2_items[2]}</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">{t.s2_descs[3]}</p>
