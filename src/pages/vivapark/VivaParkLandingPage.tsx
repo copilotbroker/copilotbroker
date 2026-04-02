@@ -199,7 +199,21 @@ const VivaParkLandingPage = () => {
         </div>
       </section>
 
-      {/* ── SEÇÃO 1 — Abertura + lifestyle image ── */}
+      {/* ── STATS RIBBON ── */}
+      <section className="py-12 md:py-16 px-4 bg-card border-y border-border/30">
+        <div className="max-w-5xl mx-auto">
+          <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-8 block text-center">{inv.stats_title}</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {inv.stats.map((s, i) => (
+              <div key={i} className="text-center p-4">
+                <span className="block font-serif text-3xl md:text-4xl font-bold text-gold-gradient mb-2">{s.value}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground leading-tight">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-20 md:py-28 px-4 bg-card/50">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
