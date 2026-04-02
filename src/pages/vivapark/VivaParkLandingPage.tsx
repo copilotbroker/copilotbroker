@@ -23,6 +23,13 @@ import streetImg from "@/assets/vivapark/44.jpg";
 import parkImg from "@/assets/vivapark/49.jpg";
 import familyImg from "@/assets/vivapark/50.jpg";
 import nightPanoImg from "@/assets/vivapark/51.jpg";
+import personImg from "@/assets/vivapark/1.jpg";
+import award1Img from "@/assets/vivapark/2.png";
+import award2Img from "@/assets/vivapark/5.png";
+import badge1Img from "@/assets/vivapark/6.png";
+import badge2Img from "@/assets/vivapark/7.png";
+import award3Img from "@/assets/vivapark/15.jpg";
+import award4Img from "@/assets/vivapark/16.jpg";
 
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
 
