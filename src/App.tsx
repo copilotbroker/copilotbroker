@@ -51,6 +51,7 @@ import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
 import TermosNAU from "./pages/nau/TermosNAU";
 import MonacoLandingPage from "./pages/monaco/MonacoLandingPage";
 import TermosMonaco from "./pages/monaco/TermosMonaco";
+import VivaParkLandingPage from "./pages/vivapark/VivaParkLandingPage";
 
 const queryClient = new QueryClient();
 
