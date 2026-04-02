@@ -23,6 +23,13 @@ import streetImg from "@/assets/vivapark/44.jpg";
 import parkImg from "@/assets/vivapark/49.jpg";
 import familyImg from "@/assets/vivapark/50.jpg";
 import nightPanoImg from "@/assets/vivapark/51.jpg";
+import personImg from "@/assets/vivapark/1.jpg";
+import award1Img from "@/assets/vivapark/2.png";
+import award2Img from "@/assets/vivapark/5.png";
+import badge1Img from "@/assets/vivapark/6.png";
+import badge2Img from "@/assets/vivapark/7.png";
+import award3Img from "@/assets/vivapark/15.jpg";
+import award4Img from "@/assets/vivapark/16.jpg";
 
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
 
@@ -209,23 +216,65 @@ const VivaParkLandingPage = () => {
 
       {/* ── SEÇÃO 2 — Autoridade ── */}
       <section className="py-20 md:py-28 px-4 bg-background">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-4 block">
-            {t.s2_title}
-          </span>
-          <div className="w-10 h-px bg-primary/50 mx-auto mb-10" />
-
-          <div className="grid sm:grid-cols-2 gap-5 mb-12">
-            {t.s2_items.map((item, i) => (
-              <div key={i} className="card-luxury flex items-start gap-4 text-left">
-                <div className="w-8 h-8 rounded-sm bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                </div>
-                <span className="text-muted-foreground text-sm md:text-base">{item}</span>
-              </div>
-            ))}
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-4 block">
+              {t.s2_title}
+            </span>
+            <div className="w-10 h-px bg-primary/50 mx-auto mb-8" />
           </div>
-          <p className="font-serif text-lg md:text-xl text-muted-foreground italic">{t.s2_footer}</p>
+
+          {/* Main layout: Person + Awards */}
+          <div className="grid md:grid-cols-5 gap-8 md:gap-12 items-center mb-14">
+            {/* Person photo column */}
+            <div className="md:col-span-2 flex flex-col items-center">
+              <div className="relative">
+                <div className="w-56 h-56 md:w-64 md:h-64 rounded-full overflow-hidden border-2 border-primary/30 shadow-[0_0_40px_hsl(var(--gold)/0.15)]">
+                  <img src={personImg} alt="Especialista Vivapark" className="w-full h-full object-cover object-top" loading="lazy" />
+                </div>
+                {/* Small badges floating around the photo */}
+                <div className="absolute -top-2 -right-2 w-14 h-14 bg-card rounded-full border border-border/50 shadow-lg p-1.5 flex items-center justify-center">
+                  <img src={badge1Img} alt="Selo" className="w-full h-full object-contain" loading="lazy" />
+                </div>
+                <div className="absolute -bottom-2 -left-2 w-14 h-14 bg-card rounded-full border border-border/50 shadow-lg p-1.5 flex items-center justify-center">
+                  <img src={badge2Img} alt="Selo" className="w-full h-full object-contain" loading="lazy" />
+                </div>
+              </div>
+            </div>
+
+            {/* Awards + items column */}
+            <div className="md:col-span-3 space-y-6">
+              {/* Award certificates row */}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-6">
+                <div className="w-28 h-32 md:w-32 md:h-36 rounded-lg overflow-hidden bg-card/50 border border-border/50 shadow-md p-2 flex items-center justify-center hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--gold)/0.1)]">
+                  <img src={award1Img} alt="Premiação" className="w-full h-full object-contain" loading="lazy" />
+                </div>
+                <div className="w-28 h-32 md:w-32 md:h-36 rounded-lg overflow-hidden bg-card/50 border border-border/50 shadow-md p-2 flex items-center justify-center hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--gold)/0.1)]">
+                  <img src={award2Img} alt="Premiação" className="w-full h-full object-contain" loading="lazy" />
+                </div>
+                <div className="w-28 h-32 md:w-32 md:h-36 rounded-lg overflow-hidden bg-card/50 border border-border/50 shadow-md p-2 flex items-center justify-center hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--gold)/0.1)]">
+                  <img src={award3Img} alt="Premiação" className="w-full h-full object-contain" loading="lazy" />
+                </div>
+                <div className="w-28 h-32 md:w-32 md:h-36 rounded-lg overflow-hidden bg-card/50 border border-border/50 shadow-md p-2 flex items-center justify-center hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--gold)/0.1)]">
+                  <img src={award4Img} alt="Premiação" className="w-full h-full object-contain" loading="lazy" />
+                </div>
+              </div>
+
+              {/* Authority items */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                {t.s2_items.map((item, i) => (
+                  <div key={i} className="card-luxury flex items-start gap-3 text-left py-4 px-5">
+                    <div className="w-7 h-7 rounded-sm bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <span className="text-muted-foreground text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <p className="font-serif text-lg md:text-xl text-muted-foreground italic text-center max-w-3xl mx-auto">{t.s2_footer}</p>
         </div>
       </section>
 
