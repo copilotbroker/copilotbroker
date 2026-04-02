@@ -10,12 +10,19 @@ import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-pa
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { translations, flags, type Lang } from "@/components/vivapark/translations";
 
-const youtubeLocaleMap: Record<Lang, string> = {
-  pt: "pt-BR",
-  en: "en",
-  es: "es-ES",
-  fr: "fr",
-};
+import heroImg from "@/assets/vivapark/0.jpg";
+import coastImg from "@/assets/vivapark/4.jpg";
+import lifestyleImg from "@/assets/vivapark/8.jpg";
+import loungeImg from "@/assets/vivapark/9.jpg";
+import rooftopImg from "@/assets/vivapark/22.jpg";
+import sunsetImg from "@/assets/vivapark/24.jpg";
+import poolImg from "@/assets/vivapark/26.jpg";
+import nightImg from "@/assets/vivapark/31.jpg";
+import facadeImg from "@/assets/vivapark/36.jpg";
+import streetImg from "@/assets/vivapark/44.jpg";
+import parkImg from "@/assets/vivapark/49.jpg";
+import familyImg from "@/assets/vivapark/50.jpg";
+import nightPanoImg from "@/assets/vivapark/51.jpg";
 
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
 
@@ -26,7 +33,6 @@ const VivaParkLandingPage = () => {
   const location = useLocation();
   const isThankYou = location.pathname.endsWith("/obrigado");
 
-  // Animations
   const [heroVisible, setHeroVisible] = useState(false);
   useEffect(() => { setHeroVisible(true); }, []);
 
@@ -98,7 +104,7 @@ const VivaParkLandingPage = () => {
         <meta name="description" content="Vivapark Porto Belo — o primeiro bairro parque do Brasil. Investimento inteligente no litoral de Santa Catarina." />
       </Helmet>
 
-      {/* Top bar with flags — Monaco-style header */}
+      {/* Top bar */}
       <div className="sticky top-0 z-50 bg-card/90 backdrop-blur-md border-b border-border/50">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
           <span className="font-serif text-xl font-bold tracking-wider text-gold-gradient">VIVAPARK</span>
@@ -121,12 +127,10 @@ const VivaParkLandingPage = () => {
         </div>
       </div>
 
-      {/* ── HERO ── */}
+      {/* ── HERO with background image ── */}
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-background" />
-        <div className="absolute top-20 right-20 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px]" />
-        <div className="absolute bottom-20 left-10 w-[300px] h-[300px] bg-primary/3 rounded-full blur-[80px]" />
+        <img src={heroImg} alt="Vivapark Porto Belo aerial view" className="absolute inset-0 w-full h-full object-cover" loading="eager" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
 
         <div className={`relative z-10 max-w-4xl mx-auto px-4 text-center transition-all duration-1000 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <div className="inline-flex items-center gap-1.5 px-4 py-2 mb-8 border border-primary/30 rounded-full bg-primary/10 backdrop-blur-sm">
@@ -155,8 +159,8 @@ const VivaParkLandingPage = () => {
             {t.subheadline}
           </p>
 
-          {/* Video with language-based source */}
-          <div className="max-w-2xl mx-auto mb-10 rounded-lg overflow-hidden shadow-[0_0_60px_hsl(var(--gold)/0.1)] border border-border/50">
+          {/* Video */}
+          <div className="max-w-2xl mx-auto mb-10 rounded-lg overflow-hidden shadow-[0_0_60px_hsl(var(--gold)/0.15)] border border-border/50">
             <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
               <iframe
                 key={lang}
@@ -182,16 +186,24 @@ const VivaParkLandingPage = () => {
         </div>
       </section>
 
-      {/* ── SEÇÃO 1 — Abertura ── */}
+      {/* ── SEÇÃO 1 — Abertura + lifestyle image ── */}
       <section className="py-20 md:py-28 px-4 bg-card/50">
-        <div className="max-w-3xl mx-auto space-y-8">
-          {[t.s1_p1, t.s1_p2, t.s1_p3].map((p, i) => (
-            <p key={i} className={`text-base md:text-lg whitespace-pre-line leading-relaxed ${
-              i === 2 ? "text-foreground font-semibold text-lg md:text-xl" : "text-muted-foreground"
-            }`}>
-              {p}
-            </p>
-          ))}
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          <div className="space-y-8">
+            {[t.s1_p1, t.s1_p2, t.s1_p3].map((p, i) => (
+              <p key={i} className={`text-base md:text-lg whitespace-pre-line leading-relaxed ${
+                i === 2 ? "text-foreground font-semibold text-lg md:text-xl" : "text-muted-foreground"
+              }`}>
+                {p}
+              </p>
+            ))}
+          </div>
+          <div className="relative">
+            <img src={lifestyleImg} alt="Vivapark lifestyle" className="rounded-lg shadow-[0_0_60px_hsl(var(--gold)/0.1)] border border-border/50 w-full h-auto object-cover" loading="lazy" />
+            <div className="absolute -bottom-4 -left-4 w-32 h-32 rounded-lg overflow-hidden border-2 border-primary/30 shadow-lg hidden md:block">
+              <img src={loungeImg} alt="Lounge area" className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -217,9 +229,15 @@ const VivaParkLandingPage = () => {
         </div>
       </section>
 
-      {/* ── SEÇÃO 3 — Investidores ── */}
+      {/* ── Full-width image break — Rooftop pools ── */}
+      <div className="relative h-[50vh] md:h-[60vh] overflow-hidden">
+        <img src={rooftopImg} alt="Vivapark rooftop pools" className="w-full h-full object-cover" loading="lazy" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/30" />
+      </div>
+
+      {/* ── SEÇÃO 3 — Investidores + location image ── */}
       <section className="py-20 md:py-28 px-4 bg-card/50">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-4 block">
               {t.s3_title}
@@ -237,21 +255,24 @@ const VivaParkLandingPage = () => {
             ))}
           </div>
 
-          <div className="card-luxury flex items-start gap-4">
-            <div className="w-10 h-10 rounded-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-5 h-5 text-primary" />
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="card-luxury flex items-start gap-4">
+              <div className="w-10 h-10 rounded-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-serif font-semibold text-foreground text-lg">{t.s3_location}</p>
+                {t.s3_location_details.map((d, i) => (
+                  <p key={i} className="text-sm text-muted-foreground mt-1">{d}</p>
+                ))}
+              </div>
             </div>
-            <div>
-              <p className="font-serif font-semibold text-foreground text-lg">{t.s3_location}</p>
-              {t.s3_location_details.map((d, i) => (
-                <p key={i} className="text-sm text-muted-foreground mt-1">{d}</p>
-              ))}
-            </div>
+            <img src={coastImg} alt="Porto Belo coast" className="rounded-lg shadow-[0_0_40px_hsl(var(--gold)/0.08)] border border-border/50 w-full h-64 object-cover" loading="lazy" />
           </div>
         </div>
       </section>
 
-      {/* ── SEÇÃO 4 — Diferenciais ── */}
+      {/* ── SEÇÃO 4 — Diferenciais + gallery ── */}
       <section className="py-20 md:py-28 px-4 bg-background">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
@@ -260,6 +281,13 @@ const VivaParkLandingPage = () => {
             </span>
             <div className="w-10 h-px bg-primary/50 mx-auto mb-8" />
             <p className="text-muted-foreground whitespace-pre-line max-w-xl mx-auto">{t.s4_intro}</p>
+          </div>
+
+          {/* Image gallery strip */}
+          <div className="grid grid-cols-3 gap-3 mb-14 rounded-lg overflow-hidden">
+            <img src={poolImg} alt="Vivapark pool area" className="w-full h-48 md:h-64 object-cover" loading="lazy" />
+            <img src={streetImg} alt="Vivapark neighborhood" className="w-full h-48 md:h-64 object-cover" loading="lazy" />
+            <img src={parkImg} alt="Vivapark park" className="w-full h-48 md:h-64 object-cover" loading="lazy" />
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -289,32 +317,53 @@ const VivaParkLandingPage = () => {
         </div>
       </section>
 
-      {/* ── SEÇÃO 5 — Valorização ── */}
-      <section className="py-20 md:py-28 px-4 bg-card/50 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/3 rounded-full blur-[120px]" />
-        <div className="max-w-3xl mx-auto text-center space-y-5 relative z-10">
-          <TrendingUp className="w-10 h-10 text-primary mx-auto mb-4" />
-          <h2 className="font-serif text-2xl md:text-4xl font-bold text-foreground">{t.s5_title}</h2>
-          {t.s5_lines.map((l, i) => (
-            <p key={i} className={`text-lg ${i === 0 ? "text-muted-foreground" : "text-foreground font-medium"}`}>{l}</p>
-          ))}
-          <div className="w-10 h-px bg-primary/50 mx-auto my-6" />
-          <p className="font-serif text-muted-foreground whitespace-pre-line text-lg italic">{t.s5_conclusion}</p>
+      {/* ── SEÇÃO 5 — Valorização with sunset image ── */}
+      <section className="py-0 bg-card/50 relative overflow-hidden">
+        <div className="grid md:grid-cols-2 min-h-[500px]">
+          <div className="relative">
+            <img src={sunsetImg} alt="Vivapark at sunset" className="w-full h-full object-cover min-h-[400px]" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/50 hidden md:block" />
+          </div>
+          <div className="flex items-center py-16 md:py-20 px-6 md:px-12">
+            <div className="space-y-5 max-w-lg">
+              <TrendingUp className="w-10 h-10 text-primary mb-4" />
+              <h2 className="font-serif text-2xl md:text-4xl font-bold text-foreground">{t.s5_title}</h2>
+              {t.s5_lines.map((l, i) => (
+                <p key={i} className={`text-lg ${i === 0 ? "text-muted-foreground" : "text-foreground font-medium"}`}>{l}</p>
+              ))}
+              <div className="w-10 h-px bg-primary/50 my-6" />
+              <p className="font-serif text-muted-foreground whitespace-pre-line text-lg italic">{t.s5_conclusion}</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── SEÇÃO 6 — Timing ── */}
-      <section className="py-20 md:py-28 px-4 bg-background">
-        <div className="max-w-3xl mx-auto text-center space-y-5">
-          <Clock className="w-10 h-10 text-primary mx-auto mb-4" />
-          <h2 className="font-serif text-2xl md:text-4xl font-bold text-foreground">{t.s6_title}</h2>
-          {t.s6_lines.map((l, i) => (
-            <p key={i} className="text-muted-foreground text-lg">{l}</p>
-          ))}
-          <div className="w-10 h-px bg-primary/50 mx-auto my-6" />
-          <p className="font-serif text-xl md:text-2xl font-bold text-gold-gradient">{t.s6_cta}</p>
+      {/* ── SEÇÃO 6 — Timing with night image ── */}
+      <section className="py-0 bg-background relative overflow-hidden">
+        <div className="grid md:grid-cols-2 min-h-[500px]">
+          <div className="flex items-center py-16 md:py-20 px-6 md:px-12 order-2 md:order-1">
+            <div className="space-y-5 max-w-lg mx-auto md:ml-auto md:mr-0 text-center md:text-right">
+              <Clock className="w-10 h-10 text-primary mb-4 mx-auto md:ml-auto md:mr-0" />
+              <h2 className="font-serif text-2xl md:text-4xl font-bold text-foreground">{t.s6_title}</h2>
+              {t.s6_lines.map((l, i) => (
+                <p key={i} className="text-muted-foreground text-lg">{l}</p>
+              ))}
+              <div className="w-10 h-px bg-primary/50 my-6 mx-auto md:ml-auto md:mr-0" />
+              <p className="font-serif text-xl md:text-2xl font-bold text-gold-gradient">{t.s6_cta}</p>
+            </div>
+          </div>
+          <div className="relative order-1 md:order-2">
+            <img src={nightImg} alt="Vivapark at night" className="w-full h-full object-cover min-h-[400px]" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent to-background/50 hidden md:block" />
+          </div>
         </div>
       </section>
+
+      {/* ── Full-width image break — facade detail ── */}
+      <div className="relative h-[40vh] md:h-[50vh] overflow-hidden">
+        <img src={facadeImg} alt="Vivapark architecture" className="w-full h-full object-cover" loading="lazy" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/40" />
+      </div>
 
       {/* ── SEÇÃO 7 — Decisão ── */}
       <section className="py-16 md:py-24 px-4 bg-card/50">
@@ -334,9 +383,10 @@ const VivaParkLandingPage = () => {
         </div>
       </section>
 
-      {/* ── FORM ── */}
+      {/* ── FORM with family image background ── */}
       <section id="cadastro" ref={formRef} className="py-24 md:py-32 px-4 bg-background relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-[120px]" />
+        <img src={familyImg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-10" loading="lazy" aria-hidden="true" />
+        <div className="absolute inset-0 bg-background/80" />
         <div className="max-w-xl mx-auto relative z-10">
           {isThankYou ? (
             <div className="text-center p-12 rounded-lg bg-card border border-border/50 shadow-[0_0_60px_hsl(var(--gold)/0.1)]">
@@ -413,9 +463,11 @@ const VivaParkLandingPage = () => {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="py-20 px-4 bg-card border-t border-border/30">
-        <div className="max-w-3xl mx-auto text-center space-y-4">
+      {/* ── FOOTER with night panoramic ── */}
+      <footer className="relative py-20 px-4 border-t border-border/30 overflow-hidden">
+        <img src={nightPanoImg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15" loading="lazy" aria-hidden="true" />
+        <div className="absolute inset-0 bg-card/85" />
+        <div className="max-w-3xl mx-auto text-center space-y-4 relative z-10">
           <p className="font-serif text-lg md:text-xl text-foreground font-medium">{t.footer_line1}</p>
           <p className="font-serif text-lg md:text-xl text-foreground font-medium">{t.footer_line2}</p>
           <div className="w-10 h-px bg-primary/50 mx-auto my-6" />
