@@ -35,6 +35,7 @@ const categoryImages = [familyImg, lifestyleImg, parkImg, streetImg, nightImg, l
 const VivaParkLandingPage = () => {
   const [lang, setLang] = useState<Lang>("pt");
   const t = translations[lang];
+  const inv = investorTranslations[lang];
   const navigate = useNavigate();
   const location = useLocation();
   const isThankYou = location.pathname.endsWith("/obrigado");
