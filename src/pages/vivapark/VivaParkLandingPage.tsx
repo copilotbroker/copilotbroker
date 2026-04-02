@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { CheckCircle2, Loader2, MapPin, ChevronDown, ChevronUp, GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, ChevronDown, ChevronUp, GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store, TrendingUp, Clock, ArrowRight, BarChart3, Plane, CheckCircle, Building2, Landmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { WhatsAppInput, isValidWhatsApp } from "@/components/ui/whatsapp-input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-page-tracking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { translations, flags, type Lang } from "@/components/vivapark/translations";
+import { investorTranslations } from "@/components/vivapark/investor-translations";
 
 import heroImg from "@/assets/vivapark/0.jpg";
 import coastImg from "@/assets/vivapark/4.jpg";
@@ -34,6 +35,7 @@ const categoryImages = [familyImg, lifestyleImg, parkImg, streetImg, nightImg, l
 const VivaParkLandingPage = () => {
   const [lang, setLang] = useState<Lang>("pt");
   const t = translations[lang];
+  const inv = investorTranslations[lang];
   const navigate = useNavigate();
   const location = useLocation();
   const isThankYou = location.pathname.endsWith("/obrigado");
@@ -144,6 +146,12 @@ const VivaParkLandingPage = () => {
               Porto Belo — Santa Catarina
             </span>
           </div>
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 mb-8 bg-primary/20 border border-primary/40 rounded-full backdrop-blur-sm shadow-[0_0_30px_hsl(var(--gold)/0.2)]">
+            <Landmark className="w-4 h-4 text-primary" />
+            <span className="text-xs sm:text-sm font-bold tracking-[0.15em] uppercase text-primary">
+              {inv.badge_first_park}
+            </span>
+          </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.95] mb-6">
             {t.headline.split(" ").map((word, i, arr) => (
@@ -191,7 +199,21 @@ const VivaParkLandingPage = () => {
         </div>
       </section>
 
-      {/* ── SEÇÃO 1 — Abertura + lifestyle image ── */}
+      {/* ── STATS RIBBON ── */}
+      <section className="py-12 md:py-16 px-4 bg-card border-y border-border/30">
+        <div className="max-w-5xl mx-auto">
+          <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-8 block text-center">{inv.stats_title}</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {inv.stats.map((s, i) => (
+              <div key={i} className="text-center p-4">
+                <span className="block font-serif text-3xl md:text-4xl font-bold text-gold-gradient mb-2">{s.value}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground leading-tight">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-20 md:py-28 px-4 bg-card/50">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
@@ -409,7 +431,103 @@ const VivaParkLandingPage = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/40" />
       </div>
 
-      {/* ── SEÇÃO 7 — Decisão ── */}
+      {/* ── SC MARKET DATA ── */}
+      <section className="py-20 md:py-28 px-4 bg-card/50">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <BarChart3 className="w-10 h-10 text-primary mx-auto mb-4" />
+            <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground mb-4">{inv.sc_title}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">{inv.sc_subtitle}</p>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-4 mb-8 max-w-3xl mx-auto">
+            {inv.sc_ranking.map((r, i) => (
+              <div key={i} className={`card-luxury text-center p-6 ${i === 0 ? "border-primary/40 shadow-[0_0_30px_hsl(var(--gold)/0.12)]" : ""}`}>
+                <span className="block font-serif text-3xl font-bold text-gold-gradient mb-1">{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>
+                <span className="block text-sm font-semibold text-foreground mb-2">{r.city}</span>
+                <span className="block text-lg font-bold text-foreground">{r.price}</span>
+                <span className="block text-sm font-semibold text-primary">{r.growth}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-muted-foreground/60">{inv.sc_source}</p>
+        </div>
+      </section>
+
+      {/* ── PORTO BELO INVESTMENT ── */}
+      <section className="py-20 md:py-28 px-4 bg-background">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <MapPin className="w-10 h-10 text-primary mx-auto mb-4" />
+            <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground mb-4">{inv.porto_title}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">{inv.porto_subtitle}</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 mb-14">
+            <div className="space-y-3">
+              {inv.porto_reasons.map((r, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-card/50 transition-colors">
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground text-sm">{r}</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <h3 className="font-serif text-lg font-semibold text-foreground mb-4">{inv.porto_indicators_title}</h3>
+              <div className="space-y-3">
+                {inv.porto_indicators.map((ind, i) => (
+                  <div key={i} className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
+                    <TrendingUp className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground">{ind}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Location distances */}
+          <div className="flex flex-wrap justify-center gap-4">
+            {inv.location_distances.map((d, i) => (
+              <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border/50 text-sm">
+                <Plane className="w-3.5 h-3.5 text-primary" />
+                <span className="text-muted-foreground">{d.place}</span>
+                <span className="font-semibold text-foreground">{d.time}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── REAL ESTATE MARKET ── */}
+      <section className="py-20 md:py-28 px-4 bg-card/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <Building2 className="w-10 h-10 text-primary mx-auto mb-4" />
+            <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground mb-4">{inv.market_title}</h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <div className="card-luxury">
+              <p className="text-muted-foreground leading-relaxed">{inv.market_p1}</p>
+            </div>
+            <div className="card-luxury">
+              <p className="text-muted-foreground leading-relaxed">{inv.market_p2}</p>
+            </div>
+          </div>
+
+          <div className="max-w-lg mx-auto">
+            <h3 className="font-serif text-lg font-semibold text-foreground mb-5 text-center">{inv.market_invest_title}</h3>
+            <div className="space-y-2.5">
+              {inv.market_invest_items.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-background border border-border/50">
+                  <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span className="text-sm text-foreground">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="py-16 md:py-24 px-4 bg-card/50">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="font-serif text-2xl md:text-3xl font-bold mb-8 text-foreground">{t.s7_title}</h2>
