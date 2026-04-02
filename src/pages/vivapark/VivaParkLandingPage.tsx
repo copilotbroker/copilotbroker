@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { CheckCircle2, Loader2, MapPin, ChevronDown, ChevronUp, GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store, TrendingUp, Clock, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { WhatsAppInput, isValidBrazilianWhatsApp } from "@/components/ui/whatsapp-input";
+import { WhatsAppInput, isValidWhatsApp } from "@/components/ui/whatsapp-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-page-tracking";
@@ -77,7 +77,7 @@ const VivaParkLandingPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { toast({ title: t.form_name, variant: "destructive" }); return; }
-    if (!isValidBrazilianWhatsApp(whatsapp)) { toast({ title: "WhatsApp inválido", variant: "destructive" }); return; }
+    if (!isValidWhatsApp(whatsapp)) { toast({ title: "WhatsApp inválido", variant: "destructive" }); return; }
     if (!acceptedTerms) { toast({ title: t.form_terms_prefix, variant: "destructive" }); return; }
     setIsSubmitting(true);
     try {
