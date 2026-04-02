@@ -10,6 +10,13 @@ import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-pa
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { translations, flags, type Lang } from "@/components/vivapark/translations";
 
+const youtubeLocaleMap: Record<Lang, string> = {
+  pt: "pt-BR",
+  en: "en",
+  es: "es-ES",
+  fr: "fr",
+};
+
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
 
 const VivaParkLandingPage = () => {
