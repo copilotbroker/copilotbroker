@@ -104,6 +104,10 @@ const App = () => (
             <Route path="/xangrila/monaco/obrigado" element={<MonacoLandingPage />} />
             <Route path="/xangrila/monaco/termos" element={<TermosMonaco />} />
             
+            {/* Vivapark Porto Belo — multilingual investment landing */}
+            <Route path="/portobelo/vivapark" element={<VivaParkLandingPage />} />
+            <Route path="/portobelo/vivapark/obrigado" element={<VivaParkLandingPage />} />
+            
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
