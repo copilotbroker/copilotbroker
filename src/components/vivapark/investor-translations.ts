@@ -24,7 +24,7 @@ export const investorTranslations: Record<Lang, {
     badge_first_park: "1º Bairro Parque do Brasil",
     stats_title: "Em números",
     stats: [
-      { value: "+160%", label: "Valorização em 24 meses" },
+      { value: "+180%", label: "Valorização desde o lançamento em 2021" },
       { value: "138 mil", label: "m² de área verde" },
       { value: "1º", label: "LEED Platinum do mundo na categoria" },
       { value: "40+", label: "Países competiram no ACD Awards" },
@@ -77,7 +77,7 @@ export const investorTranslations: Record<Lang, {
     badge_first_park: "Brazil's 1st Park Neighborhood",
     stats_title: "By the numbers",
     stats: [
-      { value: "+160%", label: "Appreciation in 24 months" },
+      { value: "+180%", label: "Appreciation since launch in 2021" },
       { value: "138k", label: "m² of green area" },
       { value: "1st", label: "LEED Platinum worldwide in category" },
       { value: "40+", label: "Countries competed at ACD Awards" },
@@ -130,7 +130,7 @@ export const investorTranslations: Record<Lang, {
     badge_first_park: "1er Barrio Parque de Brasil",
     stats_title: "En números",
     stats: [
-      { value: "+160%", label: "Valorización en 24 meses" },
+      { value: "+180%", label: "Valorización desde el lanzamiento en 2021" },
       { value: "138 mil", label: "m² de área verde" },
       { value: "1º", label: "LEED Platinum mundial en categoría" },
       { value: "40+", label: "Países compitieron en ACD Awards" },
@@ -183,7 +183,7 @@ export const investorTranslations: Record<Lang, {
     badge_first_park: "1er Quartier-Parc du Brésil",
     stats_title: "En chiffres",
     stats: [
-      { value: "+160%", label: "Valorisation en 24 mois" },
+      { value: "+180%", label: "Valorisation depuis le lancement en 2021" },
       { value: "138k", label: "m² d'espaces verts" },
       { value: "1er", label: "LEED Platinum mondial dans sa catégorie" },
       { value: "40+", label: "Pays en compétition aux ACD Awards" },
