@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-page-tracking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { translations, flags, type Lang } from "@/components/vivapark/translations";
+import { investorTranslations } from "@/components/vivapark/investor-translations";
 
 import heroImg from "@/assets/vivapark/0.jpg";
 import coastImg from "@/assets/vivapark/4.jpg";
