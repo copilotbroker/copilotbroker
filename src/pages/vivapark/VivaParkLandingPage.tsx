@@ -163,6 +163,8 @@ const VivaParkLandingPage = () => {
                 className="absolute inset-0 w-full h-full"
                 src={lang === "en"
                   ? "https://drive.google.com/file/d/1_Ds8DK7H0YUxRrmYigkF1dMRmoy68TKi/preview"
+                  : lang === "fr"
+                  ? "https://drive.google.com/file/d/1X2D3G5FW1Pi-s9SbYVIeSaJpT5FBCNUY/preview"
                   : `https://www.youtube.com/embed/17vsHL9DL3E?hl=${youtubeLocaleMap[lang]}&cc_lang_pref=${youtubeLocaleMap[lang]}&cc_load_policy=1&rel=0`}
                 title="Vivapark Porto Belo"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
