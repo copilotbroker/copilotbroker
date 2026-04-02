@@ -155,13 +155,15 @@ const VivaParkLandingPage = () => {
             {t.subheadline}
           </p>
 
-          {/* YouTube video with language-based dubbing */}
+          {/* Video with language-based source */}
           <div className="max-w-2xl mx-auto mb-10 rounded-lg overflow-hidden shadow-[0_0_60px_hsl(var(--gold)/0.1)] border border-border/50">
             <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
               <iframe
                 key={lang}
                 className="absolute inset-0 w-full h-full"
-                src={`https://www.youtube.com/embed/17vsHL9DL3E?hl=${youtubeLocaleMap[lang]}&cc_lang_pref=${youtubeLocaleMap[lang]}&cc_load_policy=1&rel=0`}
+                src={lang === "en"
+                  ? "https://drive.google.com/file/d/1_Ds8DK7H0YUxRrmYigkF1dMRmoy68TKi/preview"
+                  : `https://www.youtube.com/embed/17vsHL9DL3E?hl=${youtubeLocaleMap[lang]}&cc_lang_pref=${youtubeLocaleMap[lang]}&cc_load_policy=1&rel=0`}
                 title="Vivapark Porto Belo"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
