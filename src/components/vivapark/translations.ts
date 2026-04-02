@@ -73,7 +73,7 @@ export const translations: Record<Lang, {
     s3_location: "Porto Belo — litoral de Santa Catarina",
     s3_location_details: ["A poucos minutos de Balneário Camboriú", "Região com expansão acelerada e valorização constante"],
     s4_title: "O que torna o Vivapark diferente",
-    s4_intro: "Aqui não é só um lugar para morar.\nÉ um bairro inteiro planejado para funcionar sozinho.",
+    s4_intro: "Aqui não é só um lugar para morar. É um bairro inteiro planejado para funcionar sozinho. Feito para as pessoas estudarem, trabalharem e se divertirem",
     s4_categories: [
       { title: "Educação", items: ["Colégio Bom Jesus (ensino infantil ao médio, com programa bilíngue)", "Projeto de instituição de ensino superior dentro do bairro"] },
       { title: "Saúde", items: ["Unidade de Pronto Atendimento (UPA)", "HUB de saúde com múltiplos serviços"] },
