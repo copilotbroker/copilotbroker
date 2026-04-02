@@ -1,5 +1,7 @@
 export type Lang = "pt" | "en" | "es" | "fr";
 
+// Keep the type definition inline to avoid bloating further
+
 export const translations: Record<Lang, {
   headline: string;
   subheadline: string;
@@ -9,6 +11,7 @@ export const translations: Record<Lang, {
   s1_p3: string;
   s2_title: string;
   s2_items: string[];
+  s2_descs: string[];
   s2_footer: string;
   s3_title: string;
   s3_intro: string;
@@ -56,6 +59,12 @@ export const translations: Record<Lang, {
       "Assinatura urbanística de Jaime Lerner",
       "Certificação internacional LEED Platinum",
       "Premiações globais de arquitetura e design",
+    ],
+    s2_descs: [
+      "Urbanista visionário, ex-prefeito de Curitiba e referência mundial em planejamento urbano. Responsável pelo desenho urbanístico do Vivapark.",
+      "Vencedor do Architecture, Construction & Design Awards — premiação internacional que reconhece excelência em projetos de alto impacto.",
+      "Premiado no DNA Paris Design Awards, um dos mais prestigiados concursos de design do mundo, sediado em Paris.",
+      "Mais alto nível da certificação LEED, concedida pelo U.S. Green Building Council. Reconhece edificações com desempenho excepcional em sustentabilidade, eficiência energética e qualidade ambiental.",
     ],
     s2_footer: "Um projeto reconhecido não só pelo mercado brasileiro, mas validado internacionalmente.",
     s3_title: "Por que investidores estão entrando",
@@ -112,6 +121,12 @@ export const translations: Record<Lang, {
       "International LEED Platinum certification",
       "Global architecture and design awards",
     ],
+    s2_descs: [
+      "Visionary urbanist, former mayor of Curitiba and a global reference in urban planning. Responsible for Vivapark's urban design.",
+      "Winner of the Architecture, Construction & Design Awards — an international prize recognizing excellence in high-impact projects.",
+      "Awarded at the DNA Paris Design Awards, one of the most prestigious design competitions in the world, based in Paris.",
+      "Highest level of LEED certification, granted by the U.S. Green Building Council. Recognizes buildings with exceptional performance in sustainability, energy efficiency and environmental quality.",
+    ],
     s2_footer: "A project recognized not only by the Brazilian market, but validated internationally.",
     s3_title: "Why investors are getting in",
     s3_intro: "Experienced investors don't just buy properties.\nThey look for projects that combine three factors:",
@@ -167,6 +182,12 @@ export const translations: Record<Lang, {
       "Certificación internacional LEED Platinum",
       "Premios globales de arquitectura y diseño",
     ],
+    s2_descs: [
+      "Urbanista visionario, exalcalde de Curitiba y referencia mundial en planificación urbana. Responsable del diseño urbanístico de Vivapark.",
+      "Ganador del Architecture, Construction & Design Awards — premio internacional que reconoce la excelencia en proyectos de alto impacto.",
+      "Premiado en el DNA Paris Design Awards, uno de los concursos de diseño más prestigiosos del mundo, con sede en París.",
+      "Nivel más alto de la certificación LEED, otorgada por el U.S. Green Building Council. Reconoce edificaciones con desempeño excepcional en sostenibilidad, eficiencia energética y calidad ambiental.",
+    ],
     s2_footer: "Un proyecto reconocido no solo por el mercado brasileño, sino validado internacionalmente.",
     s3_title: "Por qué los inversores están entrando",
     s3_intro: "Los inversores experimentados no compran solo propiedades.\nBuscan proyectos que concentran tres factores:",
@@ -221,6 +242,12 @@ export const translations: Record<Lang, {
       "Conception urbanistique de Jaime Lerner",
       "Certification internationale LEED Platinum",
       "Prix mondiaux d'architecture et de design",
+    ],
+    s2_descs: [
+      "Urbaniste visionnaire, ancien maire de Curitiba et référence mondiale en planification urbaine. Responsable de la conception urbanistique du Vivapark.",
+      "Lauréat des Architecture, Construction & Design Awards — distinction internationale reconnaissant l'excellence dans les projets à fort impact.",
+      "Primé aux DNA Paris Design Awards, l'un des concours de design les plus prestigieux au monde, basé à Paris.",
+      "Plus haut niveau de la certification LEED, décernée par le U.S. Green Building Council. Reconnaît les bâtiments ayant des performances exceptionnelles en durabilité, efficacité énergétique et qualité environnementale.",
     ],
     s2_footer: "Un projet reconnu non seulement par le marché brésilien, mais validé internationalement.",
     s3_title: "Pourquoi les investisseurs entrent",

@@ -25,6 +25,7 @@ import familyImg from "@/assets/vivapark/50.jpg";
 import nightPanoImg from "@/assets/vivapark/51.jpg";
 import personImg from "@/assets/vivapark/1.jpg";
 import badge1Img from "@/assets/vivapark/6.png";
+import badge2Img from "@/assets/vivapark/7.png";
 
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
 
@@ -219,29 +220,45 @@ const VivaParkLandingPage = () => {
             <div className="w-10 h-px bg-primary/50 mx-auto mb-8" />
           </div>
 
-          {/* Main layout: Person + Authority items */}
-          <div className="flex flex-col items-center gap-10 mb-14">
-            {/* Person photo with Winner badge */}
-            <div className="relative">
-              <div className="w-56 h-56 md:w-64 md:h-64 rounded-full overflow-hidden border-2 border-primary/30 shadow-[0_0_40px_hsl(var(--gold)/0.15)]">
-                <img src={personImg} alt="Especialista Vivapark" className="w-full h-full object-cover object-top" loading="lazy" />
+          {/* Authority grid — 2x2 cards with images */}
+          <div className="grid md:grid-cols-2 gap-6 mb-14 max-w-4xl mx-auto">
+
+            {/* Jaime Lerner */}
+            <div className="card-luxury flex flex-col items-center text-center p-6 gap-4 border border-primary/20 hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_hsl(var(--gold)/0.12)]">
+              <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-primary/30 shadow-[0_0_30px_hsl(var(--gold)/0.15)]">
+                <img src={personImg} alt="Jaime Lerner" className="w-full h-full object-cover object-top" loading="lazy" />
               </div>
-              <div className="absolute -top-2 -right-2 w-16 h-16 bg-card rounded-full border border-border/50 shadow-lg p-1.5 flex items-center justify-center">
-                <img src={badge1Img} alt="Winner Award" className="w-full h-full object-contain" loading="lazy" />
-              </div>
+              <h3 className="font-serif text-foreground font-semibold text-base">{t.s2_items[1]}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{t.s2_descs[0]}</p>
             </div>
 
-            {/* Authority items */}
-            <div className="grid sm:grid-cols-2 gap-4 w-full max-w-2xl">
-              {t.s2_items.map((item, i) => (
-                <div key={i} className="card-luxury flex items-start gap-3 text-left py-4 px-5">
-                  <div className="w-7 h-7 rounded-sm bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <span className="text-muted-foreground text-sm">{item}</span>
-                </div>
-              ))}
+            {/* Architecture Construction & Design Awards */}
+            <div className="card-luxury flex flex-col items-center text-center p-6 gap-4 border border-primary/20 hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_hsl(var(--gold)/0.12)]">
+              <div className="w-28 h-28 rounded-full overflow-hidden bg-white/5 flex items-center justify-center p-3">
+                <img src={badge1Img} alt="Architecture Construction & Design Awards" className="w-full h-full object-contain" loading="lazy" />
+              </div>
+              <h3 className="font-serif text-foreground font-semibold text-base">{t.s2_items[3]}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{t.s2_descs[1]}</p>
             </div>
+
+            {/* DNA Paris Design Awards */}
+            <div className="card-luxury flex flex-col items-center text-center p-6 gap-4 border border-primary/20 hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_hsl(var(--gold)/0.12)]">
+              <div className="w-28 h-28 rounded-full overflow-hidden bg-white/5 flex items-center justify-center p-3">
+                <img src={badge2Img} alt="DNA Paris Design Awards" className="w-full h-full object-contain" loading="lazy" />
+              </div>
+              <h3 className="font-serif text-foreground font-semibold text-base">{t.s2_items[0]}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{t.s2_descs[2]}</p>
+            </div>
+
+            {/* LEED Platinum */}
+            <div className="card-luxury flex flex-col items-center text-center p-6 gap-4 border border-primary/20 hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_hsl(var(--gold)/0.12)]">
+              <div className="w-28 h-28 rounded-full overflow-hidden bg-white/5 flex items-center justify-center">
+                <span className="text-3xl font-bold text-gold-gradient font-serif">LEED</span>
+              </div>
+              <h3 className="font-serif text-foreground font-semibold text-base">{t.s2_items[2]}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{t.s2_descs[3]}</p>
+            </div>
+
           </div>
 
           <p className="font-serif text-lg md:text-xl text-muted-foreground italic text-center max-w-3xl mx-auto">{t.s2_footer}</p>
