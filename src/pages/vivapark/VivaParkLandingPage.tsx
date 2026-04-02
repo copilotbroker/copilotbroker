@@ -26,7 +26,7 @@ import nightPanoImg from "@/assets/vivapark/51.jpg";
 import personImg from "@/assets/vivapark/1.jpg";
 import badge1Img from "@/assets/vivapark/6.png";
 import badge2Img from "@/assets/vivapark/7.png";
-import leedBadgeImg from "@/assets/vivapark/leed-badge.png";
+import leedBadgeImg from "@/assets/vivapark/leed-badge.svg";
 
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
 
