@@ -29,6 +29,7 @@ import badge2Img from "@/assets/vivapark/7.png";
 import leedBadgeImg from "@/assets/vivapark/leed-badge.svg";
 
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
+const categoryImages = [familyImg, lifestyleImg, parkImg, streetImg, nightImg, loungeImg];
 
 const VivaParkLandingPage = () => {
   const [lang, setLang] = useState<Lang>("pt");
@@ -330,22 +331,28 @@ const VivaParkLandingPage = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {t.s4_categories.map((cat, i) => {
               const Icon = categoryIcons[i];
+              const catImg = categoryImages[i];
               return (
-                <div key={i} className="card-luxury group">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-10 h-10 rounded-sm bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <Icon className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="font-serif font-semibold text-foreground">{cat.title}</h3>
+                <div key={i} className="card-luxury group overflow-hidden p-0">
+                  <div className="h-40 overflow-hidden">
+                    <img src={catImg} alt={cat.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                   </div>
-                  <ul className="space-y-2.5">
-                    {cat.items.map((item, j) => (
-                      <li key={j} className="text-sm text-muted-foreground flex items-start gap-2.5">
-                        <span className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="p-5">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-sm bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        <Icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <h3 className="font-serif font-semibold text-foreground">{cat.title}</h3>
+                    </div>
+                    <ul className="space-y-2.5">
+                      {cat.items.map((item, j) => (
+                        <li key={j} className="text-sm text-muted-foreground flex items-start gap-2.5">
+                          <span className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               );
             })}
