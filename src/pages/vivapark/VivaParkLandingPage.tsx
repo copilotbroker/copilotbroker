@@ -143,12 +143,6 @@ const VivaParkLandingPage = () => {
           <div className="inline-flex items-center gap-1.5 px-4 py-2 mb-8 border border-primary/30 rounded-full bg-primary/10 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <span className="text-[10px] sm:text-xs font-medium tracking-[0.2em] uppercase text-primary">
-              Porto Belo — Santa Catarina
-            </span>
-          </div>
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 mb-8 bg-primary/20 border border-primary/40 rounded-full backdrop-blur-sm shadow-[0_0_30px_hsl(var(--gold)/0.2)]">
-            <Landmark className="w-4 h-4 text-primary" />
-            <span className="text-xs sm:text-sm font-bold tracking-[0.15em] uppercase text-primary">
               {inv.badge_first_park}
             </span>
           </div>
