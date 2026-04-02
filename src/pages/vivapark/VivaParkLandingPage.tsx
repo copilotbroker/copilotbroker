@@ -143,12 +143,6 @@ const VivaParkLandingPage = () => {
           <div className="inline-flex items-center gap-1.5 px-4 py-2 mb-8 border border-primary/30 rounded-full bg-primary/10 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <span className="text-[10px] sm:text-xs font-medium tracking-[0.2em] uppercase text-primary">
-              Porto Belo — Santa Catarina
-            </span>
-          </div>
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 mb-8 bg-primary/20 border border-primary/40 rounded-full backdrop-blur-sm shadow-[0_0_30px_hsl(var(--gold)/0.2)]">
-            <Landmark className="w-4 h-4 text-primary" />
-            <span className="text-xs sm:text-sm font-bold tracking-[0.15em] uppercase text-primary">
               {inv.badge_first_park}
             </span>
           </div>
@@ -200,16 +194,31 @@ const VivaParkLandingPage = () => {
       </section>
 
       {/* ── STATS RIBBON ── */}
-      <section className="py-12 md:py-16 px-4 bg-card border-y border-border/30">
+      <section className="py-16 md:py-24 px-4 bg-card border-y border-primary/20">
         <div className="max-w-5xl mx-auto">
-          <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-8 block text-center">{inv.stats_title}</span>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {inv.stats.map((s, i) => (
-              <div key={i} className="text-center p-4">
-                <span className="block font-serif text-3xl md:text-4xl font-bold text-gold-gradient mb-2">{s.value}</span>
-                <span className="text-xs sm:text-sm text-muted-foreground leading-tight">{s.label}</span>
-              </div>
-            ))}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-4">
+              <BarChart3 className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary">{inv.stats_title}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {inv.stats.map((s, i) => {
+              const icons = [TrendingUp, TreePine, Shield, Landmark];
+              const Icon = icons[i];
+              return (
+                <div key={i} className="relative text-center p-6 md:p-8 rounded-xl bg-background border border-border/50 hover:border-primary/30 transition-all duration-500 group hover:shadow-[0_0_40px_hsl(var(--gold)/0.1)]">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="w-10 h-10 rounded-full bg-card border border-primary/30 flex items-center justify-center shadow-[0_0_20px_hsl(var(--gold)/0.15)] group-hover:shadow-[0_0_30px_hsl(var(--gold)/0.25)] transition-shadow">
+                      <Icon className="w-4 h-4 text-primary" />
+                    </div>
+                  </div>
+                  <span className="block font-serif text-3xl md:text-4xl font-bold text-gold-gradient mt-3 mb-3">{s.value}</span>
+                  <div className="w-8 h-px bg-primary/30 mx-auto mb-3" />
+                  <span className="text-xs sm:text-sm text-muted-foreground leading-tight">{s.label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
