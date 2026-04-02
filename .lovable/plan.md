@@ -1,23 +1,20 @@
 
 
-## Fix: Conversas do Plantão aparecem e somem ao abrir
+## Plan: Simplify Authority Section + Update Video URLs
 
-### Causa raiz
+### 1. Authority Section Cleanup (lines 228-275)
+- **Keep**: Person photo (`personImg`) and the Winner badge (`badge1Img` — blue "Architecture Construction & Design Awards WINNER" at top-right)
+- **Remove**: `badge2Img` (DNA Paris Design Awards circle at bottom-left)
+- **Remove**: All 4 award certificate cards (`award1Img`, `award2Img`, `award3Img`, `award4Img` — these include the turtle, turtle map, and building renders)
+- Adjust layout: since removing the awards row, simplify the grid so the person photo is centered above the authority items list
 
-Quando o `AdminPlantao` monta, o estado `myBrokerId` começa como `null`. A query de "novos" usa `brokerId: myBrokerId || undefined` — com `undefined`, o filtro de broker não é aplicado, então **todas** as conversas globais pendentes aparecem. Quando o `useEffect` de inicialização termina e seta o `myBrokerId` real, a query re-executa com o filtro correto, e as conversas que não são daquele broker desaparecem.
+### 2. Update Video URLs (lines 175-181)
+Replace Google Drive preview links with YouTube embeds:
+- **pt** → `https://www.youtube.com/embed/EpmPylLq2PI`
+- **es** → `https://www.youtube.com/embed/LKHEwubIb0M`
+- **fr** → `https://www.youtube.com/embed/vKkOWuJg5sg`
+- **en** → `https://www.youtube.com/embed/n2dt_xUeY28`
 
-### Solução
-
-Impedir que a query de "novos" execute até que `myBrokerId` esteja carregado. O hook `useConversations` já suporta `enabled: false` — basta usá-lo.
-
-### Arquivo: `src/pages/AdminPlantao.tsx`
-
-1. Criar um flag `isInitialized` (começa `false`, vira `true` ao final do `init`)
-2. Na segunda chamada de `useConversations` (novos, linha 93-105), passar `enabled: isInitialized` para que não busque dados antes de saber quem é o admin
-3. Na primeira chamada (linha 80-91), o `effectiveBrokerId === "__skip__"` já passa um UUID fake — mas também adicionar `enabled: selectedBrokerId !== "_loading"` para evitar fetch desnecessário
-
-### O que NÃO muda
-- Hook `use-conversations.ts`
-- Lógica de filtro, realtime, tabs
-- Toda a UI de renderização
+### 3. Clean up unused imports
+Remove imports for `award1Img`, `award2Img`, `award3Img`, `award4Img`, `badge2Img` since they will no longer be used.
 
