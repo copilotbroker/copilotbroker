@@ -334,8 +334,8 @@ const VivaParkLandingPage = () => {
               const catImg = categoryImages[i];
               return (
                 <div key={i} className="card-luxury group overflow-hidden p-0">
-                  <div className="h-40 overflow-hidden">
-                    <img src={catImg} alt={cat.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
+                  <div className="overflow-hidden">
+                    <img src={catImg} alt={cat.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                   </div>
                   <div className="p-5">
                     <div className="flex items-center gap-3 mb-5">
