@@ -51,6 +51,7 @@ import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
 import TermosNAU from "./pages/nau/TermosNAU";
 import MonacoLandingPage from "./pages/monaco/MonacoLandingPage";
 import TermosMonaco from "./pages/monaco/TermosMonaco";
+import VivaParkLandingPage from "./pages/vivapark/VivaParkLandingPage";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,10 @@ const App = () => (
             <Route path="/xangrila/monaco" element={<MonacoLandingPage />} />
             <Route path="/xangrila/monaco/obrigado" element={<MonacoLandingPage />} />
             <Route path="/xangrila/monaco/termos" element={<TermosMonaco />} />
+            
+            {/* Vivapark Porto Belo — multilingual investment landing */}
+            <Route path="/portobelo/vivapark" element={<VivaParkLandingPage />} />
+            <Route path="/portobelo/vivapark/obrigado" element={<VivaParkLandingPage />} />
             
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
