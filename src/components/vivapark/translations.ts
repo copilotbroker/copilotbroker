@@ -1,5 +1,7 @@
 export type Lang = "pt" | "en" | "es" | "fr";
 
+// Keep the type definition inline to avoid bloating further
+
 export const translations: Record<Lang, {
   headline: string;
   subheadline: string;
