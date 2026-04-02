@@ -161,7 +161,7 @@ const VivaParkLandingPage = () => {
               <iframe
                 key={lang}
                 className="absolute inset-0 w-full h-full"
-                src={`https://www.youtube.com/embed/17vsHL9DL3E?hl=${lang}&cc_lang_pref=${lang}&cc_load_policy=1&rel=0`}
+                src={`https://www.youtube.com/embed/17vsHL9DL3E?hl=${youtubeLocaleMap[lang]}&cc_lang_pref=${youtubeLocaleMap[lang]}&cc_load_policy=1&rel=0`}
                 title="Vivapark Porto Belo"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
