@@ -623,7 +623,7 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
                   <Checkbox checked={acceptedTerms} onCheckedChange={(v) => setAcceptedTerms(!!v)} id="vp-terms" className="mt-0.5" />
                   <label htmlFor="vp-terms" className="text-xs text-muted-foreground leading-tight">
                     {t.form_terms_prefix}{" "}
-                    <a href="/termos" target="_blank" className="underline text-primary hover:text-primary/80 transition-colors">{t.form_terms_link}</a>
+                    <a href="/portobelo/vivapark/termos" target="_blank" className="underline text-primary hover:text-primary/80 transition-colors">{t.form_terms_link}</a>
                   </label>
                 </div>
 
