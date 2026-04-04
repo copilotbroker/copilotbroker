@@ -431,7 +431,8 @@ body:not(:has(.admin-scrollbar))::-webkit-scrollbar-thumb:hover {
 }
 
 /* Vivapark Porto Belo — Deep navy + warm gold (Monaco-inspired luxury) */
-.vivapark-theme {
+.vivapark-theme,
+.vivapark-theme.vp-dark {
   --background: 220 40% 6%;
   --foreground: 40 25% 96%;
   --card: 220 32% 10%;
@@ -452,4 +453,28 @@ body:not(:has(.admin-scrollbar))::-webkit-scrollbar-thumb:hover {
   --gold-dark: 34 70% 38%;
   --gradient-gold: linear-gradient(135deg, hsl(38, 65%, 52%) 0%, hsl(42, 55%, 62%) 50%, hsl(38, 65%, 52%) 100%);
   --shadow-gold: 0 0 40px hsl(38 65% 52% / 0.25);
+}
+
+/* Vivapark Light — Luxurious minimalist ivory & champagne */
+.vivapark-theme.vp-light {
+  --background: 40 30% 97%;
+  --foreground: 220 25% 12%;
+  --card: 40 20% 100%;
+  --card-foreground: 220 25% 12%;
+  --primary: 34 55% 42%;
+  --primary-foreground: 40 30% 98%;
+  --secondary: 38 15% 92%;
+  --secondary-foreground: 220 20% 20%;
+  --muted: 38 12% 90%;
+  --muted-foreground: 220 10% 42%;
+  --accent: 34 55% 42%;
+  --accent-foreground: 40 30% 98%;
+  --border: 38 15% 86%;
+  --input: 40 20% 95%;
+  --ring: 34 55% 42%;
+  --gold: 34 55% 42%;
+  --gold-light: 38 45% 52%;
+  --gold-dark: 30 60% 32%;
+  --gradient-gold: linear-gradient(135deg, hsl(34, 55%, 42%) 0%, hsl(38, 45%, 52%) 50%, hsl(34, 55%, 42%) 100%);
+  --shadow-gold: 0 0 40px hsl(34 55% 42% / 0.12);
 }

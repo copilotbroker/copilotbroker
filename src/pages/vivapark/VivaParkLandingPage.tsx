@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { CheckCircle2, Loader2, MapPin, ChevronDown, ChevronUp, GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store, TrendingUp, Clock, ArrowRight, BarChart3, Plane, CheckCircle, Building2, Landmark } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, ChevronDown, ChevronUp, GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store, TrendingUp, Clock, ArrowRight, BarChart3, Plane, CheckCircle, Building2, Landmark, Sun, Moon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { WhatsAppInput, isValidWhatsApp } from "@/components/ui/whatsapp-input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,6 +44,24 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
   const navigate = useNavigate();
   const location = useLocation();
   const isThankYou = location.pathname.endsWith("/obrigado");
+
+  // Theme state — defaults to system preference
+  const [vpTheme, setVpTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("vp-theme");
+      if (saved === "light" || saved === "dark") return saved;
+      return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    return "dark";
+  });
+
+  const toggleTheme = useCallback(() => {
+    setVpTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      localStorage.setItem("vp-theme", next);
+      return next;
+    });
+  }, []);
 
   const [heroVisible, setHeroVisible] = useState(false);
   useEffect(() => { setHeroVisible(true); }, []);
@@ -112,7 +130,7 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
   const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <div className="vivapark-theme min-h-screen bg-background text-foreground">
+    <div className={`vivapark-theme ${vpTheme === "light" ? "vp-light" : "vp-dark"} min-h-screen bg-background text-foreground transition-colors duration-500`}>
       <Helmet>
         <title>Vivapark Porto Belo | Investimento Inteligente</title>
         <meta name="description" content="Vivapark Porto Belo — o primeiro bairro parque do Brasil. Investimento inteligente no litoral de Santa Catarina." />
@@ -122,7 +140,15 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
       <div className="sticky top-0 z-50 bg-card/90 backdrop-blur-md border-b border-border/50">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
           <span className="font-serif text-xl font-bold tracking-wider text-gold-gradient">VIVAPARK</span>
-          <div className="flex gap-1">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-muted transition-all duration-300 text-muted-foreground hover:text-foreground"
+              title={vpTheme === "dark" ? "Light mode" : "Dark mode"}
+            >
+              {vpTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <div className="w-px h-5 bg-border/50 mx-1 hidden sm:block" />
             {(Object.keys(flags) as Lang[]).map((l) => (
               <button
                 key={l}
