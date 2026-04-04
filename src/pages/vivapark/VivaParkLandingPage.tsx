@@ -130,7 +130,7 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
   const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <div className="vivapark-theme min-h-screen bg-background text-foreground">
+    <div className={`vivapark-theme ${vpTheme === "light" ? "vp-light" : "vp-dark"} min-h-screen bg-background text-foreground transition-colors duration-500`}>
       <Helmet>
         <title>Vivapark Porto Belo | Investimento Inteligente</title>
         <meta name="description" content="Vivapark Porto Belo — o primeiro bairro parque do Brasil. Investimento inteligente no litoral de Santa Catarina." />
