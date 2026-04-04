@@ -52,6 +52,8 @@ import TermosNAU from "./pages/nau/TermosNAU";
 import MonacoLandingPage from "./pages/monaco/MonacoLandingPage";
 import TermosMonaco from "./pages/monaco/TermosMonaco";
 import VivaParkLandingPage from "./pages/vivapark/VivaParkLandingPage";
+import VivaParkBrokerLandingPage from "./pages/vivapark/VivaParkBrokerLandingPage";
+import TermosVivaPark from "./pages/vivapark/TermosVivaPark";
 
 const queryClient = new QueryClient();
 
@@ -107,6 +109,9 @@ const App = () => (
             {/* Vivapark Porto Belo — multilingual investment landing */}
             <Route path="/portobelo/vivapark" element={<VivaParkLandingPage />} />
             <Route path="/portobelo/vivapark/obrigado" element={<VivaParkLandingPage />} />
+            <Route path="/portobelo/vivapark/termos" element={<TermosVivaPark />} />
+            <Route path="/portobelo/vivapark/:brokerSlug/obrigado" element={<VivaParkBrokerLandingPage />} />
+            <Route path="/portobelo/vivapark/:brokerSlug" element={<VivaParkBrokerLandingPage />} />
             
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />

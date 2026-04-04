@@ -32,7 +32,12 @@ import leedBadgeImg from "@/assets/vivapark/leed-badge.svg";
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
 const categoryImages = [familyImg, lifestyleImg, parkImg, streetImg, nightImg, loungeImg];
 
-const VivaParkLandingPage = () => {
+interface VivaParkLandingPageProps {
+  brokerId?: string;
+  brokerName?: string;
+}
+
+const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLandingPageProps = {}) => {
   const [lang, setLang] = useState<Lang>("pt");
   const t = translations[lang];
   const inv = investorTranslations[lang];
@@ -87,11 +92,13 @@ const VivaParkLandingPage = () => {
     setIsSubmitting(true);
     try {
       const leadId = crypto.randomUUID();
-      await supabase.from("leads").insert({ id: leadId, name: name.trim(), whatsapp, project_id: projectId, broker_id: selectedBrokerId || null, source: "landing_page", lead_origin: getLeadOriginFromUTM(), lead_origin_detail: getLeadOriginDetailFromUTM() });
+      const finalBrokerId = propBrokerId || selectedBrokerId || null;
+      const finalSource = propBrokerId ? "broker_landing" : "landing_page";
+      await supabase.from("leads").insert({ id: leadId, name: name.trim(), whatsapp, project_id: projectId, broker_id: finalBrokerId, source: finalSource, lead_origin: getLeadOriginFromUTM(), lead_origin_detail: getLeadOriginDetailFromUTM() });
       await supabase.from("lead_attribution").insert({ lead_id: leadId, project_id: projectId, landing_page: "vivapark", referrer: document.referrer || null, utm_source: new URLSearchParams(window.location.search).get("utm_source"), utm_medium: new URLSearchParams(window.location.search).get("utm_medium"), utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign") });
       supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
-      supabase.functions.invoke("notify-new-lead", { body: { leadId, leadName: name.trim(), leadWhatsapp: whatsapp, brokerId: selectedBrokerId || null, projectId, source: "Vivapark" } }).catch(console.error);
+      supabase.functions.invoke("notify-new-lead", { body: { leadId, leadName: name.trim(), leadWhatsapp: whatsapp, brokerId: finalBrokerId, projectId, source: "Vivapark" } }).catch(console.error);
       const eventId = crypto.randomUUID();
       try {
         if (typeof window !== "undefined" && window.fbq) window.fbq("track", "Lead", {}, { eventID: eventId });
@@ -587,7 +594,7 @@ const VivaParkLandingPage = () => {
                   <WhatsAppInput value={whatsapp} onChange={setWhatsapp} />
                 </div>
 
-                {projectId && (
+                {projectId && !propBrokerId && (
                   <div>
                     <button type="button" onClick={handleToggleBroker} className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors">
                       {showBrokerSelect ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -616,7 +623,7 @@ const VivaParkLandingPage = () => {
                   <Checkbox checked={acceptedTerms} onCheckedChange={(v) => setAcceptedTerms(!!v)} id="vp-terms" className="mt-0.5" />
                   <label htmlFor="vp-terms" className="text-xs text-muted-foreground leading-tight">
                     {t.form_terms_prefix}{" "}
-                    <a href="/termos" target="_blank" className="underline text-primary hover:text-primary/80 transition-colors">{t.form_terms_link}</a>
+                    <a href="/portobelo/vivapark/termos" target="_blank" className="underline text-primary hover:text-primary/80 transition-colors">{t.form_terms_link}</a>
                   </label>
                 </div>
 
