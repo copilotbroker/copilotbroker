@@ -617,7 +617,7 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
                 </div>
                 <div>
                   <label className="block text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">{t.form_phone}</label>
-                  <WhatsAppInput value={whatsapp} onChange={setWhatsapp} />
+                  <WhatsAppInput value={whatsapp} onChange={setWhatsapp} defaultCountryCode={lang === "pt" ? "55" : lang === "en" ? "1" : lang === "es" ? "34" : "33"} />
                 </div>
 
                 {projectId && !propBrokerId && (
