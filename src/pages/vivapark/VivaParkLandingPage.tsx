@@ -11,22 +11,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { translations, flags, type Lang } from "@/components/vivapark/translations";
 import { investorTranslations } from "@/components/vivapark/investor-translations";
 
-import heroImg from "@/assets/vivapark/0.jpg";
-import coastImg from "@/assets/vivapark/4.jpg";
-import lifestyleImg from "@/assets/vivapark/8.jpg";
-import loungeImg from "@/assets/vivapark/9.jpg";
-import rooftopImg from "@/assets/vivapark/22.jpg";
-import sunsetImg from "@/assets/vivapark/24.jpg";
-import poolImg from "@/assets/vivapark/26.jpg";
-import nightImg from "@/assets/vivapark/31.jpg";
-import facadeImg from "@/assets/vivapark/36.jpg";
-import streetImg from "@/assets/vivapark/44.jpg";
-import parkImg from "@/assets/vivapark/49.jpg";
-import familyImg from "@/assets/vivapark/50.jpg";
-import nightPanoImg from "@/assets/vivapark/51.jpg";
-import personImg from "@/assets/vivapark/1.jpg";
-import badge1Img from "@/assets/vivapark/6.png";
-import badge2Img from "@/assets/vivapark/7.png";
+import heroImg from "@/assets/vivapark/0.webp";
+import coastImg from "@/assets/vivapark/4.webp";
+import lifestyleImg from "@/assets/vivapark/8.webp";
+import loungeImg from "@/assets/vivapark/9.webp";
+import rooftopImg from "@/assets/vivapark/22.webp";
+import sunsetImg from "@/assets/vivapark/24.webp";
+import poolImg from "@/assets/vivapark/26.webp";
+import nightImg from "@/assets/vivapark/31.webp";
+import facadeImg from "@/assets/vivapark/36.webp";
+import streetImg from "@/assets/vivapark/44.webp";
+import parkImg from "@/assets/vivapark/49.webp";
+import familyImg from "@/assets/vivapark/50.webp";
+import nightPanoImg from "@/assets/vivapark/51.webp";
+import personImg from "@/assets/vivapark/1.webp";
+import badge1Img from "@/assets/vivapark/6.webp";
+import badge2Img from "@/assets/vivapark/7.webp";
 import leedBadgeImg from "@/assets/vivapark/leed-badge.svg";
 
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
