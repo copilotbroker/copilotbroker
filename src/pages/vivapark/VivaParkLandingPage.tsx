@@ -140,7 +140,15 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
       <div className="sticky top-0 z-50 bg-card/90 backdrop-blur-md border-b border-border/50">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
           <span className="font-serif text-xl font-bold tracking-wider text-gold-gradient">VIVAPARK</span>
-          <div className="flex gap-1">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-muted transition-all duration-300 text-muted-foreground hover:text-foreground"
+              title={vpTheme === "dark" ? "Light mode" : "Dark mode"}
+            >
+              {vpTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <div className="w-px h-5 bg-border/50 mx-1 hidden sm:block" />
             {(Object.keys(flags) as Lang[]).map((l) => (
               <button
                 key={l}
