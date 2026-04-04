@@ -32,7 +32,12 @@ import leedBadgeImg from "@/assets/vivapark/leed-badge.svg";
 const categoryIcons = [GraduationCap, HeartPulse, TreePine, Cpu, Shield, Store];
 const categoryImages = [familyImg, lifestyleImg, parkImg, streetImg, nightImg, loungeImg];
 
-const VivaParkLandingPage = () => {
+interface VivaParkLandingPageProps {
+  brokerId?: string;
+  brokerName?: string;
+}
+
+const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLandingPageProps = {}) => {
   const [lang, setLang] = useState<Lang>("pt");
   const t = translations[lang];
   const inv = investorTranslations[lang];
