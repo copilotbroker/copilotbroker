@@ -98,7 +98,7 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
       await supabase.from("lead_attribution").insert({ lead_id: leadId, project_id: projectId, landing_page: "vivapark", referrer: document.referrer || null, utm_source: new URLSearchParams(window.location.search).get("utm_source"), utm_medium: new URLSearchParams(window.location.search).get("utm_medium"), utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign") });
       supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
-      supabase.functions.invoke("notify-new-lead", { body: { leadId, leadName: name.trim(), leadWhatsapp: whatsapp, brokerId: selectedBrokerId || null, projectId, source: "Vivapark" } }).catch(console.error);
+      supabase.functions.invoke("notify-new-lead", { body: { leadId, leadName: name.trim(), leadWhatsapp: whatsapp, brokerId: finalBrokerId, projectId, source: "Vivapark" } }).catch(console.error);
       const eventId = crypto.randomUUID();
       try {
         if (typeof window !== "undefined" && window.fbq) window.fbq("track", "Lead", {}, { eventID: eventId });
