@@ -135,11 +135,22 @@ export function isValidWhatsApp(value: string): boolean {
 }
 
 const WhatsAppInput = forwardRef<HTMLInputElement, WhatsAppInputProps>(
-  ({ value, onChange, className, showFormatted = true, ...props }, ref) => {
-    const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
+  ({ value, onChange, className, showFormatted = true, defaultCountryCode, ...props }, ref) => {
+    const defaultCountry = defaultCountryCode
+      ? COUNTRIES.find(c => c.code === defaultCountryCode) ?? COUNTRIES[0]
+      : COUNTRIES[0];
+    const [selectedCountry, setSelectedCountry] = useState<Country>(defaultCountry);
     const [localNumber, setLocalNumber] = useState("");
     const [popoverOpen, setPopoverOpen] = useState(false);
     const initialized = useRef(false);
+
+    // Update default country when prop changes (e.g. language switch)
+    useEffect(() => {
+      if (defaultCountryCode && !initialized.current) {
+        const country = COUNTRIES.find(c => c.code === defaultCountryCode);
+        if (country) setSelectedCountry(country);
+      }
+    }, [defaultCountryCode]);
 
     // Initialize from value on first render
     useEffect(() => {
