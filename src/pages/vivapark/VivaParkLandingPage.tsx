@@ -45,6 +45,24 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
   const location = useLocation();
   const isThankYou = location.pathname.endsWith("/obrigado");
 
+  // Theme state — defaults to system preference
+  const [vpTheme, setVpTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("vp-theme");
+      if (saved === "light" || saved === "dark") return saved;
+      return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    return "dark";
+  });
+
+  const toggleTheme = useCallback(() => {
+    setVpTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      localStorage.setItem("vp-theme", next);
+      return next;
+    });
+  }, []);
+
   const [heroVisible, setHeroVisible] = useState(false);
   useEffect(() => { setHeroVisible(true); }, []);
 
