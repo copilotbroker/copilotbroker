@@ -594,7 +594,7 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
                   <WhatsAppInput value={whatsapp} onChange={setWhatsapp} />
                 </div>
 
-                {projectId && (
+                {projectId && !propBrokerId && (
                   <div>
                     <button type="button" onClick={handleToggleBroker} className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors">
                       {showBrokerSelect ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
