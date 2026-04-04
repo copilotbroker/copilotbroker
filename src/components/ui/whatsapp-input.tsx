@@ -72,6 +72,7 @@ interface WhatsAppInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
   value: string;
   onChange: (value: string) => void;
   showFormatted?: boolean;
+  defaultCountryCode?: string;
 }
 
 function findCountryByCode(rawValue: string): Country {
