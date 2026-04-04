@@ -92,7 +92,9 @@ const VivaParkLandingPage = ({ brokerId: propBrokerId, brokerName }: VivaParkLan
     setIsSubmitting(true);
     try {
       const leadId = crypto.randomUUID();
-      await supabase.from("leads").insert({ id: leadId, name: name.trim(), whatsapp, project_id: projectId, broker_id: selectedBrokerId || null, source: "landing_page", lead_origin: getLeadOriginFromUTM(), lead_origin_detail: getLeadOriginDetailFromUTM() });
+      const finalBrokerId = propBrokerId || selectedBrokerId || null;
+      const finalSource = propBrokerId ? "broker_landing" : "landing_page";
+      await supabase.from("leads").insert({ id: leadId, name: name.trim(), whatsapp, project_id: projectId, broker_id: finalBrokerId, source: finalSource, lead_origin: getLeadOriginFromUTM(), lead_origin_detail: getLeadOriginDetailFromUTM() });
       await supabase.from("lead_attribution").insert({ lead_id: leadId, project_id: projectId, landing_page: "vivapark", referrer: document.referrer || null, utm_source: new URLSearchParams(window.location.search).get("utm_source"), utm_medium: new URLSearchParams(window.location.search).get("utm_medium"), utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign") });
       supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
