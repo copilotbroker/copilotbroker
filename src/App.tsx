@@ -54,6 +54,8 @@ import TermosMonaco from "./pages/monaco/TermosMonaco";
 import VivaParkLandingPage from "./pages/vivapark/VivaParkLandingPage";
 import VivaParkBrokerLandingPage from "./pages/vivapark/VivaParkBrokerLandingPage";
 import TermosVivaPark from "./pages/vivapark/TermosVivaPark";
+import ASRamosLandingPage from "./pages/vivapark/ASRamosLandingPage";
+import ASRamosBrokerLandingPage from "./pages/vivapark/ASRamosBrokerLandingPage";
 
 const queryClient = new QueryClient();
 
