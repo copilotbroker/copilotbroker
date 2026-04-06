@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ChevronDown } from "lucide-react";
 
 const COUNTRIES = [
+  { code: "55", flagCode: "br", name: "Brasil", format: true, maxDigits: 13 },
   { code: "27", flagCode: "za", name: "África do Sul", format: false, maxDigits: 11 },
   { code: "49", flagCode: "de", name: "Alemanha", format: false, maxDigits: 13 },
   { code: "966", flagCode: "sa", name: "Arábia Saudita", format: false, maxDigits: 12 },
@@ -13,7 +14,6 @@ const COUNTRIES = [
   { code: "43", flagCode: "at", name: "Áustria", format: false, maxDigits: 13 },
   { code: "32", flagCode: "be", name: "Bélgica", format: false, maxDigits: 11 },
   { code: "591", flagCode: "bo", name: "Bolívia", format: false, maxDigits: 11 },
-  { code: "55", flagCode: "br", name: "Brasil", format: true, maxDigits: 13 },
   { code: "974", flagCode: "qa", name: "Catar", format: false, maxDigits: 11 },
   { code: "56", flagCode: "cl", name: "Chile", format: false, maxDigits: 12 },
   { code: "86", flagCode: "cn", name: "China", format: false, maxDigits: 13 },
