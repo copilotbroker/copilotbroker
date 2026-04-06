@@ -115,6 +115,12 @@ const App = () => (
             <Route path="/portobelo/vivapark/:brokerSlug/obrigado" element={<VivaParkBrokerLandingPage />} />
             <Route path="/portobelo/vivapark/:brokerSlug" element={<VivaParkBrokerLandingPage />} />
             
+            {/* AS Ramos — Lofts Duplex no Vivapark Porto Belo */}
+            <Route path="/portobelo/asramos" element={<ASRamosLandingPage />} />
+            <Route path="/portobelo/asramos/obrigado" element={<ASRamosLandingPage />} />
+            <Route path="/portobelo/asramos/:brokerSlug/obrigado" element={<ASRamosBrokerLandingPage />} />
+            <Route path="/portobelo/asramos/:brokerSlug" element={<ASRamosBrokerLandingPage />} />
+            
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
