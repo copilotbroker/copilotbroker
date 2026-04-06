@@ -4,8 +4,7 @@ import { Helmet } from "react-helmet-async";
 import {
   CheckCircle2, Loader2, ChevronDown, ChevronUp, Sun, Moon,
   Building2, Layers, Sofa, BedDouble, TrendingUp, Clock,
-  Sparkles, Ruler, DollarSign, Key, CalendarClock, Shield,
-  Waves, Users, Dumbbell
+  Sparkles, DollarSign, Key, CalendarClock, Shield
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { WhatsAppInput, isValidWhatsApp } from "@/components/ui/whatsapp-input";
@@ -13,8 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-page-tracking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { asramosTranslations, flags, type Lang } from "@/components/vivapark/asramos-translations";
 
-// Reuse VivaPark images for context sections
 import heroImg from "@/assets/vivapark/0.webp";
 import lifestyleImg from "@/assets/vivapark/8.webp";
 import loungeImg from "@/assets/vivapark/9.webp";
@@ -33,6 +32,8 @@ interface ASRamosLandingPageProps {
 }
 
 const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandingPageProps = {}) => {
+  const [lang, setLang] = useState<Lang>("pt");
+  const t = asramosTranslations[lang];
   const navigate = useNavigate();
   const location = useLocation();
   const isThankYou = location.pathname.endsWith("/obrigado");
@@ -57,7 +58,6 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
   const [heroVisible, setHeroVisible] = useState(false);
   useEffect(() => { setHeroVisible(true); }, []);
 
-  // Form state
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -95,9 +95,9 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) { toast({ title: "Preencha seu nome", variant: "destructive" }); return; }
+    if (!name.trim()) { toast({ title: t.form_name, variant: "destructive" }); return; }
     if (!isValidWhatsApp(whatsapp)) { toast({ title: "WhatsApp inválido", variant: "destructive" }); return; }
-    if (!acceptedTerms) { toast({ title: "Aceite os termos", variant: "destructive" }); return; }
+    if (!acceptedTerms) { toast({ title: t.form_terms_prefix, variant: "destructive" }); return; }
     setIsSubmitting(true);
     try {
       const leadId = crypto.randomUUID();
@@ -115,21 +115,9 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
 
   const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: "smooth" });
 
-  const paymentItems = [
-    { icon: DollarSign, text: "Valores a partir de R$839.000" },
-    { icon: Key, text: "Entrada de 10%" },
-    { icon: CalendarClock, text: "Parcelamento da entrada em até 3x" },
-    { icon: Building2, text: "Financiamento direto com a construtora em até 120 meses" },
-    { icon: Shield, text: "Parcelas a partir de aproximadamente R$2.800" },
-  ];
+  const paymentIcons = [DollarSign, Key, CalendarClock, Building2, Shield];
 
-  const leisureItems = [
-    { icon: Waves, text: "Piscina adulto e infantil" },
-    { icon: Dumbbell, text: "Fitness center" },
-    { icon: Users, text: "Espaço gourmet" },
-    { icon: Sofa, text: "Lounge" },
-    { icon: Sparkles, text: "Rooftop" },
-  ];
+  const defaultCountryCode = lang === "pt" ? "55" : lang === "en" ? "1" : lang === "es" ? "34" : "33";
 
   return (
     <div className={`vivapark-theme ${vpTheme === "light" ? "vp-light" : "vp-dark"} min-h-screen bg-background text-foreground transition-colors duration-500`}>
@@ -145,13 +133,30 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
             <span className="font-serif text-lg font-bold tracking-wider text-gold-gradient">AS RAMOS</span>
             <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground">no Vivapark Porto Belo</span>
           </div>
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-muted transition-all duration-300 text-muted-foreground hover:text-foreground"
-            title={vpTheme === "dark" ? "Light mode" : "Dark mode"}
-          >
-            {vpTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-muted transition-all duration-300 text-muted-foreground hover:text-foreground"
+              title={vpTheme === "dark" ? "Light mode" : "Dark mode"}
+            >
+              {vpTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <div className="w-px h-5 bg-border/50 mx-1 hidden sm:block" />
+            {(Object.keys(flags) as Lang[]).map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`text-xl sm:text-2xl px-2.5 py-1.5 rounded transition-all duration-300 ${
+                  lang === l
+                    ? "bg-primary/20 scale-110 shadow-[0_0_15px_hsl(var(--gold)/0.3)]"
+                    : "hover:bg-muted opacity-60 hover:opacity-100"
+                }`}
+                title={flags[l].label}
+              >
+                {flags[l].emoji}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -164,23 +169,22 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
           <div className="inline-flex items-center gap-1.5 px-4 py-2 mb-8 border border-primary/30 rounded-full bg-primary/10 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <span className="text-[10px] sm:text-xs font-medium tracking-[0.2em] uppercase text-primary">
-              Pré-lançamento exclusivo
+              {t.badge}
             </span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.95] mb-6">
-            <span className="text-foreground">Antes de ter nome, </span>
-            <span className="text-gold-gradient">já está sendo escolhido.</span>
+            {t.headline}
           </h1>
 
           <div className="w-16 h-px bg-primary/50 mx-auto mb-6" />
 
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Um novo capítulo dentro do Vivapark Porto Belo — pensado para quem entende valor antes dele aparecer no preço.
+            {t.subheadline}
           </p>
 
           <button onClick={scrollToForm} className="btn-primary text-sm sm:text-base px-10 py-5">
-            Receber informações
+            {t.cta}
           </button>
         </div>
       </section>
@@ -188,20 +192,18 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
       {/* ── SEÇÃO 1 — ABERTURA ── */}
       <section className="py-20 md:py-28 px-4 bg-card/50">
         <div className="max-w-3xl mx-auto text-center space-y-8">
-          <p className="text-muted-foreground text-lg md:text-xl leading-relaxed">
-            Existe um tipo de ativo que não precisa se provar.
-          </p>
-          <p className="text-muted-foreground text-lg md:text-xl leading-relaxed">
-            Ele simplesmente atrai o tipo certo de comprador.
-          </p>
+          <p className="text-muted-foreground text-lg md:text-xl leading-relaxed">{t.s1_p1}</p>
+          <p className="text-muted-foreground text-lg md:text-xl leading-relaxed">{t.s1_p2}</p>
           <div className="w-10 h-px bg-primary/50 mx-auto" />
-          <p className="text-foreground font-serif text-xl md:text-2xl font-semibold leading-relaxed">
-            Esse projeto nasce dentro do Vivapark —<br />
-            <span className="text-gold-gradient">o primeiro bairro parque planejado do Brasil.</span>
+          <p className="text-foreground font-serif text-xl md:text-2xl font-semibold leading-relaxed whitespace-pre-line">
+            {t.s1_p3.split("\n").map((line, i) => (
+              <span key={i}>
+                {i === 1 ? <span className="text-gold-gradient">{line}</span> : line}
+                {i === 0 && <br />}
+              </span>
+            ))}
           </p>
-          <p className="text-muted-foreground text-base italic">
-            E isso, por si só, já muda o nível da conversa.
-          </p>
+          <p className="text-muted-foreground text-base italic">{t.s1_p4}</p>
         </div>
       </section>
 
@@ -209,21 +211,19 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
       <section className="py-20 md:py-28 px-4 bg-background">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
-            <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary block">
-              Contexto que valoriza
-            </span>
+            <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary block">{t.s2_label}</span>
             <div className="w-10 h-px bg-primary/50" />
-            <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground">
-              O Vivapark não é um endereço.
-            </h2>
-            <p className="text-foreground font-semibold text-lg">É um ecossistema completo.</p>
-            <p className="text-muted-foreground text-base leading-relaxed">
-              Um lugar onde morar, trabalhar, estudar, cuidar da saúde e viver bem acontecem no mesmo espaço — com planejamento urbano real, não improvisado.
-            </p>
+            <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground">{t.s2_title}</h2>
+            <p className="text-foreground font-semibold text-lg">{t.s2_subtitle}</p>
+            <p className="text-muted-foreground text-base leading-relaxed">{t.s2_body}</p>
             <div className="w-10 h-px bg-primary/50" />
-            <p className="font-serif text-lg text-foreground font-medium italic">
-              Isso cria algo raro no mercado imobiliário:<br />
-              <span className="text-gold-gradient">valor sustentado ao longo do tempo.</span>
+            <p className="font-serif text-lg text-foreground font-medium italic whitespace-pre-line">
+              {t.s2_footer.split("\n").map((line, i) => (
+                <span key={i}>
+                  {i === 1 ? <span className="text-gold-gradient">{line}</span> : line}
+                  {i === 0 && <br />}
+                </span>
+              ))}
             </p>
           </div>
           <div className="relative">
@@ -244,24 +244,13 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
       {/* ── SEÇÃO 3 — O PRODUTO ── */}
       <section className="py-20 md:py-28 px-4 bg-card/50">
         <div className="max-w-3xl mx-auto text-center space-y-8">
-          <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary block">
-            O empreendimento
-          </span>
+          <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary block">{t.s3_label}</span>
           <div className="w-10 h-px bg-primary/50 mx-auto" />
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            Dentro desse contexto, surge um novo empreendimento.
-          </p>
-          <p className="font-serif text-2xl md:text-3xl font-bold text-foreground">
-            Ainda sem nome.
-          </p>
-          <p className="text-muted-foreground text-base leading-relaxed">
-            E isso diz mais sobre ele do que parece.
-          </p>
+          <p className="text-muted-foreground text-lg leading-relaxed">{t.s3_p1}</p>
+          <p className="font-serif text-2xl md:text-3xl font-bold text-foreground">{t.s3_title}</p>
+          <p className="text-muted-foreground text-base leading-relaxed">{t.s3_p2}</p>
           <div className="w-10 h-px bg-primary/50 mx-auto" />
-          <p className="text-muted-foreground text-base leading-relaxed max-w-xl mx-auto">
-            Porque você não está olhando para algo massificado.<br />
-            Está olhando para algo em <span className="text-foreground font-medium">fase inicial</span> — onde as melhores decisões são tomadas.
-          </p>
+          <p className="text-muted-foreground text-base leading-relaxed max-w-xl mx-auto whitespace-pre-line">{t.s3_p3}</p>
         </div>
       </section>
 
@@ -275,18 +264,20 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
           <div className="flex items-center py-16 md:py-20 px-6 md:px-12">
             <div className="space-y-5 max-w-lg">
               <Sparkles className="w-10 h-10 text-primary mb-4" />
-              <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground">
-                Aqui, o projeto não começa no apartamento.
-              </h2>
-              <p className="text-foreground font-semibold text-lg">Começa na experiência.</p>
+              <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground">{t.s4_title}</h2>
+              <p className="text-foreground font-semibold text-lg">{t.s4_subtitle}</p>
               <div className="space-y-4 text-muted-foreground text-base leading-relaxed">
-                <p>O hall não é um espaço de passagem.<br /><span className="text-foreground font-medium">É uma galeria.</span></p>
-                <p>O edifício não é só funcional.<br /><span className="text-foreground font-medium">É estético.</span></p>
+                <p>{t.s4_hall}<br /><span className="text-foreground font-medium">{t.s4_hall_desc}</span></p>
+                <p>{t.s4_building}<br /><span className="text-foreground font-medium">{t.s4_building_desc}</span></p>
               </div>
               <div className="w-10 h-px bg-primary/50 my-6" />
-              <p className="font-serif text-muted-foreground italic text-lg">
-                Existe uma intenção clara:<br />
-                <span className="text-gold-gradient font-semibold not-italic">fugir do padrão que já saturou o mercado.</span>
+              <p className="font-serif text-muted-foreground italic text-lg whitespace-pre-line">
+                {t.s4_footer.split("\n").map((line, i) => (
+                  <span key={i}>
+                    {i === 1 ? <span className="text-gold-gradient font-semibold not-italic">{line}</span> : line}
+                    {i === 0 && <br />}
+                  </span>
+                ))}
               </p>
             </div>
           </div>
@@ -297,16 +288,16 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
       <section className="py-20 md:py-28 px-4 bg-card/50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-4 block">
-              Tipologia
-            </span>
+            <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-4 block">{t.s5_label}</span>
             <div className="w-10 h-px bg-primary/50 mx-auto mb-8" />
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-3">
-              Lofts duplex a partir de <span className="text-gold-gradient">47,01m²</span>
+              {t.s5_title.includes("47") ? (
+                <>
+                  {t.s5_title.split("47")[0]}<span className="text-gold-gradient">47,01m²</span>
+                </>
+              ) : t.s5_title}
             </h2>
-            <p className="text-muted-foreground text-base max-w-xl mx-auto">
-              Com uma lógica simples e bem resolvida:
-            </p>
+            <p className="text-muted-foreground text-base max-w-xl mx-auto">{t.s5_subtitle}</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-10">
@@ -315,8 +306,8 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
                 <BedDouble className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="font-serif font-semibold text-foreground">Andar superior</p>
-                <p className="text-sm text-muted-foreground">Área íntima (dormitórios)</p>
+                <p className="font-serif font-semibold text-foreground">{t.s5_upper_title}</p>
+                <p className="text-sm text-muted-foreground">{t.s5_upper_desc}</p>
               </div>
             </div>
             <div className="card-luxury flex items-center gap-4 p-6 border border-primary/20 hover:border-primary/40 transition-all duration-500 hover:shadow-[0_0_40px_hsl(var(--gold)/0.12)]">
@@ -324,15 +315,13 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
                 <Sofa className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="font-serif font-semibold text-foreground">Andar inferior</p>
-                <p className="text-sm text-muted-foreground">Área social integrada</p>
+                <p className="font-serif font-semibold text-foreground">{t.s5_lower_title}</p>
+                <p className="text-sm text-muted-foreground">{t.s5_lower_desc}</p>
               </div>
             </div>
           </div>
 
-          <p className="text-center text-muted-foreground text-base italic">
-            Uma tipologia que funciona tanto para <span className="text-foreground font-medium">uso próprio</span> quanto para <span className="text-foreground font-medium">renda</span>.
-          </p>
+          <p className="text-center text-muted-foreground text-base italic">{t.s5_footer}</p>
         </div>
       </section>
 
@@ -342,26 +331,16 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
           <div className="flex items-center py-16 md:py-20 px-6 md:px-12 order-2 md:order-1">
             <div className="space-y-5 max-w-lg mx-auto md:ml-auto md:mr-0 text-center md:text-right">
               <TrendingUp className="w-10 h-10 text-primary mb-4 mx-auto md:ml-auto md:mr-0" />
-              <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground">
-                Uso inteligente
-              </h2>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Esse tipo de planta tem um comportamento claro no mercado:
-              </p>
+              <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground">{t.s6_title}</h2>
+              <p className="text-muted-foreground text-base leading-relaxed">{t.s6_intro}</p>
               <div className="flex flex-wrap gap-3 justify-center md:justify-end">
-                {["Alta liquidez", "Alta procura", "Boa performance em locação por diária"].map((item, i) => (
-                  <span key={i} className="px-4 py-2 rounded-full border border-primary/30 bg-primary/10 text-sm text-foreground font-medium">
-                    {item}
-                  </span>
+                {t.s6_tags.map((tag, i) => (
+                  <span key={i} className="px-4 py-2 rounded-full border border-primary/30 bg-primary/10 text-sm text-foreground font-medium">{tag}</span>
                 ))}
               </div>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Principalmente em regiões com fluxo constante e infraestrutura completa — como é o caso do Vivapark.
-              </p>
+              <p className="text-muted-foreground text-sm leading-relaxed">{t.s6_body}</p>
               <div className="w-10 h-px bg-primary/50 my-4 mx-auto md:ml-auto md:mr-0" />
-              <p className="font-serif text-lg font-semibold text-gold-gradient">
-                Não é uma aposta. É um padrão que já se repete.
-              </p>
+              <p className="font-serif text-lg font-semibold text-gold-gradient">{t.s6_footer}</p>
             </div>
           </div>
           <div className="relative order-1 md:order-2">
@@ -377,9 +356,13 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
           <div className="text-center mb-14">
             <Layers className="w-10 h-10 text-primary mx-auto mb-4" />
             <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Mais de <span className="text-gold-gradient">1.400m²</span> de lazer
+              {t.s7_title.includes("1.400") || t.s7_title.includes("1,400") ? (
+                <>
+                  {t.s7_title.split(/1[.,]400/)[0]}<span className="text-gold-gradient">{t.s7_title.match(/1[.,]400m²/)?.[0] || "1.400m²"}</span>{t.s7_title.split(/1[.,]400m²/)[1] || ""}
+                </>
+              ) : t.s7_title}
             </h2>
-            <p className="text-muted-foreground text-base">Distribuídos em 9 ambientes</p>
+            <p className="text-muted-foreground text-base">{t.s7_subtitle}</p>
           </div>
 
           <div className="grid grid-cols-3 gap-3 mb-10 rounded-lg overflow-hidden">
@@ -389,11 +372,15 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
           </div>
 
           <div className="max-w-2xl mx-auto text-center space-y-6">
-            <p className="text-muted-foreground text-base">Não como excesso. Mas como <span className="text-foreground font-medium">permanência</span>.</p>
+            <p className="text-muted-foreground text-base">{t.s7_p1}</p>
             <div className="w-10 h-px bg-primary/50 mx-auto" />
-            <p className="font-serif text-lg text-foreground italic">
-              Quanto mais tempo as pessoas permanecem,<br />
-              <span className="text-gold-gradient font-semibold not-italic">mais o ativo se valoriza.</span>
+            <p className="font-serif text-lg text-foreground italic whitespace-pre-line">
+              {t.s7_p2.split("\n").map((line, i) => (
+                <span key={i}>
+                  {i === 1 ? <span className="text-gold-gradient font-semibold not-italic">{line}</span> : line}
+                  {i === 0 && <br />}
+                </span>
+              ))}
             </p>
           </div>
         </div>
@@ -403,16 +390,10 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
       <section className="py-20 md:py-28 px-4 bg-background">
         <div className="max-w-3xl mx-auto text-center">
           <Building2 className="w-12 h-12 text-primary mx-auto mb-6" />
-          <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold-gradient mb-6">
-            AS RAMOS
-          </h2>
-          <p className="font-serif text-xl md:text-2xl text-foreground font-semibold mb-4">
-            Mais de 75 empreendimentos entregues.
-          </p>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold-gradient mb-6">{t.s8_title}</h2>
+          <p className="font-serif text-xl md:text-2xl text-foreground font-semibold mb-4">{t.s8_subtitle}</p>
           <div className="w-10 h-px bg-primary/50 mx-auto my-6" />
-          <p className="text-muted-foreground text-lg italic max-w-xl mx-auto">
-            Experiência suficiente para tirar o projeto do campo da ideia e colocar no campo da execução.
-          </p>
+          <p className="text-muted-foreground text-lg italic max-w-xl mx-auto">{t.s8_body}</p>
         </div>
       </section>
 
@@ -426,24 +407,26 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
       <section className="py-20 md:py-28 px-4 bg-card/50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-4 block">
-              Condições
-            </span>
+            <span className="text-[10px] sm:text-xs font-medium tracking-[0.25em] uppercase text-primary mb-4 block">{t.s9_label}</span>
             <div className="w-10 h-px bg-primary/50 mx-auto mb-8" />
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground">
-              A partir de <span className="text-gold-gradient">R$839.000</span>
+              {t.s9_title.includes("839") ? (
+                <>
+                  {t.s9_title.split("R$")[0]}<span className="text-gold-gradient">R${t.s9_title.split("R$")[1]}</span>
+                </>
+              ) : t.s9_title}
             </h2>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl mx-auto mb-10">
-            {paymentItems.map((item, i) => {
-              const Icon = item.icon;
+            {t.s9_items.map((item, i) => {
+              const Icon = paymentIcons[i];
               return (
                 <div key={i} className="card-luxury flex items-start gap-3 p-5 border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-[0_0_30px_hsl(var(--gold)/0.1)]">
                   <div className="w-9 h-9 rounded-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-4 h-4 text-primary" />
                   </div>
-                  <p className="text-sm text-foreground">{item.text}</p>
+                  <p className="text-sm text-foreground">{item}</p>
                 </div>
               );
             })}
@@ -451,10 +434,7 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
 
           <div className="max-w-xl mx-auto text-center">
             <div className="w-10 h-px bg-primary/50 mx-auto mb-6" />
-            <p className="text-muted-foreground text-base">
-              Sem estrutura bancária no meio do caminho.<br />
-              <span className="text-foreground font-medium">Mais controle, mais previsibilidade.</span>
-            </p>
+            <p className="text-muted-foreground text-base whitespace-pre-line">{t.s9_footer}</p>
           </div>
         </div>
       </section>
@@ -463,15 +443,9 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
       <section className="py-16 md:py-24 px-4 bg-background">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <Clock className="w-10 h-10 text-primary mx-auto" />
-          <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground">
-            Esse ainda é o início.
-          </h2>
-          <p className="text-muted-foreground text-lg">
-            E início tem uma característica que não volta depois:
-          </p>
-          <p className="font-serif text-2xl md:text-3xl font-bold text-gold-gradient">
-            liberdade de escolha.
-          </p>
+          <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground">{t.s10_title}</h2>
+          <p className="text-muted-foreground text-lg">{t.s10_body}</p>
+          <p className="font-serif text-2xl md:text-3xl font-bold text-gold-gradient">{t.s10_highlight}</p>
         </div>
       </section>
 
@@ -483,40 +457,36 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
           {isThankYou ? (
             <div className="text-center p-12 rounded-lg bg-card border border-border/50 shadow-[0_0_60px_hsl(var(--gold)/0.1)]">
               <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4" />
-              <h2 className="font-serif text-2xl font-bold text-foreground mb-2">Cadastro realizado!</h2>
-              <p className="text-muted-foreground">Em breve entraremos em contato com as informações completas.</p>
+              <h2 className="font-serif text-2xl font-bold text-foreground mb-2">{t.form_success_title}</h2>
+              <p className="text-muted-foreground">{t.form_success_msg}</p>
             </div>
           ) : (
             <>
               <div className="text-center mb-12">
-                <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground mb-3">
-                  Receba as informações completas
-                </h2>
-                <p className="text-muted-foreground">
-                  Se fizer sentido entender melhor as unidades disponíveis neste momento:
-                </p>
+                <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground mb-3">{t.form_title}</h2>
+                <p className="text-muted-foreground">{t.form_subtitle}</p>
               </div>
               <form onSubmit={handleSubmit} className="space-y-5 p-8 md:p-10 rounded-lg bg-card border border-border/50 shadow-[0_0_60px_hsl(var(--gold)/0.08)]">
                 <div>
-                  <label className="block text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">Nome</label>
+                  <label className="block text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">{t.form_name}</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full px-4 py-3.5 rounded-sm border border-border bg-input text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:outline-none transition-all"
-                    placeholder="Seu nome"
+                    placeholder={t.form_name}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">WhatsApp</label>
-                  <WhatsAppInput value={whatsapp} onChange={setWhatsapp} defaultCountryCode="55" />
+                  <label className="block text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">{t.form_phone}</label>
+                  <WhatsAppInput value={whatsapp} onChange={setWhatsapp} defaultCountryCode={defaultCountryCode} />
                 </div>
 
                 {projectId && !propBrokerId && (
                   <div>
                     <button type="button" onClick={handleToggleBroker} className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors">
                       {showBrokerSelect ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      Já tem um corretor?
+                      {t.form_broker_toggle}
                     </button>
                     {showBrokerSelect && (
                       <div className="mt-2">
@@ -524,7 +494,7 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
                           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                         ) : (
                           <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-                            <SelectTrigger><SelectValue placeholder="Selecione seu corretor" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder={t.form_broker_placeholder} /></SelectTrigger>
                             <SelectContent>
                               {brokers.map((b) => (
                                 <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
@@ -540,8 +510,8 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
                 <div className="flex items-start gap-3">
                   <Checkbox checked={acceptedTerms} onCheckedChange={(v) => setAcceptedTerms(!!v)} id="ar-terms" className="mt-0.5" />
                   <label htmlFor="ar-terms" className="text-xs text-muted-foreground leading-tight">
-                    Concordo com os{" "}
-                    <a href="/portobelo/vivapark/termos" target="_blank" className="underline text-primary hover:text-primary/80 transition-colors">termos de uso</a>
+                    {t.form_terms_prefix}{" "}
+                    <a href="/portobelo/vivapark/termos" target="_blank" className="underline text-primary hover:text-primary/80 transition-colors">{t.form_terms_link}</a>
                   </label>
                 </div>
 
@@ -551,7 +521,7 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
                   className="btn-primary w-full py-4 text-sm disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
-                  Receber informações
+                  {t.form_submit}
                 </button>
               </form>
             </>
@@ -564,12 +534,8 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
         <img src={nightPanoImg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15" loading="lazy" aria-hidden="true" />
         <div className="absolute inset-0 bg-card/85" />
         <div className="max-w-3xl mx-auto text-center space-y-4 relative z-10">
-          <p className="font-serif text-lg md:text-xl text-foreground font-medium">
-            Alguns imóveis são comprados.
-          </p>
-          <p className="font-serif text-lg md:text-xl text-foreground font-medium">
-            Outros são escolhidos antes de se tornarem óbvios.
-          </p>
+          <p className="font-serif text-lg md:text-xl text-foreground font-medium">{t.footer_line1}</p>
+          <p className="font-serif text-lg md:text-xl text-foreground font-medium">{t.footer_line2}</p>
           <div className="w-10 h-px bg-primary/50 mx-auto my-6" />
           <p className="text-xs text-muted-foreground/50 mt-8">
             © {new Date().getFullYear()} AS Ramos — Vivapark Porto Belo. Enove Inteligência Imobiliária.
