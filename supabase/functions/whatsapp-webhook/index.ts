@@ -1090,6 +1090,23 @@ async function archiveMessageToConversation(
     if (!conv) return {};
 
     const enrichedMeta = { ...(metadata || {}), source_instance: sourceInstance || "personal" };
+
+    // Deduplicate outbound messages: if this message was already saved by inbox-send-message, skip insert
+    if (direction === "outbound" && uazapiMessageId) {
+      const { data: existing } = await supabase
+        .from("conversation_messages")
+        .select("id")
+        .eq("conversation_id", (conv as { id: string }).id)
+        .eq("uazapi_message_id", uazapiMessageId)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        console.log(`⏭️ Outbound message already exists (uazapi_id=${uazapiMessageId}), skipping duplicate insert`);
+        return { conversationId: (conv as { id: string }).id, brokerId };
+      }
+    }
+
     await supabase.from("conversation_messages").insert({
       conversation_id: (conv as { id: string }).id,
       direction,

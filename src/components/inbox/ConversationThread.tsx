@@ -268,6 +268,7 @@ export function ConversationThread({
     setInputValue("");
     setPendingFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (inputRef.current) inputRef.current.style.height = "auto";
     inputRef.current?.focus();
 
     if (fileToSend && fileTypeToSend) {
@@ -654,10 +655,15 @@ export function ConversationThread({
             <Textarea
               ref={inputRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                const el = e.target;
+                el.style.height = "auto";
+                el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+              }}
               onKeyDown={handleKeyDown}
               placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem..."}
-              className="max-h-[120px] min-h-[36px] resize-none py-2 text-sm"
+              className="max-h-[160px] min-h-[36px] resize-none overflow-y-auto py-2 text-sm"
               rows={1}
             />
             <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
