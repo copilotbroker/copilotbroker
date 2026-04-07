@@ -71,6 +71,7 @@ export interface OutboundMessagePayload {
 }
 
 export type InboxTab = "novos" | "meus" | "outros";
+export type BrokerInboxTab = "novos" | "atendimento" | "arquivados";
 
 interface UseConversationsOptions {
   brokerId?: string;
