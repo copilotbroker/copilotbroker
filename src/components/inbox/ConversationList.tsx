@@ -3,7 +3,7 @@ import {
   Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
   ArrowUpDown, ThermometerSun, Target, MoreVertical, Check, Zap,
   TrendingUp, Eye, EyeOff, ChevronDown, MessageCircleMore, LayoutGrid, Archive,
-  Users, UserPlus
+  Users, UserPlus, User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -449,6 +449,18 @@ export function ConversationList({
                             <Badge variant="destructive" className="h-4 px-1 py-0 text-[10px]">
                               {conv.unread_count}
                             </Badge>
+                          )}
+                          {/* Broker attribution badge for global conversations */}
+                          {(conv as any).source_instance === "global" && (
+                            (conv as any).attendance_started && (conv as any).broker?.name ? (
+                              <Badge className="h-4 px-1.5 text-[10px] bg-emerald-600/20 text-emerald-400 border-emerald-500/30 border">
+                                <User className="mr-1 h-3 w-3" /> {(conv as any).broker.name}
+                              </Badge>
+                            ) : !(conv as any).attendance_started ? (
+                              <Badge className="h-4 px-1.5 text-[10px] bg-amber-600/20 text-amber-400 border-amber-500/30 border">
+                                <Clock className="mr-1 h-3 w-3" /> Aguardando
+                              </Badge>
+                            ) : null
                           )}
                           {conv.lead_id ? (
                             <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">

@@ -31,7 +31,9 @@ export interface Conversation {
   created_at: string;
   updated_at: string;
   lead?: { id: string; name: string; status: string; project_id: string | null; notes: string | null; lead_origin: string | null } | null;
+  broker?: { id: string; name: string } | null;
   project?: { id: string; name: string } | null;
+  attendance_started?: boolean;
 }
 
 export interface ConversationMessage {
@@ -171,7 +173,8 @@ export function useConversations(options: UseConversationsOptions = {}) {
         .from("conversations")
         .select(`
           *,
-          lead:leads!conversations_lead_id_fkey(id, name, status, project_id, notes, lead_origin)
+          lead:leads!conversations_lead_id_fkey(id, name, status, project_id, notes, lead_origin),
+          broker:brokers!conversations_broker_id_fkey(id, name)
         `)
         .eq("is_archived", options.isArchived ?? false)
         .order("last_message_at", { ascending: false });
