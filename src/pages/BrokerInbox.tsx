@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { BrokerConversationList, BrokerInboxTab } from "@/components/inbox/BrokerConversationList";
+import { ConversationList } from "@/components/inbox/ConversationList";
 import { ConversationThread } from "@/components/inbox/ConversationThread";
 import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatModal";
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
-import { useConversations, useConversationMessages, Conversation } from "@/hooks/use-conversations";
+import { useConversations, useConversationMessages, Conversation, BrokerInboxTab } from "@/hooks/use-conversations";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useLogout } from "@/hooks/use-logout";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
@@ -24,6 +24,7 @@ export default function BrokerInbox() {
   const [brokerId, setBrokerId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<BrokerInboxTab>("novos");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
@@ -60,7 +61,6 @@ export default function BrokerInbox() {
 
   const isArchived = activeTab === "arquivados";
 
-  // Fetch conversations for "novos" (personal, no lead_id) and "atendimento" (personal, has lead_id)
   const {
     conversations: allPersonalConversations, isLoading, totalUnread, markAsRead, archiveConversation,
     unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
@@ -72,7 +72,6 @@ export default function BrokerInbox() {
     sourceInstance: "personal",
   });
 
-  // Split conversations into novos vs em atendimento
   const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
   const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
 
@@ -80,7 +79,7 @@ export default function BrokerInbox() {
     ? novosConversations
     : activeTab === "atendimento"
     ? atendimentoConversations
-    : allPersonalConversations; // archived shows all
+    : allPersonalConversations;
 
   const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {
@@ -147,14 +146,12 @@ export default function BrokerInbox() {
     fetchConversations();
   }, [fetchConversations]);
 
-  // Start attendance: auto-create lead in kanban
   const handleStartAttendance = useCallback(async () => {
     if (!selectedConversation || !brokerId) return;
     setIsStartingAttendance(true);
     try {
       const displayName = selectedConversation.display_name || selectedConversation.phone;
 
-      // Create lead in CRM
       const { data: newLead, error: leadError } = await supabase
         .from("leads").insert({
           name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
@@ -173,7 +170,6 @@ export default function BrokerInbox() {
       const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
       const finalLeadId = unifiedId || leadId;
 
-      // Link lead to conversation
       await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
       await supabase.from("lead_interactions").insert({
         lead_id: finalLeadId, interaction_type: "atendimento_iniciado" as any,
@@ -181,7 +177,6 @@ export default function BrokerInbox() {
         broker_id: brokerId, channel: "whatsapp", new_status: "info_sent",
       } as any);
 
-      // Move to "Em atendimento" tab
       setActiveTab("atendimento");
       setSelectedConversation({
         ...selectedConversation, lead_id: finalLeadId,
@@ -268,25 +263,25 @@ export default function BrokerInbox() {
 
   if (featuresLoading) {
     return (
-      <div className="min-h-screen bg-[#0f0a1a] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!inboxEnabled) {
     return (
-      <div className="min-h-screen bg-[#0f0a1a] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-purple-900/30 flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-purple-400" />
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h2 className="text-lg font-semibold text-purple-100 mb-2">Inbox não liberado</h2>
-          <p className="text-sm text-purple-300/60">
+          <h2 className="text-lg font-semibold text-foreground mb-2">Inbox não liberado</h2>
+          <p className="text-sm text-muted-foreground">
             Esta funcionalidade não está habilitada para sua conta. Solicite ao administrador para liberar o acesso.
           </p>
           <button onClick={() => navigate("/corretor/crm")}
-            className="mt-6 px-6 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-500 transition-all">
+            className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all">
             Voltar ao CRM
           </button>
         </div>
@@ -308,21 +303,23 @@ export default function BrokerInbox() {
     >
       <div className="flex h-[calc(100vh-64px)] lg:h-[calc(100vh-72px)] overflow-hidden -m-3 lg:-m-6 lg:ml-0">
         {showList && (
-          <div className={`${isMobile ? "w-full" : "w-80 border-r border-purple-500/10"} flex-shrink-0`}>
-            <BrokerConversationList
+          <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0`}>
+            <ConversationList
               conversations={activeConversations}
               selectedId={selectedConversation?.id || null}
               onSelect={handleSelectConversation}
               search={search}
               onSearchChange={setSearch}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
               isLoading={isLoading}
               totalUnread={totalUnread}
               onMarkAsRead={(id) => markAsRead(id)}
               onArchive={(id) => archiveConversation(id)}
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              novosCount={novosConversations.length}
-              atendimentoCount={atendimentoConversations.length}
+              brokerInboxTab={activeTab}
+              onBrokerTabChange={handleTabChange}
+              brokerNovosCount={novosConversations.length}
+              brokerAtendimentoCount={atendimentoConversations.length}
             />
           </div>
         )}
@@ -330,7 +327,7 @@ export default function BrokerInbox() {
         {showThread && (
           <div className={`flex-1 min-w-0 ${isMobile ? "animate-in slide-in-from-right-5 duration-200" : ""}`}>
             {viewingLeadId ? (
-              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>}>
+              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
                 <LeadPage embeddedLeadId={viewingLeadId} onBack={handleBackFromLead} />
               </Suspense>
             ) : (
