@@ -1,4 +1,4 @@
-import { Bot, Building2, CalendarDays, Headset, Inbox, LayoutDashboard, List, RotateCw } from "lucide-react";
+import { Bot, Building2, CalendarDays, Headset, Inbox, LayoutDashboard, List, RotateCw, UserCog } from "lucide-react";
 
 export const BROKER_ROUTE_TABS = [
   { id: "crm", label: "Kanban", path: "/corretor/crm", icon: LayoutDashboard },
@@ -9,6 +9,7 @@ export const BROKER_ROUTE_TABS = [
   { id: "copilot", label: "Copiloto", path: "/corretor/copiloto", icon: Bot },
   { id: "roletas", label: "Roletas", path: "/corretor/roletas", icon: RotateCw },
   { id: "projects", label: "Landing Pages", path: "/corretor/empreendimentos", icon: Building2 },
+  { id: "profile", label: "Perfil", path: "/corretor/perfil", icon: UserCog },
 ] as const;
 
 export type BrokerRouteTabId = typeof BROKER_ROUTE_TABS[number]["id"];
@@ -25,6 +26,7 @@ export const BROKER_TAB_BY_SEGMENT: Record<string, BrokerRouteTabId> = {
   copiloto: "copilot",
   roletas: "roletas",
   empreendimentos: "projects",
+  perfil: "profile",
 };
 
 export const BROKER_TAB_LABELS: Record<BrokerRouteTabId, { title: string; subtitle?: string }> = {
@@ -36,6 +38,7 @@ export const BROKER_TAB_LABELS: Record<BrokerRouteTabId, { title: string; subtit
   copilot: { title: "Copiloto", subtitle: "Conexão, assistente e automações" },
   roletas: { title: "Roletas", subtitle: "Distribuição e regras da equipe" },
   projects: { title: "Landing Pages", subtitle: "Links e empreendimentos do corretor" },
+  profile: { title: "Perfil", subtitle: "Informações e configurações pessoais" },
 };
 
 export function getBrokerTabFromPath(pathname: string): BrokerRouteTabId {
