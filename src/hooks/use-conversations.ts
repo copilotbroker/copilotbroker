@@ -211,6 +211,10 @@ export function useConversations(options: UseConversationsOptions = {}) {
       const missingLastMessageIds = filtered
         .filter((conversation) => !conversation.last_message_at)
         .map((conversation) => conversation.id);
+      // Get sender_name for ALL conversations without a good display_name (not just those without last_message_at)
+      const missingNameIds = filtered
+        .filter((conversation) => !conversation.display_name || conversation.display_name_source === "phone" || !conversation.display_name_source)
+        .map((conversation) => conversation.id);
 
       const [latestMessagesResult, fallbackMessagesResult] = await Promise.all([
         conversationIds.length > 0
@@ -221,11 +225,11 @@ export function useConversations(options: UseConversationsOptions = {}) {
               .order("created_at", { ascending: false })
               .limit(1000)
           : Promise.resolve({ data: [], error: null }),
-        missingLastMessageIds.length > 0
+        missingNameIds.length > 0
           ? supabase
               .from("conversation_messages")
               .select("conversation_id, sender_name, created_at")
-              .in("conversation_id", missingLastMessageIds)
+              .in("conversation_id", missingNameIds)
               .eq("direction", "inbound")
               .not("sender_name", "is", null)
               .order("created_at", { ascending: false })
@@ -308,24 +312,26 @@ export function useConversations(options: UseConversationsOptions = {}) {
         }
 
         filtered = filtered.map((conversation) => {
-          if (conversation.lead_id || conversation.lead) {
-            return resolveConversationIdentity(conversation);
-          }
-
-          const normalizedVariants = getPhoneSearchVariants(conversation.phone_normalized);
-          const match = normalizedVariants.map((variant) => phoneToLead.get(variant)).find(Boolean);
-          if (match) return resolveConversationIdentity(conversation, match);
-
+          // Apply sender_name fallback for any conversation missing display_name
           const senderName = senderNameByConversation.get(conversation.id)?.trim();
-          if (senderName && (!conversation.display_name || ["phone", "sender_name"].includes(conversation.display_name_source || ""))) {
-            return resolveConversationIdentity({
+          let enrichedConv = conversation;
+          if (senderName && (!conversation.display_name || ["phone"].includes(conversation.display_name_source || ""))) {
+            enrichedConv = {
               ...conversation,
               display_name: senderName,
               display_name_source: "sender_name",
-            });
+            };
           }
 
-          return resolveConversationIdentity(conversation);
+          if (enrichedConv.lead_id || enrichedConv.lead) {
+            return resolveConversationIdentity(enrichedConv);
+          }
+
+          const normalizedVariants = getPhoneSearchVariants(enrichedConv.phone_normalized);
+          const match = normalizedVariants.map((variant) => phoneToLead.get(variant)).find(Boolean);
+          if (match) return resolveConversationIdentity(enrichedConv, match);
+
+          return resolveConversationIdentity(enrichedConv);
         });
       } else {
         filtered = filtered.map((conversation) => {
