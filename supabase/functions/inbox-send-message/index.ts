@@ -196,7 +196,14 @@ serve(async (req) => {
       });
     }
 
-    // 2. Get WhatsApp instance based on source_instance routing
+    // 2. Get broker info for global name prefix
+    const { data: brokerInfo } = await supabase
+      .from("brokers")
+      .select("name, show_name_on_global, global_display_name")
+      .eq("id", conv.broker_id)
+      .single();
+
+    // 3. Get WhatsApp instance based on source_instance routing
     let instanceToken: string | null = null;
 
     if (conv.source_instance === "global") {
@@ -233,11 +240,20 @@ serve(async (req) => {
 
     const normalizedType = typeof message_type === "string" ? message_type : "text";
 
-    // 3. Send via UAZAPI
+    // Prepend broker name for global instance text messages
+    let finalContent = content || "";
+    if (conv.source_instance === "global" && brokerInfo?.show_name_on_global && normalizedType === "text" && finalContent.trim()) {
+      const displayName = brokerInfo.global_display_name || brokerInfo.name;
+      if (displayName) {
+        finalContent = `*${displayName}:*\n${finalContent}`;
+      }
+    }
+
+    // 4. Send via UAZAPI
     const sendResult = await sendViaUAZAPI(
       instanceToken,
       conv.phone_normalized || conv.phone,
-      content || "",
+      finalContent,
       normalizedType,
       metadata
     );
@@ -255,8 +271,11 @@ serve(async (req) => {
       ? "🎤 Áudio"
       : (typeof metadata?.file_name === "string" ? `📎 ${metadata.file_name}` : "[Mídia]");
 
-    // 4. Save message in conversation_messages
+    // 5. Save message in conversation_messages
     const enrichedMetadata = { ...(metadata || {}), source_instance: currentSourceInstance };
+    const senderName = conv.source_instance === "global" && brokerInfo
+      ? (brokerInfo.global_display_name || brokerInfo.name)
+      : null;
 
     const { data: msg, error: msgError } = await supabase
       .from("conversation_messages")
@@ -265,6 +284,7 @@ serve(async (req) => {
         direction: "outbound",
         content: content || previewText,
         sent_by: sent_by || "human",
+        sender_name: senderName,
         message_type: normalizedType,
         metadata: enrichedMetadata,
         status: "sent",

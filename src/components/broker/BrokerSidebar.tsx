@@ -37,6 +37,7 @@ export function BrokerSidebar({
     if (item.id === "inbox") return inboxEnabled;
     if (item.id === "plantao") return true;
     if (item.id === "copilot") return copilotEnabled;
+    if (item.id === "profile") return false; // Shown separately in the bottom section
     return item.id !== "projects" || true;
   });
 
@@ -123,9 +124,21 @@ export function BrokerSidebar({
       <div className="flex flex-col items-center gap-2 px-2 py-4 border-t border-[#2a2a2e]">
         <NotificationPanel />
 
-        <div className="w-8 h-8 rounded-full bg-[#FFFF00]/10 border border-[#FFFF00]/30 flex items-center justify-center">
+        <button
+          onClick={() => navigate("/corretor/perfil")}
+          className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 group relative",
+            activeTab === "profile"
+              ? "bg-[#FFFF00]/20 border-2 border-[#FFFF00]/50"
+              : "bg-[#FFFF00]/10 border border-[#FFFF00]/30 hover:border-[#FFFF00]/50"
+          )}
+          title="Perfil e Configurações"
+        >
           <span className="text-[#FFFF00] text-sm font-medium">{brokerInitial}</span>
-        </div>
+          <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            Perfil
+          </span>
+        </button>
 
         <button
           onClick={onLogout}

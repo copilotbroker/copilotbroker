@@ -39,6 +39,7 @@ import AdminPlantao from "./pages/AdminPlantao";
 import AdminCopilotConfig from "./pages/AdminCopilotConfig";
 import AdminAgenda from "./pages/AdminAgenda";
 import BrokerAgenda from "./pages/BrokerAgenda";
+import BrokerProfile from "./pages/BrokerProfile";
 import Prontos from "./pages/Prontos";
 import ProntosBrokerPage from "./pages/ProntosBrokerPage";
 import Termos from "./pages/Termos";
@@ -147,6 +148,7 @@ const App = () => (
             <Route path="/corretor/plantao" element={<BrokerPlantao />} />
             <Route path="/corretor/agenda" element={<BrokerAgenda />} />
             <Route path="/corretor/copiloto" element={<BrokerCopilotConfig />} />
+            <Route path="/corretor/perfil" element={<BrokerProfile />} />
             <Route path="/corretor/lead/:leadId" element={<LeadPage />} />
             <Route path="/corretor/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />
             <Route path="/:brokerSlug/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />

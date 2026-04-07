@@ -399,12 +399,14 @@ export type Database = {
           copilot_enabled: boolean
           created_at: string
           email: string
+          global_display_name: string | null
           id: string
           inbox_enabled: boolean
           is_active: boolean
           lider_id: string | null
           name: string
           nome_equipe: string | null
+          show_name_on_global: boolean
           slug: string
           updated_at: string
           user_id: string
@@ -414,12 +416,14 @@ export type Database = {
           copilot_enabled?: boolean
           created_at?: string
           email: string
+          global_display_name?: string | null
           id?: string
           inbox_enabled?: boolean
           is_active?: boolean
           lider_id?: string | null
           name: string
           nome_equipe?: string | null
+          show_name_on_global?: boolean
           slug: string
           updated_at?: string
           user_id: string
@@ -429,12 +433,14 @@ export type Database = {
           copilot_enabled?: boolean
           created_at?: string
           email?: string
+          global_display_name?: string | null
           id?: string
           inbox_enabled?: boolean
           is_active?: boolean
           lider_id?: string | null
           name?: string
           nome_equipe?: string | null
+          show_name_on_global?: boolean
           slug?: string
           updated_at?: string
           user_id?: string
