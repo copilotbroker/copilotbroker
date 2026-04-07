@@ -43,6 +43,7 @@ import BrokerProfile from "./pages/BrokerProfile";
 import Prontos from "./pages/Prontos";
 import ProntosBrokerPage from "./pages/ProntosBrokerPage";
 import Termos from "./pages/Termos";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
@@ -154,6 +155,7 @@ const App = () => (
             <Route path="/:brokerSlug/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />
             <Route path="/caminhadaonovocondominioev" element={<CaminhadaEV />} />
             <Route path="/termos" element={<Termos />} />
+            <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/designsystem" element={<DesignSystem />} />
             <Route path="/google-calendar/callback" element={<GoogleCalendarCallback />} />
             

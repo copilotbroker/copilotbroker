@@ -37,9 +37,11 @@ const Footer = () => {
           
           <div className="divider-gold" role="separator" aria-hidden="true" />
           
-          <p className="text-[10px] sm:text-xs text-muted-foreground">
-            © {currentYear} Todos os direitos reservados
-          </p>
+          <div className="flex items-center gap-3 text-[10px] sm:text-xs text-muted-foreground">
+            <span>© {currentYear} Todos os direitos reservados</span>
+            <span>·</span>
+            <a href="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</a>
+          </div>
         </div>
       </div>
     </footer>
