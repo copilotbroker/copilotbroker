@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ConversationList } from "@/components/inbox/ConversationList";
+import { BrokerConversationList, BrokerInboxTab } from "@/components/inbox/BrokerConversationList";
 import { ConversationThread } from "@/components/inbox/ConversationThread";
 import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatModal";
@@ -23,7 +23,7 @@ export default function BrokerInbox() {
   const isMobile = useIsMobile();
   const [brokerId, setBrokerId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState<BrokerInboxTab>("novos");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
@@ -31,6 +31,7 @@ export default function BrokerInbox() {
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
+  const [isStartingAttendance, setIsStartingAttendance] = useState(false);
 
   const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
@@ -57,19 +58,29 @@ export default function BrokerInbox() {
     fetchRoletas();
   }, []);
 
-  const isArchived = statusFilter === "archived";
+  const isArchived = activeTab === "arquivados";
 
-  // Personal instance conversations only (no global)
+  // Fetch conversations for "novos" (personal, no lead_id) and "atendimento" (personal, has lead_id)
   const {
-    conversations, isLoading, totalUnread, markAsRead, archiveConversation,
+    conversations: allPersonalConversations, isLoading, totalUnread, markAsRead, archiveConversation,
     unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
   } = useConversations({
     brokerId: brokerId || undefined,
     search,
-    statusFilter: isArchived ? "all" : statusFilter,
+    statusFilter: "all",
     isArchived,
     sourceInstance: "personal",
   });
+
+  // Split conversations into novos vs em atendimento
+  const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
+  const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
+
+  const activeConversations = activeTab === "novos"
+    ? novosConversations
+    : activeTab === "atendimento"
+    ? atendimentoConversations
+    : allPersonalConversations; // archived shows all
 
   const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {
@@ -90,21 +101,21 @@ export default function BrokerInbox() {
 
   useEffect(() => {
     const convId = searchParams.get("conversationId");
-    if (convId && conversations.length > 0 && !selectedConversation) {
-      const target = conversations.find((c) => c.id === convId);
+    if (convId && activeConversations.length > 0 && !selectedConversation) {
+      const target = activeConversations.find((c) => c.id === convId);
       if (target) { setSelectedConversation(target); setSearchParams({}, { replace: true }); }
     }
-  }, [conversations, searchParams, selectedConversation, setSearchParams]);
+  }, [activeConversations, searchParams, selectedConversation, setSearchParams]);
 
   useEffect(() => {
     if (!selectedConversation) return;
-    const refreshed = conversations.find((c) => c.id === selectedConversation.id);
+    const refreshed = allPersonalConversations.find((c) => c.id === selectedConversation.id);
     if (!refreshed) return;
     setSelectedConversation((current) => {
       if (!current) return current;
       return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
     });
-  }, [conversations, selectedConversation?.id]);
+  }, [allPersonalConversations, selectedConversation?.id]);
 
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelectedConversation(conv);
@@ -120,6 +131,12 @@ export default function BrokerInbox() {
   const handleOpenLead = useCallback((leadId: string) => setViewingLeadId(leadId), []);
   const handleBackFromLead = useCallback(() => setViewingLeadId(null), []);
 
+  const handleTabChange = useCallback((tab: BrokerInboxTab) => {
+    setActiveTab(tab);
+    setSelectedConversation(null);
+    setShowLeadPanel(false);
+  }, []);
+
   const handleTransferFromInbox = useCallback(() => {
     if (selectedConversation?.lead_id) setShowTransferDialog(true);
   }, [selectedConversation]);
@@ -129,6 +146,57 @@ export default function BrokerInbox() {
     setSelectedConversation(null);
     fetchConversations();
   }, [fetchConversations]);
+
+  // Start attendance: auto-create lead in kanban
+  const handleStartAttendance = useCallback(async () => {
+    if (!selectedConversation || !brokerId) return;
+    setIsStartingAttendance(true);
+    try {
+      const displayName = selectedConversation.display_name || selectedConversation.phone;
+
+      // Create lead in CRM
+      const { data: newLead, error: leadError } = await supabase
+        .from("leads").insert({
+          name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
+          broker_id: brokerId, status: "info_sent" as any,
+          source: "whatsapp", lead_origin: "whatsapp_direto",
+          atendimento_iniciado_em: new Date().toISOString(),
+          status_distribuicao: "atendimento_iniciado" as any,
+        } as any).select("id").single();
+
+      if (leadError || !newLead) {
+        toast.error("Erro ao criar card no Kanban");
+        return;
+      }
+
+      const leadId = (newLead as any).id;
+      const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
+      const finalLeadId = unifiedId || leadId;
+
+      // Link lead to conversation
+      await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
+      await supabase.from("lead_interactions").insert({
+        lead_id: finalLeadId, interaction_type: "atendimento_iniciado" as any,
+        notes: "Atendimento iniciado via Inbox pessoal",
+        broker_id: brokerId, channel: "whatsapp", new_status: "info_sent",
+      } as any);
+
+      // Move to "Em atendimento" tab
+      setActiveTab("atendimento");
+      setSelectedConversation({
+        ...selectedConversation, lead_id: finalLeadId,
+        lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_direto" },
+      });
+
+      toast.success("Atendimento iniciado! Card criado no Kanban.");
+      fetchConversations();
+    } catch (error) {
+      console.error("Erro ao iniciar atendimento:", error);
+      toast.error("Erro ao iniciar atendimento");
+    } finally {
+      setIsStartingAttendance(false);
+    }
+  }, [selectedConversation, brokerId, fetchConversations]);
 
   const handleRequestSuggestion = useCallback(async () => {
     if (!selectedConversation) return;
@@ -200,25 +268,25 @@ export default function BrokerInbox() {
 
   if (featuresLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-[#0f0a1a] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
       </div>
     );
   }
 
   if (!inboxEnabled) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#0f0a1a] flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-muted-foreground" />
+          <div className="w-16 h-16 rounded-full bg-purple-900/30 flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-purple-400" />
           </div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">Inbox não liberado</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-lg font-semibold text-purple-100 mb-2">Inbox não liberado</h2>
+          <p className="text-sm text-purple-300/60">
             Esta funcionalidade não está habilitada para sua conta. Solicite ao administrador para liberar o acesso.
           </p>
           <button onClick={() => navigate("/corretor/crm")}
-            className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all">
+            className="mt-6 px-6 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-500 transition-all">
             Voltar ao CRM
           </button>
         </div>
@@ -226,6 +294,7 @@ export default function BrokerInbox() {
     );
   }
 
+  const isNewConversation = activeTab === "novos" && !!selectedConversation && !selectedConversation.lead_id;
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
   const showContext = showLeadPanel && !isMobile;
@@ -239,19 +308,21 @@ export default function BrokerInbox() {
     >
       <div className="flex h-[calc(100vh-64px)] lg:h-[calc(100vh-72px)] overflow-hidden -m-3 lg:-m-6 lg:ml-0">
         {showList && (
-          <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0`}>
-            <ConversationList
-              conversations={conversations}
+          <div className={`${isMobile ? "w-full" : "w-80 border-r border-purple-500/10"} flex-shrink-0`}>
+            <BrokerConversationList
+              conversations={activeConversations}
               selectedId={selectedConversation?.id || null}
               onSelect={handleSelectConversation}
               search={search}
               onSearchChange={setSearch}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
               isLoading={isLoading}
               totalUnread={totalUnread}
               onMarkAsRead={(id) => markAsRead(id)}
               onArchive={(id) => archiveConversation(id)}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              novosCount={novosConversations.length}
+              atendimentoCount={atendimentoConversations.length}
             />
           </div>
         )}
@@ -259,7 +330,7 @@ export default function BrokerInbox() {
         {showThread && (
           <div className={`flex-1 min-w-0 ${isMobile ? "animate-in slide-in-from-right-5 duration-200" : ""}`}>
             {viewingLeadId ? (
-              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>}>
                 <LeadPage embeddedLeadId={viewingLeadId} onBack={handleBackFromLead} />
               </Suspense>
             ) : (
@@ -290,6 +361,9 @@ export default function BrokerInbox() {
                 onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
                 onReturnToGlobal={handleReturnToGlobal}
                 isReturningToGlobal={isReturningToGlobal}
+                isNewLead={isNewConversation}
+                onStartAttendance={handleStartAttendance}
+                isStartingAttendance={isStartingAttendance}
               />
             )}
           </div>
