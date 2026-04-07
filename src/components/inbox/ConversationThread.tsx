@@ -506,6 +506,8 @@ export function ConversationThread({
               const instanceChanged = !!msgInstance && !!prevInstance && msgInstance !== prevInstance && !showDayDivider;
               const isGlobalInstance = msgInstance === "global";
 
+              const adReferral = (msg.metadata as any)?.ad_referral as Record<string, string> | undefined;
+
               return (
                 <div key={msg.id}>
                   {showDayDivider && (
@@ -591,6 +593,10 @@ export function ConversationThread({
                       </span>
                     </div>
                   </div>
+                  )}
+
+                  {adReferral && !isOutbound && (
+                    <AdReferralCard referral={adReferral} timestamp={msg.created_at} />
                   )}
                 </div>
               );
