@@ -174,6 +174,28 @@ export default function BrokerInbox() {
     else toast.success("Status atualizado!");
   }, [selectedConversation]);
 
+  const [isReturningToGlobal, setIsReturningToGlobal] = useState(false);
+
+  const handleReturnToGlobal = useCallback(async () => {
+    if (!selectedConversation) return;
+    setIsReturningToGlobal(true);
+    try {
+      const { error } = await supabase
+        .from("conversations")
+        .update({ source_instance: "global" } as any)
+        .eq("id", selectedConversation.id);
+      if (error) throw error;
+      toast.success("Conversa devolvida ao WhatsApp do Plantão!");
+      setSelectedConversation(null);
+      fetchConversations();
+    } catch (err) {
+      console.error("Erro ao devolver conversa:", err);
+      toast.error("Erro ao devolver conversa");
+    } finally {
+      setIsReturningToGlobal(false);
+    }
+  }, [selectedConversation, fetchConversations]);
+
   const handleLogout = useLogout({ silent: true });
 
   if (featuresLoading) {
@@ -266,6 +288,8 @@ export default function BrokerInbox() {
                 onCreateLead={!selectedConversation!.lead_id ? handleOpenCreateLeadModal : undefined}
                 onOpenLead={handleOpenLead}
                 onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
+                onReturnToGlobal={handleReturnToGlobal}
+                isReturningToGlobal={isReturningToGlobal}
               />
             )}
           </div>
