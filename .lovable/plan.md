@@ -1,50 +1,52 @@
 
 
-## Plan: Fix "Novos" Tab Showing Already-Attended Conversations
+## Plan: Add Attendance History Messages and Broker Attribution Visibility
 
-### Problem
+### What the user needs
 
-The "Novos" tab shows 22 conversations, but some already have broker activity (outbound messages sent, leads linked). The `attendance_started` flag only gets set when someone clicks "Iniciar Atendimento" in the UI. However, brokers can respond via auto-messages or directly through the global instance without clicking that button, leaving `attendance_started = false` even though the conversation is actively being handled.
+1. **System message in conversation when attendance starts** — When a broker clicks "Iniciar Atendimento", insert a visible system message into the conversation thread (e.g., "✅ Davi Santiago iniciou o atendimento — 6 de abril, 15:20") so there's a clear audit trail inside the chat.
 
-Database evidence: 6 conversations have outbound messages but `attendance_started = false`. 2 conversations have linked `lead_id` but `attendance_started = false`.
+2. **Show assigned broker info in the conversation list and thread header** — In the Plantão inbox (especially for admins), display which broker is assigned to each conversation and whether attendance has been started, so the admin can immediately see attribution status.
 
-### What changes
+### Changes
 
-**1. Database migration — Fix the trigger `update_conversation_on_message`**
+**1. Insert system message on "Iniciar Atendimento" (AdminPlantao.tsx + BrokerPlantao.tsx)**
 
-Update the existing trigger function so that when an outbound message is inserted on a `source_instance = 'global'` conversation, it automatically sets `attendance_started = true`. This ensures any broker reply (manual, auto-message, or campaign) marks the conversation as attended.
+After the `handleStartAttendance` function creates the lead and records the interaction, also insert a `conversation_messages` record with:
+- `direction: "outbound"`, `sent_by: "system"`, `content: "✅ {brokerName} iniciou o atendimento"`
+- `metadata: { system_event: "attendance_started", broker_name: brokerName }`
 
+This makes the event visible inside the chat thread. Both AdminPlantao and BrokerPlantao `handleStartAttendance` functions get this addition.
+
+**2. Fetch broker name alongside conversations (use-conversations.ts)**
+
+Update the conversation query to join the broker table:
 ```sql
--- Inside update_conversation_on_message, add:
-attendance_started = CASE 
-  WHEN NEW.direction = 'outbound' AND source_instance = 'global' 
-  THEN true 
-  ELSE attendance_started 
-END
+broker:brokers!conversations_broker_id_fkey(id, name)
 ```
 
-**2. Database migration — Fix existing stale data**
+Add `broker?: { id: string; name: string } | null` to the `Conversation` interface.
 
-Run a one-time update to mark conversations as attended when they already have outbound messages or a linked lead:
+**3. Show broker name in ConversationList items (ConversationList.tsx)**
 
-```sql
-UPDATE conversations SET attendance_started = true
-WHERE source_instance = 'global' AND attendance_started = false
-AND (
-  lead_id IS NOT NULL
-  OR id IN (
-    SELECT DISTINCT conversation_id FROM conversation_messages WHERE direction = 'outbound'
-  )
-);
-```
+For conversations in the Plantão (where `source_instance === "global"`), add a badge showing the assigned broker's name below the existing badges:
+- If `attendance_started === true` and broker name exists: green badge "👤 Davi Santiago — Atendendo"
+- If `attendance_started === false`: orange badge "⏳ Aguardando atendimento"
 
-**3. No frontend changes needed**
+**4. Show broker info in ConversationThread header (ConversationThread.tsx)**
 
-The query in `use-conversations.ts` already filters correctly on `attendance_started = false`. Once the data and trigger are fixed, the "Novos" tab will only show genuinely unattended conversations.
+In the header area (below the phone/badges), when `source_instance === "global"` and there's an assigned broker, display:
+- Badge: "Atribuído a: {broker.name}"
+- If `attendance_started`: "Attending" status badge (already partially exists but needs broker name)
+
+**5. Render system messages distinctly in ConversationThread (ConversationThread.tsx)**
+
+Messages with `sent_by === "system"` should render as centered, muted system messages (like date separators) instead of chat bubbles — similar to "WhatsApp: Messages are end-to-end encrypted" style.
 
 ### Technical details
 
-- The trigger `update_conversation_on_message` fires on every message insert and already updates `last_message_at`, `unread_count`, `status`, and `display_name`. Adding the `attendance_started` flip for outbound global messages is a natural extension.
-- The data fix migration handles the ~6-8 conversations currently stuck in the wrong state.
-- No RLS or schema changes required.
+- The `conversation_messages` insert for system events uses `sent_by: "system"` which is already a valid value in the schema.
+- The broker join uses the existing `broker_id` FK on conversations. RLS already allows admins to see all brokers.
+- No database migration needed — just frontend changes and an extra insert call.
+- The `Conversation` interface update propagates to all consumers but the new `broker` field is optional, so no breaking changes.
 
