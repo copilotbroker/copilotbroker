@@ -1,48 +1,50 @@
 
 
-## Plan: Ensure "Novos" Tab Behavior in Plantao and Inbox
+## Plan: Fix "Novos" Tab Showing Already-Attended Conversations
 
-### Current state
+### Problem
 
-The system **already implements** the described behavior:
+The "Novos" tab shows 22 conversations, but some already have broker activity (outbound messages sent, leads linked). The `attendance_started` flag only gets set when someone clicks "Iniciar Atendimento" in the UI. However, brokers can respond via auto-messages or directly through the global instance without clicking that button, leaving `attendance_started = false` even though the conversation is actively being handled.
 
-- **"Novos" tab** in Plantao (both admin and broker) filters by `attendance_started = false` — only showing conversations where no broker has claimed attendance
-- **"Iniciar Atendimento"** sets `attendance_started = true` and assigns `broker_id` to the claiming broker, which removes the conversation from "Novos" and makes it appear in "Meus"
-- The transition includes automatic tab switch to "Meus" after claiming
-
-### Identified issues to fix
-
-1. **AdminInbox defaults to "meus" tab but has no "novos" query hook** — Unlike AdminPlantao, AdminInbox doesn't have a separate `novosConversations` hook, so the novos tab count and list may not work correctly there.
-
-2. **BrokerInbox has no tab system at all** — It only shows personal instance conversations with no novos/meus tabs. Since BrokerInbox is for the broker's personal WhatsApp (not global), the "novos" concept doesn't apply the same way. However, the user wants consistency.
-
-3. **Potential double-filter on source_instance** — The "novos" query already applies `source_instance = 'global'`, and then the `sourceInstance: "global"` option applies it again. This is harmless but redundant.
+Database evidence: 6 conversations have outbound messages but `attendance_started = false`. 2 conversations have linked `lead_id` but `attendance_started = false`.
 
 ### What changes
 
-**File: `src/pages/AdminInbox.tsx`**
-- Add a dedicated `novosConversations` hook (matching AdminPlantao pattern) so the "Novos" tab properly queries `attendance_started = false` with `userRole: "admin"`
-- Use `novosConversations` when `inboxTab === "novos"` and the correct loading state
-- Show novos count badge on the tab
+**1. Database migration — Fix the trigger `update_conversation_on_message`**
 
-**File: `src/pages/BrokerInbox.tsx`**
-- No changes — BrokerInbox is for personal instance conversations where the attendance concept doesn't apply. The user's personal WhatsApp messages go directly to their inbox without a claim flow.
+Update the existing trigger function so that when an outbound message is inserted on a `source_instance = 'global'` conversation, it automatically sets `attendance_started = true`. This ensures any broker reply (manual, auto-message, or campaign) marks the conversation as attended.
 
-**File: `src/hooks/use-conversations.ts`**
-- Skip the redundant `sourceInstance` filter when `inboxTab === "novos"` (already filtered by `source_instance = 'global'` in the novos logic)
+```sql
+-- Inside update_conversation_on_message, add:
+attendance_started = CASE 
+  WHEN NEW.direction = 'outbound' AND source_instance = 'global' 
+  THEN true 
+  ELSE attendance_started 
+END
+```
+
+**2. Database migration — Fix existing stale data**
+
+Run a one-time update to mark conversations as attended when they already have outbound messages or a linked lead:
+
+```sql
+UPDATE conversations SET attendance_started = true
+WHERE source_instance = 'global' AND attendance_started = false
+AND (
+  lead_id IS NOT NULL
+  OR id IN (
+    SELECT DISTINCT conversation_id FROM conversation_messages WHERE direction = 'outbound'
+  )
+);
+```
+
+**3. No frontend changes needed**
+
+The query in `use-conversations.ts` already filters correctly on `attendance_started = false`. Once the data and trigger are fixed, the "Novos" tab will only show genuinely unattended conversations.
 
 ### Technical details
 
-The core query in `use-conversations.ts` line 181 already enforces:
-```sql
-WHERE source_instance = 'global' AND attendance_started = false
-```
-
-The `handleStartAttendance` in both AdminPlantao and BrokerPlantao correctly:
-1. Updates `attendance_started = true` and `broker_id = claimingBrokerId`
-2. Creates a lead in the CRM with status `info_sent`
-3. Switches the UI to the "Meus" tab
-4. Refreshes both conversation lists
-
-The AdminInbox fix ensures the same pattern works when admins use the Inbox view (not just Plantao).
+- The trigger `update_conversation_on_message` fires on every message insert and already updates `last_message_at`, `unread_count`, `status`, and `display_name`. Adding the `attendance_started` flip for outbound global messages is a natural extension.
+- The data fix migration handles the ~6-8 conversations currently stuck in the wrong state.
+- No RLS or schema changes required.
 
