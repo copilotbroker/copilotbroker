@@ -4,6 +4,9 @@ import { cn } from "@/lib/utils";
 import logoEnoveMini from "@/assets/logo-enove-mini.png";
 import { NotificationPanel } from "@/components/admin/NotificationPanel";
 import { BROKER_ROUTE_TABS, getBrokerPathByTab, getBrokerTabFromPath } from "./brokerNavigation";
+import { useUserRole } from "@/hooks/use-user-role";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BrokerSidebarProps {
   viewMode: "kanban" | "list";
@@ -23,7 +26,7 @@ export function BrokerSidebar({
   onLogout,
   onOpenLanding,
   onAddLead,
-  brokerInitial = "C",
+  brokerInitial: brokerInitialProp,
   isLeader = false,
   inboxEnabled = true,
   copilotEnabled = true,
@@ -31,6 +34,24 @@ export function BrokerSidebar({
   const navigate = useNavigate();
   const location = useLocation();
   const activeTab = getBrokerTabFromPath(location.pathname);
+  const { brokerId } = useUserRole();
+
+  const { data: brokerName } = useQuery({
+    queryKey: ["broker-name", brokerId],
+    queryFn: async () => {
+      if (!brokerId) return null;
+      const { data } = await supabase
+        .from("brokers")
+        .select("name")
+        .eq("id", brokerId)
+        .single();
+      return data?.name || null;
+    },
+    enabled: !!brokerId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const brokerInitial = brokerName?.charAt(0).toUpperCase() || brokerInitialProp || "C";
 
   const navigationItems = BROKER_ROUTE_TABS.filter((item) => {
     if (item.id === "roletas") return isLeader;
