@@ -74,6 +74,94 @@ function detectOptout(message: string): string | null {
   return null;
 }
 
+// ========================= AD REFERRAL EXTRACTION =========================
+
+interface AdReferralContext {
+  source: string;       // e.g. "FACEBOOK"
+  campaign: string;     // campaign name
+  headline: string;     // ad body/headline text
+  medium: string;       // e.g. "WHATSAPP BUSINESS APP", "ctwa"
+  source_url: string;   // e.g. "https://fb.me/..."
+  source_id?: string;   // ad id
+  source_type?: string; // e.g. "ad", "post"
+  thumbnail_url?: string;
+}
+
+function extractAdReferralContext(msg: NonNullable<UAZAPIv2Payload["message"]>, payload: UAZAPIv2Payload): AdReferralContext | null {
+  // UAZAPI forwards the WhatsApp contextInfo in various locations
+  const data = payload.data || {};
+  const msgRaw = payload.message as Record<string, unknown> || {};
+  
+  // Try multiple paths where contextInfo might be
+  const contextInfo = (msgRaw.contextInfo as Record<string, unknown>)
+    || (data.contextInfo as Record<string, unknown>)
+    || ((msgRaw.content as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || ((data.message as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || null;
+  
+  const externalAdReply = contextInfo?.externalAdReply as Record<string, unknown> | undefined;
+  
+  // Also check for entryPointConversionSource (CTWA ads)
+  const entryPointSource = (contextInfo?.entryPointConversionSource as string)
+    || (data.entryPointConversionSource as string)
+    || (msgRaw.entryPointConversionSource as string);
+  const entryPointApp = (contextInfo?.entryPointConversionApp as string)
+    || (data.entryPointConversionApp as string)
+    || (msgRaw.entryPointConversionApp as string);
+
+  // Also check top-level UAZAPI fields for referral info
+  const referralInfo = (data.referral as Record<string, unknown>)
+    || (msgRaw.referral as Record<string, unknown>);
+
+  if (!externalAdReply && !entryPointSource && !referralInfo) return null;
+
+  const source = (externalAdReply?.title as string)
+    || (referralInfo?.source as string)
+    || entryPointSource
+    || "FACEBOOK";
+  
+  const headline = (externalAdReply?.body as string)
+    || (referralInfo?.headline as string)
+    || (referralInfo?.body as string)
+    || "";
+  
+  const sourceUrl = (externalAdReply?.sourceUrl as string)
+    || (referralInfo?.url as string)
+    || (referralInfo?.source_url as string)
+    || "";
+  
+  const medium = entryPointApp
+    || (referralInfo?.source_type as string)
+    || (externalAdReply ? "WHATSAPP BUSINESS APP" : "");
+  
+  const campaign = (referralInfo?.campaign as string)
+    || (externalAdReply?.title as string)
+    || "";
+
+  const thumbnailUrl = (externalAdReply?.thumbnailUrl as string)
+    || (externalAdReply?.mediaUrl as string)
+    || "";
+
+  const sourceId = (referralInfo?.source_id as string)
+    || (externalAdReply?.sourceId as string)
+    || "";
+
+  const sourceType = (referralInfo?.source_type as string)
+    || (externalAdReply?.sourceType as string)
+    || "";
+
+  return {
+    source: source || "FACEBOOK",
+    campaign: campaign || "",
+    headline: headline || "",
+    medium: medium || "",
+    source_url: sourceUrl || "",
+    source_id: sourceId || undefined,
+    source_type: sourceType || undefined,
+    thumbnail_url: thumbnailUrl || undefined,
+  };
+}
+
 // ========================= PHONE UTILITIES =========================
 
 function formatPhoneE164(phone: string): string {
@@ -1869,9 +1957,16 @@ async function handleIncomingMessage(
   if (resolvedMessageType !== "text") {
     mediaMetadata = await persistInboundMediaIfNeeded(supabase, payload, phone, resolvedMessageType, mediaMetadata);
   }
+
+  // Extract Facebook CTWA / ad referral context
+  const adReferral = extractAdReferralContext(msg, payload);
+  if (adReferral) {
+    (mediaMetadata as Record<string, unknown>).ad_referral = adReferral;
+    console.log(`📢 Ad referral detected: source=${adReferral.source}, headline="${(adReferral.headline || "").substring(0, 60)}"`);
+  }
+
   const direction = msg.fromMe ? "outbound" : "inbound";
   console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | text="${messageText.substring(0, 50)}"`);
-
   // Check if this is from the global WhatsApp instance
   let archiveResult: { conversationId?: string; brokerId?: string } = {};
   const isGlobal = instanceName ? await isGlobalInstance(supabase, instanceName) : false;
