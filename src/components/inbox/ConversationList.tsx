@@ -3,7 +3,7 @@ import {
   Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
   ArrowUpDown, ThermometerSun, Target, MoreVertical, Check, Zap,
   TrendingUp, Eye, EyeOff, ChevronDown, MessageCircleMore, LayoutGrid, Archive,
-  Users, UserPlus, User
+  Users, UserPlus, User, Headphones
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Conversation, InboxTab } from "@/hooks/use-conversations";
+import { Conversation, InboxTab, BrokerInboxTab } from "@/hooks/use-conversations";
 import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,11 @@ interface ConversationListProps {
   showOthersTab?: boolean;
   novosCount?: number;
   emptyMessage?: string;
+  /** Broker inbox mode: 3 tabs (Novos | Em atendimento | Arquivados) */
+  brokerInboxTab?: BrokerInboxTab;
+  onBrokerTabChange?: (tab: BrokerInboxTab) => void;
+  brokerNovosCount?: number;
+  brokerAtendimentoCount?: number;
 }
 
 type SortMode = "recent" | "unread" | "temperature" | "opportunity" | "risk" | "idle";
@@ -130,6 +135,10 @@ export function ConversationList({
   showOthersTab = false,
   novosCount = 0,
   emptyMessage,
+  brokerInboxTab,
+  onBrokerTabChange,
+  brokerNovosCount = 0,
+  brokerAtendimentoCount = 0,
 }: ConversationListProps) {
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [activeKpi, setActiveKpi] = useState<string | null>(null);
@@ -296,10 +305,62 @@ export function ConversationList({
           </div>
         )}
 
+        {/* Broker Inbox Tabs (Novos | Em atendimento | Arquivados) */}
+        {onBrokerTabChange && (
+          <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
+            <button
+              onClick={() => onBrokerTabChange("novos")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                brokerInboxTab === "novos"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Novos
+              {brokerNovosCount > 0 && (
+                <Badge variant={brokerInboxTab === "novos" ? "secondary" : "destructive"} className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
+                  {brokerNovosCount}
+                </Badge>
+              )}
+            </button>
+            <button
+              onClick={() => onBrokerTabChange("atendimento")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                brokerInboxTab === "atendimento"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Headphones className="h-3.5 w-3.5" />
+              Atendimento
+              {brokerAtendimentoCount > 0 && (
+                <Badge variant={brokerInboxTab === "atendimento" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
+                  {brokerAtendimentoCount}
+                </Badge>
+              )}
+            </button>
+            <button
+              onClick={() => onBrokerTabChange("arquivados")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                brokerInboxTab === "arquivados"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Archive className="h-3.5 w-3.5" />
+              Arquivados
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
             <Inbox className="h-5 w-5 text-primary" />
-            {inboxTab === "novos" ? "Novos Contatos" : inboxTab === "outros" ? "Equipe" : isAdminView ? "Inbox Admin" : "Inbox"}
+            {brokerInboxTab === "novos" ? "Novos" : brokerInboxTab === "atendimento" ? "Em atendimento" : brokerInboxTab === "arquivados" ? "Arquivados" : inboxTab === "novos" ? "Novos Contatos" : inboxTab === "outros" ? "Equipe" : isAdminView ? "Inbox Admin" : "Inbox"}
             {totalUnread > 0 && inboxTab === "meus" && (
               <Badge variant="destructive" className="min-w-[20px] px-1.5 py-0 text-xs h-5">
                 {totalUnread}
