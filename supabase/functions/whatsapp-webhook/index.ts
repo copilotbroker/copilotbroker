@@ -1966,8 +1966,12 @@ async function handleIncomingMessage(
     console.log(`📢 Ad referral detected: source=${adReferral.source}, headline="${(adReferral.headline || "").substring(0, 60)}"`);
   }
 
+  // Resolve sender name: UAZAPI v2 uses senderName, older versions use pushName, fallback to chat.wa_name
+  const chatObj = (payload as any).chat;
+  const resolvedSenderName = msg.senderName || msg.pushName || chatObj?.wa_name || chatObj?.name || undefined;
+
   const direction = msg.fromMe ? "outbound" : "inbound";
-  console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | text="${messageText.substring(0, 50)}"`);
+  console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | sender="${resolvedSenderName || '(unknown)'}" | text="${messageText.substring(0, 50)}"`);
   // Check if this is from the global WhatsApp instance
   let archiveResult: { conversationId?: string; brokerId?: string } = {};
   const isGlobal = instanceName ? await isGlobalInstance(supabase, instanceName) : false;
@@ -1976,7 +1980,7 @@ async function handleIncomingMessage(
     // Global instance routing
     archiveResult = await handleGlobalInstanceMessage(
       supabase, phone, messageText, direction as "inbound" | "outbound",
-      instanceName!, msg.pushName, "lead", msg.id, resolvedMessageType, mediaMetadata
+      instanceName!, resolvedSenderName, "lead", msg.id, resolvedMessageType, mediaMetadata
     );
   } else if (isGlobal && msg.fromMe) {
     // Outbound from global — try to find which broker owns this lead
