@@ -7,6 +7,7 @@ import {
   HomeDifferentials,
   HomeProcess,
   HomePartnership,
+  HomePlatform,
   HomeCTA,
 } from "@/components/home";
 
@@ -67,6 +68,7 @@ const Home = () => {
           <HomeDifferentials />
           <HomeProcess />
           <HomePartnership />
+          <HomePlatform />
           <HomeCTA />
         </main>
 
