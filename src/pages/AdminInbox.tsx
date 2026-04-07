@@ -230,7 +230,7 @@ export default function AdminInbox() {
   const handleLogout = useLogout({ silent: true });
 
   const isNewLeadConversation = inboxTab === "novos" && !!selectedConversation;
-  const isReadOnlyConversation = inboxTab === "outros";
+  const isReadOnlyConversation = false;
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
   const showContext = showLeadPanel && !isMobile;
