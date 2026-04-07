@@ -1089,12 +1089,13 @@ async function archiveMessageToConversation(
     const conv = await getOrCreateCanonicalConversation(supabase, brokerId!, phone, undefined, sourceInstance, senderName);
     if (!conv) return {};
 
+    const enrichedMeta = { ...(metadata || {}), source_instance: sourceInstance || "personal" };
     await supabase.from("conversation_messages").insert({
       conversation_id: (conv as { id: string }).id,
       direction,
       content: messageText || (messageType === "image" ? "Foto" : messageType === "audio" ? "Áudio" : messageType === "video" ? "Vídeo" : messageType === "document" ? "Documento" : "[Mídia]"),
       message_type: messageType,
-      metadata: metadata || null,
+      metadata: enrichedMeta,
       sender_name: senderName,
       sent_by: sentBy,
       status: "delivered",
@@ -1541,6 +1542,7 @@ CONTEXTO DO LEAD:
       content: finalText,
       sent_by: "ai",
       message_type: "text",
+      metadata: { source_instance: sourceInstance || "personal" },
       status: "sent",
       uazapi_message_id: sendResult.messageId || null,
     });

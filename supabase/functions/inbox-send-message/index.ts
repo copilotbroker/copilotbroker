@@ -187,6 +187,8 @@ serve(async (req) => {
       .eq("id", conversation_id)
       .single();
 
+    const currentSourceInstance = conv?.source_instance || "personal";
+
     if (convError || !conv) {
       return new Response(JSON.stringify({ error: "Conversa não encontrada" }), {
         status: 404,
@@ -254,6 +256,8 @@ serve(async (req) => {
       : (typeof metadata?.file_name === "string" ? `📎 ${metadata.file_name}` : "[Mídia]");
 
     // 4. Save message in conversation_messages
+    const enrichedMetadata = { ...(metadata || {}), source_instance: currentSourceInstance };
+
     const { data: msg, error: msgError } = await supabase
       .from("conversation_messages")
       .insert({
@@ -262,7 +266,7 @@ serve(async (req) => {
         content: content || previewText,
         sent_by: sent_by || "human",
         message_type: normalizedType,
-        metadata: metadata || null,
+        metadata: enrichedMetadata,
         status: "sent",
         uazapi_message_id: sendResult.messageId || null,
       })
