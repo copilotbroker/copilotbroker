@@ -79,17 +79,19 @@ export default function AdminInbox() {
 
   const {
     conversations: novosConversations,
+    isLoading: novosLoading,
     fetchConversations: fetchNovos,
   } = useConversations({
-    brokerId: myBrokerId || undefined,
+    brokerId: undefined,
     search: inboxTab === "novos" ? search : "",
     statusFilter: "all",
     isArchived: false,
     inboxTab: "novos",
+    userRole: "admin",
   });
 
   const activeConversations = inboxTab === "novos" ? novosConversations : conversations;
-  const activeLoading = isLoading;
+  const activeLoading = inboxTab === "novos" ? novosLoading : isLoading;
 
   const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {

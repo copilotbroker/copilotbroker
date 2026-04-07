@@ -194,8 +194,8 @@ export function useConversations(options: UseConversationsOptions = {}) {
         if (options.brokerId) query = query.eq("broker_id", options.brokerId);
       }
 
-      // Filter by source instance when specified
-      if (options.sourceInstance === "global") {
+      // Filter by source instance when specified (skip for novos — already filtered)
+      if (options.inboxTab !== "novos" && options.sourceInstance === "global") {
         query = query.eq("source_instance", "global");
       } else if (options.sourceInstance === "personal") {
         query = query.or("source_instance.is.null,source_instance.neq.global");
