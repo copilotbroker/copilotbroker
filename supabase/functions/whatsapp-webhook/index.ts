@@ -958,6 +958,7 @@ async function getOrCreateCanonicalConversation(
   phone: string,
   leadId?: string | null,
   sourceInstance?: string | null,
+  senderName?: string | null,
 ): Promise<{ id: string } | null> {
   const canonicalPhone = getCanonicalPhone(phone);
   const canonicalNormalized = getCanonicalPhoneNormalized(phone);
@@ -965,14 +966,17 @@ async function getOrCreateCanonicalConversation(
 
   const { data: existing } = await supabase
     .from("conversations")
-    .select("id, lead_id, ai_mode, created_at, phone, phone_normalized, source_instance")
+    .select("id, lead_id, ai_mode, created_at, phone, phone_normalized, source_instance, display_name, display_name_source")
     .eq("broker_id", brokerId)
     .in("phone_normalized", phoneVariants.map((value) => value.replace(/\D/g, "")))
     .order("created_at", { ascending: true });
 
   if (existing && existing.length > 0) {
-    const primary = existing[0] as { id: string; lead_id: string | null; ai_mode: string; phone: string; phone_normalized: string; source_instance: string | null };
+    const primary = existing[0] as { id: string; lead_id: string | null; ai_mode: string; phone: string; phone_normalized: string; source_instance: string | null; display_name: string | null; display_name_source: string | null };
     const duplicateIds = existing.slice(1).map((conv: any) => conv.id);
+
+    // Update display_name from senderName if not already set from a better source
+    const shouldUpdateName = senderName && (!primary.display_name || primary.display_name_source === "phone");
 
     if (duplicateIds.length > 0) {
       await supabase.from("conversation_messages").update({ conversation_id: primary.id }).in("conversation_id", duplicateIds);
@@ -987,12 +991,13 @@ async function getOrCreateCanonicalConversation(
           ai_mode: primary.ai_mode === "ai_active" ? "ai_active" : "copilot",
           is_archived: false,
           source_instance: sourceInstance || primary.source_instance || null,
+          ...(shouldUpdateName ? { display_name: senderName, display_name_source: "sender_name" } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq("id", primary.id);
 
       await supabase.from("conversations").delete().in("id", duplicateIds);
-    } else if (primary.phone !== canonicalPhone || primary.phone_normalized !== canonicalNormalized || (!primary.lead_id && leadId) || (sourceInstance && !primary.source_instance)) {
+    } else if (primary.phone !== canonicalPhone || primary.phone_normalized !== canonicalNormalized || (!primary.lead_id && leadId) || (sourceInstance && !primary.source_instance) || shouldUpdateName) {
       await supabase
         .from("conversations")
         .update({
@@ -1000,12 +1005,32 @@ async function getOrCreateCanonicalConversation(
           phone_normalized: canonicalNormalized,
           lead_id: primary.lead_id || leadId || null,
           source_instance: sourceInstance || primary.source_instance || null,
+          ...(shouldUpdateName ? { display_name: senderName, display_name_source: "sender_name" } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq("id", primary.id);
     }
 
     return { id: primary.id };
+  }
+
+  // Resolve lead name for display if no senderName
+  let resolvedDisplayName = senderName || null;
+  let resolvedDisplaySource = senderName ? "sender_name" : null;
+
+  if (!resolvedDisplayName) {
+    // Try to find a lead name by phone
+    const { data: matchedLead } = await supabase
+      .from("leads")
+      .select("name")
+      .in("whatsapp", phoneVariants)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (matchedLead?.name) {
+      resolvedDisplayName = matchedLead.name as string;
+      resolvedDisplaySource = "lead";
+    }
   }
 
   const { data: created, error: createError } = await supabase
@@ -1018,6 +1043,7 @@ async function getOrCreateCanonicalConversation(
       ai_mode: "copilot",
       status: "active",
       source_instance: sourceInstance || null,
+      ...(resolvedDisplayName ? { display_name: resolvedDisplayName, display_name_source: resolvedDisplaySource } : {}),
     })
     .select("id")
     .single();
@@ -1060,7 +1086,7 @@ async function archiveMessageToConversation(
       brokerId = (inst as { broker_id: string }).broker_id;
     }
 
-    const conv = await getOrCreateCanonicalConversation(supabase, brokerId!, phone, undefined, sourceInstance);
+    const conv = await getOrCreateCanonicalConversation(supabase, brokerId!, phone, undefined, sourceInstance, senderName);
     if (!conv) return {};
 
     await supabase.from("conversation_messages").insert({
