@@ -290,8 +290,12 @@ const makeRequest = async (
 // Configure webhook on UAZAPI instance so incoming messages are forwarded
 const configureGlobalWebhook = async (instanceToken: string, instanceName: string, baseUrl: string): Promise<boolean> => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
-  const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
-  console.log(`🔗 Configuring webhook for global instance ${instanceName}: ${webhookUrl}`);
+  const webhookSecret = Deno.env.get("UAZAPI_WEBHOOK_SECRET") || "";
+  // Include webhook secret in path for secure validation; fall back to base path
+  const webhookUrl = webhookSecret
+    ? `${SUPABASE_URL}/functions/v1/whatsapp-webhook/${webhookSecret}`
+    : `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
+  console.log(`🔗 Configuring webhook for global instance ${instanceName}: ${webhookUrl.replace(webhookSecret, "***")}`);
 
   const authHeaders = [
     { "token": instanceToken },
@@ -419,6 +423,13 @@ app.get("/status", async (c) => {
 
           // Update status in DB
           await updateInstanceStatus(connectionStatus, phoneNumber || undefined);
+
+          // Auto-configure webhook when instance is connected (ensures webhook survives restarts)
+          if (connectionStatus === "connected") {
+            configureGlobalWebhook(storedInstance.instance_token, storedInstance.instance_name, config.baseUrl)
+              .then(ok => { if (ok) console.log("✅ Webhook auto-reconfigured on status check"); })
+              .catch(err => console.warn("⚠️ Webhook auto-reconfig failed:", err));
+          }
 
           return c.json({
             status: connectionStatus,
