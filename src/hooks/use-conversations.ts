@@ -312,24 +312,26 @@ export function useConversations(options: UseConversationsOptions = {}) {
         }
 
         filtered = filtered.map((conversation) => {
-          if (conversation.lead_id || conversation.lead) {
-            return resolveConversationIdentity(conversation);
-          }
-
-          const normalizedVariants = getPhoneSearchVariants(conversation.phone_normalized);
-          const match = normalizedVariants.map((variant) => phoneToLead.get(variant)).find(Boolean);
-          if (match) return resolveConversationIdentity(conversation, match);
-
+          // Apply sender_name fallback for any conversation missing display_name
           const senderName = senderNameByConversation.get(conversation.id)?.trim();
-          if (senderName && (!conversation.display_name || ["phone", "sender_name"].includes(conversation.display_name_source || ""))) {
-            return resolveConversationIdentity({
+          let enrichedConv = conversation;
+          if (senderName && (!conversation.display_name || ["phone"].includes(conversation.display_name_source || ""))) {
+            enrichedConv = {
               ...conversation,
               display_name: senderName,
               display_name_source: "sender_name",
-            });
+            };
           }
 
-          return resolveConversationIdentity(conversation);
+          if (enrichedConv.lead_id || enrichedConv.lead) {
+            return resolveConversationIdentity(enrichedConv);
+          }
+
+          const normalizedVariants = getPhoneSearchVariants(enrichedConv.phone_normalized);
+          const match = normalizedVariants.map((variant) => phoneToLead.get(variant)).find(Boolean);
+          if (match) return resolveConversationIdentity(enrichedConv, match);
+
+          return resolveConversationIdentity(enrichedConv);
         });
       } else {
         filtered = filtered.map((conversation) => {
