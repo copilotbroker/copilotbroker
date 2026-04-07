@@ -135,6 +135,10 @@ export function ConversationList({
   showOthersTab = false,
   novosCount = 0,
   emptyMessage,
+  brokerInboxTab,
+  onBrokerTabChange,
+  brokerNovosCount = 0,
+  brokerAtendimentoCount = 0,
 }: ConversationListProps) {
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [activeKpi, setActiveKpi] = useState<string | null>(null);
