@@ -542,6 +542,11 @@ export function ConversationThread({
                         : "rounded-bl-sm border border-border bg-card text-card-foreground"
                     )}>
                       {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-muted-foreground"><Bot className="h-3 w-3" /> Copiloto</span>}
+                      {isOutbound && !isAi && msg.sender_name && isGlobalInstance && (
+                        <span className="mb-1 block text-[10px] font-semibold text-emerald-400">
+                          {msg.sender_name}
+                        </span>
+                      )}
                       {isOutbound && msgInstance && (
                         <span className={cn(
                           "mb-1 flex items-center gap-1 text-[10px]",
