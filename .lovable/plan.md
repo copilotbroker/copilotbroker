@@ -1,39 +1,36 @@
 
 
-## Plan: Fix "Iniciar Atendimento" Not Showing Message Input for Brokers
+## Diagnóstico: Mensagens do WhatsApp do Plantão não chegam ao sistema
 
-### Problem
+### Problema identificado
 
-When Márcio clicks "Iniciar Atendimento" in the Plantão, the message input field doesn't appear. The most likely cause is that the `leads` insert fails silently (RLS policy or constraint), triggering an early return at line 192-194 of `BrokerPlantao.tsx`. When this happens:
-- `setInboxTab("meus")` never executes
-- `isNewLeadConversation` remains `true`  
-- The UI continues showing "Inicie o atendimento para enviar mensagens" instead of the input
+Sua mensagem de teste (número 97010323) **nunca chegou ao sistema**. Verifiquei os logs do webhook e não há nenhum registro de mensagem recebida da instância global (`enove_global_1774904515037`). Todas as mensagens nos logs recentes são de instâncias pessoais de corretores (ex: `enove_jaqueline_panigo`, `enove_fabiane_witt`).
 
-A secondary issue: even if the insert succeeds, the flow has a fragile dependency chain (insert lead → unify → update conversation → insert interaction → insert system message) where any failure after the early return causes partial state.
+Isso significa que a **instância global do WhatsApp na UAZAPI não está com a URL de webhook configurada** para enviar os eventos ao sistema. As mensagens chegam no WhatsApp do Plantão, mas a UAZAPI não repassa para o CRM.
 
-### Fix
+### Causa raiz
 
-**1. Restructure `handleStartAttendance` in `BrokerPlantao.tsx` to be more resilient**
+O código do `whatsapp-global-instance-manager` não configura automaticamente a URL do webhook na UAZAPI quando a instância é criada/conectada. Isso precisa ser feito manualmente no painel UAZAPI ou adicionado ao código.
 
-- Move `attendance_started = true` and `setInboxTab("meus")` BEFORE the lead creation, so the broker can start typing immediately even if CRM card creation has issues
-- If the conversation update succeeds but lead creation fails, still allow messaging (the conversation is claimed)
-- Show specific error messages for each step that fails, rather than silently returning
+### Solução proposta
 
-**2. Same fix in `AdminPlantao.tsx`**
+Adicionar a configuração automática do webhook no `whatsapp-global-instance-manager`, assim como já é feito para instâncias de corretores (padrão existente). Quando a instância global for conectada ou reconectada, o sistema irá:
 
-- Apply the same restructuring to keep both flows consistent
+1. Chamar a API da UAZAPI para configurar a URL do webhook apontando para `https://nckzxwxxtyeydolmdijn.supabase.co/functions/v1/whatsapp-webhook/{WEBHOOK_SECRET}`
+2. Configurar os eventos que devem ser encaminhados (messages, connection.update, messages_update)
 
-### Technical details
+**Arquivo: `supabase/functions/whatsapp-global-instance-manager/index.ts`**
 
-The key change is reordering the flow:
+- Criar uma função `configureWebhookUrl` que faz POST para a UAZAPI configurando a URL de callback
+- Chamar essa função automaticamente após conexão bem-sucedida (no handler de `/connect` e `/status` quando detecta status "connected")
+
+### Ação imediata necessária
+
+Enquanto o fix automático não é deployado, a URL do webhook precisa ser configurada **manualmente** na UAZAPI para a instância `enove_global_1774904515037`. A URL correta é:
 
 ```
-Step 1: Update conversation (attendance_started=true, broker_id) → switch to "meus" tab immediately
-Step 2: Create lead in CRM (async, non-blocking for messaging)
-Step 3: Link lead to conversation, insert interactions and system message
+https://nckzxwxxtyeydolmdijn.supabase.co/functions/v1/whatsapp-webhook/{SEU_WEBHOOK_SECRET}
 ```
 
-If Step 1 succeeds, the broker can message. Steps 2-3 can show warnings on failure without blocking the input.
-
-Both files (`BrokerPlantao.tsx` and `AdminPlantao.tsx`) will be updated with the same pattern. No database changes needed.
+Os eventos que devem estar habilitados: `messages`, `messages_update`, `connection`.
 
