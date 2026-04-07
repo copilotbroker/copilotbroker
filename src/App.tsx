@@ -43,6 +43,7 @@ import BrokerProfile from "./pages/BrokerProfile";
 import Prontos from "./pages/Prontos";
 import ProntosBrokerPage from "./pages/ProntosBrokerPage";
 import Termos from "./pages/Termos";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
