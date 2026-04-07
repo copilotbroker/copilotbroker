@@ -63,7 +63,7 @@ export default function AdminInbox() {
   }, []);
 
   const isArchived = statusFilter === "archived";
-  const effectiveBrokerId = selectedBrokerId === "_loading" ? "__skip__" : (selectedBrokerId !== "all" ? selectedBrokerId : undefined);
+  const effectiveBrokerId = myBrokerId || undefined;
 
   const {
     conversations, isLoading, totalUnread, markAsRead, archiveConversation,
