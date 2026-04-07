@@ -268,6 +268,7 @@ export function ConversationThread({
     setInputValue("");
     setPendingFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (inputRef.current) inputRef.current.style.height = "auto";
     inputRef.current?.focus();
 
     if (fileToSend && fileTypeToSend) {
