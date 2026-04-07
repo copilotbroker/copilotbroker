@@ -125,6 +125,8 @@ export function ConversationThread({
   onTransfer,
   onPullToPersonal,
   isPullingToPersonal,
+  onReturnToGlobal,
+  isReturningToGlobal,
 }: ConversationThreadProps) {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
