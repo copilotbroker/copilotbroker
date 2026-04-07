@@ -80,7 +80,7 @@ export function BrokerBottomNav({
     setIsMoreOpen(false);
     if (action === "leads") {
       onViewChange("list");
-    } else if (action === "inbox" || action === "projects" || action === "roletas" || action === "copilot") {
+    } else if (action === "inbox" || action === "projects" || action === "roletas" || action === "copilot" || action === "profile") {
       navigate(getBrokerPathByTab(action as any));
     } else if (action === "notifications") {
       onNotificationsClick?.();
@@ -117,6 +117,7 @@ export function BrokerBottomNav({
     { id: "notifications", label: "Notificações", description: "Ver notificações", badge: unreadCount },
     ...(isLeader ? [{ id: "roletas", label: "Roletas", description: "Gerenciar roletas da equipe" }] : []),
     { id: "projects", label: "Landing Pages", description: "Ver suas landing pages" },
+    { id: "profile", label: "Perfil", description: "Informações e configurações" },
     { id: "logout", label: "Sair", description: "Encerrar sessão", destructive: true },
   ];
 
