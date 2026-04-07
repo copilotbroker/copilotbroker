@@ -26,6 +26,7 @@ import {
   CalendarClock,
   X,
   Square,
+  Wifi,
 } from "lucide-react";
 import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
 import { AdReferralCard } from "./AdReferralCard";
@@ -412,6 +413,18 @@ export function ConversationThread({
                 <span className="hidden sm:inline">Meu WhatsApp</span>
               </Button>
             )}
+            {onReturnToGlobal && (conversation as any).source_instance === "personal" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onReturnToGlobal}
+                disabled={isReturningToGlobal}
+                className="h-8 gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                title="Devolver ao WhatsApp do Plantão"
+              >
+                <Wifi className="h-4 w-4" />
+                <span className="hidden sm:inline">Plantão</span>
+              </Button>
             {conversation.lead_id && onTransfer && (
               <Button
                 variant="ghost"
