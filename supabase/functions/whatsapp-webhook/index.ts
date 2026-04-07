@@ -28,6 +28,7 @@ interface UAZAPIv2Payload {
     id?: string;
     timestamp?: number;
     pushName?: string;
+    senderName?: string;
     status?: string;
     sender_pn?: string;
     mimetype?: string;
