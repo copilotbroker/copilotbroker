@@ -288,6 +288,8 @@ export default function BrokerInbox() {
                 onCreateLead={!selectedConversation!.lead_id ? handleOpenCreateLeadModal : undefined}
                 onOpenLead={handleOpenLead}
                 onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
+                onReturnToGlobal={handleReturnToGlobal}
+                isReturningToGlobal={isReturningToGlobal}
               />
             )}
           </div>
