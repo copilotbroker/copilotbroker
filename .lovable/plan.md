@@ -1,36 +1,39 @@
 
 
-## Plan: Allow Leaders to Send Messages from "Outros" Tab
+## Plan: Fix "Iniciar Atendimento" Not Showing Message Input for Brokers
 
 ### Problem
 
-Leaders (`isLeader === true`) use `BrokerPlantao.tsx` which has `isReadOnlyConversation = inboxTab === "outros"`. Leaders can see other brokers' conversations via the "Outros" tab but cannot respond — they get the same "Modo supervisão — somente leitura" message. Leaders should have supervisory control similar to admins.
+When Márcio clicks "Iniciar Atendimento" in the Plantão, the message input field doesn't appear. The most likely cause is that the `leads` insert fails silently (RLS policy or constraint), triggering an early return at line 192-194 of `BrokerPlantao.tsx`. When this happens:
+- `setInboxTab("meus")` never executes
+- `isNewLeadConversation` remains `true`  
+- The UI continues showing "Inicie o atendimento para enviar mensagens" instead of the input
+
+A secondary issue: even if the insert succeeds, the flow has a fragile dependency chain (insert lead → unify → update conversation → insert interaction → insert system message) where any failure after the early return causes partial state.
 
 ### Fix
 
-**File: `src/pages/BrokerPlantao.tsx` (1 line change)**
+**1. Restructure `handleStartAttendance` in `BrokerPlantao.tsx` to be more resilient**
 
-```typescript
-// Before:
-const isReadOnlyConversation = inboxTab === "outros";
+- Move `attendance_started = true` and `setInboxTab("meus")` BEFORE the lead creation, so the broker can start typing immediately even if CRM card creation has issues
+- If the conversation update succeeds but lead creation fails, still allow messaging (the conversation is claimed)
+- Show specific error messages for each step that fails, rather than silently returning
 
-// After:
-const isReadOnlyConversation = inboxTab === "outros" && !isLeader;
+**2. Same fix in `AdminPlantao.tsx`**
+
+- Apply the same restructuring to keep both flows consistent
+
+### Technical details
+
+The key change is reordering the flow:
+
+```
+Step 1: Update conversation (attendance_started=true, broker_id) → switch to "meus" tab immediately
+Step 2: Create lead in CRM (async, non-blocking for messaging)
+Step 3: Link lead to conversation, insert interactions and system message
 ```
 
-Leaders get write access on "Outros"; regular brokers remain read-only. The `isLeader` variable is already available (line 36).
+If Step 1 succeeds, the broker can message. Steps 2-3 can show warnings on failure without blocking the input.
 
-**File: `src/pages/AdminInbox.tsx` (1 line change)**
-
-Same fix for the Admin Inbox, which also has this restriction:
-
-```typescript
-// Before:
-const isReadOnlyConversation = inboxTab === "outros";
-
-// After:
-const isReadOnlyConversation = false;
-```
-
-No other files need changes.
+Both files (`BrokerPlantao.tsx` and `AdminPlantao.tsx`) will be updated with the same pattern. No database changes needed.
 
