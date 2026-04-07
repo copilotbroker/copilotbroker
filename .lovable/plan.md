@@ -1,52 +1,32 @@
 
 
-## Plan: Add Attendance History Messages and Broker Attribution Visibility
+## Plan: Allow Admin to Send Messages from "Outros" Tab
 
-### What the user needs
+### Problem
 
-1. **System message in conversation when attendance starts** — When a broker clicks "Iniciar Atendimento", insert a visible system message into the conversation thread (e.g., "✅ Davi Santiago iniciou o atendimento — 6 de abril, 15:20") so there's a clear audit trail inside the chat.
+When the admin views a conversation in the "Outros" tab of the Plantão de Vendas, the input box is hidden and replaced with "Modo supervisão — somente leitura". This prevents the admin from responding to any conversation that belongs to another broker.
 
-2. **Show assigned broker info in the conversation list and thread header** — In the Plantão inbox (especially for admins), display which broker is assigned to each conversation and whether attendance has been started, so the admin can immediately see attribution status.
-
-### Changes
-
-**1. Insert system message on "Iniciar Atendimento" (AdminPlantao.tsx + BrokerPlantao.tsx)**
-
-After the `handleStartAttendance` function creates the lead and records the interaction, also insert a `conversation_messages` record with:
-- `direction: "outbound"`, `sent_by: "system"`, `content: "✅ {brokerName} iniciou o atendimento"`
-- `metadata: { system_event: "attendance_started", broker_name: brokerName }`
-
-This makes the event visible inside the chat thread. Both AdminPlantao and BrokerPlantao `handleStartAttendance` functions get this addition.
-
-**2. Fetch broker name alongside conversations (use-conversations.ts)**
-
-Update the conversation query to join the broker table:
-```sql
-broker:brokers!conversations_broker_id_fkey(id, name)
+The root cause is line 252 in `AdminPlantao.tsx`:
+```typescript
+const isReadOnlyConversation = inboxTab === "outros";
 ```
 
-Add `broker?: { id: string; name: string } | null` to the `Conversation` interface.
+This unconditionally makes all "Outros" conversations read-only — which makes sense for brokers but not for admins who need full supervisory control.
 
-**3. Show broker name in ConversationList items (ConversationList.tsx)**
+### Fix
 
-For conversations in the Plantão (where `source_instance === "global"`), add a badge showing the assigned broker's name below the existing badges:
-- If `attendance_started === true` and broker name exists: green badge "👤 Davi Santiago — Atendendo"
-- If `attendance_started === false`: orange badge "⏳ Aguardando atendimento"
+**File: `src/pages/AdminPlantao.tsx` (1 line change)**
 
-**4. Show broker info in ConversationThread header (ConversationThread.tsx)**
+Change the read-only logic so admins are never restricted:
+```typescript
+// Before:
+const isReadOnlyConversation = inboxTab === "outros";
 
-In the header area (below the phone/badges), when `source_instance === "global"` and there's an assigned broker, display:
-- Badge: "Atribuído a: {broker.name}"
-- If `attendance_started`: "Attending" status badge (already partially exists but needs broker name)
+// After:
+const isReadOnlyConversation = false;
+```
 
-**5. Render system messages distinctly in ConversationThread (ConversationThread.tsx)**
+Since this is the **Admin** Plantao page, the admin should always be able to respond. The "Outros" tab's purpose for admins is to see other brokers' conversations — but they should still be able to intervene and send messages when needed.
 
-Messages with `sent_by === "system"` should render as centered, muted system messages (like date separators) instead of chat bubbles — similar to "WhatsApp: Messages are end-to-end encrypted" style.
-
-### Technical details
-
-- The `conversation_messages` insert for system events uses `sent_by: "system"` which is already a valid value in the schema.
-- The broker join uses the existing `broker_id` FK on conversations. RLS already allows admins to see all brokers.
-- No database migration needed — just frontend changes and an extra insert call.
-- The `Conversation` interface update propagates to all consumers but the new `broker` field is optional, so no breaking changes.
+No other files need changes. The broker version (`BrokerPlantao.tsx`) correctly keeps read-only on "Outros" since brokers should not message other brokers' leads.
 
