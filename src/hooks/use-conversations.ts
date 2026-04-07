@@ -178,9 +178,9 @@ export function useConversations(options: UseConversationsOptions = {}) {
 
       if (options.inboxTab === "novos") {
         // Global conversations pending attendance
-        // fila mode: only the assigned broker sees it; disputa mode: all checked-in brokers see it
         query = query.eq("source_instance", "global").eq("attendance_started", false);
-        if (options.brokerId) {
+        // Admins see ALL pending global conversations; brokers see only their assigned or disputa
+        if (options.userRole !== "admin" && options.brokerId) {
           query = query.or(`broker_id.eq.${options.brokerId},roleta_modo.eq.disputa`);
         }
       } else if (options.inboxTab === "outros") {
