@@ -28,6 +28,7 @@ interface UAZAPIv2Payload {
     id?: string;
     timestamp?: number;
     pushName?: string;
+    senderName?: string;
     status?: string;
     sender_pn?: string;
     mimetype?: string;
@@ -1965,8 +1966,12 @@ async function handleIncomingMessage(
     console.log(`📢 Ad referral detected: source=${adReferral.source}, headline="${(adReferral.headline || "").substring(0, 60)}"`);
   }
 
+  // Resolve sender name: UAZAPI v2 uses senderName, older versions use pushName, fallback to chat.wa_name
+  const chatObj = (payload as any).chat;
+  const resolvedSenderName = msg.senderName || msg.pushName || chatObj?.wa_name || chatObj?.name || undefined;
+
   const direction = msg.fromMe ? "outbound" : "inbound";
-  console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | text="${messageText.substring(0, 50)}"`);
+  console.log(`📞 ${direction} DM: chatid="${chatid}" | phone="${phone}" | type="${resolvedMessageType}" | sender="${resolvedSenderName || '(unknown)'}" | text="${messageText.substring(0, 50)}"`);
   // Check if this is from the global WhatsApp instance
   let archiveResult: { conversationId?: string; brokerId?: string } = {};
   const isGlobal = instanceName ? await isGlobalInstance(supabase, instanceName) : false;
@@ -1975,7 +1980,7 @@ async function handleIncomingMessage(
     // Global instance routing
     archiveResult = await handleGlobalInstanceMessage(
       supabase, phone, messageText, direction as "inbound" | "outbound",
-      instanceName!, msg.pushName, "lead", msg.id, resolvedMessageType, mediaMetadata
+      instanceName!, resolvedSenderName, "lead", msg.id, resolvedMessageType, mediaMetadata
     );
   } else if (isGlobal && msg.fromMe) {
     // Outbound from global — try to find which broker owns this lead
@@ -1991,7 +1996,7 @@ async function handleIncomingMessage(
 
     if (lead?.broker_id) {
       archiveResult = await archiveMessageToConversation(
-        supabase, phone, messageText, "outbound", undefined, msg.pushName, "human",
+        supabase, phone, messageText, "outbound", undefined, resolvedSenderName, "human",
         msg.id, resolvedMessageType, mediaMetadata, lead.broker_id as string, "global"
       );
     }
@@ -1999,7 +2004,7 @@ async function handleIncomingMessage(
     // Regular broker instance flow
     archiveResult = await archiveMessageToConversation(
       supabase, phone, messageText, direction as "inbound" | "outbound",
-      instanceName, msg.pushName, msg.fromMe ? "human" : "lead", msg.id, resolvedMessageType, mediaMetadata
+      instanceName, resolvedSenderName, msg.fromMe ? "human" : "lead", msg.id, resolvedMessageType, mediaMetadata
     );
   }
 
@@ -2055,7 +2060,7 @@ async function handleIncomingMessage(
   const autoResponseConvId = archiveResult.conversationId;
 
   if (autoResponseBrokerId && autoResponseConvId) {
-    handleAutoResponse(supabase, autoResponseBrokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), autoResponseConvId, msg.pushName)
+    handleAutoResponse(supabase, autoResponseBrokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), autoResponseConvId, resolvedSenderName)
       .catch(err => console.error("Auto-response background error:", err));
   } else if (instanceName && !isGlobal) {
     // Legacy fallback for broker instance
@@ -2069,7 +2074,7 @@ async function handleIncomingMessage(
       const brokerId = (inst as { broker_id: string }).broker_id;
       const convForAuto = await getOrCreateCanonicalConversation(supabase, brokerId, phone);
       if (convForAuto) {
-        handleAutoResponse(supabase, brokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), convForAuto.id, msg.pushName)
+        handleAutoResponse(supabase, brokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), convForAuto.id, resolvedSenderName)
           .catch(err => console.error("Auto-response background error:", err));
       }
     }
