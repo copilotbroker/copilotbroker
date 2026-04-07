@@ -62,7 +62,7 @@ export default function AdminPlantao() {
         setBrokers(brokersRes.data as any);
         setAllBrokers(brokersRes.data as any);
       }
-      setSelectedBrokerId(brokerIdFound || "all");
+      setSelectedBrokerId("all");
       setIsInitialized(true);
     };
     init();
@@ -95,19 +95,21 @@ export default function AdminPlantao() {
 
   const {
     conversations: novosConversations,
+    isLoading: novosLoading,
     fetchConversations: fetchNovos,
   } = useConversations({
-    brokerId: myBrokerId || undefined,
+    brokerId: undefined,
     search: inboxTab === "novos" ? search : "",
     statusFilter: "all",
     isArchived: false,
     inboxTab: "novos",
+    userRole: "admin",
     sourceInstance: "global",
     enabled: isInitialized,
   });
 
   const activeConversations = inboxTab === "novos" ? novosConversations : conversations;
-  const activeLoading = isLoading;
+  const activeLoading = inboxTab === "novos" ? novosLoading : isLoading;
 
   const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {
