@@ -74,6 +74,9 @@ interface ConversationThreadProps {
   /** Pull conversation from global to personal instance */
   onPullToPersonal?: () => void;
   isPullingToPersonal?: boolean;
+  /** Return conversation from personal back to global instance */
+  onReturnToGlobal?: () => void;
+  isReturningToGlobal?: boolean;
 }
 
 const getMessageStatusIcon = (status?: string) => {
