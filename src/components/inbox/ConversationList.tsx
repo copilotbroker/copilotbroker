@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Conversation, InboxTab } from "@/hooks/use-conversations";
+import { Conversation, InboxTab, BrokerInboxTab } from "@/hooks/use-conversations";
 import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,11 @@ interface ConversationListProps {
   showOthersTab?: boolean;
   novosCount?: number;
   emptyMessage?: string;
+  /** Broker inbox mode: 3 tabs (Novos | Em atendimento | Arquivados) */
+  brokerInboxTab?: BrokerInboxTab;
+  onBrokerTabChange?: (tab: BrokerInboxTab) => void;
+  brokerNovosCount?: number;
+  brokerAtendimentoCount?: number;
 }
 
 type SortMode = "recent" | "unread" | "temperature" | "opportunity" | "risk" | "idle";
