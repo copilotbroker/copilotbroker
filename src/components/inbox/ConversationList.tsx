@@ -305,10 +305,62 @@ export function ConversationList({
           </div>
         )}
 
+        {/* Broker Inbox Tabs (Novos | Em atendimento | Arquivados) */}
+        {onBrokerTabChange && (
+          <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
+            <button
+              onClick={() => onBrokerTabChange("novos")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                brokerInboxTab === "novos"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Novos
+              {brokerNovosCount > 0 && (
+                <Badge variant={brokerInboxTab === "novos" ? "secondary" : "destructive"} className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
+                  {brokerNovosCount}
+                </Badge>
+              )}
+            </button>
+            <button
+              onClick={() => onBrokerTabChange("atendimento")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                brokerInboxTab === "atendimento"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Headphones className="h-3.5 w-3.5" />
+              Atendimento
+              {brokerAtendimentoCount > 0 && (
+                <Badge variant={brokerInboxTab === "atendimento" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
+                  {brokerAtendimentoCount}
+                </Badge>
+              )}
+            </button>
+            <button
+              onClick={() => onBrokerTabChange("arquivados")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                brokerInboxTab === "arquivados"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Archive className="h-3.5 w-3.5" />
+              Arquivados
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
             <Inbox className="h-5 w-5 text-primary" />
-            {inboxTab === "novos" ? "Novos Contatos" : inboxTab === "outros" ? "Equipe" : isAdminView ? "Inbox Admin" : "Inbox"}
+            {brokerInboxTab === "novos" ? "Novos" : brokerInboxTab === "atendimento" ? "Em atendimento" : brokerInboxTab === "arquivados" ? "Arquivados" : inboxTab === "novos" ? "Novos Contatos" : inboxTab === "outros" ? "Equipe" : isAdminView ? "Inbox Admin" : "Inbox"}
             {totalUnread > 0 && inboxTab === "meus" && (
               <Badge variant="destructive" className="min-w-[20px] px-1.5 py-0 text-xs h-5">
                 {totalUnread}
