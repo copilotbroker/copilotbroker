@@ -143,6 +143,25 @@ export function ConversationThread({
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
+  // Fetch lead attribution for the linked lead (shows ad tracking info)
+  const { data: leadAttribution } = useQuery({
+    queryKey: ["lead-attribution-chat", conversation.lead_id],
+    queryFn: async () => {
+      if (!conversation.lead_id) return null;
+      const { data } = await supabase
+        .from("lead_attribution")
+        .select("utm_source, utm_medium, utm_campaign, utm_content, utm_term, landing_page, created_at")
+        .eq("lead_id", conversation.lead_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!data || (!data.utm_source && !data.utm_campaign && !data.utm_medium && !data.landing_page)) return null;
+      return data;
+    },
+    enabled: !!conversation.lead_id,
+    staleTime: 5 * 60_000,
+  });
+
   const cleanupRecording = useCallback(() => {
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
