@@ -425,6 +425,7 @@ export function ConversationThread({
                 <Wifi className="h-4 w-4" />
                 <span className="hidden sm:inline">Plantão</span>
               </Button>
+            )}
             {conversation.lead_id && onTransfer && (
               <Button
                 variant="ghost"
