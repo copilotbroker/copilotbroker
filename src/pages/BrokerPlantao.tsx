@@ -209,6 +209,20 @@ export default function BrokerPlantao() {
         new_status: "info_sent",
       } as any);
 
+      // Get broker name for system message
+      const { data: brokerData } = await supabase.from("brokers").select("name").eq("id", brokerId).maybeSingle();
+      const brokerName = (brokerData as any)?.name || "Corretor";
+
+      // Insert system message into conversation thread
+      await supabase.from("conversation_messages").insert({
+        conversation_id: selectedConversation.id,
+        direction: "outbound",
+        sent_by: "system",
+        content: `✅ ${brokerName} iniciou o atendimento`,
+        message_type: "text",
+        metadata: { system_event: "attendance_started", broker_name: brokerName },
+      } as any);
+
       toast.success("Atendimento iniciado! Lead criado no Kanban.");
 
       setInboxTab("meus");

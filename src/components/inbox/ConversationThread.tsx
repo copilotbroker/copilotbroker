@@ -356,6 +356,11 @@ export function ConversationThread({
                 <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
                   {conversation.lead_id ? "Lead vinculado" : hasResolvedName ? "Nome identificado" : "WhatsApp direto"}
                 </Badge>
+                {(conversation as any).source_instance === "global" && (conversation as any).broker?.name && (
+                  <Badge className="h-4 px-1.5 text-[10px] bg-emerald-600/20 text-emerald-400 border-emerald-500/30 border">
+                    Atribuído a: {(conversation as any).broker.name}
+                  </Badge>
+                )}
                 {conversation.status && (
                   <Badge variant="secondary" className="h-4 px-1.5 text-[10px] capitalize">
                     {conversation.status}
@@ -489,6 +494,7 @@ export function ConversationThread({
             {messages.map((msg, index) => {
               const isOutbound = msg.direction === "outbound";
               const isAi = msg.sent_by === "ai";
+              const isSystemMessage = msg.sent_by === "system";
               const previousMessage = messages[index - 1];
               const showDayDivider = !previousMessage || formatMessageDay(previousMessage.created_at) !== formatMessageDay(msg.created_at);
 
@@ -530,7 +536,19 @@ export function ConversationThread({
                     </div>
                   )}
 
-                  <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
+                  {isSystemMessage ? (
+                    <div className="my-2 flex items-center gap-3">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="rounded-full bg-muted/60 border border-border px-3 py-1 text-[11px] text-muted-foreground">
+                        {msg.content}
+                        <span className="ml-2 text-[10px] opacity-70">
+                          {format(new Date(msg.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                  ) : (
+                    <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
                     <div className={cn(
                       "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
                       isOutbound
@@ -571,6 +589,7 @@ export function ConversationThread({
                       </span>
                     </div>
                   </div>
+                  )}
                 </div>
               );
             })}
