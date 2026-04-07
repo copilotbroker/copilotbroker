@@ -7,6 +7,7 @@ import {
   HomeDifferentials,
   HomeProcess,
   HomePartnership,
+  HomePlatform,
   HomeCTA,
 } from "@/components/home";
 
