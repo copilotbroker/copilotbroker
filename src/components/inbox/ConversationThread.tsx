@@ -26,6 +26,7 @@ import {
   Square,
 } from "lucide-react";
 import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
+import { AdReferralCard } from "./AdReferralCard";
 import { MessageMedia } from "./MessageMedia";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
