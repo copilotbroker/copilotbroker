@@ -1996,7 +1996,7 @@ async function handleIncomingMessage(
 
     if (lead?.broker_id) {
       archiveResult = await archiveMessageToConversation(
-        supabase, phone, messageText, "outbound", undefined, msg.pushName, "human",
+        supabase, phone, messageText, "outbound", undefined, resolvedSenderName, "human",
         msg.id, resolvedMessageType, mediaMetadata, lead.broker_id as string, "global"
       );
     }
@@ -2004,7 +2004,7 @@ async function handleIncomingMessage(
     // Regular broker instance flow
     archiveResult = await archiveMessageToConversation(
       supabase, phone, messageText, direction as "inbound" | "outbound",
-      instanceName, msg.pushName, msg.fromMe ? "human" : "lead", msg.id, resolvedMessageType, mediaMetadata
+      instanceName, resolvedSenderName, msg.fromMe ? "human" : "lead", msg.id, resolvedMessageType, mediaMetadata
     );
   }
 
@@ -2060,7 +2060,7 @@ async function handleIncomingMessage(
   const autoResponseConvId = archiveResult.conversationId;
 
   if (autoResponseBrokerId && autoResponseConvId) {
-    handleAutoResponse(supabase, autoResponseBrokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), autoResponseConvId, msg.pushName)
+    handleAutoResponse(supabase, autoResponseBrokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), autoResponseConvId, resolvedSenderName)
       .catch(err => console.error("Auto-response background error:", err));
   } else if (instanceName && !isGlobal) {
     // Legacy fallback for broker instance
@@ -2074,7 +2074,7 @@ async function handleIncomingMessage(
       const brokerId = (inst as { broker_id: string }).broker_id;
       const convForAuto = await getOrCreateCanonicalConversation(supabase, brokerId, phone);
       if (convForAuto) {
-        handleAutoResponse(supabase, brokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), convForAuto.id, msg.pushName)
+        handleAutoResponse(supabase, brokerId, getCanonicalPhone(phone), getCanonicalPhoneNormalized(phone), convForAuto.id, resolvedSenderName)
           .catch(err => console.error("Auto-response background error:", err));
       }
     }
