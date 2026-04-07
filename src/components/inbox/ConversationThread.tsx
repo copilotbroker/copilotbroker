@@ -514,6 +514,19 @@ export function ConversationThread({
           <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma mensagem ainda. Envie a primeira!</div>
         ) : (
           <div className="space-y-3">
+            {/* Lead attribution card from CRM data */}
+            {leadAttribution && (
+              <AdReferralCard
+                referral={{
+                  source: leadAttribution.utm_source || undefined,
+                  campaign: leadAttribution.utm_campaign || undefined,
+                  headline: leadAttribution.utm_content || undefined,
+                  medium: leadAttribution.utm_medium || undefined,
+                  source_url: leadAttribution.landing_page || undefined,
+                }}
+                timestamp={leadAttribution.created_at}
+              />
+            )}
             {messages.map((msg, index) => {
               const isOutbound = msg.direction === "outbound";
               const isAi = msg.sent_by === "ai";
