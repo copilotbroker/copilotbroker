@@ -68,6 +68,7 @@ const Home = () => {
           <HomeDifferentials />
           <HomeProcess />
           <HomePartnership />
+          <HomePlatform />
           <HomeCTA />
         </main>
 
