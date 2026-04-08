@@ -676,14 +676,12 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                 <Zap className="w-3.5 h-3.5 mr-1.5" />+ Cadência
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={() => setTransferOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-blue-500/20 text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/30">
+              <ArrowRightLeft className="w-3.5 h-3.5 mr-1.5" />Transferir
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setPerdaOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-[#2a2a2e] text-red-400/80 hover:bg-red-500/10 hover:border-red-500/20">
               <UserX className="w-3.5 h-3.5 mr-1.5" />Inativar
             </Button>
-            {canTransfer && (
-              <Button variant="outline" size="sm" onClick={() => setTransferOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-[#2a2a2e] text-slate-400 hover:bg-[#1e1e22]">
-                <ArrowRightLeft className="w-3.5 h-3.5 mr-1.5" />Transferir
-              </Button>
-            )}
           </div>
         )}
 
