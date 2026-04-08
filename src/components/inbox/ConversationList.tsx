@@ -273,6 +273,42 @@ export function ConversationList({
             className="h-9 pl-8 text-sm"
           />
         </div>
+
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setQuickFilter(quickFilter === "unread" ? null : "unread")}
+            className={cn(
+              "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+              quickFilter === "unread"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            )}
+          >
+            <Eye className="h-3 w-3" /> Não lidas
+          </button>
+          <button
+            onClick={() => setQuickFilter(quickFilter === "labels" ? null : "labels")}
+            className={cn(
+              "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+              quickFilter === "labels"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            )}
+          >
+            <Tag className="h-3 w-3" /> Etiquetas
+          </button>
+          <button
+            onClick={() => setQuickFilter(quickFilter === "oldest" ? null : "oldest")}
+            className={cn(
+              "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+              quickFilter === "oldest"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            )}
+          >
+            <Clock className="h-3 w-3" /> Mais antigas
+          </button>
+        </div>
       </div>
 
       <ScrollArea className="flex-1">
