@@ -413,6 +413,10 @@ export function ConversationList({
                 ? (Date.now() - new Date(conv.last_message_at).getTime()) / (1000 * 60 * 60)
                 : 0;
               const hasCadenciaAtiva = conv.lead_id ? cadenciaLeadIds.has(conv.lead_id) : false;
+              const convLabelIds = conv.lead_id ? leadLabelMap.get(conv.lead_id) || [] : [];
+              const convLabels = convLabelIds
+                .map(lid => brokerLabels.find(bl => bl.id === lid))
+                .filter((l): l is BrokerLabel => !!l);
               const preview = getLastPreview(conv);
 
               return (
