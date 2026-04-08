@@ -200,8 +200,8 @@ export default function AdminInbox() {
   }, [selectedConversation, fetchConversations]);
 
   const handleTransferFromInbox = useCallback(() => {
-    if (selectedConversation?.lead_id) setShowTransferDialog(true);
-  }, [selectedConversation]);
+    setShowTransferDialog(true);
+  }, []);
 
   const handleTransferred = useCallback(() => {
     setShowTransferDialog(false);
@@ -320,7 +320,7 @@ export default function AdminInbox() {
                   onOpenLeadPanel={() => setShowLeadPanel(!showLeadPanel)}
                   onCreateLead={!selectedConversation!.lead_id ? handleOpenCreateLeadModal : undefined}
                   onOpenLead={handleOpenLead}
-                  onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
+                  onTransfer={handleTransferFromInbox}
                   onReturnToGlobal={handleReturnToGlobal}
                   isReturningToGlobal={isReturningToGlobal}
                   isNewLead={isNewConversation}
