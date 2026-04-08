@@ -3,13 +3,14 @@ import {
   Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
   Target, MoreVertical, Check, Zap,
   Eye, EyeOff, LayoutGrid, Archive,
-  Users, UserPlus, User, Headphones, Tag
+  Users, UserPlus, User, Headphones, Tag, ChevronDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +46,13 @@ interface ConversationListProps {
   onBrokerTabChange?: (tab: BrokerInboxTab) => void;
   brokerNovosCount?: number;
   brokerAtendimentoCount?: number;
+  brokerId?: string | null;
+}
+
+interface BrokerLabel {
+  id: string;
+  name: string;
+  color: string | null;
 }
 
 // Stable animation style for active cadence (matches KanbanCard)
@@ -74,13 +82,17 @@ export function ConversationList({
   onBrokerTabChange,
   brokerNovosCount = 0,
   brokerAtendimentoCount = 0,
+  brokerId,
 }: ConversationListProps) {
   const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
-  const [labelLeadIds, setLabelLeadIds] = useState<Set<string>>(new Set());
-  const [quickFilter, setQuickFilter] = useState<null | "unread" | "labels" | "oldest">(null);
+  const [leadLabelMap, setLeadLabelMap] = useState<Map<string, string[]>>(new Map());
+  const [brokerLabels, setBrokerLabels] = useState<BrokerLabel[]>([]);
+  const [quickFilter, setQuickFilter] = useState<null | "unread" | "oldest">(null);
+  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
+  const [labelPopoverOpen, setLabelPopoverOpen] = useState(false);
 
   // Reset quick filter when tab changes
-  useEffect(() => { setQuickFilter(null); }, [inboxTab, brokerInboxTab]);
+  useEffect(() => { setQuickFilter(null); setSelectedLabelId(null); }, [inboxTab, brokerInboxTab]);
 
   // Fetch lead IDs with active cadences (pending messages in queue)
   useEffect(() => {
@@ -100,18 +112,38 @@ export function ConversationList({
     fetchCadencias();
   }, [conversations]);
 
-  // Fetch lead IDs with labels
+  // Fetch broker labels catalog
+  useEffect(() => {
+    if (!brokerId) { setBrokerLabels([]); return; }
+    const fetchBrokerLabels = async () => {
+      const { data } = await supabase
+        .from("whatsapp_labels")
+        .select("id, name, color")
+        .eq("broker_id", brokerId)
+        .order("name");
+      if (data) setBrokerLabels(data as BrokerLabel[]);
+    };
+    fetchBrokerLabels();
+  }, [brokerId]);
+
+  // Fetch lead→label mapping
   useEffect(() => {
     const leadIds = conversations.filter(c => c.lead_id).map(c => c.lead_id!);
-    if (leadIds.length === 0) { setLabelLeadIds(new Set()); return; }
+    if (leadIds.length === 0) { setLeadLabelMap(new Map()); return; }
 
     const fetchLabels = async () => {
       const { data } = await supabase
         .from("lead_whatsapp_labels")
-        .select("lead_id")
+        .select("lead_id, label_id")
         .in("lead_id", leadIds);
       if (data) {
-        setLabelLeadIds(new Set(data.map((d: any) => d.lead_id)));
+        const map = new Map<string, string[]>();
+        data.forEach((d: any) => {
+          const existing = map.get(d.lead_id) || [];
+          existing.push(d.label_id);
+          map.set(d.lead_id, existing);
+        });
+        setLeadLabelMap(map);
       }
     };
     fetchLabels();
@@ -120,14 +152,14 @@ export function ConversationList({
   const sortedConversations = useMemo(() => {
     let result = [...conversations];
     if (quickFilter === "unread") result = result.filter(c => c.unread_count > 0);
-    if (quickFilter === "labels") result = result.filter(c => c.lead_id ? labelLeadIds.has(c.lead_id) : false);
+    if (selectedLabelId) result = result.filter(c => c.lead_id && leadLabelMap.get(c.lead_id)?.includes(selectedLabelId));
     result.sort((a, b) => {
       const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
       const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
       return quickFilter === "oldest" ? aTime - bTime : bTime - aTime;
     });
     return result;
-  }, [conversations, quickFilter, labelLeadIds]);
+  }, [conversations, quickFilter, selectedLabelId, leadLabelMap]);
 
   const getLastPreview = (conv: Conversation) => {
     const preview = conv.last_message_preview || "Sem mensagens";
@@ -286,17 +318,62 @@ export function ConversationList({
           >
             <Eye className="h-3 w-3" /> Não lidas
           </button>
-          <button
-            onClick={() => setQuickFilter(quickFilter === "labels" ? null : "labels")}
-            className={cn(
-              "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-              quickFilter === "labels"
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            )}
-          >
-            <Tag className="h-3 w-3" /> Etiquetas
-          </button>
+          <Popover open={labelPopoverOpen} onOpenChange={setLabelPopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={cn(
+                  "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                  selectedLabelId
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                )}
+              >
+                <Tag className="h-3 w-3" />
+                {selectedLabelId
+                  ? (brokerLabels.find(l => l.id === selectedLabelId)?.name || "Etiqueta")
+                  : "Etiquetas"}
+                <ChevronDown className="h-2.5 w-2.5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-56 p-2">
+              {brokerLabels.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground text-center">Nenhuma etiqueta encontrada</p>
+              ) : (
+                <div className="space-y-0.5">
+                  {selectedLabelId && (
+                    <button
+                      onClick={() => { setSelectedLabelId(null); setLabelPopoverOpen(false); }}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60"
+                    >
+                      Limpar filtro
+                    </button>
+                  )}
+                  {brokerLabels.map(label => (
+                    <button
+                      key={label.id}
+                      onClick={() => {
+                        setSelectedLabelId(selectedLabelId === label.id ? null : label.id);
+                        setLabelPopoverOpen(false);
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors",
+                        selectedLabelId === label.id
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-muted/60"
+                      )}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: label.color || 'hsl(var(--muted-foreground))' }}
+                      />
+                      <span className="truncate">{label.name}</span>
+                      {selectedLabelId === label.id && <Check className="ml-auto h-3 w-3 flex-shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
           <button
             onClick={() => setQuickFilter(quickFilter === "oldest" ? null : "oldest")}
             className={cn(
@@ -336,6 +413,10 @@ export function ConversationList({
                 ? (Date.now() - new Date(conv.last_message_at).getTime()) / (1000 * 60 * 60)
                 : 0;
               const hasCadenciaAtiva = conv.lead_id ? cadenciaLeadIds.has(conv.lead_id) : false;
+              const convLabelIds = conv.lead_id ? leadLabelMap.get(conv.lead_id) || [] : [];
+              const convLabels = convLabelIds
+                .map(lid => brokerLabels.find(bl => bl.id === lid))
+                .filter((l): l is BrokerLabel => !!l);
               const preview = getLastPreview(conv);
 
               return (
@@ -412,6 +493,25 @@ export function ConversationList({
                           ) : (
                             <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
                               <LayoutGrid className="mr-1 h-3 w-3" /> Sem card no Kanban
+                            </Badge>
+                          )}
+                          {convLabels.length > 0 && convLabels.slice(0, 2).map(label => (
+                            <Badge
+                              key={label.id}
+                              variant="outline"
+                              className="h-4 px-1.5 text-[10px] border-opacity-60"
+                              style={{
+                                backgroundColor: label.color ? `${label.color}18` : undefined,
+                                borderColor: label.color ? `${label.color}50` : undefined,
+                                color: label.color || undefined,
+                              }}
+                            >
+                              <Tag className="mr-0.5 h-2.5 w-2.5" /> {label.name}
+                            </Badge>
+                          ))}
+                          {convLabels.length > 2 && (
+                            <Badge variant="outline" className="h-4 px-1 text-[10px]">
+                              +{convLabels.length - 2}
                             </Badge>
                           )}
                           {conv.last_message_type && conv.last_message_type !== "text" && (

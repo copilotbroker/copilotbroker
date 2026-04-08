@@ -284,6 +284,7 @@ export default function AdminInbox() {
                 onBrokerTabChange={handleTabChange}
                 brokerNovosCount={novosConversations.length}
                 brokerAtendimentoCount={atendimentoConversations.length}
+                brokerId={myBrokerId}
               />
             </div>
           )}

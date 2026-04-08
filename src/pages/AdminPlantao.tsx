@@ -360,6 +360,7 @@ export default function AdminPlantao() {
                   onTabChange={handleTabChange}
                   showOthersTab={true}
                   novosCount={novosConversations.length}
+                  brokerId={selectedBrokerId !== "all" && selectedBrokerId !== "_loading" ? selectedBrokerId : myBrokerId}
                 />
               </div>
             </div>
