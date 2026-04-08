@@ -318,17 +318,62 @@ export function ConversationList({
           >
             <Eye className="h-3 w-3" /> Não lidas
           </button>
-          <button
-            onClick={() => setQuickFilter(quickFilter === "labels" ? null : "labels")}
-            className={cn(
-              "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-              quickFilter === "labels"
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            )}
-          >
-            <Tag className="h-3 w-3" /> Etiquetas
-          </button>
+          <Popover open={labelPopoverOpen} onOpenChange={setLabelPopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={cn(
+                  "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                  selectedLabelId
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                )}
+              >
+                <Tag className="h-3 w-3" />
+                {selectedLabelId
+                  ? (brokerLabels.find(l => l.id === selectedLabelId)?.name || "Etiqueta")
+                  : "Etiquetas"}
+                <ChevronDown className="h-2.5 w-2.5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-56 p-2">
+              {brokerLabels.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground text-center">Nenhuma etiqueta encontrada</p>
+              ) : (
+                <div className="space-y-0.5">
+                  {selectedLabelId && (
+                    <button
+                      onClick={() => { setSelectedLabelId(null); setLabelPopoverOpen(false); }}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60"
+                    >
+                      Limpar filtro
+                    </button>
+                  )}
+                  {brokerLabels.map(label => (
+                    <button
+                      key={label.id}
+                      onClick={() => {
+                        setSelectedLabelId(selectedLabelId === label.id ? null : label.id);
+                        setLabelPopoverOpen(false);
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors",
+                        selectedLabelId === label.id
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-muted/60"
+                      )}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: label.color || 'hsl(var(--muted-foreground))' }}
+                      />
+                      <span className="truncate">{label.name}</span>
+                      {selectedLabelId === label.id && <Check className="ml-auto h-3 w-3 flex-shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
           <button
             onClick={() => setQuickFilter(quickFilter === "oldest" ? null : "oldest")}
             className={cn(
