@@ -575,7 +575,7 @@ export function ConversationThread({
 
                   {instanceChanged && (
                     <div className="my-3 flex items-center gap-2">
-                      <div className="h-px flex-1 bg-primary/30" />
+                      <div className={cn("h-px flex-1", isGlobalInstance ? "bg-emerald-500/30" : "bg-purple-500/30")} />
                       <span className={cn(
                         "flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-medium",
                         isGlobalInstance
