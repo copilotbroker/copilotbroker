@@ -446,7 +446,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     }
   };
 
-  const whatsappLink = `https://wa.me/55${lead.whatsapp.replace(/\D/g, "")}`;
+  // whatsappLink removed - messages are now sent via platform
 
   return (
     <div className={cn(isEmbedded ? "h-full overflow-auto" : "min-h-screen", "bg-[#0a0a0d] text-white")}>
