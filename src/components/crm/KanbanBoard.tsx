@@ -16,6 +16,7 @@ import { PropostaModal } from "./PropostaModal";
 import { VendaModal } from "./VendaModal";
 import { PerdaModal } from "./PerdaModal";
 import { CallLogModal } from "./CallLogModal";
+import { TransferLeadDialog } from "./TransferLeadDialog";
 import { NewCampaignSheet } from "@/components/whatsapp/NewCampaignSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { cancelCadenciaForLead } from "@/hooks/use-cadencia-ativa";
@@ -122,6 +123,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [perdaModal, setPerdaModal] = useState<{ open: boolean; leadId: string | null; currentStatus: LeadStatus }>({ open: false, leadId: null, currentStatus: "new" });
   const [newLeadIds, setNewLeadIds] = useState<Set<string>>(new Set());
   const [callModal, setCallModal] = useState<{ open: boolean; leadId: string | null }>({ open: false, leadId: null });
+  const [cardTransferModal, setCardTransferModal] = useState<{ open: boolean; leadId: string | null; leadName: string; currentBrokerId: string | null }>({ open: false, leadId: null, leadName: "", currentBrokerId: null });
   const newLeadTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const { criarProposta } = usePropostas(propostaModal.leadId || "");
@@ -362,6 +364,16 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const handleDeleteLead = async (leadId: string) => {
     await deleteLead(leadId);
   };
+
+  const handleCardTransfer = useCallback((leadId: string) => {
+    const lead = allLeadsRef.current.get(leadId);
+    setCardTransferModal({
+      open: true,
+      leadId,
+      leadName: lead?.name || "Lead",
+      currentBrokerId: lead?.broker_id || null,
+    });
+  }, []);
 
   const handleDispatchWhatsApp = (status: LeadStatus) => {
     setWhatsappPreselectedStatus(status);
@@ -772,6 +784,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
                 onSendWhatsAppNow={handleSendWhatsAppNow}
                 onScheduleWhatsApp={handleScheduleWhatsApp}
                 onCallClick={handleCallClick}
+                onTransfer={handleCardTransfer}
               />
             ))}
           </div>
@@ -881,6 +894,23 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
         brokerId={callModal.leadId ? allLeadsRef.current.get(callModal.leadId)?.broker_id : brokerId}
         onConfirm={handleCallConfirm}
       />
+
+      {/* Card-level Transfer Dialog */}
+      {cardTransferModal.open && cardTransferModal.leadId && (
+        <TransferLeadDialog
+          leadId={cardTransferModal.leadId}
+          leadName={cardTransferModal.leadName}
+          currentBrokerId={cardTransferModal.currentBrokerId}
+          brokers={brokers}
+          roletas={activeRoletas}
+          isOpen={cardTransferModal.open}
+          onClose={() => setCardTransferModal({ open: false, leadId: null, leadName: "", currentBrokerId: null })}
+          onTransferred={() => {
+            setCardTransferModal({ open: false, leadId: null, leadName: "", currentBrokerId: null });
+            invalidateAll();
+          }}
+        />
+      )}
     </div>
   );
 }
