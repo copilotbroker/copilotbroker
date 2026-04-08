@@ -21,7 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface TransferLeadDialogProps {
-  leadId: string;
+  leadId?: string | null;
+  conversationId?: string | null;
   leadName: string;
   currentBrokerId?: string | null;
   brokers: { id: string; name: string }[];
@@ -33,6 +34,7 @@ interface TransferLeadDialogProps {
 
 export function TransferLeadDialog({
   leadId,
+  conversationId,
   leadName,
   currentBrokerId,
   brokers,
@@ -55,91 +57,139 @@ export function TransferLeadDialog({
     setIsTransferring(true);
     try {
       if (mode === "corretor") {
-        const { error } = await supabase.rpc("transfer_lead", {
-          _lead_id: leadId,
-          _new_broker_id: selectedBrokerId,
-        });
-        if (error) throw error;
+        if (leadId) {
+          // Transfer lead (existing flow)
+          const { error } = await supabase.rpc("transfer_lead", {
+            _lead_id: leadId,
+            _new_broker_id: selectedBrokerId,
+          });
+          if (error) throw error;
+        }
+
+        // Also transfer conversation if we have one
+        if (conversationId) {
+          await supabase
+            .from("conversations")
+            .update({
+              broker_id: selectedBrokerId,
+              reserva_expira_em: null,
+              attendance_started: leadId ? undefined : false,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", conversationId);
+        }
 
         // Notify new broker via WhatsApp (non-blocking)
-        try {
-          await supabase.functions.invoke("notify-transfer", {
-            body: { lead_id: leadId, new_broker_id: selectedBrokerId },
-          });
-        } catch (notifyErr) {
-          console.error("Notify transfer failed (non-critical):", notifyErr);
+        if (leadId) {
+          try {
+            await supabase.functions.invoke("notify-transfer", {
+              body: { lead_id: leadId, new_broker_id: selectedBrokerId },
+            });
+          } catch (notifyErr) {
+            console.error("Notify transfer failed (non-critical):", notifyErr);
+          }
         }
 
         const targetBroker = brokers.find(b => b.id === selectedBrokerId);
         toast.success(`Lead transferido para ${targetBroker?.name || "corretor"}`);
       } else {
-        // Fetch current lead project_id to preserve it
-        const { data: currentLead, error: leadError } = await supabase
-          .from("leads")
-          .select("project_id")
-          .eq("id", leadId)
-          .single();
+        if (leadId) {
+          // Existing roleta transfer flow for leads
+          const { data: currentLead, error: leadError } = await supabase
+            .from("leads")
+            .select("project_id")
+            .eq("id", leadId)
+            .single();
 
-        if (leadError) throw leadError;
+          if (leadError) throw leadError;
 
-        let projectId = currentLead?.project_id || null;
+          let projectId = currentLead?.project_id || null;
 
-        // Only use roleta's empreendimento as fallback if lead has no project_id
-        if (!projectId) {
-          const { data: empreendimentos, error: empError } = await (supabase
-            .from("roletas_empreendimentos" as any)
-            .select("empreendimento_id")
-            .eq("roleta_id", selectedRoletaId)
-            .eq("ativo", true)
-            .limit(1) as any);
+          if (!projectId) {
+            const { data: empreendimentos, error: empError } = await (supabase
+              .from("roletas_empreendimentos" as any)
+              .select("empreendimento_id")
+              .eq("roleta_id", selectedRoletaId)
+              .eq("ativo", true)
+              .limit(1) as any);
 
-          if (empError) throw empError;
-          projectId = empreendimentos?.[0]?.empreendimento_id || null;
-        }
+            if (empError) throw empError;
+            projectId = empreendimentos?.[0]?.empreendimento_id || null;
+          }
 
-        // Clear broker assignment and reset distribution status (preserve project_id)
-        const updatePayload: any = {
-          broker_id: null,
-          roleta_id: null,
-          status_distribuicao: null,
-          reserva_expira_em: null,
-          corretor_atribuido_id: null,
-          atribuido_em: null,
-        };
-        // Only set project_id if it was a fallback (lead had none)
-        if (!currentLead?.project_id && projectId) {
-          updatePayload.project_id = projectId;
-        }
+          const updatePayload: any = {
+            broker_id: null,
+            roleta_id: null,
+            status_distribuicao: null,
+            reserva_expira_em: null,
+            corretor_atribuido_id: null,
+            atribuido_em: null,
+          };
+          if (!currentLead?.project_id && projectId) {
+            updatePayload.project_id = projectId;
+          }
 
-        const { error: updateError } = await supabase
-          .from("leads")
-          .update(updatePayload)
-          .eq("id", leadId);
+          const { error: updateError } = await supabase
+            .from("leads")
+            .update(updatePayload)
+            .eq("id", leadId);
 
-        if (updateError) throw updateError;
+          if (updateError) throw updateError;
 
-        // Log interaction
-        const userId = (await supabase.auth.getUser()).data.user?.id;
-        const targetRoleta = roletas.find(r => r.id === selectedRoletaId);
-        await supabase.from("lead_interactions").insert({
-          lead_id: leadId,
-          interaction_type: "roleta_transferencia" as any,
-          notes: `Lead enviado para roleta "${targetRoleta?.nome || "Roleta"}" para redistribuição`,
-          created_by: userId,
-        });
+          const userId = (await supabase.auth.getUser()).data.user?.id;
+          const targetRoleta = roletas.find(r => r.id === selectedRoletaId);
+          await supabase.from("lead_interactions").insert({
+            lead_id: leadId,
+            interaction_type: "roleta_transferencia" as any,
+            notes: `Lead enviado para roleta "${targetRoleta?.nome || "Roleta"}" para redistribuição`,
+            created_by: userId,
+          });
 
-        // Invoke roleta-distribuir to trigger round-robin
-        if (projectId) {
+          if (projectId) {
+            try {
+              await supabase.functions.invoke("roleta-distribuir", {
+                body: { lead_id: leadId, project_id: projectId },
+              });
+            } catch (roletaErr) {
+              console.error("Roleta distribuir invoke failed:", roletaErr);
+            }
+          }
+
+          // Also clear timeout on conversation
+          if (conversationId) {
+            await supabase
+              .from("conversations")
+              .update({ reserva_expira_em: null, updated_at: new Date().toISOString() })
+              .eq("id", conversationId);
+          }
+
+          toast.success(`Lead enviado para roleta "${targetRoleta?.nome || "Roleta"}"`);
+        } else if (conversationId) {
+          // Conversation-only roleta transfer: clear broker, invoke roleta-distribuir
+          const { error: convError } = await supabase
+            .from("conversations")
+            .update({
+              broker_id: null as any,
+              reserva_expira_em: null,
+              attendance_started: false,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", conversationId);
+
+          if (convError) throw convError;
+
+          // Try to invoke roleta for redistribution
           try {
             await supabase.functions.invoke("roleta-distribuir", {
-              body: { lead_id: leadId, project_id: projectId },
+              body: { conversation_id: conversationId, roleta_id: selectedRoletaId },
             });
           } catch (roletaErr) {
-            console.error("Roleta distribuir invoke failed:", roletaErr);
+            console.error("Roleta distribuir for conversation failed:", roletaErr);
           }
-        }
 
-        toast.success(`Lead enviado para roleta "${targetRoleta?.nome || "Roleta"}"`);
+          const targetRoleta = roletas.find(r => r.id === selectedRoletaId);
+          toast.success(`Conversa enviada para roleta "${targetRoleta?.nome || "Roleta"}"`);
+        }
       }
 
       onTransferred();

@@ -138,8 +138,8 @@ export default function BrokerInbox() {
   }, []);
 
   const handleTransferFromInbox = useCallback(() => {
-    if (selectedConversation?.lead_id) setShowTransferDialog(true);
-  }, [selectedConversation]);
+    setShowTransferDialog(true);
+  }, []);
 
   const handleTransferred = useCallback(() => {
     setShowTransferDialog(false);
@@ -357,7 +357,7 @@ export default function BrokerInbox() {
                 onOpenLeadPanel={() => setShowLeadPanel(!showLeadPanel)}
                 onCreateLead={!selectedConversation!.lead_id ? handleOpenCreateLeadModal : undefined}
                 onOpenLead={handleOpenLead}
-                onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
+                onTransfer={handleTransferFromInbox}
                 onReturnToGlobal={handleReturnToGlobal}
                 isReturningToGlobal={isReturningToGlobal}
                 isNewLead={isNewConversation}
@@ -392,9 +392,10 @@ export default function BrokerInbox() {
         />
       )}
 
-      {selectedConversation?.lead_id && brokerId && (
+      {selectedConversation && brokerId && (
         <TransferLeadDialog
-          leadId={selectedConversation.lead_id}
+          leadId={selectedConversation.lead_id || undefined}
+          conversationId={selectedConversation.id}
           leadName={(selectedConversation.lead as any)?.name || selectedConversation.display_name || selectedConversation.phone}
           currentBrokerId={brokerId}
           brokers={allBrokers}

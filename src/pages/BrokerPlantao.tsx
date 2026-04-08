@@ -288,8 +288,8 @@ export default function BrokerPlantao() {
   }, [selectedConversation, navigate]);
 
   const handleTransferFromInbox = useCallback(() => {
-    if (selectedConversation?.lead_id) setShowTransferDialog(true);
-  }, [selectedConversation]);
+    setShowTransferDialog(true);
+  }, []);
 
   const handleTransferred = useCallback(() => {
     setShowTransferDialog(false);
@@ -404,7 +404,7 @@ export default function BrokerPlantao() {
                 onStartAttendance={handleStartAttendance}
                 isStartingAttendance={isStartingAttendance}
                 isReadOnly={isReadOnlyConversation}
-                onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
+                onTransfer={handleTransferFromInbox}
                 onPullToPersonal={handlePullToPersonal}
                 isPullingToPersonal={isPullingToPersonal}
               />
@@ -424,9 +424,10 @@ export default function BrokerPlantao() {
         )}
       </div>
 
-      {selectedConversation?.lead_id && brokerId && (
+      {selectedConversation && brokerId && (
         <TransferLeadDialog
-          leadId={selectedConversation.lead_id}
+          leadId={selectedConversation.lead_id || undefined}
+          conversationId={selectedConversation.id}
           leadName={(selectedConversation.lead as any)?.name || selectedConversation.display_name || selectedConversation.phone}
           currentBrokerId={brokerId}
           brokers={allBrokers}

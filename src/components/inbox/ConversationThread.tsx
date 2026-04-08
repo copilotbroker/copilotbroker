@@ -426,7 +426,7 @@ export function ConversationThread({
                 <span className="hidden sm:inline">Plantão</span>
               </Button>
             )}
-            {conversation.lead_id && onTransfer && (
+            {onTransfer && (
               <Button
                 variant="ghost"
                 size="icon"
