@@ -106,6 +106,7 @@ export const KanbanCard = memo(function KanbanCard({
   onSendWhatsAppNow,
   onScheduleWhatsApp,
   onCallClick,
+  onTransfer,
 }: KanbanCardProps) {
   const [composerOpen, setComposerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
