@@ -362,19 +362,19 @@ export function ConversationList({
               </button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-56 p-2">
-              {brokerLabels.length === 0 ? (
-                <p className="px-2 py-3 text-xs text-muted-foreground text-center">Nenhuma etiqueta encontrada</p>
-              ) : (
-                <div className="space-y-0.5">
-                  {selectedLabelId && (
-                    <button
-                      onClick={() => { setSelectedLabelId(null); setLabelPopoverOpen(false); }}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60"
-                    >
-                      Limpar filtro
-                    </button>
-                  )}
-                  {brokerLabels.map(label => (
+              <div className="space-y-0.5">
+                {selectedLabelId && (
+                  <button
+                    onClick={() => { setSelectedLabelId(null); setLabelPopoverOpen(false); }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60"
+                  >
+                    Limpar filtro
+                  </button>
+                )}
+                {brokerLabels.length === 0 ? (
+                  <p className="px-2 py-3 text-xs text-muted-foreground text-center">Nenhuma etiqueta encontrada</p>
+                ) : (
+                  brokerLabels.map(label => (
                     <button
                       key={label.id}
                       onClick={() => {
@@ -395,9 +395,19 @@ export function ConversationList({
                       <span className="truncate">{label.name}</span>
                       {selectedLabelId === label.id && <Check className="ml-auto h-3 w-3 flex-shrink-0" />}
                     </button>
-                  ))}
+                  ))
+                )}
+                <div className="border-t border-border mt-1 pt-1">
+                  <button
+                    onClick={handleSyncLabels}
+                    disabled={isSyncingLabels}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60 disabled:opacity-50"
+                  >
+                    <RefreshCw className={cn("h-3 w-3", isSyncingLabels && "animate-spin")} />
+                    {isSyncingLabels ? "Atualizando..." : "Atualizar etiquetas"}
+                  </button>
                 </div>
-              )}
+              </div>
             </PopoverContent>
           </Popover>
           <button
