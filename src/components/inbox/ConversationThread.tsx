@@ -728,7 +728,12 @@ export function ConversationThread({
               }}
               onKeyDown={handleKeyDown}
               placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem..."}
-              className="max-h-[160px] min-h-[36px] resize-none overflow-y-auto py-2 text-sm"
+              className={cn(
+                "max-h-[160px] min-h-[36px] resize-none overflow-y-auto py-2 text-sm",
+                (conversation as any).source_instance === "global"
+                  ? "border-emerald-500/40 focus-visible:ring-emerald-500/30"
+                  : "border-purple-500/40 focus-visible:ring-purple-500/30"
+              )}
               rows={1}
             />
             <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
