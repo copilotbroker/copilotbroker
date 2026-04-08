@@ -56,8 +56,8 @@ import TermosMonaco from "./pages/monaco/TermosMonaco";
 import VivaParkLandingPage from "./pages/vivapark/VivaParkLandingPage";
 import VivaParkBrokerLandingPage from "./pages/vivapark/VivaParkBrokerLandingPage";
 import TermosVivaPark from "./pages/vivapark/TermosVivaPark";
-import ASRamosLandingPage from "./pages/vivapark/ASRamosLandingPage";
-import ASRamosBrokerLandingPage from "./pages/vivapark/ASRamosBrokerLandingPage";
+import NC1LandingPage from "./pages/vivapark/NC1LandingPage";
+import NC1BrokerLandingPage from "./pages/vivapark/NC1BrokerLandingPage";
 
 const queryClient = new QueryClient();
 
@@ -117,11 +117,14 @@ const App = () => (
             <Route path="/portobelo/vivapark/:brokerSlug/obrigado" element={<VivaParkBrokerLandingPage />} />
             <Route path="/portobelo/vivapark/:brokerSlug" element={<VivaParkBrokerLandingPage />} />
             
-            {/* AS Ramos — Lofts Duplex no Vivapark Porto Belo */}
-            <Route path="/portobelo/asramos" element={<ASRamosLandingPage />} />
-            <Route path="/portobelo/asramos/obrigado" element={<ASRamosLandingPage />} />
-            <Route path="/portobelo/asramos/:brokerSlug/obrigado" element={<ASRamosBrokerLandingPage />} />
-            <Route path="/portobelo/asramos/:brokerSlug" element={<ASRamosBrokerLandingPage />} />
+            {/* NC-1 — Lofts Duplex no Vivapark Porto Belo */}
+            <Route path="/portobelo/nc1" element={<NC1LandingPage />} />
+            <Route path="/portobelo/nc1/obrigado" element={<NC1LandingPage />} />
+            <Route path="/portobelo/nc1/:brokerSlug/obrigado" element={<NC1BrokerLandingPage />} />
+            <Route path="/portobelo/nc1/:brokerSlug" element={<NC1BrokerLandingPage />} />
+            {/* Legacy redirect */}
+            <Route path="/portobelo/asramos" element={<Navigate to="/portobelo/nc1" replace />} />
+            <Route path="/portobelo/asramos/:brokerSlug" element={<Navigate to="/portobelo/nc1" replace />} />
             
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
