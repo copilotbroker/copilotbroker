@@ -1,10 +1,11 @@
-import { Bot, Building2, CalendarDays, Headset, Inbox, LayoutDashboard, List, RotateCw, UserCog } from "lucide-react";
+import { Bot, Building2, CalendarDays, LayoutDashboard, List, RotateCw, UserCog } from "lucide-react";
+import { WhatsAppInboxIcon, WhatsAppPlantaoIcon } from "@/components/icons/WhatsAppIcon";
 
 export const BROKER_ROUTE_TABS = [
   { id: "crm", label: "Kanban", path: "/corretor/crm", icon: LayoutDashboard },
   { id: "leads", label: "Lista", path: "/corretor/leads", icon: List },
-  { id: "inbox", label: "Inbox", path: "/corretor/inbox", icon: Inbox },
-  { id: "plantao", label: "Plantão", path: "/corretor/plantao", icon: Headset },
+  { id: "inbox", label: "Inbox", path: "/corretor/inbox", icon: WhatsAppInboxIcon },
+  { id: "plantao", label: "Plantão", path: "/corretor/plantao", icon: WhatsAppPlantaoIcon },
   { id: "agenda", label: "Agenda", path: "/corretor/agenda", icon: CalendarDays },
   { id: "copilot", label: "Copiloto", path: "/corretor/copiloto", icon: Bot },
   { id: "roletas", label: "Roletas", path: "/corretor/roletas", icon: RotateCw },
