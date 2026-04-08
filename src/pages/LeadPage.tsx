@@ -277,8 +277,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     const lastInteraction = lead.last_interaction_at || lead.updated_at;
     const diff = Date.now() - new Date(lastInteraction).getTime();
     const hours = diff / (1000 * 60 * 60);
-    if (hours < 24) return "text-emerald-400";
-    if (hours < 48) return "text-yellow-400";
+    if (hours < 360) return "text-emerald-400";
+    if (hours < 720) return "text-yellow-400";
     return "text-red-400";
   }, [lead]);
 
@@ -288,8 +288,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     const lastInteraction = lead.last_interaction_at || lead.updated_at;
     const diff = Date.now() - new Date(lastInteraction).getTime();
     const hours = diff / (1000 * 60 * 60);
-    if (hours < 24) return "No prazo";
-    if (hours < 48) return "Atenção";
+    if (hours < 360) return "No prazo";
+    if (hours < 720) return "Atenção";
     return "SLA estourado";
   }, [lead]);
 
@@ -551,7 +551,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         {slaLabel === "SLA estourado" && (
           <div className="mb-6 flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
             <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-            <p className="text-xs text-red-300">Este lead está sem interação há mais de 48h. Ação imediata é necessária.</p>
+            <p className="text-xs text-red-300">Este lead está sem interação há mais de 30 dias. Ação imediata é necessária.</p>
           </div>
         )}
 

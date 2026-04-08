@@ -244,7 +244,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   <div className="space-y-0.5">
                     <Label className="text-sm text-slate-200">Leads Estagnados</Label>
                     <p className="text-xs text-slate-500">
-                      Alertar sobre leads sem interação há mais de 48h
+                      Alertar sobre leads sem interação há mais de 30 dias
                     </p>
                   </div>
                   <Switch
