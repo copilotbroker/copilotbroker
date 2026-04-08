@@ -357,44 +357,6 @@ export function ConversationList({
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-            <Inbox className="h-5 w-5 text-primary" />
-            {brokerInboxTab === "novos" ? "Novos" : brokerInboxTab === "atendimento" ? "Em atendimento" : brokerInboxTab === "arquivados" ? "Arquivados" : inboxTab === "novos" ? "Novos Contatos" : inboxTab === "outros" ? "Equipe" : isAdminView ? "Inbox Admin" : "Inbox"}
-            {totalUnread > 0 && inboxTab === "meus" && (
-              <Badge variant="destructive" className="min-w-[20px] px-1.5 py-0 text-xs h-5">
-                {totalUnread}
-              </Badge>
-            )}
-          </h2>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground">
-                <ArrowUpDown className="h-3 w-3" />
-                Ordenar
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {SORT_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
-                return (
-                  <DropdownMenuItem
-                    key={opt.id}
-                    onClick={() => setSortMode(opt.id)}
-                    className={cn("gap-2 text-xs", sortMode === opt.id && "text-primary")}
-                  >
-                    <Icon className="h-3 w-3" />
-                    {opt.label}
-                    {sortMode === opt.id && <Check className="ml-auto h-3 w-3" />}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -404,30 +366,7 @@ export function ConversationList({
             className="h-9 pl-8 text-sm"
           />
         </div>
-
-        <div className="scrollbar-hide flex gap-1 overflow-x-auto pb-1">
-          {STATUS_FILTERS.map((f) => {
-            const Icon = f.icon;
-            return (
-              <button
-                key={f.id}
-                onClick={() => onStatusFilterChange(f.id)}
-                className={cn(
-                  "flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
-                  statusFilter === f.id
-                    ? "border-border bg-card text-foreground font-medium"
-                    : "border-transparent bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                )}
-              >
-                <Icon className="h-3 w-3" />
-                {f.label}
-              </button>
-            );
-          })}
-        </div>
       </div>
-
-      <InboxKPIs conversations={conversations} activeKpi={activeKpi} onKpiClick={handleKpiClick} />
 
       <ScrollArea className="flex-1">
         <div className="space-y-1 px-2 pb-2">
