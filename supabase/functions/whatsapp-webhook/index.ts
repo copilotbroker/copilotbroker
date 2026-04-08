@@ -1745,6 +1745,24 @@ async function handleGlobalInstanceMessage(
     return { brokerId: existingConv.broker_id as string, conversationId: result.conversationId };
   }
 
+  // Case B2: Any global conversation for this phone (including attended ones)
+  const { data: anyGlobalConv } = await supabase
+    .from("conversations")
+    .select("id, broker_id")
+    .eq("phone_normalized", canonicalPhoneNorm)
+    .eq("source_instance", "global")
+    .limit(1)
+    .maybeSingle();
+
+  if (anyGlobalConv) {
+    console.log(`📥 Msg for attended global conv ${anyGlobalConv.id} (broker ${anyGlobalConv.broker_id})`);
+    const result = await archiveMessageToConversation(
+      supabase, phone, messageText, direction, undefined, senderName, sentBy,
+      uazapiMessageId, messageType, metadata, anyGlobalConv.broker_id as string, "global"
+    );
+    return { brokerId: anyGlobalConv.broker_id as string, conversationId: result.conversationId };
+  }
+
   const { data: roleta } = await supabase
     .from("roletas")
     .select(`
