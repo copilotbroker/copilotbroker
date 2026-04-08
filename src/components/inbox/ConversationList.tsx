@@ -513,6 +513,7 @@ export function ConversationList({
                             <Badge variant="outline" className="h-4 px-1 text-[10px]">
                               +{convLabels.length - 2}
                             </Badge>
+                          )}
                           {conv.last_message_type && conv.last_message_type !== "text" && (
                             <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
                               Mídia
