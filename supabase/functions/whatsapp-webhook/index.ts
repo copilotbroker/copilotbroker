@@ -1175,7 +1175,9 @@ async function archiveMessageToConversation(
       brokerId = (inst as { broker_id: string }).broker_id;
     }
 
-    const conv = await getOrCreateCanonicalConversation(supabase, brokerId!, phone, undefined, sourceInstance, senderName);
+    // Only use senderName for display_name on inbound messages to avoid overwriting with broker's own name
+    const displaySenderName = direction === "inbound" ? senderName : undefined;
+    const conv = await getOrCreateCanonicalConversation(supabase, brokerId!, phone, undefined, sourceInstance, displaySenderName);
     if (!conv) return {};
 
     const enrichedMeta = { ...(metadata || {}), source_instance: sourceInstance || "personal" };
