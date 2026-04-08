@@ -495,6 +495,24 @@ export function ConversationList({
                               <LayoutGrid className="mr-1 h-3 w-3" /> Sem card no Kanban
                             </Badge>
                           )}
+                          {convLabels.length > 0 && convLabels.slice(0, 2).map(label => (
+                            <Badge
+                              key={label.id}
+                              variant="outline"
+                              className="h-4 px-1.5 text-[10px] border-opacity-60"
+                              style={{
+                                backgroundColor: label.color ? `${label.color}18` : undefined,
+                                borderColor: label.color ? `${label.color}50` : undefined,
+                                color: label.color || undefined,
+                              }}
+                            >
+                              <Tag className="mr-0.5 h-2.5 w-2.5" /> {label.name}
+                            </Badge>
+                          ))}
+                          {convLabels.length > 2 && (
+                            <Badge variant="outline" className="h-4 px-1 text-[10px]">
+                              +{convLabels.length - 2}
+                            </Badge>
                           {conv.last_message_type && conv.last_message_type !== "text" && (
                             <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
                               Mídia
