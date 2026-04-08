@@ -106,7 +106,7 @@ export default function BrokerPlantao() {
     isArchived: false,
     inboxTab: "novos",
     sourceInstance: "global",
-    enabled: isCheckedInGlobal === true,
+    enabled: !!brokerId && isCheckedInGlobal === true,
   });
 
   const activeConversations = inboxTab === "novos" ? novosConversations : conversations;
