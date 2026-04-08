@@ -1748,7 +1748,7 @@ async function handleGlobalInstanceMessage(
   const { data: roleta } = await supabase
     .from("roletas")
     .select(`
-      id, lider_id, tempo_reserva_minutos, ultimo_membro_ordem_atribuida, modo_distribuicao,
+      id, lider_id, tempo_reserva_minutos, timeout_ativo, ultimo_membro_ordem_atribuida, modo_distribuicao,
       membros:roletas_membros(id, corretor_id, ordem, status_checkin, ativo)
     `)
     .eq("ativa", true)
