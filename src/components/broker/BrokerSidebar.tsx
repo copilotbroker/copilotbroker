@@ -7,6 +7,8 @@ import { BROKER_ROUTE_TABS, getBrokerPathByTab, getBrokerTabFromPath } from "./b
 import { useUserRole } from "@/hooks/use-user-role";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useInboxUnread } from "@/hooks/use-inbox-unread";
+import { usePlantaoNovosCount } from "@/hooks/use-plantao-novos-count";
 
 interface BrokerSidebarProps {
   viewMode: "kanban" | "list";
