@@ -3,13 +3,14 @@ import {
   Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
   Target, MoreVertical, Check, Zap,
   Eye, EyeOff, LayoutGrid, Archive,
-  Users, UserPlus, User, Headphones, Tag
+  Users, UserPlus, User, Headphones, Tag, ChevronDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
