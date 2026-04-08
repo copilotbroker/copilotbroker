@@ -1,36 +1,28 @@
 
 
-## Diagnóstico: Mensagens do WhatsApp do Plantão não chegam ao sistema
+## Estilo visual Purple para mensagens do WhatsApp Pessoal
 
-### Problema identificado
+### Resumo
+Aplicar tons de roxo (purple) nas mensagens enviadas pelo WhatsApp Pessoal, espelhando o tratamento visual verde usado para mensagens do Plantão. Isso inclui: balões de mensagem, badges de instância, divisores de troca de instância e avatares na lista de conversas.
 
-Sua mensagem de teste (número 97010323) **nunca chegou ao sistema**. Verifiquei os logs do webhook e não há nenhum registro de mensagem recebida da instância global (`enove_global_1774904515037`). Todas as mensagens nos logs recentes são de instâncias pessoais de corretores (ex: `enove_jaqueline_panigo`, `enove_fabiane_witt`).
+### Alterações
 
-Isso significa que a **instância global do WhatsApp na UAZAPI não está com a URL de webhook configurada** para enviar os eventos ao sistema. As mensagens chegam no WhatsApp do Plantão, mas a UAZAPI não repassa para o CRM.
+**1. ConversationThread.tsx - Balões e badges de mensagem**
 
-### Causa raiz
+- **Balão outbound pessoal** (linha ~616): trocar `border-border bg-muted` por `border-purple-500/30 bg-purple-900/20`
+- **Badge "Pessoal"** (linha ~628): trocar `text-blue-400` por `text-purple-400`
+- **Divisor de instância pessoal** (linhas ~576-593): usar `border-purple-500/30 bg-purple-500/10 text-purple-400` em vez do amarelo primary genérico, mantendo verde para global com `border-emerald-500/30 bg-emerald-500/10 text-emerald-400`
 
-O código do `whatsapp-global-instance-manager` não configura automaticamente a URL do webhook na UAZAPI quando a instância é criada/conectada. Isso precisa ser feito manualmente no painel UAZAPI ou adicionado ao código.
+**2. ConversationList.tsx - Avatar e badges na lista**
 
-### Solução proposta
+- **Avatar pessoal** (linhas ~479-484): trocar `bg-muted` por `bg-purple-900/60 text-purple-400` para conversas pessoais (non-global), espelhando o tratamento `bg-emerald-900/60 text-emerald-400` do global
+- Manter o avatar de iniciais com a cor roxa para instâncias pessoais
 
-Adicionar a configuração automática do webhook no `whatsapp-global-instance-manager`, assim como já é feito para instâncias de corretores (padrão existente). Quando a instância global for conectada ou reconectada, o sistema irá:
+### Detalhes Técnicos
 
-1. Chamar a API da UAZAPI para configurar a URL do webhook apontando para `https://nckzxwxxtyeydolmdijn.supabase.co/functions/v1/whatsapp-webhook/{WEBHOOK_SECRET}`
-2. Configurar os eventos que devem ser encaminhados (messages, connection.update, messages_update)
-
-**Arquivo: `supabase/functions/whatsapp-global-instance-manager/index.ts`**
-
-- Criar uma função `configureWebhookUrl` que faz POST para a UAZAPI configurando a URL de callback
-- Chamar essa função automaticamente após conexão bem-sucedida (no handler de `/connect` e `/status` quando detecta status "connected")
-
-### Ação imediata necessária
-
-Enquanto o fix automático não é deployado, a URL do webhook precisa ser configurada **manualmente** na UAZAPI para a instância `enove_global_1774904515037`. A URL correta é:
-
-```
-https://nckzxwxxtyeydolmdijn.supabase.co/functions/v1/whatsapp-webhook/{SEU_WEBHOOK_SECRET}
-```
-
-Os eventos que devem estar habilitados: `messages`, `messages_update`, `connection`.
+Todas as alterações são puramente visuais (classes CSS Tailwind), sem impacto funcional. As cores usadas:
+- `purple-900/20` - fundo do balão
+- `purple-500/30` - borda do balão e divisores
+- `purple-400` - texto de badges e labels
+- `purple-900/60` - fundo do avatar na lista
 
