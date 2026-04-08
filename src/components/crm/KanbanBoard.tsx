@@ -893,6 +893,23 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
         brokerId={callModal.leadId ? allLeadsRef.current.get(callModal.leadId)?.broker_id : brokerId}
         onConfirm={handleCallConfirm}
       />
+
+      {/* Card-level Transfer Dialog */}
+      {cardTransferModal.open && cardTransferModal.leadId && (
+        <TransferLeadDialog
+          leadId={cardTransferModal.leadId}
+          leadName={cardTransferModal.leadName}
+          currentBrokerId={cardTransferModal.currentBrokerId}
+          brokers={brokers}
+          roletas={activeRoletas}
+          isOpen={cardTransferModal.open}
+          onClose={() => setCardTransferModal({ open: false, leadId: null, leadName: "", currentBrokerId: null })}
+          onTransferred={() => {
+            setCardTransferModal({ open: false, leadId: null, leadName: "", currentBrokerId: null });
+            invalidateAll();
+          }}
+        />
+      )}
     </div>
   );
 }
