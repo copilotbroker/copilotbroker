@@ -21,7 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface TransferLeadDialogProps {
-  leadId: string;
+  leadId?: string | null;
+  conversationId?: string | null;
   leadName: string;
   currentBrokerId?: string | null;
   brokers: { id: string; name: string }[];
@@ -33,6 +34,7 @@ interface TransferLeadDialogProps {
 
 export function TransferLeadDialog({
   leadId,
+  conversationId,
   leadName,
   currentBrokerId,
   brokers,
