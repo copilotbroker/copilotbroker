@@ -82,13 +82,17 @@ export function ConversationList({
   onBrokerTabChange,
   brokerNovosCount = 0,
   brokerAtendimentoCount = 0,
+  brokerId,
 }: ConversationListProps) {
   const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
-  const [labelLeadIds, setLabelLeadIds] = useState<Set<string>>(new Set());
-  const [quickFilter, setQuickFilter] = useState<null | "unread" | "labels" | "oldest">(null);
+  const [leadLabelMap, setLeadLabelMap] = useState<Map<string, string[]>>(new Map());
+  const [brokerLabels, setBrokerLabels] = useState<BrokerLabel[]>([]);
+  const [quickFilter, setQuickFilter] = useState<null | "unread" | "oldest">(null);
+  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
+  const [labelPopoverOpen, setLabelPopoverOpen] = useState(false);
 
   // Reset quick filter when tab changes
-  useEffect(() => { setQuickFilter(null); }, [inboxTab, brokerInboxTab]);
+  useEffect(() => { setQuickFilter(null); setSelectedLabelId(null); }, [inboxTab, brokerInboxTab]);
 
   // Fetch lead IDs with active cadences (pending messages in queue)
   useEffect(() => {
