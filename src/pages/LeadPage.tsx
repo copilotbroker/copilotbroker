@@ -270,7 +270,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         if (error) throw error;
 
         // Log the change
-        const fieldLabels: Record<string, string> = { name: "Nome", whatsapp: "Telefone", email: "Email", project_id: "Empreendimento", lead_origin: "Origem", notes: "Observações" };
+        const fieldLabels: Record<string, string> = { name: "Nome", whatsapp: "Telefone", email: "Email", project_id: "Empreendimento", lead_origin: "Campanha", notes: "Observações" };
         const label = fieldLabels[field] || field;
         await supabase.from("lead_interactions").insert({
           lead_id: leadId,
@@ -955,6 +955,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   interactions={interactions}
                   leadOrigin={lead?.lead_origin}
                   leadOriginDetail={lead?.lead_origin_detail}
+                  leadSource={lead?.source}
                   attribution={lead?.attribution}
                   createdAt={lead?.created_at}
                   brokerName={lead?.broker?.name}
