@@ -1,28 +1,25 @@
 
-
-## Estilo visual Purple para mensagens do WhatsApp Pessoal
+## Adicionar botões de filtro rápido abaixo da busca
 
 ### Resumo
-Aplicar tons de roxo (purple) nas mensagens enviadas pelo WhatsApp Pessoal, espelhando o tratamento visual verde usado para mensagens do Plantão. Isso inclui: balões de mensagem, badges de instância, divisores de troca de instância e avatares na lista de conversas.
+Adicionar uma linha de botões-filtro "Não lidas | Etiquetas | Mais antigas" logo abaixo do campo de busca no `ConversationList`. Esses botões funcionam como toggles: ao clicar, filtram/ordenam a lista; ao clicar novamente, desativam o filtro.
 
 ### Alterações
 
-**1. ConversationThread.tsx - Balões e badges de mensagem**
+**Arquivo: `src/components/inbox/ConversationList.tsx`**
 
-- **Balão outbound pessoal** (linha ~616): trocar `border-border bg-muted` por `border-purple-500/30 bg-purple-900/20`
-- **Badge "Pessoal"** (linha ~628): trocar `text-blue-400` por `text-purple-400`
-- **Divisor de instância pessoal** (linhas ~576-593): usar `border-purple-500/30 bg-purple-500/10 text-purple-400` em vez do amarelo primary genérico, mantendo verde para global com `border-emerald-500/30 bg-emerald-500/10 text-emerald-400`
-
-**2. ConversationList.tsx - Avatar e badges na lista**
-
-- **Avatar pessoal** (linhas ~479-484): trocar `bg-muted` por `bg-purple-900/60 text-purple-400` para conversas pessoais (non-global), espelhando o tratamento `bg-emerald-900/60 text-emerald-400` do global
-- Manter o avatar de iniciais com a cor roxa para instâncias pessoais
+1. Adicionar estado local `quickFilter` com valores `null | "unread" | "labels" | "oldest"`
+2. Abaixo do `<Input>` de busca (após linha 251), renderizar 3 botões compactos em linha:
+   - **Não lidas** (ícone `Eye`) — filtra para exibir apenas conversas com `unread_count > 0`
+   - **Etiquetas** (ícone `Tag`) — filtra para exibir apenas conversas cujo `lead_id` possui etiquetas vinculadas (via consulta em `lead_whatsapp_labels`)
+   - **Mais antigas** (ícone `Clock`) — inverte a ordenação para mostrar mensagens mais antigas primeiro
+3. Aplicar o filtro no `sortedConversations` (useMemo):
+   - `"unread"`: filtrar `conv.unread_count > 0`
+   - `"labels"`: filtrar `conv.lead_id` presente em set de leads com etiquetas (fetch similar ao `cadenciaLeadIds`)
+   - `"oldest"`: inverter sort para `aTime - bTime`
+4. Estilo dos botões: `variant="outline"` compacto, com destaque (bg-primary) quando ativo
 
 ### Detalhes Técnicos
-
-Todas as alterações são puramente visuais (classes CSS Tailwind), sem impacto funcional. As cores usadas:
-- `purple-900/20` - fundo do balão
-- `purple-500/30` - borda do balão e divisores
-- `purple-400` - texto de badges e labels
-- `purple-900/60` - fundo do avatar na lista
-
+- Busca de leads com etiquetas via `useEffect` consultando `lead_whatsapp_labels` (similar ao padrão de `cadenciaLeadIds`)
+- Componente compartilhado por todos os perfis (admin, líder, corretor) e ambas as telas (Meu WhatsApp e WhatsApp do Plantão)
+- Reset do `quickFilter` para `null` quando a aba muda (para evitar filtros cruzados)
