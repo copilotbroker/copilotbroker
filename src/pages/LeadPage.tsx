@@ -24,7 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, Phone, Mail, Building2, Clock, Calendar, DollarSign, Trophy,
   UserX, Play, FileText, Users, ChevronRight, ChevronLeft, AlertTriangle, Zap, Eye,
-  TrendingUp, Timer, MessageCircle, ExternalLink, ArrowRightLeft, Pencil, Check, X, RotateCw, Square
+  TrendingUp, Timer, MessageCircle, Send, ExternalLink, ArrowRightLeft, Pencil, Check, X, RotateCw, Square
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -97,13 +97,74 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     queryFn: async () => {
       const { data } = await supabase
         .from("conversations")
-        .select("id")
+        .select("id, source_instance")
         .eq("lead_id", leadId!)
+        .order("last_message_at", { ascending: false })
         .maybeSingle();
       return data;
     },
     enabled: !!leadId,
   });
+
+  const isGlobalInstance = linkedConversation?.source_instance === "global";
+
+  // Ensure a conversation exists for the lead (reused for sending messages)
+  const ensureConversationForLead = async (): Promise<string> => {
+    if (!lead?.broker_id) throw new Error("Lead sem corretor vinculado");
+
+    const digits = lead.whatsapp.replace(/\D/g, "");
+    const canonicalPhone = digits.startsWith("55") ? digits : `55${digits}`;
+    const canonicalNormalized = canonicalPhone.replace(/\D/g, "");
+    const basePhone = canonicalNormalized.startsWith("55") ? canonicalNormalized.slice(2) : canonicalNormalized;
+    const phoneVariants = [...new Set([
+      canonicalNormalized,
+      basePhone,
+      basePhone.length === 10 ? `${basePhone.slice(0, 2)}9${basePhone.slice(2)}` : null,
+      basePhone.length === 11 && basePhone[2] === "9" ? `${basePhone.slice(0, 2)}${basePhone.slice(3)}` : null,
+    ].filter(Boolean) as string[])];
+
+    const { data: existingConversations, error: findError } = await supabase
+      .from("conversations")
+      .select("id, broker_id, lead_id, phone, phone_normalized")
+      .eq("broker_id", lead.broker_id)
+      .in("phone_normalized", phoneVariants)
+      .order("created_at", { ascending: true });
+
+    if (findError) throw findError;
+
+    const primary = existingConversations?.[0];
+    if (primary) {
+      await supabase
+        .from("conversations")
+        .update({
+          phone: canonicalPhone,
+          phone_normalized: canonicalNormalized,
+          lead_id: primary.lead_id || lead.id,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("id", primary.id);
+      return primary.id;
+    }
+
+    const { data: created, error: createError } = await supabase
+      .from("conversations")
+      .insert({
+        broker_id: lead.broker_id,
+        lead_id: lead.id,
+        phone: `+${canonicalPhone}`,
+        phone_normalized: canonicalNormalized,
+        status: "active",
+        ai_mode: "copilot",
+        display_name: lead.name,
+        display_name_source: "lead",
+        is_archived: false,
+      } as any)
+      .select("id")
+      .single();
+
+    if (createError) throw createError;
+    return created.id as string;
+  };
 
   // Fetch brokers & projects for editable selects
   const { data: allBrokers = [] } = useQuery({
@@ -342,18 +403,17 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     if (!primaryAction) return;
     switch (primaryAction.action) {
       case "iniciar": {
-        // Go directly to WhatsApp
         const result = await iniciarAtendimento(lead.id);
         if (result.success) {
           addInteraction("whatsapp_manual" as any, {
-            notes: "Atendimento iniciado — redirecionado para WhatsApp",
+            notes: "Atendimento iniciado",
             channel: "whatsapp",
             createdBy: result.userId,
           });
-          const cleanPhone = lead.whatsapp.replace(/\D/g, "");
           toast.success("Atendimento iniciado!");
           refreshLead();
-          window.open(`https://wa.me/55${cleanPhone}`, "_blank");
+          // Open inline message composer instead of wa.me
+          setWhatsappMsgOpen(true);
         }
         break;
       }
@@ -386,7 +446,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     }
   };
 
-  const whatsappLink = `https://wa.me/55${lead.whatsapp.replace(/\D/g, "")}`;
+  // whatsappLink removed - messages are now sent via platform
 
   return (
     <div className={cn(isEmbedded ? "h-full overflow-auto" : "min-h-screen", "bg-[#0a0a0d] text-white")}>
@@ -440,11 +500,20 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                       refreshLead();
                     }
                   }
-                  window.open(whatsappLink, "_blank");
+                  // Scroll to message composer section
+                  setWhatsappMsgOpen(true);
+                  setTimeout(() => {
+                    document.getElementById("whatsapp-msg-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }, 100);
                 }}
-                className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 transition-all"
+                className={cn(
+                  "inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-all",
+                  isGlobalInstance
+                    ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20"
+                    : "text-purple-400 bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/20"
+                )}
               >
-                <MessageCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">WhatsApp</span><ExternalLink className="w-3 h-3 hidden sm:inline" />
+                <MessageCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">WhatsApp</span>
               </button>
             </div>
           </div>
@@ -672,14 +741,35 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   }
                 />
                 {whatsappMsgOpen && (
-                  <div className="sm:col-span-2 bg-[#0f0f12] border border-emerald-500/20 rounded-xl p-4 space-y-3">
-                    <p className="text-xs font-medium text-emerald-400">Mensagem para {lead.name}</p>
+                  <div id="whatsapp-msg-form" className={cn(
+                    "sm:col-span-2 bg-[#0f0f12] rounded-xl p-4 space-y-3 border",
+                    isGlobalInstance
+                      ? "border-emerald-500/30"
+                      : "border-purple-500/30"
+                  )}>
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        isGlobalInstance ? "bg-emerald-400" : "bg-purple-400"
+                      )} />
+                      <p className={cn(
+                        "text-xs font-medium",
+                        isGlobalInstance ? "text-emerald-400" : "text-purple-400"
+                      )}>
+                        {isGlobalInstance ? "Enviando pelo Plantão (Instância Global)" : "Enviando pelo WhatsApp do Corretor"}
+                      </p>
+                    </div>
                     <Textarea
                       autoFocus
                       placeholder="Escreva sua mensagem aqui..."
                       value={whatsappMsg}
                       onChange={(e) => setWhatsappMsg(e.target.value)}
-                      className="min-h-[80px] bg-[#111114] border-[#2a2a2e] text-sm text-slate-200 placeholder:text-slate-600 resize-none"
+                      className={cn(
+                        "min-h-[80px] bg-[#111114] text-sm text-slate-200 placeholder:text-slate-600 resize-none",
+                        isGlobalInstance
+                          ? "border-emerald-500/20 focus-visible:ring-emerald-500/40"
+                          : "border-purple-500/20 focus-visible:ring-purple-500/40"
+                      )}
                     />
                     <div className="flex items-center gap-2">
                       <Button
@@ -688,25 +778,38 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                         onClick={async () => {
                           setSendingWhatsapp(true);
                           try {
+                            const conversationId = await ensureConversationForLead();
+                            const { error } = await supabase.functions.invoke("inbox-send-message", {
+                              body: {
+                                conversation_id: conversationId,
+                                content: whatsappMsg,
+                                sent_by: "human",
+                                message_type: "text",
+                              },
+                            });
+                            if (error) throw error;
                             await addInteraction("whatsapp_manual" as any, {
                               notes: whatsappMsg,
                               channel: "whatsapp",
                               createdBy: (await supabase.auth.getUser()).data.user?.id,
                             });
-                            const cleanPhone = lead.whatsapp.replace(/\D/g, "");
-                            window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(whatsappMsg)}`, "_blank");
                             setWhatsappMsg("");
                             setWhatsappMsgOpen(false);
-                            toast.success("Interação registrada!");
+                            toast.success("Mensagem enviada via WhatsApp!");
                           } catch {
-                            toast.error("Erro ao registrar interação");
+                            toast.error("Erro ao enviar mensagem");
                           } finally {
                             setSendingWhatsapp(false);
                           }
                         }}
-                        className="h-9 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                        className={cn(
+                          "h-9 px-4 text-xs font-semibold text-white rounded-lg",
+                          isGlobalInstance
+                            ? "bg-emerald-600 hover:bg-emerald-700"
+                            : "bg-purple-600 hover:bg-purple-700"
+                        )}
                       >
-                        <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                        <Send className="w-3.5 h-3.5 mr-1.5" />
                         {sendingWhatsapp ? "Enviando..." : "Enviar via WhatsApp"}
                       </Button>
                       <Button
