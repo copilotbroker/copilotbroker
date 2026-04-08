@@ -633,6 +633,7 @@ export type Database = {
       conversations: {
         Row: {
           ai_mode: string
+          atribuido_em: string | null
           attendance_started: boolean
           broker_id: string
           copilot_suggestions_count: number
@@ -649,6 +650,7 @@ export type Database = {
           opportunity_score: number | null
           phone: string
           phone_normalized: string
+          reserva_expira_em: string | null
           roleta_modo: string | null
           source_instance: string | null
           status: string
@@ -658,6 +660,7 @@ export type Database = {
         }
         Insert: {
           ai_mode?: string
+          atribuido_em?: string | null
           attendance_started?: boolean
           broker_id: string
           copilot_suggestions_count?: number
@@ -674,6 +677,7 @@ export type Database = {
           opportunity_score?: number | null
           phone: string
           phone_normalized: string
+          reserva_expira_em?: string | null
           roleta_modo?: string | null
           source_instance?: string | null
           status?: string
@@ -683,6 +687,7 @@ export type Database = {
         }
         Update: {
           ai_mode?: string
+          atribuido_em?: string | null
           attendance_started?: boolean
           broker_id?: string
           copilot_suggestions_count?: number
@@ -699,6 +704,7 @@ export type Database = {
           opportunity_score?: number | null
           phone?: string
           phone_normalized?: string
+          reserva_expira_em?: string | null
           roleta_modo?: string | null
           source_instance?: string | null
           status?: string

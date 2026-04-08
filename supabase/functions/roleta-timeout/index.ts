@@ -326,7 +326,195 @@ Deno.serve(async (req) => {
       processed++;
     }
 
-    return new Response(JSON.stringify({ success: true, processed, skippedPause }), {
+    // ==================== PART 2: Global Conversations Timeout ====================
+    const { data: expiredConvs, error: convError } = await supabase
+      .from("conversations")
+      .select("id, broker_id, phone, phone_normalized, display_name, source_instance, roleta_modo")
+      .eq("source_instance", "global")
+      .eq("attendance_started", false)
+      .lte("reserva_expira_em", now)
+      .not("reserva_expira_em", "is", null);
+
+    if (convError) {
+      console.error("Error fetching expired conversations:", convError);
+    }
+
+    const expiredConversations = expiredConvs || [];
+    let convProcessed = 0;
+    let convLoopBroken = 0;
+
+    if (expiredConversations.length > 0) {
+      console.log(`Processing ${expiredConversations.length} expired global conversations`);
+
+      // Get the whatsapp_global roleta
+      const { data: globalRoleta } = await supabase
+        .from("roletas")
+        .select("*")
+        .eq("ativa", true)
+        .eq("tipo_origem", "whatsapp_global")
+        .limit(1)
+        .maybeSingle();
+
+      if (globalRoleta) {
+        // Check pause window
+        const inPause = isInPauseWindow(globalRoleta.timeout_pausa_inicio, globalRoleta.timeout_pausa_fim);
+
+        for (const conv of expiredConversations) {
+          if (inPause) {
+            console.log(`Global roleta ${globalRoleta.nome}: timeout pausado`);
+            skippedPause++;
+            continue;
+          }
+
+          // Loop breaker: count reassignments for this conversation
+          const { count: convReassignCount } = await supabase
+            .from("roletas_log")
+            .select("id", { count: "exact", head: true })
+            .eq("roleta_id", globalRoleta.id)
+            .eq("acao", "timeout_reassinado_conv")
+            .eq("motivo", `conversation:${conv.id}`);
+
+          if ((convReassignCount || 0) >= MAX_REASSIGNMENTS) {
+            console.log(`Conv ${conv.id} hit ${convReassignCount} reassignments - fallback to leader`);
+
+            await supabase
+              .from("conversations")
+              .update({
+                broker_id: globalRoleta.lider_id,
+                reserva_expira_em: null,
+                atribuido_em: new Date().toISOString(),
+              })
+              .eq("id", conv.id);
+
+            await supabase.from("roletas_log").insert({
+              roleta_id: globalRoleta.id,
+              acao: "timeout_loop_breaker_conv",
+              de_corretor_id: conv.broker_id,
+              para_corretor_id: globalRoleta.lider_id,
+              motivo: `conversation:${conv.id}`,
+            });
+
+            // Notify leader
+            const { data: liderData } = await supabase
+              .from("brokers")
+              .select("name, user_id")
+              .eq("id", globalRoleta.lider_id)
+              .single();
+
+            if (liderData?.user_id) {
+              await supabase.from("notifications").insert({
+                user_id: liderData.user_id,
+                type: "roleta_loop_breaker",
+                title: "Conversa presa em loop de timeout",
+                message: `Conversa do Plantão (${conv.display_name || conv.phone}) passou por ${convReassignCount} reassinações sem atendimento.`,
+              });
+            }
+
+            convLoopBroken++;
+            convProcessed++;
+            continue;
+          }
+
+          // Get active members excluding current
+          const { data: membros } = await supabase
+            .from("roletas_membros")
+            .select("id, corretor_id, ordem")
+            .eq("roleta_id", globalRoleta.id)
+            .eq("ativo", true)
+            .eq("status_checkin", true)
+            .neq("corretor_id", conv.broker_id)
+            .order("ordem", { ascending: true });
+
+          const activeMembros = membros || [];
+          let newBrokerId: string;
+          let novaOrdem: number;
+          let isFallback = false;
+
+          if (activeMembros.length === 0) {
+            newBrokerId = globalRoleta.lider_id;
+            novaOrdem = globalRoleta.ultimo_membro_ordem_atribuida;
+            isFallback = true;
+          } else {
+            const lastOrder = globalRoleta.ultimo_membro_ordem_atribuida;
+            const nextMembro = activeMembros.find((m: any) => m.ordem > lastOrder) || activeMembros[0];
+            newBrokerId = nextMembro.corretor_id;
+            novaOrdem = nextMembro.ordem;
+          }
+
+          const newExpira = isFallback
+            ? null
+            : new Date(Date.now() + globalRoleta.tempo_reserva_minutos * 60 * 1000).toISOString();
+
+          // Update conversation
+          await supabase
+            .from("conversations")
+            .update({
+              broker_id: newBrokerId,
+              atribuido_em: new Date().toISOString(),
+              reserva_expira_em: newExpira,
+            })
+            .eq("id", conv.id);
+
+          // Update roleta pointer
+          await supabase
+            .from("roletas")
+            .update({ ultimo_membro_ordem_atribuida: novaOrdem })
+            .eq("id", globalRoleta.id);
+
+          // Log
+          await supabase.from("roletas_log").insert({
+            roleta_id: globalRoleta.id,
+            acao: isFallback ? "timeout_fallback_lider_conv" : "timeout_reassinado_conv",
+            de_corretor_id: conv.broker_id,
+            para_corretor_id: newBrokerId,
+            motivo: `conversation:${conv.id}`,
+          });
+
+          // Notify new broker
+          const { data: brokerData } = await supabase
+            .from("brokers")
+            .select("user_id, whatsapp")
+            .eq("id", newBrokerId)
+            .single();
+
+          if (brokerData?.user_id) {
+            await supabase.from("notifications").insert({
+              user_id: brokerData.user_id,
+              type: "roleta_timeout",
+              title: isFallback ? "Conversa do Plantão (fallback)" : "Conversa reassinada (timeout)",
+              message: `Conversa do Plantão (${conv.display_name || conv.phone}) foi ${isFallback ? "atribuída a você como líder" : "reassinada por timeout"}.`,
+            });
+          }
+
+          // WhatsApp notification
+          if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
+            try {
+              const cleanPhone = brokerData.whatsapp.replace(/\D/g, "");
+              const alertMsg = `🔄 *Conversa do Plantão reassinada*\n\nVocê tem um contato aguardando atendimento na aba "Novos" do Plantão.\n\n⚡ Acesse o CRM para iniciar o atendimento.\n⏱️ Tempo: ${globalRoleta.tempo_reserva_minutos} min`;
+
+              await fetch(`${baseUrl}/send/text`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
+                body: JSON.stringify({ number: cleanPhone, text: alertMsg }),
+              });
+              console.log(`WhatsApp conv timeout notification to ${maskPhone(cleanPhone)}`);
+            } catch (whatsappErr) {
+              console.error("WhatsApp conv timeout notification failed:", whatsappErr);
+            }
+          }
+
+          convProcessed++;
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      leads_processed: processed,
+      conversations_processed: convProcessed,
+      skippedPause,
+      loopBroken: loopBroken + convLoopBroken,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {

@@ -1748,7 +1748,7 @@ async function handleGlobalInstanceMessage(
   const { data: roleta } = await supabase
     .from("roletas")
     .select(`
-      id, lider_id, tempo_reserva_minutos, ultimo_membro_ordem_atribuida, modo_distribuicao,
+      id, lider_id, tempo_reserva_minutos, timeout_ativo, ultimo_membro_ordem_atribuida, modo_distribuicao,
       membros:roletas_membros(id, corretor_id, ordem, status_checkin, ativo)
     `)
     .eq("ativa", true)
@@ -1791,9 +1791,21 @@ async function handleGlobalInstanceMessage(
     uazapiMessageId, messageType, metadata, assignedBrokerId, "global"
   );
 
-  // Set roleta_modo on the conversation so the frontend knows the distribution mode
+  // Set roleta_modo and timeout fields on the conversation
   if (result.conversationId) {
-    await supabase.from("conversations").update({ roleta_modo: modoDistribuicao }).eq("id", result.conversationId);
+    const now = new Date();
+    const timeoutAtivo = (roleta as any).timeout_ativo ?? true;
+    const tempoReserva = (roleta as any).tempo_reserva_minutos || 10;
+    const shouldSetExpiration = timeoutAtivo && modoDistribuicao === "fila";
+    const reservaExpira = shouldSetExpiration
+      ? new Date(now.getTime() + tempoReserva * 60 * 1000).toISOString()
+      : null;
+
+    await supabase.from("conversations").update({
+      roleta_modo: modoDistribuicao,
+      atribuido_em: now.toISOString(),
+      reserva_expira_em: reservaExpira,
+    }).eq("id", result.conversationId);
   }
 
   // Log distribution (no lead_id yet)
