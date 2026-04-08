@@ -403,18 +403,17 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     if (!primaryAction) return;
     switch (primaryAction.action) {
       case "iniciar": {
-        // Go directly to WhatsApp
         const result = await iniciarAtendimento(lead.id);
         if (result.success) {
           addInteraction("whatsapp_manual" as any, {
-            notes: "Atendimento iniciado — redirecionado para WhatsApp",
+            notes: "Atendimento iniciado",
             channel: "whatsapp",
             createdBy: result.userId,
           });
-          const cleanPhone = lead.whatsapp.replace(/\D/g, "");
           toast.success("Atendimento iniciado!");
           refreshLead();
-          window.open(`https://wa.me/55${cleanPhone}`, "_blank");
+          // Open inline message composer instead of wa.me
+          setWhatsappMsgOpen(true);
         }
         break;
       }
