@@ -3,7 +3,7 @@ import {
   Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
   Target, MoreVertical, Check, Zap,
   Eye, EyeOff, LayoutGrid, Archive,
-  Users, UserPlus, User, Headphones, Tag, ChevronDown
+  Users, UserPlus, User, Headphones, Tag, ChevronDown, RefreshCw
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -90,6 +90,7 @@ export function ConversationList({
   const [quickFilter, setQuickFilter] = useState<null | "unread" | "oldest">(null);
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
   const [labelPopoverOpen, setLabelPopoverOpen] = useState(false);
+  const [isSyncingLabels, setIsSyncingLabels] = useState(false);
 
   // Reset quick filter when tab changes
   useEffect(() => { setQuickFilter(null); setSelectedLabelId(null); }, [inboxTab, brokerInboxTab]);
@@ -126,7 +127,32 @@ export function ConversationList({
     fetchBrokerLabels();
   }, [brokerId]);
 
-  // Fetch lead→label mapping
+  const handleSyncLabels = async () => {
+    if (!brokerId || isSyncingLabels) return;
+    setIsSyncingLabels(true);
+    try {
+      // Find any lead to use for the sync call
+      const anyLeadId = conversations.find(c => c.lead_id)?.lead_id;
+      if (anyLeadId) {
+        await supabase.functions.invoke("whatsapp-labels", {
+          body: { action: "sync", leadId: anyLeadId },
+        });
+      }
+      // Refresh local labels
+      const { data } = await supabase
+        .from("whatsapp_labels")
+        .select("id, name, color")
+        .eq("broker_id", brokerId)
+        .order("name");
+      if (data) setBrokerLabels(data as BrokerLabel[]);
+    } catch (e) {
+      console.error("Erro ao sincronizar etiquetas:", e);
+    } finally {
+      setIsSyncingLabels(false);
+    }
+  };
+
+
   useEffect(() => {
     const leadIds = conversations.filter(c => c.lead_id).map(c => c.lead_id!);
     if (leadIds.length === 0) { setLeadLabelMap(new Map()); return; }
@@ -336,19 +362,19 @@ export function ConversationList({
               </button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-56 p-2">
-              {brokerLabels.length === 0 ? (
-                <p className="px-2 py-3 text-xs text-muted-foreground text-center">Nenhuma etiqueta encontrada</p>
-              ) : (
-                <div className="space-y-0.5">
-                  {selectedLabelId && (
-                    <button
-                      onClick={() => { setSelectedLabelId(null); setLabelPopoverOpen(false); }}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60"
-                    >
-                      Limpar filtro
-                    </button>
-                  )}
-                  {brokerLabels.map(label => (
+              <div className="space-y-0.5">
+                {selectedLabelId && (
+                  <button
+                    onClick={() => { setSelectedLabelId(null); setLabelPopoverOpen(false); }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60"
+                  >
+                    Limpar filtro
+                  </button>
+                )}
+                {brokerLabels.length === 0 ? (
+                  <p className="px-2 py-3 text-xs text-muted-foreground text-center">Nenhuma etiqueta encontrada</p>
+                ) : (
+                  brokerLabels.map(label => (
                     <button
                       key={label.id}
                       onClick={() => {
@@ -369,9 +395,19 @@ export function ConversationList({
                       <span className="truncate">{label.name}</span>
                       {selectedLabelId === label.id && <Check className="ml-auto h-3 w-3 flex-shrink-0" />}
                     </button>
-                  ))}
+                  ))
+                )}
+                <div className="border-t border-border mt-1 pt-1">
+                  <button
+                    onClick={handleSyncLabels}
+                    disabled={isSyncingLabels}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60 disabled:opacity-50"
+                  >
+                    <RefreshCw className={cn("h-3 w-3", isSyncingLabels && "animate-spin")} />
+                    {isSyncingLabels ? "Atualizando..." : "Atualizar etiquetas"}
+                  </button>
                 </div>
-              )}
+              </div>
             </PopoverContent>
           </Popover>
           <button
