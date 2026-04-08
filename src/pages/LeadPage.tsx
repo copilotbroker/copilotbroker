@@ -820,7 +820,6 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   icon={Building2}
                   label="Canal"
                   value={getSourceDisplayLabel(lead.source)}
-                  className={SOURCE_CHANNEL_COLORS[getSourceChannelType(lead.source)]}
                 />
 
                 {/* Campanha — editável, derivado de lead_origin */}
