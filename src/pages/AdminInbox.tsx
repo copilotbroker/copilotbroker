@@ -5,20 +5,14 @@ import { ConversationList } from "@/components/inbox/ConversationList";
 import { ConversationThread } from "@/components/inbox/ConversationThread";
 import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatModal";
-import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
+import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
+import { useConversations, useConversationMessages, Conversation, BrokerInboxTab } from "@/hooks/use-conversations";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { toast } from "sonner";
 import { useLogout } from "@/hooks/use-logout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
@@ -28,70 +22,59 @@ export default function AdminInbox() {
   const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("_loading");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showLeadPanel, setShowLeadPanel] = useState(false);
-  const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [myBrokerId, setMyBrokerId] = useState<string | null>(null);
-  const [inboxTab, setInboxTab] = useState<InboxTab>("meus");
+  const [activeTab, setActiveTab] = useState<BrokerInboxTab>("novos");
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
+  const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
+  const [isReturningToGlobal, setIsReturningToGlobal] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      const [brokersRes, myBrokerRes, rolesRes] = await Promise.all([
-        supabase.from("brokers").select("id, name").eq("is_active", true).order("name"),
+      const [myBrokerRes, brokersRes, roletasRes] = await Promise.all([
         supabase.from("brokers").select("id").eq("user_id", session.user.id).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", session.user.id),
+        supabase.from("brokers").select("id, name").eq("is_active", true).order("name"),
+        supabase.from("roletas").select("id, nome").eq("ativa", true),
       ]);
-
-      const roles = (rolesRes.data || []).map((r: any) => r.role);
-      const userIsAdmin = roles.includes("admin");
-      setIsAdmin(userIsAdmin);
 
       const brokerIdFound = (myBrokerRes?.data as any)?.id || null;
       setMyBrokerId(brokerIdFound);
-      if (brokersRes.data) setBrokers(brokersRes.data as any);
-      setSelectedBrokerId(brokerIdFound || "all");
+      if (brokersRes.data) setAllBrokers(brokersRes.data as any);
+      if (roletasRes.data) setActiveRoletas(roletasRes.data as any);
     };
     init();
   }, []);
 
-  const isArchived = statusFilter === "archived";
-  const effectiveBrokerId = myBrokerId || undefined;
+  const isArchived = activeTab === "arquivados";
 
+  // Personal conversations only (sourceInstance: "personal")
   const {
-    conversations, isLoading, totalUnread, markAsRead, archiveConversation,
+    conversations: allPersonalConversations, isLoading, totalUnread, markAsRead, archiveConversation,
     unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
   } = useConversations({
-    brokerId: effectiveBrokerId === "__skip__" ? "00000000-0000-0000-0000-000000000000" : effectiveBrokerId,
+    brokerId: myBrokerId || undefined,
     search,
-    statusFilter: isArchived ? "all" : statusFilter,
-    isArchived,
-    inboxTab,
-    userRole: "admin",
-  });
-
-  const {
-    conversations: novosConversations,
-    isLoading: novosLoading,
-    fetchConversations: fetchNovos,
-  } = useConversations({
-    brokerId: undefined,
-    search: inboxTab === "novos" ? search : "",
     statusFilter: "all",
-    isArchived: false,
-    inboxTab: "novos",
-    userRole: "admin",
+    isArchived,
+    sourceInstance: "personal",
   });
 
-  const activeConversations = inboxTab === "novos" ? novosConversations : conversations;
-  const activeLoading = inboxTab === "novos" ? novosLoading : isLoading;
+  const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
+  const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
+
+  const activeConversations = activeTab === "novos"
+    ? novosConversations
+    : activeTab === "atendimento"
+    ? atendimentoConversations
+    : allPersonalConversations;
 
   const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {
@@ -118,6 +101,16 @@ export default function AdminInbox() {
     }
   }, [activeConversations, searchParams, selectedConversation, setSearchParams]);
 
+  useEffect(() => {
+    if (!selectedConversation) return;
+    const refreshed = allPersonalConversations.find((c) => c.id === selectedConversation.id);
+    if (!refreshed) return;
+    setSelectedConversation((current) => {
+      if (!current) return current;
+      return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
+    });
+  }, [allPersonalConversations, selectedConversation?.id]);
+
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelectedConversation(conv);
     if (isMobile) setShowLeadPanel(false);
@@ -132,8 +125,8 @@ export default function AdminInbox() {
   const handleOpenLead = useCallback((leadId: string) => setViewingLeadId(leadId), []);
   const handleBackFromLead = useCallback(() => setViewingLeadId(null), []);
 
-  const handleTabChange = useCallback((tab: InboxTab) => {
-    setInboxTab(tab);
+  const handleTabChange = useCallback((tab: BrokerInboxTab) => {
+    setActiveTab(tab);
     setSelectedConversation(null);
     setShowLeadPanel(false);
   }, []);
@@ -142,19 +135,22 @@ export default function AdminInbox() {
     if (!selectedConversation || !myBrokerId) return;
     setIsStartingAttendance(true);
     try {
-      await supabase.from("conversations").update({ broker_id: myBrokerId, attendance_started: true } as any).eq("id", selectedConversation.id);
-
       const displayName = selectedConversation.display_name || selectedConversation.phone;
+
       const { data: newLead, error: leadError } = await supabase
         .from("leads").insert({
           name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
           broker_id: myBrokerId, status: "info_sent" as any,
-          source: "whatsapp_global", lead_origin: "whatsapp_plantao",
+          source: "whatsapp", lead_origin: "whatsapp_direto",
           atendimento_iniciado_em: new Date().toISOString(),
           status_distribuicao: "atendimento_iniciado" as any,
         } as any).select("id").single();
 
-      if (leadError || !newLead) { toast.error("Erro ao criar lead no CRM"); return; }
+      if (leadError || !newLead) {
+        toast.error("Erro ao criar card no Kanban");
+        return;
+      }
+
       const leadId = (newLead as any).id;
       const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
       const finalLeadId = unifiedId || leadId;
@@ -162,25 +158,55 @@ export default function AdminInbox() {
       await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
       await supabase.from("lead_interactions").insert({
         lead_id: finalLeadId, interaction_type: "atendimento_iniciado" as any,
-        notes: "Atendimento iniciado via Inbox Admin (WhatsApp Global)",
+        notes: "Atendimento iniciado via Inbox pessoal (Admin)",
         broker_id: myBrokerId, channel: "whatsapp", new_status: "info_sent",
       } as any);
 
-      toast.success("Atendimento iniciado! Lead criado no Kanban.");
-      setInboxTab("meus");
+      setActiveTab("atendimento");
       setSelectedConversation({
-        ...selectedConversation, broker_id: myBrokerId, lead_id: finalLeadId,
-        lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
+        ...selectedConversation, lead_id: finalLeadId,
+        lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_direto" },
       });
+
+      toast.success("Atendimento iniciado! Card criado no Kanban.");
       fetchConversations();
-      fetchNovos();
     } catch (error) {
       console.error("Erro ao iniciar atendimento:", error);
       toast.error("Erro ao iniciar atendimento");
     } finally {
       setIsStartingAttendance(false);
     }
-  }, [selectedConversation, myBrokerId, fetchConversations, fetchNovos]);
+  }, [selectedConversation, myBrokerId, fetchConversations]);
+
+  const handleReturnToGlobal = useCallback(async () => {
+    if (!selectedConversation) return;
+    setIsReturningToGlobal(true);
+    try {
+      const { error } = await supabase
+        .from("conversations")
+        .update({ source_instance: "global" } as any)
+        .eq("id", selectedConversation.id);
+      if (error) throw error;
+      toast.success("Conversa devolvida ao WhatsApp do Plantão!");
+      setSelectedConversation(null);
+      fetchConversations();
+    } catch (err) {
+      console.error("Erro ao devolver conversa:", err);
+      toast.error("Erro ao devolver conversa");
+    } finally {
+      setIsReturningToGlobal(false);
+    }
+  }, [selectedConversation, fetchConversations]);
+
+  const handleTransferFromInbox = useCallback(() => {
+    if (selectedConversation?.lead_id) setShowTransferDialog(true);
+  }, [selectedConversation]);
+
+  const handleTransferred = useCallback(() => {
+    setShowTransferDialog(false);
+    setSelectedConversation(null);
+    fetchConversations();
+  }, [fetchConversations]);
 
   const handleRequestSuggestion = useCallback(async () => {
     if (!selectedConversation) return;
@@ -198,26 +224,25 @@ export default function AdminInbox() {
   const handleOpenCreateLeadModal = useCallback(() => setShowCreateLeadModal(true), []);
 
   const handleLeadCreated = useCallback(async (leadName: string, _: string, projectId: string | null) => {
-    if (!selectedConversation) return;
-    const bId = selectedConversation.broker_id;
+    if (!selectedConversation || !myBrokerId) return;
     const { data: newLead, error: leadError } = await supabase
       .from("leads").insert({
         name: leadName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
-        broker_id: bId, project_id: projectId, status: "new" as any,
+        broker_id: myBrokerId, project_id: projectId, status: "new" as any,
         source: "whatsapp", lead_origin: "whatsapp_direto",
       } as any).select("id").single();
     if (leadError || !newLead) { toast.error("Erro ao criar card no Kanban"); return; }
     await supabase.from("conversations").update({ lead_id: (newLead as any).id } as any).eq("id", selectedConversation.id);
     await supabase.from("lead_interactions").insert({
       lead_id: (newLead as any).id, interaction_type: "note" as any,
-      notes: "Lead criado a partir da Inbox (WhatsApp direto)", broker_id: bId,
+      notes: "Lead criado a partir da Inbox (WhatsApp direto)", broker_id: myBrokerId, channel: "system",
     } as any);
     toast.success("Card criado no Kanban!");
     setSelectedConversation({
       ...selectedConversation, lead_id: (newLead as any).id,
       lead: { id: (newLead as any).id, name: leadName, status: "new", project_id: projectId, notes: null, lead_origin: "whatsapp_direto" },
     });
-  }, [selectedConversation]);
+  }, [selectedConversation, myBrokerId]);
 
   const handleAdvanceStatus = useCallback(async (newStatus: string) => {
     const lead = selectedConversation?.lead as any;
@@ -229,8 +254,7 @@ export default function AdminInbox() {
 
   const handleLogout = useLogout({ silent: true });
 
-  const isNewLeadConversation = inboxTab === "novos" && !!selectedConversation;
-  const isReadOnlyConversation = false;
+  const isNewConversation = activeTab === "novos" && !!selectedConversation && !selectedConversation.lead_id;
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
   const showContext = showLeadPanel && !isMobile;
@@ -242,28 +266,24 @@ export default function AdminInbox() {
       <div className="md:pl-16">
         <div className="flex h-[calc(100vh-64px)] md:h-screen overflow-hidden">
           {showList && (
-            <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0 flex flex-col`}>
-
-              <div className="flex-1 min-h-0">
-                <ConversationList
-                  conversations={activeConversations}
-                  selectedId={selectedConversation?.id || null}
-                  onSelect={handleSelectConversation}
-                  search={search}
-                  onSearchChange={setSearch}
-                  statusFilter={statusFilter}
-                  onStatusFilterChange={setStatusFilter}
-                  isLoading={activeLoading}
-                  totalUnread={totalUnread}
-                  onMarkAsRead={(id) => markAsRead(id)}
-                  onArchive={(id) => archiveConversation(id)}
-                  isAdminView
-                  inboxTab={inboxTab}
-                  onTabChange={handleTabChange}
-                  showOthersTab={false}
-                  novosCount={novosConversations.length}
-                />
-              </div>
+            <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0`}>
+              <ConversationList
+                conversations={activeConversations}
+                selectedId={selectedConversation?.id || null}
+                onSelect={handleSelectConversation}
+                search={search}
+                onSearchChange={setSearch}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                isLoading={isLoading}
+                totalUnread={totalUnread}
+                onMarkAsRead={(id) => markAsRead(id)}
+                onArchive={(id) => archiveConversation(id)}
+                brokerInboxTab={activeTab}
+                onBrokerTabChange={handleTabChange}
+                brokerNovosCount={novosConversations.length}
+                brokerAtendimentoCount={atendimentoConversations.length}
+              />
             </div>
           )}
 
@@ -296,12 +316,14 @@ export default function AdminInbox() {
                   onInsertSuggestion={() => setSuggestion("")}
                   onDismissSuggestion={() => setSuggestion("")}
                   onOpenLeadPanel={() => setShowLeadPanel(!showLeadPanel)}
-                  onCreateLead={!selectedConversation!.lead_id && !isNewLeadConversation ? handleOpenCreateLeadModal : undefined}
+                  onCreateLead={!selectedConversation!.lead_id ? handleOpenCreateLeadModal : undefined}
                   onOpenLead={handleOpenLead}
-                  isNewLead={isNewLeadConversation}
+                  onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
+                  onReturnToGlobal={handleReturnToGlobal}
+                  isReturningToGlobal={isReturningToGlobal}
+                  isNewLead={isNewConversation}
                   onStartAttendance={handleStartAttendance}
                   isStartingAttendance={isStartingAttendance}
-                  isReadOnly={isReadOnlyConversation}
                 />
               )}
             </div>
@@ -323,14 +345,27 @@ export default function AdminInbox() {
 
       <MobileBottomNav activeTab="inbox" />
 
-      {selectedConversation && (
+      {selectedConversation && myBrokerId && (
         <CreateLeadFromChatModal
           open={showCreateLeadModal}
           onOpenChange={setShowCreateLeadModal}
           phone={selectedConversation.phone}
           suggestedName={(selectedConversation.lead as any)?.name || selectedConversation.phone}
-          brokerId={selectedConversation.broker_id}
+          brokerId={myBrokerId}
           onCreated={handleLeadCreated}
+        />
+      )}
+
+      {selectedConversation?.lead_id && myBrokerId && (
+        <TransferLeadDialog
+          leadId={selectedConversation.lead_id}
+          leadName={(selectedConversation.lead as any)?.name || selectedConversation.display_name || selectedConversation.phone}
+          currentBrokerId={myBrokerId}
+          brokers={allBrokers}
+          roletas={activeRoletas}
+          isOpen={showTransferDialog}
+          onClose={() => setShowTransferDialog(false)}
+          onTransferred={handleTransferred}
         />
       )}
     </div>

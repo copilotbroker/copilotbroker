@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ConversationList } from "@/components/inbox/ConversationList";
 import { ConversationThread } from "@/components/inbox/ConversationThread";
 import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
+import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatModal";
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
@@ -38,8 +39,10 @@ export default function AdminPlantao() {
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
+  const [isPullingToPersonal, setIsPullingToPersonal] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -160,7 +163,6 @@ export default function AdminPlantao() {
     if (!selectedConversation || !myBrokerId) return;
     setIsStartingAttendance(true);
     try {
-      // Step 1: Claim the conversation immediately so UI unlocks messaging
       const { error: convError } = await supabase
         .from("conversations")
         .update({ broker_id: myBrokerId, attendance_started: true } as any)
@@ -172,7 +174,6 @@ export default function AdminPlantao() {
         return;
       }
 
-      // Switch tab and update local state immediately — admin can now type
       const displayName = selectedConversation.display_name || selectedConversation.phone;
       setInboxTab("meus");
       setSelectedConversation({
@@ -181,7 +182,6 @@ export default function AdminPlantao() {
       fetchConversations();
       fetchNovos();
 
-      // Step 2: Create lead in CRM (non-blocking for messaging)
       const { data: newLead, error: leadError } = await supabase
         .from("leads").insert({
           name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
@@ -201,7 +201,6 @@ export default function AdminPlantao() {
       const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
       const finalLeadId = unifiedId || leadId;
 
-      // Step 3: Link lead to conversation and record interactions
       await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
       await supabase.from("lead_interactions").insert({
         lead_id: finalLeadId, interaction_type: "atendimento_iniciado" as any,
@@ -209,11 +208,9 @@ export default function AdminPlantao() {
         broker_id: myBrokerId, channel: "whatsapp", new_status: "info_sent",
       } as any);
 
-      // Get broker name for system message
       const { data: brokerData } = await supabase.from("brokers").select("name").eq("id", myBrokerId).maybeSingle();
       const brokerName = (brokerData as any)?.name || "Corretor";
 
-      // Insert system message into conversation thread
       await supabase.from("conversation_messages").insert({
         conversation_id: selectedConversation.id,
         direction: "outbound",
@@ -223,7 +220,6 @@ export default function AdminPlantao() {
         metadata: { system_event: "attendance_started", broker_name: brokerName },
       } as any);
 
-      // Update local state with lead info
       setSelectedConversation(prev => prev ? {
         ...prev, lead_id: finalLeadId,
         lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
@@ -238,6 +234,25 @@ export default function AdminPlantao() {
       setIsStartingAttendance(false);
     }
   }, [selectedConversation, myBrokerId, fetchConversations, fetchNovos]);
+
+  const handlePullToPersonal = useCallback(async () => {
+    if (!selectedConversation) return;
+    setIsPullingToPersonal(true);
+    try {
+      const { error } = await supabase
+        .from("conversations")
+        .update({ source_instance: "personal" } as any)
+        .eq("id", selectedConversation.id);
+      if (error) throw error;
+      toast.success("Conversa migrada para seu WhatsApp pessoal!");
+      navigate(`/admin/inbox?conversationId=${selectedConversation.id}`);
+    } catch (err) {
+      console.error("Erro ao migrar conversa:", err);
+      toast.error("Erro ao migrar conversa");
+    } finally {
+      setIsPullingToPersonal(false);
+    }
+  }, [selectedConversation, navigate]);
 
   const handleTransferFromInbox = useCallback(() => {
     if (selectedConversation?.lead_id) setShowTransferDialog(true);
@@ -262,6 +277,30 @@ export default function AdminPlantao() {
       messages: chatHistory,
     });
   }, [selectedConversation, messages, generateSuggestion]);
+
+  const handleOpenCreateLeadModal = useCallback(() => setShowCreateLeadModal(true), []);
+
+  const handleLeadCreated = useCallback(async (leadName: string, _: string, projectId: string | null) => {
+    if (!selectedConversation) return;
+    const bId = selectedConversation.broker_id;
+    const { data: newLead, error: leadError } = await supabase
+      .from("leads").insert({
+        name: leadName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
+        broker_id: bId, project_id: projectId, status: "new" as any,
+        source: "whatsapp", lead_origin: "whatsapp_direto",
+      } as any).select("id").single();
+    if (leadError || !newLead) { toast.error("Erro ao criar card no Kanban"); return; }
+    await supabase.from("conversations").update({ lead_id: (newLead as any).id } as any).eq("id", selectedConversation.id);
+    await supabase.from("lead_interactions").insert({
+      lead_id: (newLead as any).id, interaction_type: "note" as any,
+      notes: "Lead criado a partir do Plantão Admin", broker_id: bId,
+    } as any);
+    toast.success("Card criado no Kanban!");
+    setSelectedConversation({
+      ...selectedConversation, lead_id: (newLead as any).id,
+      lead: { id: (newLead as any).id, name: leadName, status: "new", project_id: projectId, notes: null, lead_origin: "whatsapp_direto" },
+    });
+  }, [selectedConversation]);
 
   const handleAdvanceStatus = useCallback(async (newStatus: string) => {
     const lead = selectedConversation?.lead as any;
@@ -355,12 +394,15 @@ export default function AdminPlantao() {
                   onInsertSuggestion={() => setSuggestion("")}
                   onDismissSuggestion={() => setSuggestion("")}
                   onOpenLeadPanel={() => setShowLeadPanel(!showLeadPanel)}
+                  onCreateLead={!selectedConversation!.lead_id && !isNewLeadConversation ? handleOpenCreateLeadModal : undefined}
                   onOpenLead={handleOpenLead}
                   isNewLead={isNewLeadConversation}
                   onStartAttendance={handleStartAttendance}
                   isStartingAttendance={isStartingAttendance}
                   isReadOnly={isReadOnlyConversation}
                   onTransfer={selectedConversation!.lead_id ? handleTransferFromInbox : undefined}
+                  onPullToPersonal={handlePullToPersonal}
+                  isPullingToPersonal={isPullingToPersonal}
                 />
               )}
             </div>
@@ -372,6 +414,7 @@ export default function AdminPlantao() {
                 conversation={selectedConversation}
                 onClose={() => setShowLeadPanel(false)}
                 onAdvanceStatus={handleAdvanceStatus}
+                onCreateLead={!selectedConversation.lead_id ? handleOpenCreateLeadModal : undefined}
                 onOpenLead={handleOpenLead}
               />
             </div>
@@ -380,6 +423,17 @@ export default function AdminPlantao() {
       </div>
 
       <MobileBottomNav activeTab="plantao" />
+
+      {selectedConversation && myBrokerId && (
+        <CreateLeadFromChatModal
+          open={showCreateLeadModal}
+          onOpenChange={setShowCreateLeadModal}
+          phone={selectedConversation.phone}
+          suggestedName={(selectedConversation.lead as any)?.name || selectedConversation.phone}
+          brokerId={selectedConversation.broker_id || myBrokerId}
+          onCreated={handleLeadCreated}
+        />
+      )}
 
       {selectedConversation?.lead_id && myBrokerId && (
         <TransferLeadDialog
