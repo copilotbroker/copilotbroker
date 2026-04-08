@@ -151,7 +151,7 @@ export const ORIGIN_TYPE_COLORS: Record<OriginType, string> = {
   unknown: 'bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800',
 };
 
-// Exibir label da origem
+// Exibir label da origem (campanha de mídia)
 export const getOriginDisplayLabel = (origin: string | null): string => {
   if (!origin) return 'Não identificada';
   
@@ -161,6 +161,44 @@ export const getOriginDisplayLabel = (origin: string | null): string => {
   
   // Caso contrário, é uma origem dinâmica do analytics - exibir como está
   return origin;
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Canal de entrada — derivado de leads.source
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export type SourceChannelType = 'landing_page' | 'whatsapp' | 'manual' | 'enove' | 'unknown';
+
+const SOURCE_CHANNEL_MAP: Record<string, { label: string; type: SourceChannelType }> = {
+  landing_page: { label: 'Landing Page', type: 'landing_page' },
+  broker_landing: { label: 'Landing Page (Corretor)', type: 'landing_page' },
+  whatsapp: { label: 'WhatsApp Pessoal', type: 'whatsapp' },
+  whatsapp_global: { label: 'WhatsApp Plantão', type: 'whatsapp' },
+  manual: { label: 'Cadastro Manual', type: 'manual' },
+  broker: { label: 'Cadastro Corretor', type: 'manual' },
+  enove: { label: 'Enove', type: 'enove' },
+  csv_import: { label: 'Importação CSV', type: 'manual' },
+};
+
+export const getSourceDisplayLabel = (source: string): string => {
+  const mapped = SOURCE_CHANNEL_MAP[source];
+  if (mapped) return mapped.label;
+  // If it's a broker slug, show as broker landing
+  return 'Landing Page (Corretor)';
+};
+
+export const getSourceChannelType = (source: string): SourceChannelType => {
+  const mapped = SOURCE_CHANNEL_MAP[source];
+  if (mapped) return mapped.type;
+  return 'landing_page'; // broker slug → landing page
+};
+
+export const SOURCE_CHANNEL_COLORS: Record<SourceChannelType, string> = {
+  landing_page: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  whatsapp: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  manual: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  enove: 'bg-primary/10 text-primary border-primary/20',
+  unknown: 'bg-muted text-muted-foreground border-border',
 };
 
 export interface LeadInteraction {

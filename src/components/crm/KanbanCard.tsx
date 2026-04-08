@@ -18,7 +18,7 @@ import {
   Square,
   ArrowRightLeft,
 } from "lucide-react";
-import { CRMLead, LeadStatus, getOriginDisplayLabel } from "@/types/crm";
+import { CRMLead, LeadStatus, getOriginDisplayLabel, getSourceDisplayLabel, getSourceChannelType, SOURCE_CHANNEL_COLORS } from "@/types/crm";
 import { cn } from "@/lib/utils";
 
 import { OriginCombobox } from "./OriginCombobox";
@@ -488,36 +488,55 @@ export const KanbanCard = memo(function KanbanCard({
             </div>
           </div>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <OriginCombobox
-                  currentOrigin={lead.lead_origin}
-                  onSelect={handleOriginSelect}
-                  trigger={
-                    lead.lead_origin ? (
-                      <button className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary">
-                        {getOriginDisplayLabel(lead.lead_origin)}
-                      </button>
-                    ) : (
-                      <button className="rounded-md border border-dashed border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
-                        <span className="flex items-center gap-1">
-                          <Plus className="h-2.5 w-2.5" />
-                          Origem
-                        </span>
-                      </button>
-                    )
-                  }
-                />
-              </div>
-            </TooltipTrigger>
+          <div className="flex items-center gap-1">
+            {/* Canal de entrada — sempre visível */}
+            <span className={cn(
+              "rounded-md border px-1.5 py-0.5 text-[10px] font-medium",
+              SOURCE_CHANNEL_COLORS[getSourceChannelType(lead.source)]
+            )}>
+              {getSourceDisplayLabel(lead.source)}
+            </span>
 
-            {(lead as any).lead_origin_detail && (
-              <TooltipContent side="top" className="max-w-[250px] text-xs">
-                <span>{(lead as any).lead_origin_detail}</span>
-              </TooltipContent>
+            {/* Campanha de mídia — só se existir */}
+            {lead.lead_origin && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <OriginCombobox
+                      currentOrigin={lead.lead_origin}
+                      onSelect={handleOriginSelect}
+                      trigger={
+                        <button className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary">
+                          {getOriginDisplayLabel(lead.lead_origin)}
+                        </button>
+                      }
+                    />
+                  </div>
+                </TooltipTrigger>
+                {(lead as any).lead_origin_detail && (
+                  <TooltipContent side="top" className="max-w-[250px] text-xs">
+                    <span>{(lead as any).lead_origin_detail}</span>
+                  </TooltipContent>
+                )}
+              </Tooltip>
             )}
-          </Tooltip>
+
+            {/* Botão para adicionar campanha — só se não existir */}
+            {!lead.lead_origin && (
+              <OriginCombobox
+                currentOrigin={lead.lead_origin}
+                onSelect={handleOriginSelect}
+                trigger={
+                  <button className="rounded-md border border-dashed border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+                    <span className="flex items-center gap-1">
+                      <Plus className="h-2.5 w-2.5" />
+                      Campanha
+                    </span>
+                  </button>
+                }
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
