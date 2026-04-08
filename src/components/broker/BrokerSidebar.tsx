@@ -7,6 +7,8 @@ import { BROKER_ROUTE_TABS, getBrokerPathByTab, getBrokerTabFromPath } from "./b
 import { useUserRole } from "@/hooks/use-user-role";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useInboxUnread } from "@/hooks/use-inbox-unread";
+import { usePlantaoNovosCount } from "@/hooks/use-plantao-novos-count";
 
 interface BrokerSidebarProps {
   viewMode: "kanban" | "list";
@@ -35,7 +37,8 @@ export function BrokerSidebar({
   const location = useLocation();
   const activeTab = getBrokerTabFromPath(location.pathname);
   const { brokerId } = useUserRole();
-
+  const { unreadCount: inboxUnread } = useInboxUnread();
+  const { count: plantaoNovosCount } = usePlantaoNovosCount();
   const { data: brokerName } = useQuery({
     queryKey: ["broker-name", brokerId],
     queryFn: async () => {
@@ -121,6 +124,16 @@ export function BrokerSidebar({
               title={item.label}
             >
               <Icon className="w-5 h-5" />
+              {item.id === "inbox" && inboxUnread > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-md shadow-red-500/50">
+                  {inboxUnread > 99 ? "99+" : inboxUnread}
+                </span>
+              )}
+              {item.id === "plantao" && plantaoNovosCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shadow-md shadow-red-500/50">
+                  {plantaoNovosCount > 99 ? "99+" : plantaoNovosCount}
+                </span>
+              )}
               <span className="absolute left-full ml-2 px-2 py-1 bg-[#2a2a2e] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 {item.label}
               </span>
