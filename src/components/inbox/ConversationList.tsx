@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
-  ArrowUpDown, ThermometerSun, Target, MoreVertical, Check, Zap,
-  TrendingUp, Eye, EyeOff, ChevronDown, MessageCircleMore, LayoutGrid, Archive,
+  Target, MoreVertical, Check, Zap,
+  Eye, EyeOff, LayoutGrid, Archive,
   Users, UserPlus, User, Headphones
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,71 +47,6 @@ interface ConversationListProps {
   brokerAtendimentoCount?: number;
 }
 
-type SortMode = "recent" | "unread" | "temperature" | "opportunity" | "risk" | "idle";
-
-const STATUS_FILTERS = [
-  { id: "all", label: "Todas", icon: Inbox },
-  { id: "unread", label: "Não lidas", icon: MessageSquare },
-  { id: "attending", label: "Atendendo", icon: Clock },
-  { id: "waiting_reply", label: "Aguardando", icon: AlertTriangle },
-  { id: "archived", label: "Arquivadas", icon: Archive },
-];
-
-const SORT_OPTIONS: { id: SortMode; label: string; icon: typeof ArrowUpDown }[] = [
-  { id: "recent", label: "Mais recentes", icon: Clock },
-  { id: "unread", label: "Não lidas primeiro", icon: MessageSquare },
-  { id: "temperature", label: "Temperatura", icon: ThermometerSun },
-  { id: "opportunity", label: "Oportunidade", icon: Target },
-  { id: "risk", label: "Em risco", icon: AlertTriangle },
-  { id: "idle", label: "Mais tempo parado", icon: Clock },
-];
-
-function InboxKPIs({ conversations, activeKpi, onKpiClick }: { conversations: Conversation[]; activeKpi: string | null; onKpiClick: (kpi: string) => void }) {
-  const stats = useMemo(() => {
-    const active = conversations.length;
-    const unread = conversations.filter(c => c.unread_count > 0).length;
-    const atRisk = conversations.filter(c => {
-      const lead = c.lead as any;
-      return c.temperature <= 3 && lead?.status !== "sold" && lead?.status !== "inactive";
-    }).length;
-    const hot = conversations.filter(c => c.temperature >= 8).length;
-
-    return { active, unread, atRisk, hot };
-  }, [conversations]);
-
-    const kpis = [
-      { id: "active", label: "Ativas", value: stats.active, tone: "muted" },
-      { id: "unread", label: "Não lidas", value: stats.unread, tone: "destructive", highlight: stats.unread > 0 },
-      { id: "hot", label: "Quentes", value: stats.hot, tone: "warning", icon: Flame },
-      { id: "risk", label: "Em risco", value: stats.atRisk, tone: "destructive", icon: AlertTriangle },
-    ];
-
-    return (
-      <div className="grid grid-cols-4 gap-1 px-3 py-2">
-        {kpis.map((kpi) => {
-          const Icon = kpi.icon;
-          const isActive = activeKpi === kpi.id;
-          return (
-            <button
-              key={kpi.id}
-              onClick={() => onKpiClick(kpi.id)}
-              className={cn(
-                "flex flex-col items-center rounded-lg border border-border bg-card py-1.5 transition-all hover:bg-muted/40",
-                isActive && "border-border bg-muted/60 text-foreground"
-              )}
-            >
-              <div className="flex items-center gap-0.5">
-                {Icon && <Icon className="h-3 w-3 text-primary" />}
-                <span className="text-base font-bold text-foreground">{kpi.value}</span>
-              </div>
-              <span className="text-[9px] text-muted-foreground">{kpi.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    );
-}
-
 // Stable animation style for active cadence (matches KanbanCard)
 const RING_PULSE_STYLE: React.CSSProperties = {
   animation: "ring-pulse 3s ease-in-out infinite",
@@ -140,8 +75,6 @@ export function ConversationList({
   brokerNovosCount = 0,
   brokerAtendimentoCount = 0,
 }: ConversationListProps) {
-  const [sortMode, setSortMode] = useState<SortMode>("recent");
-  const [activeKpi, setActiveKpi] = useState<string | null>(null);
   const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
 
   // Fetch lead IDs with active cadences (pending messages in queue)
@@ -162,65 +95,15 @@ export function ConversationList({
     fetchCadencias();
   }, [conversations]);
 
-  const handleKpiClick = (kpi: string) => {
-    setActiveKpi(prev => prev === kpi ? null : kpi);
-  };
-
-  const kpiFilteredConversations = useMemo(() => {
-    if (!activeKpi) return conversations;
-    switch (activeKpi) {
-      case "unread":
-        return conversations.filter(c => c.unread_count > 0);
-      case "hot":
-        return conversations.filter(c => (c.temperature || 0) >= 8);
-      case "risk":
-        return conversations.filter(c => {
-          const lead = c.lead as any;
-          return (c.temperature || 5) <= 3 && lead?.status !== "sold" && lead?.status !== "inactive";
-        });
-      case "active":
-      default:
-        return conversations;
-    }
-  }, [conversations, activeKpi]);
-
   const sortedConversations = useMemo(() => {
-    const sorted = [...kpiFilteredConversations];
-    switch (sortMode) {
-      case "recent": {
-        sorted.sort((a, b) => {
-          const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-          const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-          return bTime - aTime;
-        });
-        break;
-      }
-      case "unread":
-        sorted.sort((a, b) => (b.unread_count || 0) - (a.unread_count || 0));
-        break;
-      case "temperature":
-        sorted.sort((a, b) => (b.temperature || 0) - (a.temperature || 0));
-        break;
-      case "opportunity":
-        sorted.sort((a, b) => (b.opportunity_score || 0) - (a.opportunity_score || 0));
-        break;
-      case "risk": {
-        sorted.sort((a, b) => (a.temperature || 5) - (b.temperature || 5));
-        break;
-      }
-      case "idle": {
-        sorted.sort((a, b) => {
-          const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-          const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-          return aTime - bTime;
-        });
-        break;
-      }
-      default:
-        break;
-    }
+    const sorted = [...conversations];
+    sorted.sort((a, b) => {
+      const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+      const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+      return bTime - aTime;
+    });
     return sorted;
-  }, [kpiFilteredConversations, sortMode]);
+  }, [conversations]);
 
   const getLastPreview = (conv: Conversation) => {
     const preview = conv.last_message_preview || "Sem mensagens";
@@ -357,44 +240,6 @@ export function ConversationList({
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-            <Inbox className="h-5 w-5 text-primary" />
-            {brokerInboxTab === "novos" ? "Novos" : brokerInboxTab === "atendimento" ? "Em atendimento" : brokerInboxTab === "arquivados" ? "Arquivados" : inboxTab === "novos" ? "Novos Contatos" : inboxTab === "outros" ? "Equipe" : isAdminView ? "Inbox Admin" : "Inbox"}
-            {totalUnread > 0 && inboxTab === "meus" && (
-              <Badge variant="destructive" className="min-w-[20px] px-1.5 py-0 text-xs h-5">
-                {totalUnread}
-              </Badge>
-            )}
-          </h2>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground">
-                <ArrowUpDown className="h-3 w-3" />
-                Ordenar
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {SORT_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
-                return (
-                  <DropdownMenuItem
-                    key={opt.id}
-                    onClick={() => setSortMode(opt.id)}
-                    className={cn("gap-2 text-xs", sortMode === opt.id && "text-primary")}
-                  >
-                    <Icon className="h-3 w-3" />
-                    {opt.label}
-                    {sortMode === opt.id && <Check className="ml-auto h-3 w-3" />}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -404,30 +249,7 @@ export function ConversationList({
             className="h-9 pl-8 text-sm"
           />
         </div>
-
-        <div className="scrollbar-hide flex gap-1 overflow-x-auto pb-1">
-          {STATUS_FILTERS.map((f) => {
-            const Icon = f.icon;
-            return (
-              <button
-                key={f.id}
-                onClick={() => onStatusFilterChange(f.id)}
-                className={cn(
-                  "flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
-                  statusFilter === f.id
-                    ? "border-border bg-card text-foreground font-medium"
-                    : "border-transparent bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                )}
-              >
-                <Icon className="h-3 w-3" />
-                {f.label}
-              </button>
-            );
-          })}
-        </div>
       </div>
-
-      <InboxKPIs conversations={conversations} activeKpi={activeKpi} onKpiClick={handleKpiClick} />
 
       <ScrollArea className="flex-1">
         <div className="space-y-1 px-2 pb-2">
