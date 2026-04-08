@@ -91,6 +91,7 @@ export default function BrokerPlantao() {
     inboxTab,
     userRole: role as "admin" | "leader" | null,
     sourceInstance: "global",
+    enabled: !!brokerId,
   });
 
   // Novos conversations (separate query) — only fetch if checked in to a whatsapp_global roulette
@@ -105,7 +106,7 @@ export default function BrokerPlantao() {
     isArchived: false,
     inboxTab: "novos",
     sourceInstance: "global",
-    enabled: isCheckedInGlobal === true,
+    enabled: !!brokerId && isCheckedInGlobal === true,
   });
 
   const activeConversations = inboxTab === "novos" ? novosConversations : conversations;

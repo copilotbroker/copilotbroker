@@ -65,6 +65,7 @@ export default function AdminInbox() {
     statusFilter: "all",
     isArchived,
     sourceInstance: "personal",
+    enabled: !!myBrokerId,
   });
 
   const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
