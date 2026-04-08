@@ -97,13 +97,74 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
     queryFn: async () => {
       const { data } = await supabase
         .from("conversations")
-        .select("id")
+        .select("id, source_instance")
         .eq("lead_id", leadId!)
+        .order("last_message_at", { ascending: false })
         .maybeSingle();
       return data;
     },
     enabled: !!leadId,
   });
+
+  const isGlobalInstance = linkedConversation?.source_instance === "global";
+
+  // Ensure a conversation exists for the lead (reused for sending messages)
+  const ensureConversationForLead = async (): Promise<string> => {
+    if (!lead?.broker_id) throw new Error("Lead sem corretor vinculado");
+
+    const digits = lead.whatsapp.replace(/\D/g, "");
+    const canonicalPhone = digits.startsWith("55") ? digits : `55${digits}`;
+    const canonicalNormalized = canonicalPhone.replace(/\D/g, "");
+    const basePhone = canonicalNormalized.startsWith("55") ? canonicalNormalized.slice(2) : canonicalNormalized;
+    const phoneVariants = [...new Set([
+      canonicalNormalized,
+      basePhone,
+      basePhone.length === 10 ? `${basePhone.slice(0, 2)}9${basePhone.slice(2)}` : null,
+      basePhone.length === 11 && basePhone[2] === "9" ? `${basePhone.slice(0, 2)}${basePhone.slice(3)}` : null,
+    ].filter(Boolean) as string[])];
+
+    const { data: existingConversations, error: findError } = await supabase
+      .from("conversations")
+      .select("id, broker_id, lead_id, phone, phone_normalized")
+      .eq("broker_id", lead.broker_id)
+      .in("phone_normalized", phoneVariants)
+      .order("created_at", { ascending: true });
+
+    if (findError) throw findError;
+
+    const primary = existingConversations?.[0];
+    if (primary) {
+      await supabase
+        .from("conversations")
+        .update({
+          phone: canonicalPhone,
+          phone_normalized: canonicalNormalized,
+          lead_id: primary.lead_id || lead.id,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("id", primary.id);
+      return primary.id;
+    }
+
+    const { data: created, error: createError } = await supabase
+      .from("conversations")
+      .insert({
+        broker_id: lead.broker_id,
+        lead_id: lead.id,
+        phone: `+${canonicalPhone}`,
+        phone_normalized: canonicalNormalized,
+        status: "active",
+        ai_mode: "copilot",
+        display_name: lead.name,
+        display_name_source: "lead",
+        is_archived: false,
+      } as any)
+      .select("id")
+      .single();
+
+    if (createError) throw createError;
+    return created.id as string;
+  };
 
   // Fetch brokers & projects for editable selects
   const { data: allBrokers = [] } = useQuery({
