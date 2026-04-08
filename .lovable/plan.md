@@ -1,37 +1,40 @@
 
 
-## Redesenhar os botões Chat e WhatsApp na página do Lead
+## Diagnóstico: Lead Guilherme não exibe botão Chat corretamente
 
-### Problema
-Os dois botões "Chat" e "WhatsApp" na página do Lead são confusos — ambos usam o ícone `MessageCircle` e não fica claro o que cada um faz.
+### O que encontrei
+
+O lead Guilherme **tem** uma conversa vinculada corretamente (`conversations.lead_id` aponta para o lead). Porém, o campo `source_instance` está **NULL** em vez de `'personal'`.
+
+Isso acontece porque:
+1. A conversa foi criada pelo trigger `auto_create_conversation_for_lead` **antes** da correção que passou a setar `source_instance = 'personal'` explicitamente
+2. Ou foi criada pela cadência automática (`auto-cadencia-10d`) que chama `ensureConversationForLead` — e essa função no LeadPage.tsx também não seta `source_instance`
+
+### Impacto do NULL
+
+O botão Chat no LeadPage **deveria funcionar** mesmo com `source_instance = NULL` — o código trata NULL como "pessoal" (inbox). Porém, em outros pontos do sistema (como o `ConversationThread` que verifica `source_instance === "personal"` para mostrar "Devolver ao Plantão"), o NULL causa problemas.
 
 ### Solução
-Transformar os dois botões em funções distintas e claras:
 
-**Botão 1 — "Chat" → Abre a conversa dentro da plataforma**
-- Identifica se a conversa vinculada (`linkedConversation`) é da instância global ou pessoal
-- Se `source_instance = 'global'`: navega para a rota do Plantão com o `conversationId`
-  - Admin: `/admin/plantao?conversationId={id}`
-  - Broker: `/corretor/plantao?conversationId={id}`
-- Se `source_instance = 'personal'` (ou null): navega para o Inbox pessoal
-  - Admin: `/admin/inbox?conversationId={id}`
-  - Broker: `/corretor/inbox?conversationId={id}`
-- Cor: verde se global, roxo se pessoal (mantém a semântica visual existente)
-- Ícone: `MessageCircle`
-- Se não houver conversa vinculada, o botão não aparece (comportamento atual)
+1. **Migração de dados**: Atualizar todas as conversas com `source_instance = NULL` para `'personal'` — são conversas pessoais que foram criadas antes da correção
+2. **Proteção futura**: Adicionar `DEFAULT 'personal'` na coluna `source_instance` para que nunca mais fique NULL
 
-**Botão 2 — "WhatsApp" → Abre link externo wa.me**
-- Sempre visível
-- Abre `https://wa.me/55{phone}` em nova aba (link externo)
-- Ícone: `ExternalLink` (já importado)
-- Cor: verde WhatsApp neutra
-- Não faz nenhuma lógica de iniciar atendimento ou scroll — apenas link externo
+### Alterações
 
-### Arquivo
-- `src/pages/LeadPage.tsx` — linhas ~480-518: substituir a lógica dos dois botões
+**Migração SQL:**
+```sql
+-- Preencher source_instance NULL com 'personal'
+UPDATE conversations 
+SET source_instance = 'personal' 
+WHERE source_instance IS NULL;
 
-### Detalhes
-- O botão "WhatsApp" atual (que faz scroll para o formulário de mensagem inline) será substituído pelo link externo
-- A funcionalidade de enviar mensagem inline continua disponível na seção de mensagem mais abaixo na página
-- O role do usuário (`role` já disponível no componente) determina o prefixo da rota (`/admin/` vs `/corretor/`)
+-- Definir default para a coluna
+ALTER TABLE conversations 
+ALTER COLUMN source_instance SET DEFAULT 'personal';
+```
+
+**Nenhuma alteração de código** — o trigger `auto_create_conversation_for_lead` já seta `'personal'` e o `LeadPage.tsx` já trata NULL como pessoal. A migração apenas corrige dados legados.
+
+### Arquivos
+- Nova migração SQL (normalizar `source_instance`)
 
