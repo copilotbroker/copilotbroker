@@ -1,32 +1,37 @@
 
 
-## Filtro por Etiquetas com seleção e exibição na lista
+## Timeout para conversas do WhatsApp Global sem lead criado
 
-### Resumo
-Transformar o botão "Etiquetas" de um filtro binário (tem/não tem etiqueta) em um seletor que abre um popover com as etiquetas do corretor, permitindo filtrar por etiqueta específica. Além disso, exibir as etiquetas de cada conversa diretamente na lista.
+### Problema identificado
+O timeout da roleta (10 minutos) só funciona para leads que entram por landing pages, pois a função `roleta-timeout` consulta exclusivamente a tabela `leads` verificando `reserva_expira_em`. Conversas do WhatsApp Global que ainda não tiveram "Iniciar Atendimento" clicado não possuem registro na tabela `leads` — logo o timeout nunca as processa.
+
+### Solução
+Estender o mecanismo de timeout para incluir conversas globais sem atendimento iniciado, usando campos na própria tabela `conversations`.
 
 ### Alterações
 
-**Arquivo: `src/components/inbox/ConversationList.tsx`**
+**1. Migração: adicionar campos de controle na tabela `conversations`**
+- `reserva_expira_em` (timestamptz, nullable) — quando a reserva expira
+- `atribuido_em` (timestamptz, nullable) — quando o broker foi atribuído
 
-1. **Receber `brokerId` como prop** -- necessário para buscar as etiquetas do corretor na tabela `whatsapp_labels`.
+**2. Atualizar `roleta-distribuir` (edge function)**
+Quando distribui uma conversa global para um broker, além de atualizar `broker_id`, definir `reserva_expira_em` = now() + tempo_reserva_minutos e `atribuido_em` = now() na conversa.
 
-2. **Buscar etiquetas do corretor** -- novo `useEffect` que consulta `whatsapp_labels` filtrando por `broker_id`, armazenando em estado local `brokerLabels`.
+**3. Atualizar `roleta-timeout` (edge function)**
+Adicionar uma segunda seção que busca conversas globais expiradas:
+- Query: `conversations` onde `source_instance = 'global'`, `attendance_started = false`, `reserva_expira_em <= now()`
+- Para cada conversa expirada: buscar a roleta global ativa, encontrar o próximo membro com check-in, reatribuir `broker_id` na conversa, atualizar `reserva_expira_em`, e registrar log em `roletas_log`
+- Aplicar a mesma lógica de loop breaker (max 6 reassinações)
 
-3. **Buscar mapa lead→etiquetas** -- alterar o fetch de `lead_whatsapp_labels` para trazer `lead_id, label_id` (em vez de só `lead_id`), construindo um `Map<string, string[]>` que mapeia cada lead aos IDs das suas etiquetas. Isso permite tanto filtrar quanto exibir.
+**4. Atualizar trigger/webhook de criação de conversa global**
+Quando o webhook WhatsApp cria uma conversa global e aciona `roleta-distribuir`, garantir que os novos campos sejam populados.
 
-4. **Substituir o botão "Etiquetas" por um Popover** -- ao clicar, abre um popover compacto listando as etiquetas do corretor (nome + cor). O corretor seleciona uma etiqueta específica e a lista filtra para exibir apenas conversas cujos leads possuem aquela etiqueta. Clicar novamente na mesma etiqueta ou fechar o popover desativa o filtro.
-
-5. **Exibir etiquetas na lista de conversas** -- na área de badges de cada conversa (após "Lead vinculado"), renderizar chips coloridos com o nome das etiquetas vinculadas ao lead daquela conversa (máximo 2, com "+N" se houver mais).
-
-6. **Estado do quickFilter** -- mudar de `"labels"` (boolean) para `{ type: "label", labelId: string }` ou manter `quickFilter` como `string | null` onde o valor é o `labelId` selecionado (diferente de `"unread"` e `"oldest"`).
+**5. Limpar reserva ao iniciar atendimento**
+Quando `attendance_started` muda para `true` (via "Iniciar Atendimento"), limpar `reserva_expira_em` para parar o ciclo de timeout.
 
 ### Detalhes Técnicos
-
-- Prop `brokerId` já está disponível em todos os pages que usam `ConversationList` (BrokerInbox, BrokerPlantao, AdminInbox, AdminPlantao)
-- Consulta `whatsapp_labels`: `supabase.from("whatsapp_labels").select("id, name, color").eq("broker_id", brokerId).order("name")`
-- Consulta `lead_whatsapp_labels`: `supabase.from("lead_whatsapp_labels").select("lead_id, label_id").in("lead_id", leadIds)` → agrupa em `Map<leadId, labelId[]>`
-- Filtragem: `result.filter(c => c.lead_id && leadLabelMap.get(c.lead_id)?.includes(selectedLabelId))`
-- Chips na conversa: lookup `leadLabelMap.get(conv.lead_id)` → resolve nomes/cores via `brokerLabels`
-- Componente do Popover usa `@/components/ui/popover`
+- A migração adiciona 2 colunas à tabela `conversations` (sem breaking changes)
+- O `roleta-distribuir` já recebe `lead_id` — para conversas globais sem lead, o fluxo será via webhook que cria a conversa e chama a distribuição
+- O cron job existente (`* * * * *`) já chama `roleta-timeout` a cada minuto — nenhuma alteração necessária no cron
+- O loop breaker contará reassinações no `roletas_log` filtrando por `motivo LIKE '%conversation%'` ou por um campo adicional `conversation_id` no log
 
