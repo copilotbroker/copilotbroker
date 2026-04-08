@@ -163,7 +163,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
     };
   };
 
-  const fetchConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async (silent = false) => {
     const requestId = ++fetchRequestIdRef.current;
 
     if (options.enabled === false) {
@@ -175,9 +175,12 @@ export function useConversations(options: UseConversationsOptions = {}) {
       return;
     }
 
-    setIsLoading(true);
-    setConversations([]);
-    setTotalUnread(0);
+    // Only show loading spinner & clear list on non-silent (tab switch) fetches
+    if (!silent) {
+      setIsLoading(true);
+      setConversations([]);
+      setTotalUnread(0);
+    }
 
     try {
       let query: any = supabase
