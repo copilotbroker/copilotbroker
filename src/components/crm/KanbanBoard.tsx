@@ -364,6 +364,16 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     await deleteLead(leadId);
   };
 
+  const handleCardTransfer = useCallback((leadId: string) => {
+    const lead = allLeadsRef.current.get(leadId);
+    setCardTransferModal({
+      open: true,
+      leadId,
+      leadName: lead?.name || "Lead",
+      currentBrokerId: lead?.broker_id || null,
+    });
+  }, []);
+
   const handleDispatchWhatsApp = (status: LeadStatus) => {
     setWhatsappPreselectedStatus(status);
     setWhatsappCampaignOpen(true);
