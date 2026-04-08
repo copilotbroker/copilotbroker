@@ -24,7 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, Phone, Mail, Building2, Clock, Calendar, DollarSign, Trophy,
   UserX, Play, FileText, Users, ChevronRight, ChevronLeft, AlertTriangle, Zap, Eye,
-  TrendingUp, Timer, MessageCircle, Send, ArrowRightLeft, Pencil, Check, X, RotateCw, Square
+  TrendingUp, Timer, MessageCircle, Send, ExternalLink, ArrowRightLeft, Pencil, Check, X, RotateCw, Square
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
