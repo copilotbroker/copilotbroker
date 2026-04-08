@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
-import { CRMLead, LeadStatus, STATUS_CONFIG, TIPO_AGENDAMENTO, getOriginDisplayLabel, LEAD_ORIGINS } from "@/types/crm";
+import { CRMLead, LeadStatus, STATUS_CONFIG, TIPO_AGENDAMENTO, getOriginDisplayLabel, LEAD_ORIGINS, getSourceDisplayLabel, getSourceChannelType, SOURCE_CHANNEL_COLORS } from "@/types/crm";
 import { LeadTimeline } from "@/components/crm/LeadTimeline";
 import { AgendamentoModal } from "@/components/crm/AgendamentoModal";
 import { ComparecimentoModal } from "@/components/crm/ComparecimentoModal";
@@ -270,7 +270,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         if (error) throw error;
 
         // Log the change
-        const fieldLabels: Record<string, string> = { name: "Nome", whatsapp: "Telefone", email: "Email", project_id: "Empreendimento", lead_origin: "Origem", notes: "Observações" };
+        const fieldLabels: Record<string, string> = { name: "Nome", whatsapp: "Telefone", email: "Email", project_id: "Empreendimento", lead_origin: "Campanha", notes: "Observações" };
         const label = fieldLabels[field] || field;
         await supabase.from("lead_interactions").insert({
           lead_id: leadId,
@@ -815,9 +815,17 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   onEditValueChange={(v) => setEditValues({ ...editValues, email: v })} />
 
 
+                {/* Canal de entrada — sempre visível, derivado de source */}
+                <DataField
+                  icon={Building2}
+                  label="Canal"
+                  value={getSourceDisplayLabel(lead.source)}
+                />
+
+                {/* Campanha — editável, derivado de lead_origin */}
                 <EditableSelectField
                   icon={Building2}
-                  label="Origem"
+                  label="Campanha"
                   field="lead_origin"
                   displayValue={lead.lead_origin ? getOriginDisplayLabel(lead.lead_origin) : "—"}
                   currentValue={lead.lead_origin || ""}
@@ -947,6 +955,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   interactions={interactions}
                   leadOrigin={lead?.lead_origin}
                   leadOriginDetail={lead?.lead_origin_detail}
+                  leadSource={lead?.source}
                   attribution={lead?.attribution}
                   createdAt={lead?.created_at}
                   brokerName={lead?.broker?.name}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Phone, Mail, User, Calendar, Clock, FileText, MessageSquare, Send, CheckCircle, X, MapPin, Play, RotateCw, ArrowRightLeft, Megaphone } from "lucide-react";
-import { CRMLead, LeadStatus, STATUS_CONFIG, INTERACTION_CHANNELS, LEAD_ORIGINS, getOriginDisplayLabel, getOriginType, ORIGIN_TYPE_COLORS } from "@/types/crm";
+import { CRMLead, LeadStatus, STATUS_CONFIG, INTERACTION_CHANNELS, LEAD_ORIGINS, getOriginDisplayLabel, getOriginType, ORIGIN_TYPE_COLORS, getSourceDisplayLabel, getSourceChannelType, SOURCE_CHANNEL_COLORS } from "@/types/crm";
 import { useLeadInteractions } from "@/hooks/use-lead-interactions";
 import { useLeadDocuments } from "@/hooks/use-lead-documents";
 import { supabase } from "@/integrations/supabase/client";
@@ -333,17 +333,18 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
                 </div>
                 <div className="flex items-center gap-3 text-slate-300">
                   <User className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm">Cadastrado por: {lead.source === "enove" ? "Enove" : lead.source}</span>
+                  <span className="text-sm">Canal: <span className={cn(
+                    "inline-flex px-2 py-0.5 text-xs font-medium rounded-full border ml-1",
+                    SOURCE_CHANNEL_COLORS[getSourceChannelType(lead.source)]
+                  )}>{getSourceDisplayLabel(lead.source)}</span></span>
                 </div>
                 {lead.lead_origin && (
                   <div className="flex items-center gap-3">
-                    <MapPin className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className={cn(
-                      "px-2 py-0.5 text-xs font-medium rounded-full border",
+                    <Megaphone className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="text-sm">Campanha: <span className={cn(
+                      "inline-flex px-2 py-0.5 text-xs font-medium rounded-full border ml-1",
                       ORIGIN_TYPE_COLORS[getOriginType(lead.lead_origin)]
-                    )}>
-                      {getOriginDisplayLabel(lead.lead_origin)}
-                    </span>
+                    )}>{getOriginDisplayLabel(lead.lead_origin)}</span></span>
                   </div>
                 )}
                 {lead.lead_origin_detail && (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LeadInteraction, STATUS_CONFIG, getOriginDisplayLabel, getOriginType } from "@/types/crm";
+import { LeadInteraction, STATUS_CONFIG, getOriginDisplayLabel, getOriginType, getSourceDisplayLabel, getSourceChannelType } from "@/types/crm";
 import {
   Clock, MessageSquare, MessageCircle, Send, FileText, CheckCircle, ArrowRight, MapPin,
   UserX, Bell, Calendar, DollarSign, Trophy, RefreshCw, Play, ChevronDown,
@@ -11,6 +11,7 @@ interface LeadTimelineProps {
   interactions: LeadInteraction[];
   leadOrigin?: string | null;
   leadOriginDetail?: string | null;
+  leadSource?: string;
   attribution?: { utm_source?: string; utm_medium?: string; utm_campaign?: string; utm_content?: string; utm_term?: string; landing_page?: string } | null;
   createdAt?: string;
   brokerName?: string | null;
@@ -99,7 +100,7 @@ function formatTimeInterval(laterDate: string, earlierDate: string): string | nu
   return `${diffHours}h depois`;
 }
 
-export function LeadTimeline({ interactions, leadOrigin, leadOriginDetail, attribution, createdAt, brokerName }: LeadTimelineProps) {
+export function LeadTimeline({ interactions, leadOrigin, leadOriginDetail, leadSource, attribution, createdAt, brokerName }: LeadTimelineProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   if (interactions.length === 0) {
@@ -308,11 +309,30 @@ export function LeadTimeline({ interactions, leadOrigin, leadOriginDetail, attri
                 )} />
 
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <OriginIcon className={cn("w-3.5 h-3.5 shrink-0", iconColor)} />
-                    <span className={cn("text-xs font-semibold", iconColor)}>
-                      {leadOrigin ? originLabel : "Origem não identificada"}
-                    </span>
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    {/* Canal de entrada */}
+                    {leadSource && (
+                      <span className="text-xs font-semibold text-blue-400">
+                        {getSourceDisplayLabel(leadSource)}
+                      </span>
+                    )}
+                    {leadSource && leadOrigin && <span className="text-[10px] text-slate-600">→</span>}
+                    {/* Campanha de mídia */}
+                    {leadOrigin ? (
+                      <>
+                        <OriginIcon className={cn("w-3.5 h-3.5 shrink-0", iconColor)} />
+                        <span className={cn("text-xs font-semibold", iconColor)}>
+                          {originLabel}
+                        </span>
+                      </>
+                    ) : !leadSource && (
+                      <>
+                        <OriginIcon className={cn("w-3.5 h-3.5 shrink-0", iconColor)} />
+                        <span className={cn("text-xs font-semibold", iconColor)}>
+                          Origem não identificada
+                        </span>
+                      </>
+                    )}
                   </div>
                   <span className="text-[10px] text-slate-600 tabular-nums shrink-0">
                     {new Date(createdAt).toLocaleDateString("pt-BR", {
