@@ -24,7 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, Phone, Mail, Building2, Clock, Calendar, DollarSign, Trophy,
   UserX, Play, FileText, Users, ChevronRight, ChevronLeft, AlertTriangle, Zap, Eye,
-  TrendingUp, Timer, MessageCircle, ExternalLink, ArrowRightLeft, Pencil, Check, X, RotateCw, Square
+  TrendingUp, Timer, MessageCircle, Send, ArrowRightLeft, Pencil, Check, X, RotateCw, Square
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -732,14 +732,35 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   }
                 />
                 {whatsappMsgOpen && (
-                  <div className="sm:col-span-2 bg-[#0f0f12] border border-emerald-500/20 rounded-xl p-4 space-y-3">
-                    <p className="text-xs font-medium text-emerald-400">Mensagem para {lead.name}</p>
+                  <div className={cn(
+                    "sm:col-span-2 bg-[#0f0f12] rounded-xl p-4 space-y-3 border",
+                    isGlobalInstance
+                      ? "border-emerald-500/30"
+                      : "border-purple-500/30"
+                  )}>
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        isGlobalInstance ? "bg-emerald-400" : "bg-purple-400"
+                      )} />
+                      <p className={cn(
+                        "text-xs font-medium",
+                        isGlobalInstance ? "text-emerald-400" : "text-purple-400"
+                      )}>
+                        {isGlobalInstance ? "Enviando pelo Plantão (Instância Global)" : "Enviando pelo WhatsApp do Corretor"}
+                      </p>
+                    </div>
                     <Textarea
                       autoFocus
                       placeholder="Escreva sua mensagem aqui..."
                       value={whatsappMsg}
                       onChange={(e) => setWhatsappMsg(e.target.value)}
-                      className="min-h-[80px] bg-[#111114] border-[#2a2a2e] text-sm text-slate-200 placeholder:text-slate-600 resize-none"
+                      className={cn(
+                        "min-h-[80px] bg-[#111114] text-sm text-slate-200 placeholder:text-slate-600 resize-none",
+                        isGlobalInstance
+                          ? "border-emerald-500/20 focus-visible:ring-emerald-500/40"
+                          : "border-purple-500/20 focus-visible:ring-purple-500/40"
+                      )}
                     />
                     <div className="flex items-center gap-2">
                       <Button
@@ -748,25 +769,38 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                         onClick={async () => {
                           setSendingWhatsapp(true);
                           try {
+                            const conversationId = await ensureConversationForLead();
+                            const { error } = await supabase.functions.invoke("inbox-send-message", {
+                              body: {
+                                conversation_id: conversationId,
+                                content: whatsappMsg,
+                                sent_by: "human",
+                                message_type: "text",
+                              },
+                            });
+                            if (error) throw error;
                             await addInteraction("whatsapp_manual" as any, {
                               notes: whatsappMsg,
                               channel: "whatsapp",
                               createdBy: (await supabase.auth.getUser()).data.user?.id,
                             });
-                            const cleanPhone = lead.whatsapp.replace(/\D/g, "");
-                            window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(whatsappMsg)}`, "_blank");
                             setWhatsappMsg("");
                             setWhatsappMsgOpen(false);
-                            toast.success("Interação registrada!");
+                            toast.success("Mensagem enviada via WhatsApp!");
                           } catch {
-                            toast.error("Erro ao registrar interação");
+                            toast.error("Erro ao enviar mensagem");
                           } finally {
                             setSendingWhatsapp(false);
                           }
                         }}
-                        className="h-9 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                        className={cn(
+                          "h-9 px-4 text-xs font-semibold text-white rounded-lg",
+                          isGlobalInstance
+                            ? "bg-emerald-600 hover:bg-emerald-700"
+                            : "bg-purple-600 hover:bg-purple-700"
+                        )}
                       >
-                        <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                        <Send className="w-3.5 h-3.5 mr-1.5" />
                         {sendingWhatsapp ? "Enviando..." : "Enviar via WhatsApp"}
                       </Button>
                       <Button
