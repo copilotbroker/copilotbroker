@@ -11,6 +11,7 @@ interface LeadTimelineProps {
   interactions: LeadInteraction[];
   leadOrigin?: string | null;
   leadOriginDetail?: string | null;
+  leadSource?: string;
   attribution?: { utm_source?: string; utm_medium?: string; utm_campaign?: string; utm_content?: string; utm_term?: string; landing_page?: string } | null;
   createdAt?: string;
   brokerName?: string | null;
