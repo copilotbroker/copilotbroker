@@ -409,6 +409,21 @@ export const KanbanCard = memo(function KanbanCard({
           )}
 
           <div className="ml-auto flex items-center gap-1">
+            {onTransfer && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTransfer(lead.id);
+                }}
+                className="h-8 w-8 rounded-lg border-border bg-transparent p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                title="Transferir lead"
+              >
+                <ArrowRightLeft className="h-3.5 w-3.5" />
+              </Button>
+            )}
+
             {lead.status !== "registered" && onOpenPerda && (
               <Button
                 size="sm"
