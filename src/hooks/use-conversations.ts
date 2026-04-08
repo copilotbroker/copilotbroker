@@ -394,19 +394,24 @@ export function useConversations(options: UseConversationsOptions = {}) {
   }, [fetchConversations]);
 
   useEffect(() => {
+    const debounceTimer = { current: null as ReturnType<typeof setTimeout> | null };
     const channel = supabase
       .channel("conversations-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () => {
-        fetchConversations();
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => fetchConversations(true), 1500);
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      supabase.removeChannel(channel);
+    };
   }, [fetchConversations]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      fetchConversations();
+      fetchConversations(true);
     }, INBOX_POLL_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);
