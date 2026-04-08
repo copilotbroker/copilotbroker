@@ -226,7 +226,6 @@ export function KanbanColumn({
                       onCallClick={onCallClick}
                       onTransfer={onTransfer}
                     />
-                    />
                   </div>
                 </div>
               );
