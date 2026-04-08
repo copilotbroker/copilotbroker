@@ -90,6 +90,7 @@ export function ConversationList({
   const [quickFilter, setQuickFilter] = useState<null | "unread" | "oldest">(null);
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
   const [labelPopoverOpen, setLabelPopoverOpen] = useState(false);
+  const [isSyncingLabels, setIsSyncingLabels] = useState(false);
 
   // Reset quick filter when tab changes
   useEffect(() => { setQuickFilter(null); setSelectedLabelId(null); }, [inboxTab, brokerInboxTab]);
