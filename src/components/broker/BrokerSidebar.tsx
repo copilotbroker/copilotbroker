@@ -37,7 +37,8 @@ export function BrokerSidebar({
   const location = useLocation();
   const activeTab = getBrokerTabFromPath(location.pathname);
   const { brokerId } = useUserRole();
-
+  const { unreadCount: inboxUnread } = useInboxUnread();
+  const { count: plantaoNovosCount } = usePlantaoNovosCount();
   const { data: brokerName } = useQuery({
     queryKey: ["broker-name", brokerId],
     queryFn: async () => {
