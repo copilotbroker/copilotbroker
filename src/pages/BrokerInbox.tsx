@@ -321,6 +321,7 @@ export default function BrokerInbox() {
               onBrokerTabChange={handleTabChange}
               brokerNovosCount={novosConversations.length}
               brokerAtendimentoCount={atendimentoConversations.length}
+              brokerId={brokerId}
             />
           </div>
         )}

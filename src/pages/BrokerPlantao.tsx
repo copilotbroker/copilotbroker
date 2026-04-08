@@ -365,6 +365,7 @@ export default function BrokerPlantao() {
                   ? "Você precisa fazer check-in na roleta do Plantão para ver novos contatos."
                   : undefined
               }
+              brokerId={brokerId}
             />
           </div>
         )}
