@@ -783,6 +783,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
                 onSendWhatsAppNow={handleSendWhatsAppNow}
                 onScheduleWhatsApp={handleScheduleWhatsApp}
                 onCallClick={handleCallClick}
+                onTransfer={handleCardTransfer}
               />
             ))}
           </div>
