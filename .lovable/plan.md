@@ -1,72 +1,59 @@
 
 
-## Unificação de conversas e leads na transferência entre corretores
+## Impedir conversas globais duplicadas para o mesmo telefone
 
 ### Problema
-Ao transferir o lead "Marcelo" para o Davi, o sistema não detecta que o Davi já possui uma conversa ativa com o mesmo número de telefone. Resultado: o Davi fica com duas conversas separadas para o mesmo contato (uma com lead vinculado, outra sem), sem unificação no Kanban nem no WhatsApp.
+Quando uma nova mensagem chega no WhatsApp Global, o webhook verifica se já existe uma conversa pendente (`attendance_started = false`) para aquele telefone. Porém, se a conversa já foi atendida (`attendance_started = true`) E o lead ainda não foi criado no CRM, o sistema cria uma **segunda conversa global** para o mesmo número e distribui para outro corretor. Resultado: dois corretores veem o mesmo contato simultaneamente.
 
 ### Causa Raiz
-A função `transfer_lead` (RPC) atualiza o `broker_id` do lead, e o `TransferLeadDialog` atualiza o `broker_id` da conversa de origem. Porém, nenhum ponto do fluxo verifica se o corretor destino já possui uma conversa com o mesmo telefone para consolidar os registros.
+No `handleGlobalInstanceMessage` (webhook), a verificação de conversa existente (linha 1730) filtra por `attendance_started = false`. Se o primeiro corretor já iniciou o atendimento mas não criou lead (ou houve uma race condition), a mensagem seguinte não encontra nem lead (Case A) nem conversa pendente (Case B), criando um registro duplicado.
 
 ### Solução
-Estender a lógica de transferência (no `transfer_lead` RPC) para detectar e unificar conversas duplicadas automaticamente.
+Alterar o webhook para verificar se já existe **qualquer** conversa global para aquele telefone antes de criar uma nova, independentemente do `attendance_started`.
 
 ### Alterações
 
-**1. Atualizar a função `transfer_lead` no banco de dados**
+**1. Atualizar `whatsapp-webhook/index.ts` — função `handleGlobalInstanceMessage`**
 
-Após atualizar o `broker_id` do lead, adicionar lógica para:
-- Buscar conversa existente do novo corretor com o mesmo `phone_normalized`
-- Se encontrar:
-  - Migrar todas as mensagens (`conversation_messages`) da conversa de origem para a conversa existente do novo corretor
-  - Vincular o `lead_id` na conversa existente (se ainda não vinculado)
-  - Deletar a conversa de origem (agora vazia)
-  - Atualizar `last_message_at`, `last_message_preview`, `unread_count` na conversa destino
-- Se não encontrar: atualizar o `broker_id` da conversa de origem normalmente (comportamento atual)
+Antes de entrar no fluxo de distribuição (Case B), adicionar verificação mais ampla:
 
-**2. Atualizar `TransferLeadDialog` no frontend**
+```text
+Fluxo atual:
+  Case A: Lead com broker? → roteia para broker
+  Case B: Conversa global pendente (attendance_started=false)? → adiciona msg
+  Else: Cria nova conversa + distribui
 
-Remover a atualização manual de `conversations` após chamar `transfer_lead` RPC, pois a unificação já será tratada no banco. O frontend apenas:
-- Chama `transfer_lead` RPC
-- Se houver `conversationId` e o RPC já tratou a conversa, não faz update adicional
-- Invalida as queries de conversas e kanban para refletir a unificação
+Fluxo corrigido:
+  Case A: Lead com broker? → roteia para broker
+  Case B: Conversa global pendente (attendance_started=false)? → adiciona msg  
+  Case B2 (NOVO): Qualquer conversa global para este phone? → adiciona msg à existente
+  Else: Cria nova conversa + distribui
+```
 
-**3. Limpar conversas órfãs do caso atual**
+O Case B2 busca: `phone_normalized = X AND source_instance = 'global'` (sem filtro de `attendance_started`). Se encontrar, adiciona a mensagem à conversa existente (do broker que já está atendendo), sem redistribuir.
 
-Aplicar uma correção de dados para o caso do Marcelo: unificar as 3 conversas globais (Davi, Edinardo, Maicon) com o mesmo telefone, mantendo apenas a do corretor que ficou com o lead.
+**2. Adicionar unique index parcial como safety net**
+
+Criar um índice único parcial para impedir duplicatas no nível do banco:
+```sql
+CREATE UNIQUE INDEX idx_conversations_global_phone_unique 
+ON conversations (phone_normalized)
+WHERE source_instance = 'global';
+```
+
+Isso garante que existe no máximo UMA conversa global por telefone, mesmo em cenários de race condition com mensagens simultâneas.
+
+**3. Limpeza de dados — unificar conversas duplicadas existentes**
+
+Para as 3 duplicatas encontradas (Marcelo, Ricardo, Teste/Fabiane), unificar mantendo a conversa mais antiga (ou a que tem lead), migrando mensagens e deletando a redundante.
 
 ### Detalhes Técnicos
 
-Lógica adicionada ao `transfer_lead`:
-```sql
--- Buscar conversa existente do novo corretor para o mesmo telefone
-SELECT id INTO _existing_conv_id
-FROM conversations
-WHERE broker_id = _new_broker_id
-  AND phone_normalized = _lead_phone_normalized
-LIMIT 1;
-
-IF _existing_conv_id IS NOT NULL AND _source_conv_id IS NOT NULL THEN
-  -- Migrar mensagens
-  UPDATE conversation_messages 
-  SET conversation_id = _existing_conv_id
-  WHERE conversation_id = _source_conv_id;
-  
-  -- Vincular lead
-  UPDATE conversations 
-  SET lead_id = _lead_id, display_name = _lead_name
-  WHERE id = _existing_conv_id AND lead_id IS NULL;
-  
-  -- Remover conversa antiga
-  DELETE FROM conversations WHERE id = _source_conv_id;
-ELSE
-  -- Mover conversa para novo corretor
-  UPDATE conversations SET broker_id = _new_broker_id
-  WHERE id = _source_conv_id;
-END IF;
-```
+- O índice único parcial é a solução definitiva contra duplicatas — mesmo com requests simultâneos, o banco rejeitará o segundo INSERT
+- O webhook deve tratar o `INSERT` failure (conflict) como fallback gracioso: se falhar, busca a conversa existente e adiciona a mensagem nela
+- A limpeza de dados será feita via migration com lógica de merge (migrar `conversation_messages`, preservar `lead_id`)
 
 ### Arquivos
-- Migração SQL: atualizar função `transfer_lead` com lógica de unificação de conversas
-- `src/components/crm/TransferLeadDialog.tsx`: simplificar lógica pós-RPC
+- `supabase/functions/whatsapp-webhook/index.ts`: adicionar Case B2 + handle conflict
+- Migração SQL: criar unique index + limpar duplicatas existentes
 
