@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LeadInteraction, STATUS_CONFIG, getOriginDisplayLabel, getOriginType } from "@/types/crm";
+import { LeadInteraction, STATUS_CONFIG, getOriginDisplayLabel, getOriginType, getSourceDisplayLabel, getSourceChannelType } from "@/types/crm";
 import {
   Clock, MessageSquare, MessageCircle, Send, FileText, CheckCircle, ArrowRight, MapPin,
   UserX, Bell, Calendar, DollarSign, Trophy, RefreshCw, Play, ChevronDown,
