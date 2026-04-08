@@ -16,6 +16,7 @@ import {
   FileText,
   Trophy,
   Square,
+  ArrowRightLeft,
 } from "lucide-react";
 import { CRMLead, LeadStatus, getOriginDisplayLabel } from "@/types/crm";
 import { cn } from "@/lib/utils";
