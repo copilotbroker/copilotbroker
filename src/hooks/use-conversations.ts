@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -114,6 +114,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalUnread, setTotalUnread] = useState(0);
+  const fetchRequestIdRef = useRef(0);
 
   const getPhoneSearchVariants = (phone: string) => {
     const cleaned = phone.replace(/\D/g, "");
@@ -163,12 +164,21 @@ export function useConversations(options: UseConversationsOptions = {}) {
   };
 
   const fetchConversations = useCallback(async () => {
+    const requestId = ++fetchRequestIdRef.current;
+
     if (options.enabled === false) {
-      setConversations([]);
-      setTotalUnread(0);
-      setIsLoading(false);
+      if (requestId === fetchRequestIdRef.current) {
+        setConversations([]);
+        setTotalUnread(0);
+        setIsLoading(false);
+      }
       return;
     }
+
+    setIsLoading(true);
+    setConversations([]);
+    setTotalUnread(0);
+
     try {
       let query: any = supabase
         .from("conversations")
@@ -362,12 +372,17 @@ export function useConversations(options: UseConversationsOptions = {}) {
         );
       }
 
+      if (requestId !== fetchRequestIdRef.current) return;
+
       setConversations(filtered);
       setTotalUnread(filtered.reduce((acc, c) => acc + (c.unread_count || 0), 0));
     } catch (error) {
+      if (requestId !== fetchRequestIdRef.current) return;
       console.error("Erro ao buscar conversas:", error);
     } finally {
-      setIsLoading(false);
+      if (requestId === fetchRequestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance, options.enabled]);
 
