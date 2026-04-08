@@ -41,6 +41,7 @@ interface KanbanColumnProps {
   onSendWhatsAppNow?: (leadId: string, content: string) => Promise<void>;
   onScheduleWhatsApp?: (leadId: string, content: string, scheduledAt: string) => Promise<void>;
   onCallClick?: (leadId: string) => void;
+  onTransfer?: (leadId: string) => void;
 }
 
 const STATUS_SQUARE_COLORS: Record<LeadStatus, string> = {
