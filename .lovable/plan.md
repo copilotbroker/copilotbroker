@@ -1,42 +1,72 @@
 
 
-## Corrigir erro ao criar card no Kanban a partir do Plantão
+## Unificação de conversas e leads na transferência entre corretores
 
 ### Problema
-Ao criar um lead pelo modal "Criar Card no Kanban" no Plantão, o INSERT na tabela `leads` dispara o trigger `auto_create_conversation_for_lead`. Esse trigger tenta criar uma nova conversa pessoal para o broker+telefone, mas já existe uma conversa global com o mesmo `broker_id` e `phone_normalized`. O unique index `idx_conversations_broker_phone` rejeita a inserção, causando o erro.
+Ao transferir o lead "Marcelo" para o Davi, o sistema não detecta que o Davi já possui uma conversa ativa com o mesmo número de telefone. Resultado: o Davi fica com duas conversas separadas para o mesmo contato (uma com lead vinculado, outra sem), sem unificação no Kanban nem no WhatsApp.
 
 ### Causa Raiz
-- O índice único `idx_conversations_broker_phone` é `(broker_id, phone_normalized)` — sem considerar `source_instance`
-- O trigger `auto_create_conversation_for_lead` filtra `source_instance IS NULL OR source_instance != 'global'` ao buscar conversas existentes, mas quando não encontra, tenta inserir uma nova, que viola a constraint
+A função `transfer_lead` (RPC) atualiza o `broker_id` do lead, e o `TransferLeadDialog` atualiza o `broker_id` da conversa de origem. Porém, nenhum ponto do fluxo verifica se o corretor destino já possui uma conversa com o mesmo telefone para consolidar os registros.
 
-### Solução (2 partes)
+### Solução
+Estender a lógica de transferência (no `transfer_lead` RPC) para detectar e unificar conversas duplicadas automaticamente.
 
-**1. Corrigir o trigger `auto_create_conversation_for_lead`**
-Alterar a busca por conversas existentes para incluir TODAS as instâncias (não excluir global). Se já existir uma conversa global para o broker+phone, linkar o lead a essa conversa em vez de criar uma nova.
+### Alterações
 
-Lógica corrigida:
+**1. Atualizar a função `transfer_lead` no banco de dados**
+
+Após atualizar o `broker_id` do lead, adicionar lógica para:
+- Buscar conversa existente do novo corretor com o mesmo `phone_normalized`
+- Se encontrar:
+  - Migrar todas as mensagens (`conversation_messages`) da conversa de origem para a conversa existente do novo corretor
+  - Vincular o `lead_id` na conversa existente (se ainda não vinculado)
+  - Deletar a conversa de origem (agora vazia)
+  - Atualizar `last_message_at`, `last_message_preview`, `unread_count` na conversa destino
+- Se não encontrar: atualizar o `broker_id` da conversa de origem normalmente (comportamento atual)
+
+**2. Atualizar `TransferLeadDialog` no frontend**
+
+Remover a atualização manual de `conversations` após chamar `transfer_lead` RPC, pois a unificação já será tratada no banco. O frontend apenas:
+- Chama `transfer_lead` RPC
+- Se houver `conversationId` e o RPC já tratou a conversa, não faz update adicional
+- Invalida as queries de conversas e kanban para refletir a unificação
+
+**3. Limpar conversas órfãs do caso atual**
+
+Aplicar uma correção de dados para o caso do Marcelo: unificar as 3 conversas globais (Davi, Edinardo, Maicon) com o mesmo telefone, mantendo apenas a do corretor que ficou com o lead.
+
+### Detalhes Técnicos
+
+Lógica adicionada ao `transfer_lead`:
 ```sql
--- Buscar qualquer conversa existente para broker+phone (incluindo global)
+-- Buscar conversa existente do novo corretor para o mesmo telefone
 SELECT id INTO _existing_conv_id
-FROM public.conversations
-WHERE broker_id = NEW.broker_id
-  AND phone_normalized = _phone_normalized
+FROM conversations
+WHERE broker_id = _new_broker_id
+  AND phone_normalized = _lead_phone_normalized
 LIMIT 1;
+
+IF _existing_conv_id IS NOT NULL AND _source_conv_id IS NOT NULL THEN
+  -- Migrar mensagens
+  UPDATE conversation_messages 
+  SET conversation_id = _existing_conv_id
+  WHERE conversation_id = _source_conv_id;
+  
+  -- Vincular lead
+  UPDATE conversations 
+  SET lead_id = _lead_id, display_name = _lead_name
+  WHERE id = _existing_conv_id AND lead_id IS NULL;
+  
+  -- Remover conversa antiga
+  DELETE FROM conversations WHERE id = _source_conv_id;
+ELSE
+  -- Mover conversa para novo corretor
+  UPDATE conversations SET broker_id = _new_broker_id
+  WHERE id = _source_conv_id;
+END IF;
 ```
-
-Se encontrar, atualiza `lead_id` e `display_name` na conversa existente (mesmo que global).
-
-**2. Alternativa complementar: tornar o índice parcial**
-Substituir o índice único por um que permita múltiplas conversas por broker+phone quando `source_instance` difere:
-```sql
-DROP INDEX idx_conversations_broker_phone;
-CREATE UNIQUE INDEX idx_conversations_broker_phone 
-ON public.conversations (broker_id, phone_normalized, COALESCE(source_instance, 'personal'));
-```
-
-### Implementação recomendada
-Aplicar a parte 1 (corrigir o trigger) como solução principal — é mais segura e cobre o caso de uso. A parte 2 pode ser aplicada como proteção adicional.
 
 ### Arquivos
-- Migração SQL: corrigir trigger + ajustar índice
+- Migração SQL: atualizar função `transfer_lead` com lógica de unificação de conversas
+- `src/components/crm/TransferLeadDialog.tsx`: simplificar lógica pós-RPC
 
