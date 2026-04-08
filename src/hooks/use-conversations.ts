@@ -163,7 +163,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
     };
   };
 
-  const fetchConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async (silent = false) => {
     const requestId = ++fetchRequestIdRef.current;
 
     if (options.enabled === false) {
@@ -175,9 +175,12 @@ export function useConversations(options: UseConversationsOptions = {}) {
       return;
     }
 
-    setIsLoading(true);
-    setConversations([]);
-    setTotalUnread(0);
+    // Only show loading spinner & clear list on non-silent (tab switch) fetches
+    if (!silent) {
+      setIsLoading(true);
+      setConversations([]);
+      setTotalUnread(0);
+    }
 
     try {
       let query: any = supabase
@@ -391,19 +394,24 @@ export function useConversations(options: UseConversationsOptions = {}) {
   }, [fetchConversations]);
 
   useEffect(() => {
+    const debounceTimer = { current: null as ReturnType<typeof setTimeout> | null };
     const channel = supabase
       .channel("conversations-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () => {
-        fetchConversations();
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => fetchConversations(true), 1500);
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      supabase.removeChannel(channel);
+    };
   }, [fetchConversations]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      fetchConversations();
+      fetchConversations(true);
     }, INBOX_POLL_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);

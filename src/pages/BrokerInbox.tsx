@@ -23,7 +23,7 @@ export default function BrokerInbox() {
   const isMobile = useIsMobile();
   const [brokerId, setBrokerId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<BrokerInboxTab>("novos");
+  const [activeTab, setActiveTab] = useState<BrokerInboxTab>("atendimento");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showLeadPanel, setShowLeadPanel] = useState(false);

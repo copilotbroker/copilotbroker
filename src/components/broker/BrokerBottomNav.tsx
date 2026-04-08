@@ -111,7 +111,7 @@ export function BrokerBottomNav({
   };
 
   const moreMenuItems = [
-    ...(inboxEnabled ? [{ id: "inbox", label: "Inbox", description: "Conversas pessoais", badge: inboxUnread }] : []),
+    ...(inboxEnabled ? [{ id: "inbox", label: "Meu WhatsApp", description: "Conversas pessoais", badge: inboxUnread }] : []),
     ...(copilotEnabled ? [{ id: "copilot", label: "Copiloto", description: "Assistente e automações" }] : []),
     { id: "leads", label: "Modo Lista", description: "Abrir visão em lista" },
     { id: "notifications", label: "Notificações", description: "Ver notificações", badge: unreadCount },

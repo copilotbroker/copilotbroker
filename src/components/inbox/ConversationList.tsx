@@ -305,26 +305,9 @@ export function ConversationList({
           </div>
         )}
 
-        {/* Broker Inbox Tabs (Novos | Em atendimento | Arquivados) */}
+        {/* Broker Inbox Tabs (Atendimento | Novos | Arquivados) */}
         {onBrokerTabChange && (
           <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
-            <button
-              onClick={() => onBrokerTabChange("novos")}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
-                brokerInboxTab === "novos"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <UserPlus className="h-3.5 w-3.5" />
-              Novos
-              {brokerNovosCount > 0 && (
-                <Badge variant={brokerInboxTab === "novos" ? "secondary" : "destructive"} className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
-                  {brokerNovosCount}
-                </Badge>
-              )}
-            </button>
             <button
               onClick={() => onBrokerTabChange("atendimento")}
               className={cn(
@@ -339,6 +322,23 @@ export function ConversationList({
               {brokerAtendimentoCount > 0 && (
                 <Badge variant={brokerInboxTab === "atendimento" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
                   {brokerAtendimentoCount}
+                </Badge>
+              )}
+            </button>
+            <button
+              onClick={() => onBrokerTabChange("novos")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                brokerInboxTab === "novos"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Novos
+              {brokerNovosCount > 0 && (
+                <Badge variant={brokerInboxTab === "novos" ? "secondary" : "destructive"} className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
+                  {brokerNovosCount}
                 </Badge>
               )}
             </button>
