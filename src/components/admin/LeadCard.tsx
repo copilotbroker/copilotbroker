@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Phone, Calendar, MapPin, UserCheck, Trash2, UserX, RotateCw } from "lucide-react";
-import { getOriginDisplayLabel, getOriginType, ORIGIN_TYPE_COLORS, LeadStatus, STATUS_CONFIG } from "@/types/crm";
+import { getOriginDisplayLabel, getOriginType, ORIGIN_TYPE_COLORS, LeadStatus, STATUS_CONFIG, getSourceDisplayLabel, getSourceChannelType, SOURCE_CHANNEL_COLORS } from "@/types/crm";
 import { cn } from "@/lib/utils";
 import { InactivationPicker } from "@/components/crm/InactivationPicker";
 import {
