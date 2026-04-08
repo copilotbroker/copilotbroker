@@ -58,22 +58,20 @@ export function TransferLeadDialog({
     try {
       if (mode === "corretor") {
         if (leadId) {
-          // Transfer lead (existing flow)
+          // RPC handles lead transfer + conversation unification automatically
           const { error } = await supabase.rpc("transfer_lead", {
             _lead_id: leadId,
             _new_broker_id: selectedBrokerId,
           });
           if (error) throw error;
-        }
-
-        // Also transfer conversation if we have one
-        if (conversationId) {
+        } else if (conversationId) {
+          // Conversation-only transfer (no lead yet)
           await supabase
             .from("conversations")
             .update({
               broker_id: selectedBrokerId,
               reserva_expira_em: null,
-              attendance_started: leadId ? undefined : false,
+              attendance_started: false,
               updated_at: new Date().toISOString(),
             })
             .eq("id", conversationId);
