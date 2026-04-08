@@ -112,18 +112,38 @@ export function ConversationList({
     fetchCadencias();
   }, [conversations]);
 
-  // Fetch lead IDs with labels
+  // Fetch broker labels catalog
+  useEffect(() => {
+    if (!brokerId) { setBrokerLabels([]); return; }
+    const fetchBrokerLabels = async () => {
+      const { data } = await supabase
+        .from("whatsapp_labels")
+        .select("id, name, color")
+        .eq("broker_id", brokerId)
+        .order("name");
+      if (data) setBrokerLabels(data as BrokerLabel[]);
+    };
+    fetchBrokerLabels();
+  }, [brokerId]);
+
+  // Fetch lead→label mapping
   useEffect(() => {
     const leadIds = conversations.filter(c => c.lead_id).map(c => c.lead_id!);
-    if (leadIds.length === 0) { setLabelLeadIds(new Set()); return; }
+    if (leadIds.length === 0) { setLeadLabelMap(new Map()); return; }
 
     const fetchLabels = async () => {
       const { data } = await supabase
         .from("lead_whatsapp_labels")
-        .select("lead_id")
+        .select("lead_id, label_id")
         .in("lead_id", leadIds);
       if (data) {
-        setLabelLeadIds(new Set(data.map((d: any) => d.lead_id)));
+        const map = new Map<string, string[]>();
+        data.forEach((d: any) => {
+          const existing = map.get(d.lead_id) || [];
+          existing.push(d.label_id);
+          map.set(d.lead_id, existing);
+        });
+        setLeadLabelMap(map);
       }
     };
     fetchLabels();
@@ -132,14 +152,14 @@ export function ConversationList({
   const sortedConversations = useMemo(() => {
     let result = [...conversations];
     if (quickFilter === "unread") result = result.filter(c => c.unread_count > 0);
-    if (quickFilter === "labels") result = result.filter(c => c.lead_id ? labelLeadIds.has(c.lead_id) : false);
+    if (selectedLabelId) result = result.filter(c => c.lead_id && leadLabelMap.get(c.lead_id)?.includes(selectedLabelId));
     result.sort((a, b) => {
       const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
       const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
       return quickFilter === "oldest" ? aTime - bTime : bTime - aTime;
     });
     return result;
-  }, [conversations, quickFilter, labelLeadIds]);
+  }, [conversations, quickFilter, selectedLabelId, leadLabelMap]);
 
   const getLastPreview = (conv: Conversation) => {
     const preview = conv.last_message_preview || "Sem mensagens";
