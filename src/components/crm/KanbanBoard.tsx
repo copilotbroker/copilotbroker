@@ -16,6 +16,7 @@ import { PropostaModal } from "./PropostaModal";
 import { VendaModal } from "./VendaModal";
 import { PerdaModal } from "./PerdaModal";
 import { CallLogModal } from "./CallLogModal";
+import { TransferLeadDialog } from "./TransferLeadDialog";
 import { NewCampaignSheet } from "@/components/whatsapp/NewCampaignSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { cancelCadenciaForLead } from "@/hooks/use-cadencia-ativa";
