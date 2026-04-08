@@ -3,7 +3,7 @@ import {
   Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
   Target, MoreVertical, Check, Zap,
   Eye, EyeOff, LayoutGrid, Archive,
-  Users, UserPlus, User, Headphones
+  Users, UserPlus, User, Headphones, Tag
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -76,6 +76,11 @@ export function ConversationList({
   brokerAtendimentoCount = 0,
 }: ConversationListProps) {
   const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
+  const [labelLeadIds, setLabelLeadIds] = useState<Set<string>>(new Set());
+  const [quickFilter, setQuickFilter] = useState<null | "unread" | "labels" | "oldest">(null);
+
+  // Reset quick filter when tab changes
+  useEffect(() => { setQuickFilter(null); }, [inboxTab, brokerInboxTab]);
 
   // Fetch lead IDs with active cadences (pending messages in queue)
   useEffect(() => {
@@ -95,15 +100,34 @@ export function ConversationList({
     fetchCadencias();
   }, [conversations]);
 
+  // Fetch lead IDs with labels
+  useEffect(() => {
+    const leadIds = conversations.filter(c => c.lead_id).map(c => c.lead_id!);
+    if (leadIds.length === 0) { setLabelLeadIds(new Set()); return; }
+
+    const fetchLabels = async () => {
+      const { data } = await supabase
+        .from("lead_whatsapp_labels")
+        .select("lead_id")
+        .in("lead_id", leadIds);
+      if (data) {
+        setLabelLeadIds(new Set(data.map((d: any) => d.lead_id)));
+      }
+    };
+    fetchLabels();
+  }, [conversations]);
+
   const sortedConversations = useMemo(() => {
-    const sorted = [...conversations];
-    sorted.sort((a, b) => {
+    let result = [...conversations];
+    if (quickFilter === "unread") result = result.filter(c => c.unread_count > 0);
+    if (quickFilter === "labels") result = result.filter(c => c.lead_id ? labelLeadIds.has(c.lead_id) : false);
+    result.sort((a, b) => {
       const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
       const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-      return bTime - aTime;
+      return quickFilter === "oldest" ? aTime - bTime : bTime - aTime;
     });
-    return sorted;
-  }, [conversations]);
+    return result;
+  }, [conversations, quickFilter, labelLeadIds]);
 
   const getLastPreview = (conv: Conversation) => {
     const preview = conv.last_message_preview || "Sem mensagens";
