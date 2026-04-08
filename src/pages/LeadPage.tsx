@@ -480,41 +480,29 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
             <div className="flex items-center gap-2 shrink-0">
               {linkedConversation && (
                 <button
-                  onClick={() => navigate("/corretor/inbox")}
-                  className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium text-[hsl(145,80%,55%)] bg-[hsl(145,80%,42%)]/10 hover:bg-[hsl(145,80%,42%)]/15 border border-[hsl(145,80%,42%)]/20 transition-all"
+                  onClick={() => {
+                    const prefix = role === "admin" ? "/admin" : "/corretor";
+                    const route = isGlobalInstance ? "plantao" : "inbox";
+                    navigate(`${prefix}/${route}?conversationId=${linkedConversation.id}`);
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-all",
+                    isGlobalInstance
+                      ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20"
+                      : "text-purple-400 bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/20"
+                  )}
                 >
                   <MessageCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">Chat</span>
                 </button>
               )}
-              <button
-                onClick={async () => {
-                  if (lead.status === "new") {
-                    const result = await iniciarAtendimento(lead.id);
-                    if (result.success) {
-                      addInteraction("whatsapp_manual" as any, {
-                        notes: "Atendimento iniciado via botão WhatsApp",
-                        channel: "whatsapp",
-                        createdBy: result.userId,
-                      });
-                      toast.success("Atendimento iniciado!");
-                      refreshLead();
-                    }
-                  }
-                  // Scroll to message composer section
-                  setWhatsappMsgOpen(true);
-                  setTimeout(() => {
-                    document.getElementById("whatsapp-msg-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  }, 100);
-                }}
-                className={cn(
-                  "inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-all",
-                  isGlobalInstance
-                    ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20"
-                    : "text-purple-400 bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/20"
-                )}
+              <a
+                href={`https://wa.me/55${lead.whatsapp.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 transition-all"
               >
-                <MessageCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">WhatsApp</span>
-              </button>
+                <ExternalLink className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">WhatsApp</span>
+              </a>
             </div>
           </div>
 
