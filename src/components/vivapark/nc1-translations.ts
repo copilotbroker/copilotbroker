@@ -2,7 +2,7 @@ import { Lang, flags } from "@/components/vivapark/translations";
 export { flags };
 export type { Lang };
 
-export const asramosTranslations: Record<Lang, {
+export const nc1Translations: Record<Lang, {
   badge: string;
   headline: string;
   subheadline: string;
@@ -112,7 +112,7 @@ export const asramosTranslations: Record<Lang, {
     s7_subtitle: "Distribuídos em 9 ambientes",
     s7_p1: "Não como excesso. Mas como permanência.",
     s7_p2: "Quanto mais tempo as pessoas permanecem,\nmais o ativo se valoriza.",
-    s8_title: "AS RAMOS",
+    s8_title: "NC-1",
     s8_subtitle: "Mais de 75 empreendimentos entregues.",
     s8_body: "Experiência suficiente para tirar o projeto do campo da ideia e colocar no campo da execução.",
     s9_label: "Condições",
@@ -185,7 +185,7 @@ export const asramosTranslations: Record<Lang, {
     s7_subtitle: "Distributed across 9 areas",
     s7_p1: "Not as excess. But as permanence.",
     s7_p2: "The longer people stay,\nthe more the asset appreciates.",
-    s8_title: "AS RAMOS",
+    s8_title: "NC-1",
     s8_subtitle: "Over 75 developments delivered.",
     s8_body: "Enough experience to take the project from concept to execution.",
     s9_label: "Conditions",
@@ -258,7 +258,7 @@ export const asramosTranslations: Record<Lang, {
     s7_subtitle: "Distribuidos en 9 ambientes",
     s7_p1: "No como exceso. Sino como permanencia.",
     s7_p2: "Cuanto más tiempo permanecen las personas,\nmás se valoriza el activo.",
-    s8_title: "AS RAMOS",
+    s8_title: "NC-1",
     s8_subtitle: "Más de 75 emprendimientos entregados.",
     s8_body: "Experiencia suficiente para llevar el proyecto del campo de la idea al campo de la ejecución.",
     s9_label: "Condiciones",
@@ -331,7 +331,7 @@ export const asramosTranslations: Record<Lang, {
     s7_subtitle: "Répartis en 9 espaces",
     s7_p1: "Pas comme un excès. Mais comme une permanence.",
     s7_p2: "Plus les gens restent longtemps,\nplus l'actif prend de la valeur.",
-    s8_title: "AS RAMOS",
+    s8_title: "NC-1",
     s8_subtitle: "Plus de 75 projets livrés.",
     s8_body: "Assez d'expérience pour faire passer le projet du domaine de l'idée à celui de l'exécution.",
     s9_label: "Conditions",

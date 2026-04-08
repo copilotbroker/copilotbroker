@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import ASRamosLandingPage from "./ASRamosLandingPage";
+import NC1LandingPage from "./NC1LandingPage";
 import { RefreshCw } from "lucide-react";
 
-const ASRamosBrokerLandingPage = () => {
+const NC1BrokerLandingPage = () => {
   const { brokerSlug } = useParams<{ brokerSlug: string }>();
   const navigate = useNavigate();
   const [broker, setBroker] = useState<{ id: string; name: string } | null>(null);
@@ -12,24 +12,24 @@ const ASRamosBrokerLandingPage = () => {
 
   useEffect(() => {
     const fetchBroker = async () => {
-      if (!brokerSlug) { navigate("/portobelo/asramos"); return; }
+      if (!brokerSlug) { navigate("/portobelo/nc1"); return; }
       try {
         const { data: brokerData } = await supabase
           .from("brokers").select("id, name").eq("slug", brokerSlug).eq("is_active", true).maybeSingle();
-        if (!brokerData) { navigate("/portobelo/asramos"); return; }
+        if (!brokerData) { navigate("/portobelo/nc1"); return; }
 
         const { data: projectData } = await supabase
-          .from("projects").select("id").eq("slug", "asramos-vivapark").maybeSingle();
+          .from("projects").select("id").eq("slug", "nc1-vivapark").maybeSingle();
         if (projectData) {
           const { data: link } = await supabase
             .from("broker_projects").select("id")
             .eq("broker_id", brokerData.id).eq("project_id", (projectData as any).id)
             .eq("is_active", true).maybeSingle();
-          if (!link) { navigate("/portobelo/asramos"); return; }
+          if (!link) { navigate("/portobelo/nc1"); return; }
         }
 
         setBroker(brokerData);
-      } catch { navigate("/portobelo/asramos"); } finally { setIsLoading(false); }
+      } catch { navigate("/portobelo/nc1"); } finally { setIsLoading(false); }
     };
     fetchBroker();
   }, [brokerSlug, navigate]);
@@ -44,7 +44,7 @@ const ASRamosBrokerLandingPage = () => {
 
   if (!broker) return null;
 
-  return <ASRamosLandingPage brokerId={broker.id} brokerName={broker.name} />;
+  return <NC1LandingPage brokerId={broker.id} brokerName={broker.name} />;
 };
 
-export default ASRamosBrokerLandingPage;
+export default NC1BrokerLandingPage;

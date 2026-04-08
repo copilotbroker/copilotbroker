@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { getLeadOriginFromUTM, getLeadOriginDetailFromUTM } from "@/hooks/use-page-tracking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { asramosTranslations, flags, type Lang } from "@/components/vivapark/asramos-translations";
+import { nc1Translations, flags, type Lang } from "@/components/vivapark/nc1-translations";
 
 import heroImg from "@/assets/vivapark/0.webp";
 import lifestyleImg from "@/assets/vivapark/8.webp";
@@ -26,14 +26,14 @@ import parkImg from "@/assets/vivapark/49.webp";
 import familyImg from "@/assets/vivapark/50.webp";
 import nightPanoImg from "@/assets/vivapark/51.webp";
 
-interface ASRamosLandingPageProps {
+interface NC1LandingPageProps {
   brokerId?: string;
   brokerName?: string;
 }
 
-const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandingPageProps = {}) => {
+const NC1LandingPage = ({ brokerId: propBrokerId, brokerName }: NC1LandingPageProps = {}) => {
   const [lang, setLang] = useState<Lang>("pt");
-  const t = asramosTranslations[lang];
+  const t = nc1Translations[lang];
   const navigate = useNavigate();
   const location = useLocation();
   const isThankYou = location.pathname.endsWith("/obrigado");
@@ -70,7 +70,7 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
   const formRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    supabase.from("projects").select("id").eq("slug", "asramos-vivapark").maybeSingle()
+    supabase.from("projects").select("id").eq("slug", "nc1-vivapark").maybeSingle()
       .then(({ data }) => { if (data) setProjectId((data as any).id); });
   }, []);
 
@@ -104,10 +104,10 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
       const finalBrokerId = propBrokerId || selectedBrokerId || null;
       const finalSource = propBrokerId ? "broker_landing" : "landing_page";
       await supabase.from("leads").insert({ id: leadId, name: name.trim(), whatsapp, project_id: projectId, broker_id: finalBrokerId, source: finalSource, lead_origin: getLeadOriginFromUTM(), lead_origin_detail: getLeadOriginDetailFromUTM() });
-      await supabase.from("lead_attribution").insert({ lead_id: leadId, project_id: projectId, landing_page: "asramos-vivapark", referrer: document.referrer || null, utm_source: new URLSearchParams(window.location.search).get("utm_source"), utm_medium: new URLSearchParams(window.location.search).get("utm_medium"), utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign") });
+      await supabase.from("lead_attribution").insert({ lead_id: leadId, project_id: projectId, landing_page: "nc1-vivapark", referrer: document.referrer || null, utm_source: new URLSearchParams(window.location.search).get("utm_source"), utm_medium: new URLSearchParams(window.location.search).get("utm_medium"), utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign") });
       supabase.rpc("unify_lead" as any, { _new_lead_id: leadId }).then(null, () => {});
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
-      supabase.functions.invoke("notify-new-lead", { body: { leadId, leadName: name.trim(), leadWhatsapp: whatsapp, brokerId: finalBrokerId, projectId, source: "AS Ramos - Vivapark" } }).catch(console.error);
+      supabase.functions.invoke("notify-new-lead", { body: { leadId, leadName: name.trim(), leadWhatsapp: whatsapp, brokerId: finalBrokerId, projectId, source: "NC-1 - Vivapark" } }).catch(console.error);
       const basePath = location.pathname.replace(/\/obrigado$/, "").replace(/\/+$/, "");
       navigate(`${basePath}/obrigado`, { replace: true });
     } catch { toast({ title: "Erro ao enviar", variant: "destructive" }); } finally { setIsSubmitting(false); }
@@ -122,15 +122,15 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
   return (
     <div className={`vivapark-theme ${vpTheme === "light" ? "vp-light" : "vp-dark"} min-h-screen bg-background text-foreground transition-colors duration-500`}>
       <Helmet>
-        <title>AS Ramos — Lofts Duplex no Vivapark Porto Belo</title>
-        <meta name="description" content="Novo empreendimento da AS Ramos dentro do Vivapark Porto Belo. Lofts duplex a partir de 47m². Investimento inteligente no primeiro bairro parque do Brasil." />
+        <title>NC-1 — Lofts Duplex no Vivapark Porto Belo</title>
+        <meta name="description" content="Novo empreendimento NC-1 dentro do Vivapark Porto Belo. Lofts duplex a partir de 47m². Investimento inteligente no primeiro bairro parque do Brasil." />
       </Helmet>
 
       {/* Top bar */}
       <div className="sticky top-0 z-50 bg-card/90 backdrop-blur-md border-b border-border/50">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
           <div className="flex flex-col">
-            <span className="font-serif text-lg font-bold tracking-wider text-gold-gradient">AS RAMOS</span>
+            <span className="font-serif text-lg font-bold tracking-wider text-gold-gradient">NC-1</span>
             <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground">no Vivapark Porto Belo</span>
           </div>
           <div className="flex items-center gap-1">
@@ -538,7 +538,7 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
           <p className="font-serif text-lg md:text-xl text-foreground font-medium">{t.footer_line2}</p>
           <div className="w-10 h-px bg-primary/50 mx-auto my-6" />
           <p className="text-xs text-muted-foreground/50 mt-8">
-            © {new Date().getFullYear()} AS Ramos — Vivapark Porto Belo. Enove Inteligência Imobiliária.
+            © {new Date().getFullYear()} NC-1 — Vivapark Porto Belo. Enove Inteligência Imobiliária.
           </p>
         </div>
       </footer>
@@ -546,4 +546,4 @@ const ASRamosLandingPage = ({ brokerId: propBrokerId, brokerName }: ASRamosLandi
   );
 };
 
-export default ASRamosLandingPage;
+export default NC1LandingPage;
