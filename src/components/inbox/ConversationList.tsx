@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import {
-  Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
-  ArrowUpDown, ThermometerSun, Target, MoreVertical, Check, Zap,
-  TrendingUp, Eye, EyeOff, ChevronDown, MessageCircleMore, LayoutGrid, Archive,
-  Users, UserPlus, User, Headphones
+  Search, Inbox, MessageSquare, Bot, Flame,
+  MoreVertical, Check, Zap,
+  Eye, EyeOff, Archive,
+  Users, UserPlus, Headphones
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
