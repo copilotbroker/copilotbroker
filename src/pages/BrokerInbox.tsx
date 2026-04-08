@@ -70,6 +70,7 @@ export default function BrokerInbox() {
     statusFilter: "all",
     isArchived,
     sourceInstance: "personal",
+    enabled: !!brokerId,
   });
 
   const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
