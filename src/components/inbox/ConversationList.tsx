@@ -3,7 +3,7 @@ import {
   Search, Inbox, MessageSquare, AlertTriangle, Bot, Clock, Flame,
   Target, MoreVertical, Check, Zap,
   Eye, EyeOff, LayoutGrid, Archive,
-  Users, UserPlus, User, Headphones, Tag, ChevronDown
+  Users, UserPlus, User, Headphones, Tag, ChevronDown, RefreshCw
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
