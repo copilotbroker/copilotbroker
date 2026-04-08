@@ -46,6 +46,13 @@ interface ConversationListProps {
   onBrokerTabChange?: (tab: BrokerInboxTab) => void;
   brokerNovosCount?: number;
   brokerAtendimentoCount?: number;
+  brokerId?: string | null;
+}
+
+interface BrokerLabel {
+  id: string;
+  name: string;
+  color: string | null;
 }
 
 // Stable animation style for active cadence (matches KanbanCard)
