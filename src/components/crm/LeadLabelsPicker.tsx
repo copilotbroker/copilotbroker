@@ -114,20 +114,7 @@ export function LeadLabelsPicker({ leadId, brokerId, phone, compact = false, pre
           {isLoading ? (
             <p className="text-xs text-muted-foreground">Carregando etiquetas...</p>
           ) : labels.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-2">
-              <p className="text-xs text-muted-foreground text-center">Nenhuma etiqueta encontrada.</p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5 text-xs"
-                onClick={() => void syncLabels()}
-                disabled={isSyncing}
-              >
-                <RefreshCw className={cn("h-3.5 w-3.5", isSyncing && "animate-spin")} />
-                {isSyncing ? "Sincronizando..." : "Buscar etiquetas"}
-              </Button>
-            </div>
+            <p className="text-xs text-muted-foreground">Nenhuma etiqueta disponível para este corretor ainda.</p>
           ) : (
             <div className="space-y-1">
               {labels.map((label) => {
