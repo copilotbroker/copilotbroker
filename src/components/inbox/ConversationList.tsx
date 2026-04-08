@@ -478,7 +478,7 @@ export function ConversationList({
                       ) : (
                         <div className={cn(
                           "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                          isUnread ? "bg-muted text-foreground" : "bg-muted/70 text-muted-foreground"
+                          "bg-purple-900/60 text-purple-400"
                         )}>
                           {leadName.charAt(0).toUpperCase()}
                         </div>
