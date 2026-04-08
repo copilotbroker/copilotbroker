@@ -741,7 +741,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   }
                 />
                 {whatsappMsgOpen && (
-                  <div className={cn(
+                  <div id="whatsapp-msg-form" className={cn(
                     "sm:col-span-2 bg-[#0f0f12] rounded-xl p-4 space-y-3 border",
                     isGlobalInstance
                       ? "border-emerald-500/30"
