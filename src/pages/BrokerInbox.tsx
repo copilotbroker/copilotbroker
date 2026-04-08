@@ -392,9 +392,10 @@ export default function BrokerInbox() {
         />
       )}
 
-      {selectedConversation?.lead_id && brokerId && (
+      {selectedConversation && brokerId && (
         <TransferLeadDialog
-          leadId={selectedConversation.lead_id}
+          leadId={selectedConversation.lead_id || undefined}
+          conversationId={selectedConversation.id}
           leadName={(selectedConversation.lead as any)?.name || selectedConversation.display_name || selectedConversation.phone}
           currentBrokerId={brokerId}
           brokers={allBrokers}

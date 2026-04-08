@@ -358,9 +358,10 @@ export default function AdminInbox() {
         />
       )}
 
-      {selectedConversation?.lead_id && myBrokerId && (
+      {selectedConversation && myBrokerId && (
         <TransferLeadDialog
-          leadId={selectedConversation.lead_id}
+          leadId={selectedConversation.lead_id || undefined}
+          conversationId={selectedConversation.id}
           leadName={(selectedConversation.lead as any)?.name || selectedConversation.display_name || selectedConversation.phone}
           currentBrokerId={myBrokerId}
           brokers={allBrokers}
