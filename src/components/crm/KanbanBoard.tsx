@@ -122,6 +122,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [perdaModal, setPerdaModal] = useState<{ open: boolean; leadId: string | null; currentStatus: LeadStatus }>({ open: false, leadId: null, currentStatus: "new" });
   const [newLeadIds, setNewLeadIds] = useState<Set<string>>(new Set());
   const [callModal, setCallModal] = useState<{ open: boolean; leadId: string | null }>({ open: false, leadId: null });
+  const [cardTransferModal, setCardTransferModal] = useState<{ open: boolean; leadId: string | null; leadName: string; currentBrokerId: string | null }>({ open: false, leadId: null, leadName: "", currentBrokerId: null });
   const newLeadTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const { criarProposta } = usePropostas(propostaModal.leadId || "");
