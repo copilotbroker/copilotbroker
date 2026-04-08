@@ -75,8 +75,6 @@ export function ConversationList({
   brokerNovosCount = 0,
   brokerAtendimentoCount = 0,
 }: ConversationListProps) {
-  const [sortMode, setSortMode] = useState<SortMode>("recent");
-  const [activeKpi, setActiveKpi] = useState<string | null>(null);
   const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
 
   // Fetch lead IDs with active cadences (pending messages in queue)
@@ -97,65 +95,15 @@ export function ConversationList({
     fetchCadencias();
   }, [conversations]);
 
-  const handleKpiClick = (kpi: string) => {
-    setActiveKpi(prev => prev === kpi ? null : kpi);
-  };
-
-  const kpiFilteredConversations = useMemo(() => {
-    if (!activeKpi) return conversations;
-    switch (activeKpi) {
-      case "unread":
-        return conversations.filter(c => c.unread_count > 0);
-      case "hot":
-        return conversations.filter(c => (c.temperature || 0) >= 8);
-      case "risk":
-        return conversations.filter(c => {
-          const lead = c.lead as any;
-          return (c.temperature || 5) <= 3 && lead?.status !== "sold" && lead?.status !== "inactive";
-        });
-      case "active":
-      default:
-        return conversations;
-    }
-  }, [conversations, activeKpi]);
-
   const sortedConversations = useMemo(() => {
-    const sorted = [...kpiFilteredConversations];
-    switch (sortMode) {
-      case "recent": {
-        sorted.sort((a, b) => {
-          const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-          const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-          return bTime - aTime;
-        });
-        break;
-      }
-      case "unread":
-        sorted.sort((a, b) => (b.unread_count || 0) - (a.unread_count || 0));
-        break;
-      case "temperature":
-        sorted.sort((a, b) => (b.temperature || 0) - (a.temperature || 0));
-        break;
-      case "opportunity":
-        sorted.sort((a, b) => (b.opportunity_score || 0) - (a.opportunity_score || 0));
-        break;
-      case "risk": {
-        sorted.sort((a, b) => (a.temperature || 5) - (b.temperature || 5));
-        break;
-      }
-      case "idle": {
-        sorted.sort((a, b) => {
-          const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-          const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-          return aTime - bTime;
-        });
-        break;
-      }
-      default:
-        break;
-    }
+    const sorted = [...conversations];
+    sorted.sort((a, b) => {
+      const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+      const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+      return bTime - aTime;
+    });
     return sorted;
-  }, [kpiFilteredConversations, sortMode]);
+  }, [conversations]);
 
   const getLastPreview = (conv: Conversation) => {
     const preview = conv.last_message_preview || "Sem mensagens";
