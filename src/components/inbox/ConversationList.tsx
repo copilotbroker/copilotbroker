@@ -127,7 +127,32 @@ export function ConversationList({
     fetchBrokerLabels();
   }, [brokerId]);
 
-  // Fetch lead→label mapping
+  const handleSyncLabels = async () => {
+    if (!brokerId || isSyncingLabels) return;
+    setIsSyncingLabels(true);
+    try {
+      // Find any lead to use for the sync call
+      const anyLeadId = conversations.find(c => c.lead_id)?.lead_id;
+      if (anyLeadId) {
+        await supabase.functions.invoke("whatsapp-labels", {
+          body: { action: "sync", leadId: anyLeadId },
+        });
+      }
+      // Refresh local labels
+      const { data } = await supabase
+        .from("whatsapp_labels")
+        .select("id, name, color")
+        .eq("broker_id", brokerId)
+        .order("name");
+      if (data) setBrokerLabels(data as BrokerLabel[]);
+    } catch (e) {
+      console.error("Erro ao sincronizar etiquetas:", e);
+    } finally {
+      setIsSyncingLabels(false);
+    }
+  };
+
+
   useEffect(() => {
     const leadIds = conversations.filter(c => c.lead_id).map(c => c.lead_id!);
     if (leadIds.length === 0) { setLeadLabelMap(new Map()); return; }
