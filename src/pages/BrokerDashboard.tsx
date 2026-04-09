@@ -75,6 +75,10 @@ function MiniCalendar({ month, year, selectedStart, selectedEnd, onSelect, onMon
     const t = new Date();
     return day === t.getDate() && month === t.getMonth() && year === t.getFullYear();
   };
+  const isFuture = (day: number) => {
+    const d = new Date(year, month, day);
+    return d > new Date();
+  };
 
   return (
     <div className="w-[220px]">
@@ -87,22 +91,27 @@ function MiniCalendar({ month, year, selectedStart, selectedEnd, onSelect, onMon
         {["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"].map(d => (
           <div key={d} className="text-[9px] text-slate-500 py-1">{d}</div>
         ))}
-        {weeks.flat().map((day, i) => (
-          <button
-            key={i}
-            disabled={!day}
-            onClick={() => day && onSelect(new Date(year, month, day))}
-            className={cn(
-              "text-[11px] h-7 w-full transition-colors",
-              !day && "invisible",
-              day && "hover:bg-[#FFFF00]/20 text-slate-300",
-              day && isInRange(day) && "bg-[#FFFF00]/10",
-              day && (isStart(day) || isEnd(day)) && "bg-[#FFFF00] text-black font-bold rounded",
-              day && isToday(day) && !isStart(day) && !isEnd(day) && "text-[#FFFF00] font-bold",
-            )}
-          >
-            {day}
-          </button>
+        {weeks.flat().map((day, i) => {
+          const future = day ? isFuture(day) : false;
+          return (
+            <button
+              key={i}
+              disabled={!day || future}
+              onClick={() => day && !future && onSelect(new Date(year, month, day))}
+              className={cn(
+                "text-[11px] h-7 w-full transition-colors",
+                !day && "invisible",
+                day && future && "text-slate-700 cursor-not-allowed",
+                day && !future && "hover:bg-[#FFFF00]/20 text-slate-300",
+                day && isInRange(day) && !future && "bg-[#FFFF00]/10",
+                day && (isStart(day) || isEnd(day)) && !future && "bg-[#FFFF00] text-black font-bold rounded",
+                day && isToday(day) && !isStart(day) && !isEnd(day) && "text-[#FFFF00] font-bold",
+              )}
+            >
+              {day}
+            </button>
+          );
+        })}
         ))}
       </div>
     </div>
