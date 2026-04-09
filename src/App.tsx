@@ -26,6 +26,7 @@ import Admin from "./pages/Admin";
 import DesignSystem from "./pages/DesignSystem";
 
 import BrokerAdmin from "./pages/BrokerAdmin";
+import BrokerDashboard from "./pages/BrokerDashboard";
 import BrokerProjects from "./pages/BrokerProjects";
 import BrokerSignup from "./pages/BrokerSignup";
 
@@ -129,7 +130,8 @@ const App = () => (
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
-            <Route path="/corretor/admin" element={<Navigate to="/corretor/crm" replace />} />
+            <Route path="/corretor/admin" element={<Navigate to="/corretor/dashboard" replace />} />
+            <Route path="/corretor/dashboard" element={<BrokerDashboard />} />
             <Route path="/corretor/crm" element={<BrokerAdmin />} />
             <Route path="/corretor/leads" element={<BrokerAdmin />} />
             <Route path="/corretor/empreendimentos" element={<BrokerProjects />} />

@@ -69,7 +69,7 @@ export function BrokerBottomNav({
       onViewChange(id === "leads" ? "list" : "kanban");
     } else if (id === "add") {
       onAddLead?.();
-    } else if (id === "inbox" || id === "agenda" || id === "copilot" || id === "plantao") {
+    } else if (id === "inbox" || id === "agenda" || id === "copilot" || id === "plantao" || id === "dashboard") {
       navigate(getBrokerPathByTab(id));
     } else if (id === "more") {
       setIsMoreOpen(true);
@@ -80,7 +80,7 @@ export function BrokerBottomNav({
     setIsMoreOpen(false);
     if (action === "leads") {
       onViewChange("list");
-    } else if (action === "inbox" || action === "projects" || action === "roletas" || action === "copilot" || action === "profile") {
+    } else if (action === "inbox" || action === "projects" || action === "roletas" || action === "copilot" || action === "profile" || action === "dashboard") {
       navigate(getBrokerPathByTab(action as any));
     } else if (action === "notifications") {
       onNotificationsClick?.();
@@ -107,10 +107,12 @@ export function BrokerBottomNav({
     if (id === "copilot" && activeTab === "copilot") return true;
     if (id === "plantao" && activeTab === "plantao") return true;
     if (id === "agenda" && activeTab === "agenda") return true;
+    if (id === "dashboard" && activeTab === "dashboard") return true;
     return false;
   };
 
   const moreMenuItems = [
+    { id: "dashboard", label: "Dashboard", description: "Performance e funil" },
     ...(inboxEnabled ? [{ id: "inbox", label: "Meu WhatsApp", description: "Conversas pessoais", badge: inboxUnread }] : []),
     ...(copilotEnabled ? [{ id: "copilot", label: "Copiloto", description: "Assistente e automações" }] : []),
     { id: "leads", label: "Modo Lista", description: "Abrir visão em lista" },
