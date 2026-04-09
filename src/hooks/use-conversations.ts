@@ -197,7 +197,19 @@ export function useConversations(options: UseConversationsOptions = {}) {
         .eq("is_archived", options.isArchived ?? false)
         .order("last_message_at", { ascending: false });
 
-      if (options.inboxTab === "novos") {
+      if (options.teamMode) {
+        // Team supervision mode: personal conversations with lead_id, excluding own
+        query = query
+          .or("source_instance.is.null,source_instance.eq.personal")
+          .not("lead_id", "is", null);
+        if (options.brokerId) {
+          query = query.neq("broker_id", options.brokerId);
+        }
+        if (options.teamBrokerFilter) {
+          query = query.eq("broker_id", options.teamBrokerFilter);
+        }
+        // RLS handles admin (all) vs leader (team only)
+      } else if (options.inboxTab === "novos") {
         // Global conversations pending attendance
         query = query.eq("source_instance", "global").eq("attendance_started", false);
         // Admins see ALL pending global conversations; brokers see only their assigned or disputa
