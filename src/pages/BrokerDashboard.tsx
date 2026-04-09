@@ -38,7 +38,7 @@ function KpiCard({ icon: Icon, label, value, color = "text-white", alert }: {
   );
 }
 
-/* ── Funnel ── */
+/* ── Wave Funnel (SVG) ── */
 function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
   const steps = [
     { label: "Visitantes", value: funnel.visitors },
@@ -50,96 +50,94 @@ function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
     { label: "Vendas", value: funnel.sales },
   ];
 
+  const maxVal = Math.max(...steps.map((s) => s.value), 1);
+
+  // Normalize heights (0.08 min so even zero has a thin line)
+  const heights = steps.map((s) => Math.max(s.value / maxVal, 0.08));
+
+  // SVG dimensions
+  const W = 700;
+  const H = 200;
+  const colW = W / steps.length;
+  const cy = H / 2;
+
+  // Build the wave path — organic Bézier curves connecting column midpoints
+  const topPoints = heights.map((h, i) => ({ x: colW * i + colW / 2, y: cy - h * (H * 0.42) }));
+  const botPoints = heights.map((h, i) => ({ x: colW * i + colW / 2, y: cy + h * (H * 0.42) }));
+
+  const bezier = (pts: { x: number; y: number }[]) => {
+    let d = `M${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const cp = (pts[i + 1].x - pts[i].x) / 2;
+      d += ` C${pts[i].x + cp},${pts[i].y} ${pts[i + 1].x - cp},${pts[i + 1].y} ${pts[i + 1].x},${pts[i + 1].y}`;
+    }
+    return d;
+  };
+
+  const topPath = bezier(topPoints);
+  const botPath = bezier(botPoints);
+  const shapePath = `${topPath} L${botPoints[botPoints.length - 1].x},${botPoints[botPoints.length - 1].y} ${bezier([...botPoints].reverse()).slice(1)} Z`;
+
   return (
     <Card className="bg-[#1e1e22] border-[#2a2a2e]">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-1">
         <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-[#FFFF00]" /> Funil de Conversão
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        {/* Desktop: horizontal */}
-        <div className="hidden md:flex gap-1.5 items-end">
-          {steps.map((step, i) => {
-            const prevValue = i > 0 ? steps[i - 1].value : undefined;
-            const rate = prevValue && prevValue > 0 ? (step.value / prevValue) * 100 : null;
-            const isLow = rate !== null && rate < 30;
-            const isMid = rate !== null && rate >= 30 && rate < 60;
-
-            return (
-              <div key={step.label} className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
-                <p className="text-lg font-bold text-white">{step.value.toLocaleString("pt-BR")}</p>
-                <div
-                  className={cn(
-                    "w-full rounded-lg px-2 py-2.5 text-center border",
-                    i === 0
-                      ? "bg-[#FFFF00]/5 border-[#FFFF00]/20"
-                      : isLow
-                        ? "bg-red-500/5 border-red-500/20"
-                        : isMid
-                          ? "bg-yellow-500/5 border-yellow-500/20"
-                          : "bg-emerald-500/5 border-emerald-500/20"
-                  )}
-                >
-                  <p className="text-[10px] text-slate-400 truncate">{step.label}</p>
-                </div>
-                {rate !== null && (
-                  <div className={cn(
-                    "flex items-center gap-0.5 text-[10px] font-medium",
-                    isLow ? "text-red-400" : isMid ? "text-yellow-400" : "text-emerald-400"
-                  )}>
-                    {isLow ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
-                    {rate.toFixed(1)}%
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      <CardContent className="px-2 sm:px-6">
+        {/* Labels row */}
+        <div className="flex">
+          {steps.map((step) => (
+            <div key={step.label} className="flex-1 text-center">
+              <p className="text-[10px] sm:text-xs text-slate-400 truncate px-0.5">{step.label}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Mobile: vertical */}
-        <div className="md:hidden flex flex-col gap-1.5">
-          {steps.map((step, i) => {
-            const prevValue = i > 0 ? steps[i - 1].value : undefined;
-            const rate = prevValue && prevValue > 0 ? (step.value / prevValue) * 100 : null;
-            const isLow = rate !== null && rate < 30;
-            const isMid = rate !== null && rate >= 30 && rate < 60;
+        {/* SVG wave */}
+        <div className="w-full overflow-hidden my-1">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="funnelGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="hsl(60,100%,50%)" stopOpacity="0.85" />
+                <stop offset="35%" stopColor="hsl(275,70%,55%)" stopOpacity="0.8" />
+                <stop offset="70%" stopColor="hsl(300,65%,50%)" stopOpacity="0.75" />
+                <stop offset="100%" stopColor="hsl(330,75%,50%)" stopOpacity="0.7" />
+              </linearGradient>
+            </defs>
+            <path d={shapePath} fill="url(#funnelGrad)" />
 
-            return (
-              <div key={step.label}>
-                <div
-                  className={cn(
-                    "rounded-lg px-4 py-3 border flex items-center justify-between",
-                    i === 0
-                      ? "bg-[#FFFF00]/5 border-[#FFFF00]/20"
-                      : isLow
-                        ? "bg-red-500/5 border-red-500/20"
-                        : isMid
-                          ? "bg-yellow-500/5 border-yellow-500/20"
-                          : "bg-emerald-500/5 border-emerald-500/20"
-                  )}
+            {/* Rate labels inside the wave */}
+            {steps.map((step, i) => {
+              if (i === 0) return null;
+              const prev = steps[i - 1].value;
+              const rate = prev > 0 ? ((step.value / prev) * 100) : 0;
+              const x = colW * i + colW / 2;
+              return (
+                <text
+                  key={step.label}
+                  x={x}
+                  y={cy + 5}
+                  textAnchor="middle"
+                  className="text-[16px] font-bold"
+                  fill="white"
+                  style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}
                 >
-                  <span className="text-xs text-slate-400">{step.label}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-white">{step.value.toLocaleString("pt-BR")}</span>
-                    {rate !== null && (
-                      <span className={cn(
-                        "text-xs font-medium",
-                        isLow ? "text-red-400" : isMid ? "text-yellow-400" : "text-emerald-400"
-                      )}>
-                        {rate.toFixed(1)}%
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {i < steps.length - 1 && (
-                  <div className="flex justify-center py-0.5">
-                    <ArrowDown className="w-3 h-3 text-slate-600" />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  {rate > 0 ? `${rate.toFixed(1)}%` : "0%"}
+                </text>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Values row */}
+        <div className="flex">
+          {steps.map((step) => (
+            <div key={step.label} className="flex-1 text-center">
+              <p className="text-sm sm:text-base font-bold text-white">{step.value.toLocaleString("pt-BR")}</p>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
