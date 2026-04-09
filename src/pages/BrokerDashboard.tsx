@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
   RefreshCw, TrendingDown, TrendingUp, AlertTriangle, Lightbulb, Info,
-  MessageSquare, Zap, Users, UserCheck, Eye, CalendarCheck, FileText,
-  Handshake, BarChart3, Activity, ArrowDown, Loader2, Hash, UserX, ShieldAlert,
+  MessageSquare, Zap, UserCheck, Eye, CalendarCheck, FileText,
+  Handshake, BarChart3, Loader2, UserX, ShieldAlert,
 } from "lucide-react";
 import { useLogout } from "@/hooks/use-logout";
 import { useUserRole } from "@/hooks/use-user-role";
