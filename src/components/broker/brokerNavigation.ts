@@ -1,7 +1,8 @@
-import { Bot, Building2, CalendarDays, LayoutDashboard, List, RotateCw, UserCog } from "lucide-react";
+import { BarChart3, Bot, Building2, CalendarDays, LayoutDashboard, List, RotateCw, UserCog } from "lucide-react";
 import { WhatsAppInboxIcon, WhatsAppPlantaoIcon } from "@/components/icons/WhatsAppIcon";
 
 export const BROKER_ROUTE_TABS = [
+  { id: "dashboard", label: "Dashboard", path: "/corretor/dashboard", icon: BarChart3 },
   { id: "crm", label: "Kanban", path: "/corretor/crm", icon: LayoutDashboard },
   { id: "leads", label: "Lista", path: "/corretor/leads", icon: List },
   { id: "inbox", label: "Meu WhatsApp", path: "/corretor/inbox", icon: WhatsAppInboxIcon },
@@ -19,6 +20,7 @@ export const BROKER_DEFAULT_TAB: BrokerRouteTabId = "crm";
 
 export const BROKER_TAB_BY_SEGMENT: Record<string, BrokerRouteTabId> = {
   admin: "crm",
+  dashboard: "dashboard",
   crm: "crm",
   leads: "leads",
   inbox: "inbox",
@@ -31,6 +33,7 @@ export const BROKER_TAB_BY_SEGMENT: Record<string, BrokerRouteTabId> = {
 };
 
 export const BROKER_TAB_LABELS: Record<BrokerRouteTabId, { title: string; subtitle?: string }> = {
+  dashboard: { title: "Dashboard", subtitle: "Performance e funil de conversão" },
   crm: { title: "Meus Leads", subtitle: "Pipeline visual do corretor" },
   leads: { title: "Lista de Leads", subtitle: "Visualização tabular da carteira" },
   inbox: { title: "Meu WhatsApp", subtitle: "Conversas e atendimento em tempo real" },
