@@ -39,7 +39,10 @@ const chartTooltipStyle = {
 export default function PerformanceDashboard() {
   const [period, setPeriod] = useState<Period>("30d");
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
-  const { from: dateFrom } = getDateRange(period);
+  const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
+  const { from: dateFrom } = period === "custom" && customRange
+    ? { from: customRange.start }
+    : getDateRange(period as "today" | "7d" | "30d" | "all");
 
   // Fetch brokers
   const { data: allBrokersRaw = [] } = useQuery<BrokerRow[]>({

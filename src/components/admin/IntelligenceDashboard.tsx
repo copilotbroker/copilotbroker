@@ -66,8 +66,11 @@ function VariationBadge({ current, previous }: { current: number; previous: numb
 
 export default function IntelligenceDashboard() {
   const [period, setPeriod] = useState<Period>("30d");
-  const { from: dateFrom, to: dateTo } = getDateRange(period);
-  const prevRange = getPreviousRange(period);
+  const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
+  const { from: dateFrom, to: dateTo } = period === "custom" && customRange
+    ? { from: customRange.start, to: customRange.end }
+    : getDateRange(period as "today" | "7d" | "30d" | "all");
+  const prevRange = period === "custom" ? null : getPreviousRange(period as "today" | "7d" | "30d" | "all");
 
   // === Data fetching ===
   const { data: allBrokersRaw = [] } = useQuery<BrokerRow[]>({
