@@ -131,7 +131,11 @@ export default function AdminInbox() {
     setActiveTab(tab);
     setSelectedConversation(null);
     setShowLeadPanel(false);
-  }, []);
+    // Reset broker filter to self when leaving "atendimento" tab
+    if (tab !== "atendimento") {
+      setSelectedBrokerId(myBrokerId);
+    }
+  }, [myBrokerId]);
 
   const handleBrokerFilterChange = useCallback((brokerId: string) => {
     setSelectedBrokerId(brokerId || myBrokerId);
