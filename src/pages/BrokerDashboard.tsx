@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
   RefreshCw, TrendingDown, TrendingUp, AlertTriangle, Lightbulb, Info,
-  MessageSquare, Zap, ArrowDown, BarChart3, Calendar,
+  MessageSquare, Zap, Users, UserCheck, Eye, CalendarCheck, FileText,
+  Handshake, BarChart3, Activity, ArrowDown, Loader2,
 } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { useLogout } from "@/hooks/use-logout";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
@@ -14,19 +13,30 @@ import { useBrokerProjects } from "@/hooks/use-broker-projects";
 import { BrokerLayout } from "@/components/broker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarPicker } from "@/components/ui/calendar";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight } from "@/hooks/use-broker-dashboard";
 import { cn } from "@/lib/utils";
 
-const PERIOD_OPTIONS = [
-  { value: "today", label: "Hoje" },
-  { value: "7d", label: "7 dias" },
-  { value: "30d", label: "30 dias" },
-  { value: "custom", label: "Personalizado" },
-];
+type Period = "today" | "7d" | "30d";
+
+/* ── KPI Card (same style as admin PerformanceDashboard) ── */
+function KpiCard({ icon: Icon, label, value, color = "text-white", alert }: {
+  icon: any; label: string; value: string | number; color?: string; alert?: boolean;
+}) {
+  return (
+    <div className={`bg-[#1e1e22] border rounded-xl p-3 sm:p-4 ${alert ? "border-amber-500/50" : "border-[#2a2a2e]"}`}>
+      <div className="flex items-start gap-2 sm:gap-3">
+        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 ${alert ? "bg-amber-400/10" : "bg-[#FFFF00]/10"}`}>
+          <Icon className={`w-4 h-4 ${alert ? "text-amber-400" : "text-[#FFFF00]"}`} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] text-slate-400 truncate leading-tight">{label}</p>
+          <p className={`text-base sm:text-lg font-bold ${color}`}>{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── Funnel ── */
 function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
@@ -41,15 +51,11 @@ function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
   ];
 
   return (
-    <Card className="bg-[#111114] border-[#1e1e22]">
-      <CardHeader className="pb-2 flex-row items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-[#FFFF00]/10 flex items-center justify-center shrink-0">
-          <BarChart3 className="w-4 h-4 text-[#FFFF00]" />
-        </div>
-        <div>
-          <CardTitle className="text-base font-semibold text-slate-100">Funil de Conversão</CardTitle>
-          <p className="text-xs text-slate-500 mt-0.5">Jornada do visitante à venda</p>
-        </div>
+    <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-[#FFFF00]" /> Funil de Conversão
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {/* Desktop: horizontal */}
@@ -62,10 +68,10 @@ function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
 
             return (
               <div key={step.label} className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
-                <p className="text-xl font-bold text-slate-100">{step.value.toLocaleString("pt-BR")}</p>
+                <p className="text-lg font-bold text-white">{step.value.toLocaleString("pt-BR")}</p>
                 <div
                   className={cn(
-                    "w-full rounded-lg px-2 py-2.5 text-center border transition-all",
+                    "w-full rounded-lg px-2 py-2.5 text-center border",
                     i === 0
                       ? "bg-[#FFFF00]/5 border-[#FFFF00]/20"
                       : isLow
@@ -75,11 +81,11 @@ function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
                           : "bg-emerald-500/5 border-emerald-500/20"
                   )}
                 >
-                  <p className="text-[11px] text-slate-400 truncate">{step.label}</p>
+                  <p className="text-[10px] text-slate-400 truncate">{step.label}</p>
                 </div>
                 {rate !== null && (
                   <div className={cn(
-                    "flex items-center gap-0.5 text-[11px] font-medium",
+                    "flex items-center gap-0.5 text-[10px] font-medium",
                     isLow ? "text-red-400" : isMid ? "text-yellow-400" : "text-emerald-400"
                   )}>
                     {isLow ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
@@ -113,9 +119,9 @@ function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
                           : "bg-emerald-500/5 border-emerald-500/20"
                   )}
                 >
-                  <span className="text-sm text-slate-400">{step.label}</span>
+                  <span className="text-xs text-slate-400">{step.label}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-slate-100">{step.value.toLocaleString("pt-BR")}</span>
+                    <span className="text-base font-bold text-white">{step.value.toLocaleString("pt-BR")}</span>
                     {rate !== null && (
                       <span className={cn(
                         "text-xs font-medium",
@@ -143,38 +149,34 @@ function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
 /* ── Follow-up ── */
 function FollowUpCard({ stats }: { stats: FollowUpStats }) {
   return (
-    <Card className="bg-[#111114] border-[#1e1e22]">
-      <CardHeader className="pb-2 flex-row items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-          <MessageSquare className="w-4 h-4 text-emerald-400" />
-        </div>
-        <div>
-          <CardTitle className="text-base font-semibold text-slate-100">Follow-up Automático</CardTitle>
-          <p className="text-xs text-slate-500 mt-0.5">Desempenho do autopilot</p>
-        </div>
+    <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-emerald-400" /> Follow-up Automático
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-[#0f0f12] rounded-lg p-3 border border-[#1e1e22] text-center">
-            <p className="text-2xl font-bold text-slate-100">{stats.totalSent}</p>
-            <p className="text-[11px] text-slate-500 mt-1">Toques enviados</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-[#16161a] rounded-lg p-2.5 border border-[#2a2a2e]">
+            <p className="text-[10px] text-slate-400 truncate">Toques enviados</p>
+            <p className="text-sm font-bold text-white">{stats.totalSent}</p>
           </div>
-          <div className="bg-[#0f0f12] rounded-lg p-3 border border-[#1e1e22] text-center">
-            <p className="text-2xl font-bold text-slate-100">{stats.totalReplied}</p>
-            <p className="text-[11px] text-slate-500 mt-1">Responderam</p>
+          <div className="bg-[#16161a] rounded-lg p-2.5 border border-[#2a2a2e]">
+            <p className="text-[10px] text-slate-400 truncate">Responderam</p>
+            <p className="text-sm font-bold text-white">{stats.totalReplied}</p>
           </div>
-          <div className="bg-[#0f0f12] rounded-lg p-3 border border-[#1e1e22] text-center">
+          <div className="bg-[#16161a] rounded-lg p-2.5 border border-[#2a2a2e]">
+            <p className="text-[10px] text-slate-400 truncate">Taxa de resposta</p>
             <p className={cn(
-              "text-2xl font-bold",
+              "text-sm font-bold",
               stats.responseRate >= 40 ? "text-emerald-400" : stats.responseRate >= 20 ? "text-yellow-400" : "text-red-400"
             )}>
               {stats.responseRate}%
             </p>
-            <p className="text-[11px] text-slate-500 mt-1">Taxa de resposta</p>
           </div>
-          <div className="bg-[#0f0f12] rounded-lg p-3 border border-[#1e1e22] text-center">
-            <p className="text-2xl font-bold text-slate-100">{stats.lateResponses}</p>
-            <p className="text-[11px] text-slate-500 mt-1">Respostas tardias (3+)</p>
+          <div className="bg-[#16161a] rounded-lg p-2.5 border border-[#2a2a2e]">
+            <p className="text-[10px] text-slate-400 truncate">Respostas tardias (3+)</p>
+            <p className="text-sm font-bold text-white">{stats.lateResponses}</p>
           </div>
         </div>
       </CardContent>
@@ -187,50 +189,35 @@ function InsightsCard({ insights }: { insights: DashboardInsight[] }) {
   if (insights.length === 0) return null;
 
   const iconMap = {
-    warning: <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />,
-    success: <Zap className="w-4 h-4 text-emerald-400 shrink-0" />,
-    info: <Info className="w-4 h-4 text-blue-400 shrink-0" />,
+    warning: <AlertTriangle className="w-3.5 h-3.5 text-yellow-400 shrink-0" />,
+    success: <Zap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />,
+    info: <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />,
   };
   const bgMap = {
-    warning: "bg-yellow-500/5 border-yellow-500/15",
-    success: "bg-emerald-500/5 border-emerald-500/15",
-    info: "bg-blue-500/5 border-blue-500/15",
+    warning: "bg-amber-500/5 border-amber-500/20",
+    success: "bg-emerald-500/5 border-emerald-500/20",
+    info: "bg-blue-500/5 border-blue-500/20",
   };
 
   return (
-    <Card className="bg-[#111114] border-[#1e1e22]">
-      <CardHeader className="pb-2 flex-row items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-          <Lightbulb className="w-4 h-4 text-blue-400" />
-        </div>
-        <div>
-          <CardTitle className="text-base font-semibold text-slate-100">Insights</CardTitle>
-          <p className="text-xs text-slate-500 mt-0.5">Diagnóstico automático do funil</p>
-        </div>
+    <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+          <Lightbulb className="w-4 h-4 text-[#FFFF00]" /> Insights
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {insights.map((insight, i) => (
           <div key={i} className={cn("flex items-start gap-3 rounded-lg border p-3", bgMap[insight.type])}>
             {iconMap[insight.type]}
             <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-200">{insight.title}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{insight.description}</p>
+              <p className="text-xs font-medium text-white">{insight.title}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{insight.description}</p>
             </div>
           </div>
         ))}
       </CardContent>
     </Card>
-  );
-}
-
-/* ── Loading skeleton ── */
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-4">
-      <Skeleton className="h-[280px] w-full bg-[#1e1e22] rounded-lg" />
-      <Skeleton className="h-[140px] w-full bg-[#1e1e22] rounded-lg" />
-      <Skeleton className="h-[120px] w-full bg-[#1e1e22] rounded-lg" />
-    </div>
   );
 }
 
@@ -243,19 +230,10 @@ const BrokerDashboard = () => {
   const projects = brokerProjectsResult.brokerProjects || [];
   const handleLogout = useLogout();
 
-  const [period, setPeriod] = useState("30d");
+  const [period, setPeriod] = useState<Period>("30d");
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [customStart, setCustomStart] = useState<Date | undefined>();
-  const [customEnd, setCustomEnd] = useState<Date | undefined>();
 
-  const isCustom = period === "custom";
-  const periodDates = useMemo(() => {
-    if (isCustom && customStart && customEnd) {
-      return { start: customStart, end: customEnd };
-    }
-    return getPeriodDates(period);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, customStart?.getTime(), customEnd?.getTime()]);
+  const periodDates = useMemo(() => getPeriodDates(period), [period]);
 
   const { funnel, followUp, insights, isLoading } = useBrokerDashboard({
     brokerId: brokerId || "",
@@ -291,6 +269,8 @@ const BrokerDashboard = () => {
 
   if (role !== "broker") return null;
 
+  const fmtRate = (num: number, den: number) => den > 0 ? `${((num / den) * 100).toFixed(1)}%` : "—";
+
   return (
     <>
       <Helmet>
@@ -305,80 +285,67 @@ const BrokerDashboard = () => {
         copilotEnabled={copilotEnabled}
         brokerId={brokerId || undefined}
       >
-        <div className="space-y-4 pb-20 lg:pb-0">
-          {/* Filters row */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-[140px] bg-[#111114] border-[#1e1e22] text-slate-200 text-sm h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                {PERIOD_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {isCustom && (
-              <div className="flex gap-2 items-center">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="bg-[#111114] border-[#1e1e22] text-slate-300 text-xs h-9 gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {customStart ? format(customStart, "dd/MM/yy", { locale: ptBR }) : "Início"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-[#1e1e22] border-[#2a2a2e]" align="start">
-                    <CalendarPicker mode="single" selected={customStart} onSelect={setCustomStart} className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-                <span className="text-slate-600 text-xs">—</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="bg-[#111114] border-[#1e1e22] text-slate-300 text-xs h-9 gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {customEnd ? format(customEnd, "dd/MM/yy", { locale: ptBR }) : "Fim"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-[#1e1e22] border-[#2a2a2e]" align="start">
-                    <CalendarPicker mode="single" selected={customEnd} onSelect={setCustomEnd} className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            <Select value={projectId || "all"} onValueChange={(v) => setProjectId(v === "all" ? null : v)}>
-              <SelectTrigger className="w-[200px] bg-[#111114] border-[#1e1e22] text-slate-200 text-sm h-9">
-                <SelectValue placeholder="Todos empreendimentos" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                <SelectItem value="all">Todos empreendimentos</SelectItem>
-                {projects.map((p) => (
-                  <SelectItem key={p.project.id} value={p.project.id}>{p.project.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-6 pb-20 lg:pb-0">
+          {/* Header + Period + Project filter */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="text-lg font-bold text-white">Meu Dashboard</h2>
+              <Select value={projectId || "all"} onValueChange={(v) => setProjectId(v === "all" ? null : v)}>
+                <SelectTrigger className="w-[180px] bg-[#1e1e22] border-[#2a2a2e] text-slate-200 text-xs h-8">
+                  <SelectValue placeholder="Todos empreendimentos" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
+                  <SelectItem value="all">Todos empreendimentos</SelectItem>
+                  {projects.map((p) => (
+                    <SelectItem key={p.project.id} value={p.project.id}>{p.project.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
+              <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
+                <TabsTrigger value="today" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Hoje</TabsTrigger>
+                <TabsTrigger value="7d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">7 dias</TabsTrigger>
+                <TabsTrigger value="30d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">30 dias</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
-          {/* Content */}
           {isLoading ? (
-            <DashboardSkeleton />
-          ) : (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-[#FFFF00]" />
+            </div>
+          ) : funnel ? (
             <>
-              {funnel && <FunnelVisualization funnel={funnel} />}
-              {followUp && <FollowUpCard stats={followUp} />}
-              <InsightsCard insights={insights} />
+              {/* KPI Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                <KpiCard icon={Users} label="Visitantes LP" value={funnel.visitors} />
+                <KpiCard icon={UserCheck} label="Cadastros" value={funnel.leads} color="text-cyan-400" />
+                <KpiCard icon={Activity} label="Conversão LP" value={fmtRate(funnel.leads, funnel.visitors)} color="text-[#FFFF00]" />
+                <KpiCard icon={MessageSquare} label="Responderam" value={funnel.responded} color="text-emerald-400" />
+                <KpiCard icon={CalendarCheck} label="Agendamentos" value={funnel.scheduled} color="text-orange-400" />
+                <KpiCard icon={Eye} label="Visitas" value={funnel.visited} color="text-cyan-400" />
+                <KpiCard icon={FileText} label="Propostas" value={funnel.proposals} color="text-violet-400" />
+                <KpiCard icon={Handshake} label="Vendas" value={funnel.sales} color="text-emerald-400" />
+              </div>
 
-              {!funnel && !followUp && (
-                <Card className="bg-[#111114] border-[#1e1e22]">
-                  <CardContent className="py-16 text-center">
-                    <BarChart3 className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                    <p className="text-slate-400 text-sm">Nenhum dado disponível para este período.</p>
-                    <p className="text-slate-600 text-xs mt-1">Selecione outro período ou empreendimento.</p>
-                  </CardContent>
-                </Card>
-              )}
+              {/* Funnel */}
+              <FunnelVisualization funnel={funnel} />
+
+              {/* Follow-up */}
+              {followUp && <FollowUpCard stats={followUp} />}
+
+              {/* Insights */}
+              <InsightsCard insights={insights} />
             </>
+          ) : (
+            <Card className="bg-[#1e1e22] border-[#2a2a2e]">
+              <CardContent className="py-16 text-center">
+                <BarChart3 className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400 text-sm">Nenhum dado disponível para este período.</p>
+                <p className="text-slate-600 text-xs mt-1">Selecione outro período ou empreendimento.</p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </BrokerLayout>
