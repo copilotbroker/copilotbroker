@@ -556,7 +556,7 @@ export function ConversationList({
                               {conv.unread_count}
                             </Badge>
                           )}
-                          {/* Broker attribution badge for global conversations */}
+                          {/* Broker attribution badge for global or equipe conversations */}
                           {(conv as any).source_instance === "global" && (
                             (conv as any).attendance_started && (conv as any).broker?.name ? (
                               <Badge className="h-4 px-1.5 text-[10px] bg-emerald-600/20 text-emerald-400 border-emerald-500/30 border">
@@ -567,6 +567,12 @@ export function ConversationList({
                                 <Clock className="mr-1 h-3 w-3" /> Aguardando
                               </Badge>
                             ) : null
+                          )}
+                          {/* Show broker name on equipe tab */}
+                          {brokerInboxTab === "equipe" && (conv as any).broker?.name && (
+                            <Badge className="h-4 px-1.5 text-[10px] bg-purple-600/20 text-purple-400 border-purple-500/30 border">
+                              <User className="mr-1 h-3 w-3" /> {(conv as any).broker.name}
+                            </Badge>
                           )}
                           {conv.lead_id ? (
                             <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
