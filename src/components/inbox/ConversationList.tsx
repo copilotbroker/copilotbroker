@@ -46,13 +46,13 @@ interface ConversationListProps {
   onBrokerTabChange?: (tab: BrokerInboxTab) => void;
   brokerNovosCount?: number;
   brokerAtendimentoCount?: number;
-  brokerEquipeCount?: number;
   brokerId?: string | null;
-  showEquipeTab?: boolean;
-  /** Broker filter for equipe tab */
-  teamBrokerFilter?: string;
-  onTeamBrokerFilterChange?: (brokerId: string) => void;
-  teamBrokerOptions?: { id: string; name: string }[];
+  /** Broker filter for atendimento tab (admin/leader) */
+  brokerFilter?: string;
+  onBrokerFilterChange?: (brokerId: string) => void;
+  brokerOptions?: { id: string; name: string }[];
+  /** The logged-in user's own broker ID, to show badge when viewing others */
+  myBrokerId?: string | null;
 }
 
 interface BrokerLabel {
@@ -88,12 +88,11 @@ export function ConversationList({
   onBrokerTabChange,
   brokerNovosCount = 0,
   brokerAtendimentoCount = 0,
-  brokerEquipeCount = 0,
   brokerId,
-  showEquipeTab = false,
-  teamBrokerFilter,
-  onTeamBrokerFilterChange,
-  teamBrokerOptions = [],
+  brokerFilter,
+  onBrokerFilterChange,
+  brokerOptions = [],
+  myBrokerId,
 }: ConversationListProps) {
   const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
   const [leadLabelMap, setLeadLabelMap] = useState<Map<string, string[]>>(new Map());
