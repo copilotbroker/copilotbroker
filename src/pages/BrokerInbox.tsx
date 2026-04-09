@@ -133,14 +133,13 @@ export default function BrokerInbox() {
 
   useEffect(() => {
     if (!selectedConversation) return;
-    const allConvs = isEquipe ? teamConversations : allPersonalConversations;
-    const refreshed = allConvs.find((c) => c.id === selectedConversation.id);
+    const refreshed = allPersonalConversations.find((c) => c.id === selectedConversation.id);
     if (!refreshed) return;
     setSelectedConversation((current) => {
       if (!current) return current;
       return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
     });
-  }, [allPersonalConversations, teamConversations, isEquipe, selectedConversation?.id]);
+  }, [allPersonalConversations, selectedConversation?.id]);
 
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelectedConversation(conv);
@@ -338,20 +337,19 @@ export default function BrokerInbox() {
               onSearchChange={setSearch}
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
-              isLoading={isEquipe ? teamLoading : isLoading}
+              isLoading={isLoading}
               totalUnread={totalUnread}
-              onMarkAsRead={(id) => isEquipe ? teamMarkAsRead(id) : markAsRead(id)}
+              onMarkAsRead={(id) => markAsRead(id)}
               onArchive={(id) => archiveConversation(id)}
               brokerInboxTab={activeTab}
               onBrokerTabChange={handleTabChange}
               brokerNovosCount={novosConversations.length}
               brokerAtendimentoCount={atendimentoConversations.length}
-              brokerEquipeCount={teamConversations.length}
-              brokerId={brokerId}
-              showEquipeTab={isLeader}
-              teamBrokerFilter={teamBrokerFilter}
-              onTeamBrokerFilterChange={setTeamBrokerFilter}
-              teamBrokerOptions={allBrokers}
+              brokerId={effectiveBrokerId}
+              brokerFilter={isLeader ? (selectedBrokerId || "") : undefined}
+              onBrokerFilterChange={isLeader ? (id) => { setSelectedBrokerId(id || brokerId); setSelectedConversation(null); } : undefined}
+              brokerOptions={isLeader ? teamMembers : undefined}
+              myBrokerId={brokerId}
             />
           </div>
         )}
