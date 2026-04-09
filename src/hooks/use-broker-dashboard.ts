@@ -10,13 +10,17 @@ export interface BrokerDashboardFilters {
 }
 
 export interface FunnelData {
-  visitors: number;
   leads: number;
   responded: number;
   scheduled: number;
   visited: number;
   proposals: number;
   sales: number;
+}
+
+export interface TimeoutLossData {
+  lostByTimeout: number;
+  lostThatSold: number;
 }
 
 export interface AttemptStat {
