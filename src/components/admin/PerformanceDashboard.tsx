@@ -7,8 +7,8 @@ import {
   Handshake, Eye, AlertCircle, Target, Zap, ChevronDown, ChevronUp,
   Award, TrendingDown, Activity, PieChart as PieIcon
 } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
 import { getInactivationReasonLabel, getOriginDisplayLabel } from "@/types/crm";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -16,7 +16,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from "recharts";
 
-type Period = "today" | "7d" | "30d" | "all";
+type Period = "today" | "7d" | "30d" | "all" | "custom";
 
 function getDateRange(period: Period): { from: Date | null; to: Date } {
   const now = new Date();
@@ -39,7 +39,10 @@ const chartTooltipStyle = {
 export default function PerformanceDashboard() {
   const [period, setPeriod] = useState<Period>("30d");
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
-  const { from: dateFrom } = getDateRange(period);
+  const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
+  const { from: dateFrom } = period === "custom" && customRange
+    ? { from: customRange.start }
+    : getDateRange(period as "today" | "7d" | "30d" | "all");
 
   // Fetch brokers
   const { data: allBrokersRaw = [] } = useQuery<BrokerRow[]>({
@@ -439,14 +442,16 @@ export default function PerformanceDashboard() {
       {/* Period selector */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-lg font-bold text-white">Performance Comercial</h2>
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-          <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
-            <TabsTrigger value="today" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Hoje</TabsTrigger>
-            <TabsTrigger value="7d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">7 dias</TabsTrigger>
-            <TabsTrigger value="30d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">30 dias</TabsTrigger>
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Todo período</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <PeriodFilterWithCustom
+          period={period}
+          onPeriodChange={(v) => setPeriod(v as Period)}
+          customRange={customRange}
+          onCustomRangeApply={(start, end) => {
+            setCustomRange({ start, end });
+            setPeriod("custom");
+          }}
+          showAllPeriod
+        />
       </div>
 
       {/* ══════════ 1. CARDS PRINCIPAIS ══════════ */}
