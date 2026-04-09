@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
   RefreshCw, TrendingDown, TrendingUp, AlertTriangle, Lightbulb, Info,
   MessageSquare, Zap, UserCheck, Eye, CalendarCheck, FileText,
-  Handshake, BarChart3, Loader2, UserX, ShieldAlert,
+  Handshake, BarChart3, Loader2, UserX, ShieldAlert, Calendar,
 } from "lucide-react";
 import { useLogout } from "@/hooks/use-logout";
 import { useUserRole } from "@/hooks/use-user-role";
@@ -14,10 +14,204 @@ import { BrokerLayout } from "@/components/broker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight, type AttemptStat, type TimeoutLossData } from "@/hooks/use-broker-dashboard";
 import { cn } from "@/lib/utils";
+import { format, subDays, startOfDay, startOfWeek, endOfWeek, startOfMonth, subWeeks, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-type Period = "today" | "7d" | "30d";
+type Period = "today" | "7d" | "30d" | "custom";
+
+/* ── Preset options for the custom picker ── */
+const PERIOD_PRESETS = [
+  { label: "Hoje", get: () => ({ start: startOfDay(new Date()), end: new Date() }) },
+  { label: "Ontem", get: () => ({ start: startOfDay(subDays(new Date(), 1)), end: startOfDay(new Date()) }) },
+  { label: "Últimos 7 dias", get: () => ({ start: startOfDay(subDays(new Date(), 7)), end: new Date() }) },
+  { label: "Últimos 14 dias", get: () => ({ start: startOfDay(subDays(new Date(), 14)), end: new Date() }) },
+  { label: "Últimos 28 dias", get: () => ({ start: startOfDay(subDays(new Date(), 28)), end: new Date() }) },
+  { label: "Últimos 30 dias", get: () => ({ start: startOfDay(subDays(new Date(), 30)), end: new Date() }) },
+  { label: "Esta semana", get: () => ({ start: startOfWeek(new Date(), { weekStartsOn: 1 }), end: new Date() }) },
+  { label: "Semana passada", get: () => {
+    const s = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
+    return { start: s, end: endOfWeek(s, { weekStartsOn: 1 }) };
+  }},
+  { label: "Este mês", get: () => ({ start: startOfMonth(new Date()), end: new Date() }) },
+  { label: "Mês passado", get: () => {
+    const s = startOfMonth(subMonths(new Date(), 1));
+    return { start: s, end: startOfMonth(new Date()) };
+  }},
+] as const;
+
+/* ── Mini calendar component ── */
+function MiniCalendar({ month, year, selectedStart, selectedEnd, onSelect, onMonthChange }: {
+  month: number; year: number;
+  selectedStart: Date | null; selectedEnd: Date | null;
+  onSelect: (d: Date) => void;
+  onMonthChange: (m: number, y: number) => void;
+}) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = (new Date(year, month, 1).getDay() + 6) % 7; // Monday=0
+  const weeks: (number | null)[][] = [];
+  let week: (number | null)[] = Array(firstDayOfWeek).fill(null);
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    week.push(d);
+    if (week.length === 7) { weeks.push(week); week = []; }
+  }
+  if (week.length > 0) { while (week.length < 7) week.push(null); weeks.push(week); }
+
+  const monthNames = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+  const isInRange = (day: number) => {
+    if (!selectedStart || !selectedEnd) return false;
+    const d = new Date(year, month, day);
+    return d >= selectedStart && d <= selectedEnd;
+  };
+  const isStart = (day: number) => selectedStart && day === selectedStart.getDate() && month === selectedStart.getMonth() && year === selectedStart.getFullYear();
+  const isEnd = (day: number) => selectedEnd && day === selectedEnd.getDate() && month === selectedEnd.getMonth() && year === selectedEnd.getFullYear();
+  const isToday = (day: number) => {
+    const t = new Date();
+    return day === t.getDate() && month === t.getMonth() && year === t.getFullYear();
+  };
+
+  return (
+    <div className="w-[220px]">
+      <div className="flex items-center justify-between mb-2">
+        <button onClick={() => onMonthChange(month === 0 ? 11 : month - 1, month === 0 ? year - 1 : year)} className="text-slate-400 hover:text-white p-1">‹</button>
+        <span className="text-xs font-medium text-white">{monthNames[month]} {year}</span>
+        <button onClick={() => onMonthChange(month === 11 ? 0 : month + 1, month === 11 ? year + 1 : year)} className="text-slate-400 hover:text-white p-1">›</button>
+      </div>
+      <div className="grid grid-cols-7 gap-0 text-center">
+        {["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"].map(d => (
+          <div key={d} className="text-[9px] text-slate-500 py-1">{d}</div>
+        ))}
+        {weeks.flat().map((day, i) => (
+          <button
+            key={i}
+            disabled={!day}
+            onClick={() => day && onSelect(new Date(year, month, day))}
+            className={cn(
+              "text-[11px] h-7 w-full transition-colors",
+              !day && "invisible",
+              day && "hover:bg-[#FFFF00]/20 text-slate-300",
+              day && isInRange(day) && "bg-[#FFFF00]/10",
+              day && (isStart(day) || isEnd(day)) && "bg-[#FFFF00] text-black font-bold rounded",
+              day && isToday(day) && !isStart(day) && !isEnd(day) && "text-[#FFFF00] font-bold",
+            )}
+          >
+            {day}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Custom Date Range Picker ── */
+function CustomDateRangePicker({ onApply, initialStart, initialEnd }: {
+  onApply: (start: Date, end: Date) => void;
+  initialStart?: Date; initialEnd?: Date;
+}) {
+  const now = new Date();
+  const [selStart, setSelStart] = useState<Date | null>(initialStart || null);
+  const [selEnd, setSelEnd] = useState<Date | null>(initialEnd || null);
+  const [picking, setPicking] = useState<"start" | "end">("start");
+  const [activePreset, setActivePreset] = useState<string | null>(initialStart ? null : "Últimos 30 dias");
+
+  // Left calendar: previous month; Right calendar: current month
+  const [leftMonth, setLeftMonth] = useState(now.getMonth() === 0 ? 11 : now.getMonth() - 1);
+  const [leftYear, setLeftYear] = useState(now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
+  const [rightMonth, setRightMonth] = useState(now.getMonth());
+  const [rightYear, setRightYear] = useState(now.getFullYear());
+
+  const handleDaySelect = (d: Date) => {
+    setActivePreset(null);
+    if (picking === "start") {
+      setSelStart(d);
+      setSelEnd(null);
+      setPicking("end");
+    } else {
+      if (selStart && d < selStart) {
+        setSelStart(d);
+        setSelEnd(selStart);
+      } else {
+        setSelEnd(d);
+      }
+      setPicking("start");
+    }
+  };
+
+  const handlePreset = (preset: typeof PERIOD_PRESETS[number]) => {
+    const { start, end } = preset.get();
+    setSelStart(start);
+    setSelEnd(end);
+    setActivePreset(preset.label);
+    setPicking("start");
+  };
+
+  return (
+    <div className="flex">
+      {/* Presets sidebar */}
+      <div className="border-r border-[#2a2a2e] pr-3 mr-3 space-y-0.5 min-w-[130px]">
+        <p className="text-[10px] text-slate-500 font-medium mb-2 uppercase tracking-wider">Atalhos</p>
+        {PERIOD_PRESETS.map((p) => (
+          <button
+            key={p.label}
+            onClick={() => handlePreset(p)}
+            className={cn(
+              "block w-full text-left text-[11px] px-2 py-1.5 rounded transition-colors",
+              activePreset === p.label
+                ? "bg-[#FFFF00]/15 text-[#FFFF00] font-medium"
+                : "text-slate-400 hover:text-white hover:bg-[#2a2a2e]"
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Calendars + actions */}
+      <div className="space-y-3">
+        <div className="flex gap-4">
+          <MiniCalendar
+            month={leftMonth} year={leftYear}
+            selectedStart={selStart} selectedEnd={selEnd}
+            onSelect={handleDaySelect}
+            onMonthChange={(m, y) => { setLeftMonth(m); setLeftYear(y); }}
+          />
+          <MiniCalendar
+            month={rightMonth} year={rightYear}
+            selectedStart={selStart} selectedEnd={selEnd}
+            onSelect={handleDaySelect}
+            onMonthChange={(m, y) => { setRightMonth(m); setRightYear(y); }}
+          />
+        </div>
+
+        {/* Selected range display + apply */}
+        <div className="flex items-center justify-between border-t border-[#2a2a2e] pt-3">
+          <div className="flex items-center gap-2 text-[11px]">
+            <span className="bg-[#16161a] border border-[#2a2a2e] rounded px-2 py-1 text-slate-300">
+              {selStart ? format(selStart, "dd/MM/yyyy") : "Início"}
+            </span>
+            <span className="text-slate-600">→</span>
+            <span className="bg-[#16161a] border border-[#2a2a2e] rounded px-2 py-1 text-slate-300">
+              {selEnd ? format(selEnd, "dd/MM/yyyy") : "Fim"}
+            </span>
+          </div>
+          <Button
+            size="sm"
+            disabled={!selStart || !selEnd}
+            onClick={() => selStart && selEnd && onApply(selStart, selEnd)}
+            className="bg-[#FFFF00] text-black hover:bg-[#FFFF00]/90 text-xs h-7 px-4"
+          >
+            Aplicar
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── KPI Card (same style as admin PerformanceDashboard) ── */
 function KpiCard({ icon: Icon, label, value, color = "text-white", alert }: {
@@ -275,8 +469,13 @@ const BrokerDashboard = () => {
 
   const [period, setPeriod] = useState<Period>("30d");
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
+  const [customPickerOpen, setCustomPickerOpen] = useState(false);
 
-  const periodDates = useMemo(() => getPeriodDates(period), [period]);
+  const periodDates = useMemo(() => {
+    if (period === "custom" && customRange) return customRange;
+    return getPeriodDates(period as "today" | "7d" | "30d");
+  }, [period, customRange]);
 
   const { funnel, followUp, timeoutLoss, insights, isLoading } = useBrokerDashboard({
     brokerId: brokerId || "",
@@ -345,13 +544,49 @@ const BrokerDashboard = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-              <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
-                <TabsTrigger value="today" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Hoje</TabsTrigger>
-                <TabsTrigger value="7d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">7 dias</TabsTrigger>
-                <TabsTrigger value="30d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">30 dias</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center gap-1">
+              <Tabs value={period === "custom" ? "" : period} onValueChange={(v) => { setPeriod(v as Period); setCustomPickerOpen(false); }}>
+                <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
+                  <TabsTrigger value="today" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Hoje</TabsTrigger>
+                  <TabsTrigger value="7d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">7 dias</TabsTrigger>
+                  <TabsTrigger value="30d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">30 dias</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Popover open={customPickerOpen} onOpenChange={setCustomPickerOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    onClick={() => setCustomPickerOpen(true)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-3 h-8 text-xs font-medium transition-colors border",
+                      period === "custom"
+                        ? "bg-[#FFFF00] text-black border-[#FFFF00]"
+                        : "bg-[#1e1e22] text-slate-300 border-[#2a2a2e] hover:bg-[#2a2a2e]"
+                    )}
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    {period === "custom" && customRange
+                      ? `${format(customRange.start, "dd/MM")} - ${format(customRange.end, "dd/MM")}`
+                      : "Personalizado"
+                    }
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="w-auto p-4 bg-[#1e1e22] border-[#2a2a2e]"
+                  sideOffset={8}
+                >
+                  <CustomDateRangePicker
+                    initialStart={customRange?.start}
+                    initialEnd={customRange?.end}
+                    onApply={(start, end) => {
+                      setCustomRange({ start, end });
+                      setPeriod("custom");
+                      setCustomPickerOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           {isLoading ? (
