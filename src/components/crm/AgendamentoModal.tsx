@@ -8,6 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,10 +22,6 @@ interface AgendamentoModalProps {
   brokerId?: string | null;
 }
 
-const HOURS = Array.from({ length: 14 }, (_, i) => {
-  const h = i + 7;
-  return { value: `${h.toString().padStart(2, "0")}:00`, label: `${h.toString().padStart(2, "0")}:00` };
-});
 
 const TIPO_TO_EVENT_TYPE: Record<string, string> = {
   visita: "visit",
@@ -122,16 +119,13 @@ export function AgendamentoModal({ open, onOpenChange, onConfirm, title = "Regis
 
           <div className="space-y-2">
             <label className="text-sm text-slate-400">Horário *</label>
-            <Select value={time} onValueChange={setTime}>
-              <SelectTrigger className="bg-[#0f0f12] border-[#2a2a2e]">
-                <SelectValue placeholder="Selecione o horário" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                {HOURS.map(h => (
-                  <SelectItem key={h.value} value={h.value}>{h.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="bg-[#0f0f12] border-[#2a2a2e]"
+              placeholder="HH:MM"
+            />
           </div>
 
           <div className="space-y-2">
