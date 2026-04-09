@@ -41,12 +41,18 @@ interface ConversationListProps {
   showOthersTab?: boolean;
   novosCount?: number;
   emptyMessage?: string;
-  /** Broker inbox mode: 3 tabs (Novos | Em atendimento | Arquivados) */
+  /** Broker inbox mode: tabs */
   brokerInboxTab?: BrokerInboxTab;
   onBrokerTabChange?: (tab: BrokerInboxTab) => void;
   brokerNovosCount?: number;
   brokerAtendimentoCount?: number;
+  brokerEquipeCount?: number;
   brokerId?: string | null;
+  showEquipeTab?: boolean;
+  /** Broker filter for equipe tab */
+  teamBrokerFilter?: string;
+  onTeamBrokerFilterChange?: (brokerId: string) => void;
+  teamBrokerOptions?: { id: string; name: string }[];
 }
 
 interface BrokerLabel {
@@ -82,7 +88,12 @@ export function ConversationList({
   onBrokerTabChange,
   brokerNovosCount = 0,
   brokerAtendimentoCount = 0,
+  brokerEquipeCount = 0,
   brokerId,
+  showEquipeTab = false,
+  teamBrokerFilter,
+  onTeamBrokerFilterChange,
+  teamBrokerOptions = [],
 }: ConversationListProps) {
   const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
   const [leadLabelMap, setLeadLabelMap] = useState<Map<string, string[]>>(new Map());
