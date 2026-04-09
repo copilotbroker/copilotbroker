@@ -71,7 +71,7 @@ export interface OutboundMessagePayload {
 }
 
 export type InboxTab = "novos" | "meus" | "outros";
-export type BrokerInboxTab = "novos" | "atendimento" | "arquivados";
+export type BrokerInboxTab = "novos" | "atendimento" | "arquivados" | "equipe";
 
 interface UseConversationsOptions {
   brokerId?: string;
@@ -85,6 +85,10 @@ interface UseConversationsOptions {
   sourceInstance?: "global" | "personal";
   /** When false, skip fetching entirely */
   enabled?: boolean;
+  /** Team mode: fetch all personal conversations with lead_id (for admin/leader supervision) */
+  teamMode?: boolean;
+  /** In team mode, optionally filter by specific broker */
+  teamBrokerFilter?: string;
 }
 
 const sortMessagesAsc = (items: ConversationMessage[]) => (
