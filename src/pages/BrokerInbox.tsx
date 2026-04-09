@@ -52,7 +52,7 @@ export default function BrokerInbox() {
 
   useEffect(() => {
     const fetchBrokers = async () => {
-      const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true);
+      const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true).order("name");
       if (data) setAllBrokers(data as any);
     };
     const fetchRoletas = async () => {
@@ -63,41 +63,44 @@ export default function BrokerInbox() {
     fetchRoletas();
   }, []);
 
+  // For leaders: fetch team members
+  useEffect(() => {
+    if (!isLeader || !brokerId) return;
+    const fetchTeam = async () => {
+      const { data } = await supabase.from("brokers").select("id, name").eq("lider_id", brokerId).eq("is_active", true).order("name");
+      const members = (data || []) as { id: string; name: string }[];
+      // Include self at the top
+      const self = allBrokers.find(b => b.id === brokerId);
+      if (self) setTeamMembers([self, ...members]);
+      else setTeamMembers(members);
+    };
+    fetchTeam();
+  }, [isLeader, brokerId, allBrokers]);
+
+  // Default selectedBrokerId to own brokerId
+  useEffect(() => {
+    if (brokerId && !selectedBrokerId) setSelectedBrokerId(brokerId);
+  }, [brokerId, selectedBrokerId]);
+
   const isArchived = activeTab === "arquivados";
-  const isEquipe = activeTab === "equipe";
+  const effectiveBrokerId = isLeader ? (selectedBrokerId || brokerId) : brokerId;
 
   const {
     conversations: allPersonalConversations, isLoading, totalUnread, markAsRead, archiveConversation,
     unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
   } = useConversations({
-    brokerId: brokerId || undefined,
+    brokerId: effectiveBrokerId || undefined,
     search,
     statusFilter: "all",
     isArchived,
     sourceInstance: "personal",
-    enabled: !!brokerId && !isEquipe,
-  });
-
-  // Team conversations (equipe tab — leaders only)
-  const {
-    conversations: teamConversations, isLoading: teamLoading,
-    markAsRead: teamMarkAsRead, fetchConversations: fetchTeamConversations,
-  } = useConversations({
-    brokerId: brokerId || undefined,
-    search,
-    statusFilter: "all",
-    isArchived: false,
-    teamMode: true,
-    teamBrokerFilter: teamBrokerFilter || undefined,
-    enabled: !!brokerId && isEquipe && isLeader,
+    enabled: !!effectiveBrokerId,
   });
 
   const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
   const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
 
-  const activeConversations = isEquipe
-    ? teamConversations
-    : activeTab === "novos"
+  const activeConversations = activeTab === "novos"
     ? novosConversations
     : activeTab === "atendimento"
     ? atendimentoConversations
