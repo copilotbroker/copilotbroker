@@ -269,6 +269,7 @@ export function getPeriodDates(period: string): { start: Date; end: Date } {
     case "today": return { start: startOfDay(now), end: now };
     case "7d": return { start: startOfDay(subDays(now, 7)), end: now };
     case "30d": return { start: startOfDay(subDays(now, 30)), end: now };
+    case "all": return { start: new Date(2020, 0, 1), end: now };
     default: return { start: startOfDay(subDays(now, 30)), end: now };
   }
 }

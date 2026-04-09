@@ -17,7 +17,7 @@ import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker
 import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight, type AttemptStat, type TimeoutLossData } from "@/hooks/use-broker-dashboard";
 import { cn } from "@/lib/utils";
 
-type Period = "today" | "7d" | "30d" | "custom";
+type Period = "today" | "7d" | "30d" | "all" | "custom";
 /* ── KPI Card (same style as admin PerformanceDashboard) ── */
 function KpiCard({ icon: Icon, label, value, color = "text-white", alert }: {
   icon: any; label: string; value: string | number; color?: string; alert?: boolean;
@@ -278,7 +278,7 @@ const BrokerDashboard = () => {
 
   const periodDates = useMemo(() => {
     if (period === "custom" && customRange) return customRange;
-    return getPeriodDates(period as "today" | "7d" | "30d");
+    return getPeriodDates(period);
   }, [period, customRange]);
 
   const { funnel, followUp, timeoutLoss, insights, isLoading } = useBrokerDashboard({
@@ -356,6 +356,7 @@ const BrokerDashboard = () => {
                 setCustomRange({ start, end });
                 setPeriod("custom");
               }}
+              showAllPeriod
             />
           </div>
 
