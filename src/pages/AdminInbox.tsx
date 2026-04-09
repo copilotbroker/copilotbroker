@@ -33,6 +33,7 @@ export default function AdminInbox() {
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
   const [isReturningToGlobal, setIsReturningToGlobal] = useState(false);
+  const [teamBrokerFilter, setTeamBrokerFilter] = useState("");
 
   useEffect(() => {
     const init = async () => {
@@ -54,8 +55,9 @@ export default function AdminInbox() {
   }, []);
 
   const isArchived = activeTab === "arquivados";
+  const isEquipe = activeTab === "equipe";
 
-  // Personal conversations only (sourceInstance: "personal")
+  // Personal conversations only (sourceInstance: "personal") — for own tabs
   const {
     conversations: allPersonalConversations, isLoading, totalUnread, markAsRead, archiveConversation,
     unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
@@ -65,13 +67,29 @@ export default function AdminInbox() {
     statusFilter: "all",
     isArchived,
     sourceInstance: "personal",
-    enabled: !!myBrokerId,
+    enabled: !!myBrokerId && !isEquipe,
+  });
+
+  // Team conversations (equipe tab)
+  const {
+    conversations: teamConversations, isLoading: teamLoading, fetchConversations: fetchTeamConversations,
+    markAsRead: teamMarkAsRead,
+  } = useConversations({
+    brokerId: myBrokerId || undefined,
+    search,
+    statusFilter: "all",
+    isArchived: false,
+    teamMode: true,
+    teamBrokerFilter: teamBrokerFilter || undefined,
+    enabled: !!myBrokerId && isEquipe,
   });
 
   const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
   const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
 
-  const activeConversations = activeTab === "novos"
+  const activeConversations = isEquipe
+    ? teamConversations
+    : activeTab === "novos"
     ? novosConversations
     : activeTab === "atendimento"
     ? atendimentoConversations
