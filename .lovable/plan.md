@@ -1,71 +1,43 @@
 
 
-## Separar Origem (Canal) de Campanha no CRM
+## Dar acesso às conversas pessoais dos corretores (com card no Kanban) para Admin e Líder
 
-### Diagnóstico
-O campo `lead_origin` mistura dois conceitos diferentes:
-- **Canal de entrada** (de onde veio o lead): Landing Page, WhatsApp Direto, Indicação, Plantão, Oferta Ativa
-- **Campanha de mídia** (qual campanha trouxe): Meta ADS + dados UTM, Google Ads + dados UTM
+### Problema atual
+O Admin Inbox (`/admin/inbox`) e o Broker Inbox (`/corretor/inbox`) só mostram as conversas pessoais do **próprio** usuário logado. Admins e líderes não conseguem supervisionar as conversas pessoais dos corretores que têm cards no Kanban.
 
-O lead Guilherme veio de uma landing page (`source = 'broker_landing'`, `landing_page = 'landing_page'` na atribuição), mas como não tinha parâmetros UTM, o `lead_origin` ficou NULL → "Não identificada". Na verdade, a **origem** (canal) dele é conhecida: Landing Page do Corretor.
-
-### Solução proposta
-
-Em vez de criar novas colunas no banco, aproveitar os campos que já existem:
-
-**1. Derivar o canal automaticamente a partir de `source` + `lead_attribution`**
-
-O campo `leads.source` já identifica o canal de entrada com precisão:
-- `landing_page`, `broker_landing` → "Landing Page"
-- `whatsapp`, `whatsapp_global` → "WhatsApp"
-- `manual` → "Manual / CRM"
-- Slug de corretor → "Broker Landing"
-
-**2. Separar visualmente no CRM: Canal vs. Campanha**
-
-- **Canal** (badge principal no card): derivado de `source` — sempre preenchido, nunca "Não identificada"
-- **Campanha** (badge secundário): derivado de `lead_origin` + `lead_origin_detail` — só aparece quando há dados UTM
-
-**3. Manter `lead_origin` para campanhas de mídia**
-
-O `lead_origin` continua servindo para registrar a campanha/mídia (Meta ADS, Google Ads, etc.), mas não é mais a "origem" principal exibida no card.
+### Solução
+Adicionar uma nova aba **"Equipe"** no Admin Inbox e no Broker Inbox (para líderes), que lista conversas pessoais de outros corretores que tenham `lead_id` preenchido (card no Kanban).
 
 ### Mudanças
 
-**`src/types/crm.ts`**
-- Adicionar função `getSourceDisplayLabel(source: string): string` que mapeia os valores de `source` para labels legíveis
-- Adicionar função `getSourceType(source: string)` para estilização por tipo de canal
+**1. `src/hooks/use-conversations.ts`**
+- Adicionar suporte a um novo `inboxTab` ou parâmetro para buscar conversas pessoais de **outros** corretores filtradas por `lead_id IS NOT NULL`
+- Quando o modo "equipe" estiver ativo:
+  - Admin: não filtrar por `broker_id` (RLS já garante visibilidade total)
+  - Líder: não filtrar por `broker_id` (RLS já filtra pelo `lider_id`)
+  - Filtrar `source_instance = 'personal'` e `lead_id IS NOT NULL`
+  - Excluir conversas do próprio usuário (para não duplicar com a aba "Atendimento")
 
-**`src/components/crm/KanbanCard.tsx`**
-- Exibir badge de **Canal** (derivado de `lead.source`) como informação principal
-- Exibir badge de **Campanha** (derivado de `lead.lead_origin`) como informação secundária, só quando existir
+**2. `src/pages/AdminInbox.tsx`**
+- Adicionar aba "Equipe" ao lado de "Novos", "Atendimento" e "Arquivados"
+- Quando aba "Equipe" ativa, usar `useConversations` sem filtro de `brokerId`, com `sourceInstance: "personal"` e flag para filtrar apenas conversas com `lead_id`
+- Adicionar filtro de corretor (Select) para refinar por corretor específico
 
-**`src/components/crm/LeadDetailSheet.tsx`**
-- Separar visualmente "Canal de entrada" e "Campanha/Mídia" na ficha do lead
+**3. `src/pages/BrokerInbox.tsx`**
+- Para líderes (`isLeader`): adicionar a mesma aba "Equipe" com a mesma lógica
+- RLS existente já garante que líderes só veem conversas de corretores com `lider_id = get_my_broker_id()`
 
-**`src/components/crm/LeadTimeline.tsx`**
-- Atualizar o card de origem para mostrar Canal + Campanha separados
+**4. `src/hooks/use-conversations.ts` — tipo `BrokerInboxTab`**
+- Expandir: `"novos" | "atendimento" | "arquivados" | "equipe"`
 
-**`src/pages/LeadPage.tsx`**
-- Atualizar a exibição de origem para mostrar o canal derivado do `source`
-
-### Mapeamento de `source` → Canal
-
-```text
-source                → Label
-─────────────────────────────────
-landing_page          → Landing Page
-broker_landing        → Landing Page (Corretor)
-whatsapp              → WhatsApp Pessoal
-whatsapp_global       → WhatsApp Plantão
-manual                → Cadastro Manual
-broker                → Cadastro Corretor
-{slug-corretor}       → Landing Page (Corretor)
-```
+**5. RLS — Sem alteração necessária**
+As policies existentes já cobrem:
+- `Admins podem ver todas as conversas` (SELECT)
+- `Lideres podem ver conversas do time` (SELECT, via `brokers.lider_id`)
+- `conversation_messages` também tem policies para admin e líderes
 
 ### O que NÃO muda
-- Nenhuma alteração no banco de dados
-- O fluxo de captura de leads continua igual
-- Os filtros por origem (campanha) continuam funcionando
-- A `OriginCombobox` e `OriginQuickPicker` continuam editando `lead_origin` (campanha)
+- A aba "Novos" e "Atendimento" continuam mostrando apenas conversas do próprio usuário
+- A aba "Arquivados" continua igual
+- Nenhuma migração SQL necessária
 
