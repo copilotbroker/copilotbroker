@@ -5,15 +5,15 @@ import {
   Users, TrendingUp, AlertTriangle, Clock, BarChart3, Globe,
   Eye, Trophy, Timer, ArrowDownRight, UserCheck, UserPlus, Loader2
 } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
 import { getInactivationReasonLabel, getOriginDisplayLabel } from "@/types/crm";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from "recharts";
 
-type Period = "today" | "7d" | "30d" | "all";
+type Period = "today" | "7d" | "30d" | "all" | "custom";
 
 function getDateFrom(period: Period): string | null {
   if (period === "all") return null;
@@ -36,7 +36,8 @@ const chartTooltipStyle = {
 
 export default function DashboardOverview() {
   const [period, setPeriod] = useState<Period>("30d");
-  const dateFrom = getDateFrom(period);
+  const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
+  const dateFrom = period === "custom" && customRange ? customRange.start.toISOString() : getDateFrom(period as "today" | "7d" | "30d" | "all");
 
   const { data: allBrokersRaw = [] } = useQuery<BrokerRow[]>({
     queryKey: ["dash-brokers"],
@@ -302,14 +303,16 @@ export default function DashboardOverview() {
   return (
     <div className="space-y-6">
       {/* Period selector */}
-      <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-        <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
-          <TabsTrigger value="today" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Hoje</TabsTrigger>
-          <TabsTrigger value="7d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">7 dias</TabsTrigger>
-          <TabsTrigger value="30d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">30 dias</TabsTrigger>
-          <TabsTrigger value="all" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Todo período</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <PeriodFilterWithCustom
+        period={period}
+        onPeriodChange={(v) => setPeriod(v as Period)}
+        customRange={customRange}
+        onCustomRangeApply={(start, end) => {
+          setCustomRange({ start, end });
+          setPeriod("custom");
+        }}
+        showAllPeriod
+      />
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

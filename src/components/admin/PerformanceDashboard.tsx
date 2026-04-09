@@ -7,8 +7,8 @@ import {
   Handshake, Eye, AlertCircle, Target, Zap, ChevronDown, ChevronUp,
   Award, TrendingDown, Activity, PieChart as PieIcon
 } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
 import { getInactivationReasonLabel, getOriginDisplayLabel } from "@/types/crm";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -16,7 +16,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from "recharts";
 
-type Period = "today" | "7d" | "30d" | "all";
+type Period = "today" | "7d" | "30d" | "all" | "custom";
 
 function getDateRange(period: Period): { from: Date | null; to: Date } {
   const now = new Date();
