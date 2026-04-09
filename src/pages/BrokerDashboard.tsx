@@ -228,6 +228,16 @@ const BrokerDashboard = () => {
     periodEnd: end,
   });
 
+  // Redirect logic
+  React.useEffect(() => {
+    if (isRoleLoading) return;
+    if (role === "admin") {
+      navigate("/admin", { replace: true });
+    } else if (role !== "broker") {
+      navigate("/auth", { replace: true });
+    }
+  }, [role, isRoleLoading, navigate]);
+
   const handleViewChange = useCallback(
     (mode: "kanban" | "list") => {
       navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm");
