@@ -34,7 +34,9 @@ export default function BrokerInbox() {
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
+  const [teamBrokerFilter, setTeamBrokerFilter] = useState("");
 
+  const { isLeader } = useUserRole();
   const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
   useEffect(() => {
