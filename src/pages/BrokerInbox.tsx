@@ -10,6 +10,7 @@ import { useConversations, useConversationMessages, Conversation, BrokerInboxTab
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useLogout } from "@/hooks/use-logout";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
+import { useUserRole } from "@/hooks/use-user-role";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Lock, Loader2 } from "lucide-react";
