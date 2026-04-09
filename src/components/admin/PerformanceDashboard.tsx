@@ -442,14 +442,16 @@ export default function PerformanceDashboard() {
       {/* Period selector */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-lg font-bold text-white">Performance Comercial</h2>
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-          <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
-            <TabsTrigger value="today" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Hoje</TabsTrigger>
-            <TabsTrigger value="7d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">7 dias</TabsTrigger>
-            <TabsTrigger value="30d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">30 dias</TabsTrigger>
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Todo período</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <PeriodFilterWithCustom
+          period={period}
+          onPeriodChange={(v) => setPeriod(v as Period)}
+          customRange={customRange}
+          onCustomRangeApply={(start, end) => {
+            setCustomRange({ start, end });
+            setPeriod("custom");
+          }}
+          showAllPeriod
+        />
       </div>
 
       {/* ══════════ 1. CARDS PRINCIPAIS ══════════ */}
