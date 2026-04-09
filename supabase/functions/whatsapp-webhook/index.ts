@@ -1086,21 +1086,21 @@ async function getOrCreateCanonicalConversation(
           phone_normalized: canonicalNormalized,
           ai_mode: primary.ai_mode === "ai_active" ? "ai_active" : "copilot",
           is_archived: false,
-          source_instance: sourceInstance || primary.source_instance || null,
+          source_instance: primary.source_instance || sourceInstance || 'personal',
           ...(shouldUpdateName ? { display_name: senderName, display_name_source: "sender_name" } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq("id", primary.id);
 
       await supabase.from("conversations").delete().in("id", duplicateIds);
-    } else if (primary.phone !== canonicalPhone || primary.phone_normalized !== canonicalNormalized || (!primary.lead_id && leadId) || (sourceInstance && !primary.source_instance) || shouldUpdateName) {
+    } else if (primary.phone !== canonicalPhone || primary.phone_normalized !== canonicalNormalized || (!primary.lead_id && leadId) || (!primary.source_instance && sourceInstance) || shouldUpdateName) {
       await supabase
         .from("conversations")
         .update({
           phone: canonicalPhone,
           phone_normalized: canonicalNormalized,
           lead_id: primary.lead_id || leadId || null,
-          source_instance: sourceInstance || primary.source_instance || null,
+          source_instance: primary.source_instance || sourceInstance || 'personal',
           ...(shouldUpdateName ? { display_name: senderName, display_name_source: "sender_name" } : {}),
           updated_at: new Date().toISOString(),
         })
