@@ -318,25 +318,6 @@ export function ConversationList({
                   </Badge>
                 )}
               </button>
-              {showEquipeTab && (
-                <button
-                  onClick={() => onBrokerTabChange("equipe")}
-                  className={cn(
-                    "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
-                    brokerInboxTab === "equipe"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Users className="h-3 w-3 shrink-0" />
-                  <span className="truncate">Equipe</span>
-                  {brokerEquipeCount > 0 && (
-                    <Badge variant={brokerInboxTab === "equipe" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
-                      {brokerEquipeCount}
-                    </Badge>
-                  )}
-                </button>
-              )}
               <button
                 onClick={() => onBrokerTabChange("arquivados")}
                 className={cn(
@@ -351,15 +332,14 @@ export function ConversationList({
               </button>
             </div>
 
-            {/* Broker filter for equipe tab */}
-            {brokerInboxTab === "equipe" && onTeamBrokerFilterChange && teamBrokerOptions.length > 0 && (
+            {/* Broker filter for atendimento tab (admin/leader) */}
+            {brokerInboxTab === "atendimento" && onBrokerFilterChange && brokerOptions.length > 0 && (
               <select
-                value={teamBrokerFilter || ""}
-                onChange={(e) => onTeamBrokerFilterChange(e.target.value)}
+                value={brokerFilter || ""}
+                onChange={(e) => onBrokerFilterChange(e.target.value)}
                 className="w-full h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
               >
-                <option value="">Todos os corretores</option>
-                {teamBrokerOptions.map((b) => (
+                {brokerOptions.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
