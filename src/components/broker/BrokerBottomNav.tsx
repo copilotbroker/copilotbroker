@@ -107,6 +107,7 @@ export function BrokerBottomNav({
     if (id === "copilot" && activeTab === "copilot") return true;
     if (id === "plantao" && activeTab === "plantao") return true;
     if (id === "agenda" && activeTab === "agenda") return true;
+    if (id === "dashboard" && activeTab === "dashboard") return true;
     return false;
   };
 
