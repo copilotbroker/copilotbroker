@@ -212,7 +212,8 @@ const BrokerDashboard = () => {
   const navigate = useNavigate();
   const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
   const { inboxEnabled, copilotEnabled } = useBrokerFeatures(brokerId);
-  const { data: projects } = useBrokerProjects(brokerId);
+  const brokerProjectsResult = useBrokerProjects(brokerId);
+  const projects = brokerProjectsResult.brokerProjects || [];
   const handleLogout = useLogout();
 
   const [period, setPeriod] = useState("30d");
