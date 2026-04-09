@@ -275,7 +275,6 @@ const BrokerDashboard = () => {
   const [period, setPeriod] = useState<Period>("30d");
   const [projectId, setProjectId] = useState<string | null>(null);
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
-  const [customPickerOpen, setCustomPickerOpen] = useState(false);
 
   const periodDates = useMemo(() => {
     if (period === "custom" && customRange) return customRange;
@@ -349,49 +348,15 @@ const BrokerDashboard = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-1">
-              <Tabs value={period === "custom" ? "" : period} onValueChange={(v) => { setPeriod(v as Period); setCustomPickerOpen(false); }}>
-                <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
-                  <TabsTrigger value="today" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Hoje</TabsTrigger>
-                  <TabsTrigger value="7d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">7 dias</TabsTrigger>
-                  <TabsTrigger value="30d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">30 dias</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <Popover open={customPickerOpen} onOpenChange={setCustomPickerOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    onClick={() => setCustomPickerOpen(true)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-3 h-8 text-xs font-medium transition-colors border",
-                      period === "custom"
-                        ? "bg-[#FFFF00] text-black border-[#FFFF00]"
-                        : "bg-[#1e1e22] text-slate-300 border-[#2a2a2e] hover:bg-[#2a2a2e]"
-                    )}
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    {period === "custom" && customRange
-                      ? `${format(customRange.start, "dd/MM")} - ${format(customRange.end, "dd/MM")}`
-                      : "Personalizado"
-                    }
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  className="w-auto p-4 bg-[#1e1e22] border-[#2a2a2e]"
-                  sideOffset={8}
-                >
-                  <CustomDateRangePicker
-                    initialStart={customRange?.start}
-                    initialEnd={customRange?.end}
-                    onApply={(start, end) => {
-                      setCustomRange({ start, end });
-                      setPeriod("custom");
-                      setCustomPickerOpen(false);
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <PeriodFilterWithCustom
+              period={period}
+              onPeriodChange={(v) => setPeriod(v as Period)}
+              customRange={customRange}
+              onCustomRangeApply={(start, end) => {
+                setCustomRange({ start, end });
+                setPeriod("custom");
+              }}
+            />
           </div>
 
           {isLoading ? (
