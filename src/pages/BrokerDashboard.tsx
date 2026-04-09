@@ -281,9 +281,9 @@ const BrokerDashboard = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos empreendimentos</SelectItem>
-                {(projects || []).map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
+                {projects.map((p) => (
+                  <SelectItem key={p.project.id} value={p.project.id}>
+                    {p.project.name}
                   </SelectItem>
                 ))}
               </SelectContent>
