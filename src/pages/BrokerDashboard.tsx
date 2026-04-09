@@ -26,6 +26,7 @@ type Period = "today" | "7d" | "30d" | "custom";
 /* ── Preset options for the custom picker ── */
 const PERIOD_PRESETS = [
   { label: "Hoje", get: () => ({ start: startOfDay(new Date()), end: new Date() }) },
+  { label: "Máximo", get: () => ({ start: new Date(2020, 0, 1), end: new Date() }) },
   { label: "Ontem", get: () => ({ start: startOfDay(subDays(new Date(), 1)), end: startOfDay(new Date()) }) },
   { label: "Últimos 7 dias", get: () => ({ start: startOfDay(subDays(new Date(), 7)), end: new Date() }) },
   { label: "Últimos 14 dias", get: () => ({ start: startOfDay(subDays(new Date(), 14)), end: new Date() }) },
