@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 import {
   RefreshCw, TrendingDown, TrendingUp, AlertTriangle, Lightbulb, Info,
   MessageSquare, Zap, Users, UserCheck, Eye, CalendarCheck, FileText,
-  Handshake, BarChart3, Activity, ArrowDown, Loader2,
+  Handshake, BarChart3, Activity, ArrowDown, Loader2, Hash,
 } from "lucide-react";
 import { useLogout } from "@/hooks/use-logout";
 import { useUserRole } from "@/hooks/use-user-role";
@@ -14,7 +14,7 @@ import { BrokerLayout } from "@/components/broker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight } from "@/hooks/use-broker-dashboard";
+import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight, type AttemptStat } from "@/hooks/use-broker-dashboard";
 import { cn } from "@/lib/utils";
 
 type Period = "today" | "7d" | "30d";
@@ -154,6 +154,8 @@ function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
 
 /* ── Follow-up ── */
 function FollowUpCard({ stats }: { stats: FollowUpStats }) {
+  const maxSent = Math.max(...stats.byAttempt.map((a) => a.sent), 1);
+
   return (
     <Card className="bg-[#1e1e22] border-[#2a2a2e]">
       <CardHeader className="pb-2">
@@ -161,7 +163,8 @@ function FollowUpCard({ stats }: { stats: FollowUpStats }) {
           <MessageSquare className="w-4 h-4 text-emerald-400" /> Follow-up Automático
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {/* Summary row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-[#16161a] rounded-lg p-2.5 border border-[#2a2a2e]">
             <p className="text-[10px] text-slate-400 truncate">Toques enviados</p>
@@ -181,9 +184,44 @@ function FollowUpCard({ stats }: { stats: FollowUpStats }) {
             </p>
           </div>
           <div className="bg-[#16161a] rounded-lg p-2.5 border border-[#2a2a2e]">
-            <p className="text-[10px] text-slate-400 truncate">Respostas tardias (3+)</p>
-            <p className="text-sm font-bold text-white">{stats.lateResponses}</p>
+            <p className="text-[10px] text-slate-400 truncate">Média de toques p/ resposta</p>
+            <p className="text-sm font-bold text-white">{stats.avgTouchesToReply}</p>
           </div>
+        </div>
+
+        {/* Per-attempt breakdown */}
+        <div className="space-y-1.5">
+          <p className="text-[11px] text-slate-400 font-medium">Respostas por toque</p>
+          {stats.byAttempt.map((a) => (
+            <div key={a.attempt} className="flex items-center gap-2">
+              <span className="text-[10px] text-slate-500 w-14 shrink-0">Toque {a.attempt}</span>
+              <div className="flex-1 h-5 bg-[#16161a] rounded-full border border-[#2a2a2e] overflow-hidden relative">
+                {/* Sent bar */}
+                <div
+                  className="absolute inset-y-0 left-0 bg-[#2a2a2e] rounded-full"
+                  style={{ width: `${(a.sent / maxSent) * 100}%` }}
+                />
+                {/* Replied bar */}
+                {a.replied > 0 && (
+                  <div
+                    className="absolute inset-y-0 left-0 bg-emerald-500/60 rounded-full"
+                    style={{ width: `${(a.replied / maxSent) * 100}%` }}
+                  />
+                )}
+                <div className="absolute inset-0 flex items-center justify-between px-2">
+                  <span className="text-[9px] text-slate-300 font-medium z-10">
+                    {a.sent} enviados
+                  </span>
+                  <span className={cn(
+                    "text-[9px] font-bold z-10",
+                    a.replied > 0 ? "text-emerald-400" : "text-slate-600"
+                  )}>
+                    {a.replied} resp. ({a.rate}%)
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
