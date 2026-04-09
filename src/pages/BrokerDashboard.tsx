@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
   RefreshCw, TrendingDown, TrendingUp, AlertTriangle, Lightbulb, Info,
-  MessageSquare, Zap, Users, UserCheck, Eye, CalendarCheck, FileText,
-  Handshake, BarChart3, Activity, ArrowDown, Loader2, Hash,
+  MessageSquare, Zap, UserCheck, Eye, CalendarCheck, FileText,
+  Handshake, BarChart3, Loader2, UserX, ShieldAlert,
 } from "lucide-react";
 import { useLogout } from "@/hooks/use-logout";
 import { useUserRole } from "@/hooks/use-user-role";
@@ -14,7 +14,7 @@ import { BrokerLayout } from "@/components/broker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight, type AttemptStat } from "@/hooks/use-broker-dashboard";
+import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight, type AttemptStat, type TimeoutLossData } from "@/hooks/use-broker-dashboard";
 import { cn } from "@/lib/utils";
 
 type Period = "today" | "7d" | "30d";
@@ -41,8 +41,7 @@ function KpiCard({ icon: Icon, label, value, color = "text-white", alert }: {
 /* ── Wave Funnel (SVG) ── */
 function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
   const steps = [
-    { label: "Visitantes", value: funnel.visitors },
-    { label: "Cadastros", value: funnel.leads },
+    { label: "Atendimento", value: funnel.leads },
     { label: "Responderam", value: funnel.responded },
     { label: "Agendaram", value: funnel.scheduled },
     { label: "Visitaram", value: funnel.visited },
@@ -279,7 +278,7 @@ const BrokerDashboard = () => {
 
   const periodDates = useMemo(() => getPeriodDates(period), [period]);
 
-  const { funnel, followUp, insights, isLoading } = useBrokerDashboard({
+  const { funnel, followUp, timeoutLoss, insights, isLoading } = useBrokerDashboard({
     brokerId: brokerId || "",
     projectId,
     periodStart: periodDates.start,
@@ -313,7 +312,7 @@ const BrokerDashboard = () => {
 
   if (role !== "broker") return null;
 
-  const fmtRate = (num: number, den: number) => den > 0 ? `${((num / den) * 100).toFixed(1)}%` : "—";
+  // unused removed
 
   return (
     <>
@@ -363,14 +362,38 @@ const BrokerDashboard = () => {
             <>
               {/* KPI Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                <KpiCard icon={Users} label="Visitantes LP" value={funnel.visitors} />
-                <KpiCard icon={UserCheck} label="Cadastros" value={funnel.leads} color="text-cyan-400" />
-                <KpiCard icon={Activity} label="Conversão LP" value={fmtRate(funnel.leads, funnel.visitors)} color="text-[#FFFF00]" />
+                <KpiCard icon={UserCheck} label="Atendimento" value={funnel.leads} color="text-cyan-400" />
                 <KpiCard icon={MessageSquare} label="Responderam" value={funnel.responded} color="text-emerald-400" />
                 <KpiCard icon={CalendarCheck} label="Agendamentos" value={funnel.scheduled} color="text-orange-400" />
                 <KpiCard icon={Eye} label="Visitas" value={funnel.visited} color="text-cyan-400" />
                 <KpiCard icon={FileText} label="Propostas" value={funnel.proposals} color="text-violet-400" />
                 <KpiCard icon={Handshake} label="Vendas" value={funnel.sales} color="text-emerald-400" />
+                {timeoutLoss && timeoutLoss.lostByTimeout > 0 && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 sm:p-4">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 bg-red-500/15">
+                        <UserX className="w-4 h-4 text-red-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] text-red-300/70 truncate leading-tight">Perdidos por Timeout</p>
+                        <p className="text-base sm:text-lg font-bold text-red-400">{timeoutLoss.lostByTimeout}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {timeoutLoss && timeoutLoss.lostThatSold > 0 && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 sm:p-4">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 bg-red-500/15">
+                        <ShieldAlert className="w-4 h-4 text-red-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] text-red-300/70 truncate leading-tight">Venderam c/ outro</p>
+                        <p className="text-base sm:text-lg font-bold text-red-400">{timeoutLoss.lostThatSold}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Funnel */}
