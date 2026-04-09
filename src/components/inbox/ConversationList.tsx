@@ -41,12 +41,18 @@ interface ConversationListProps {
   showOthersTab?: boolean;
   novosCount?: number;
   emptyMessage?: string;
-  /** Broker inbox mode: 3 tabs (Novos | Em atendimento | Arquivados) */
+  /** Broker inbox mode: tabs */
   brokerInboxTab?: BrokerInboxTab;
   onBrokerTabChange?: (tab: BrokerInboxTab) => void;
   brokerNovosCount?: number;
   brokerAtendimentoCount?: number;
+  brokerEquipeCount?: number;
   brokerId?: string | null;
+  showEquipeTab?: boolean;
+  /** Broker filter for equipe tab */
+  teamBrokerFilter?: string;
+  onTeamBrokerFilterChange?: (brokerId: string) => void;
+  teamBrokerOptions?: { id: string; name: string }[];
 }
 
 interface BrokerLabel {
@@ -82,7 +88,12 @@ export function ConversationList({
   onBrokerTabChange,
   brokerNovosCount = 0,
   brokerAtendimentoCount = 0,
+  brokerEquipeCount = 0,
   brokerId,
+  showEquipeTab = false,
+  teamBrokerFilter,
+  onTeamBrokerFilterChange,
+  teamBrokerOptions = [],
 }: ConversationListProps) {
   const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
   const [leadLabelMap, setLeadLabelMap] = useState<Map<string, string[]>>(new Map());
@@ -270,55 +281,90 @@ export function ConversationList({
           </div>
         )}
 
-        {/* Broker Inbox Tabs (Atendimento | Novos | Arquivados) */}
+        {/* Broker Inbox Tabs (Atendimento | Novos | Equipe | Arquivados) */}
         {onBrokerTabChange && (
-          <div className="flex rounded-lg border border-border bg-muted/40 p-0.5 overflow-hidden">
-            <button
-              onClick={() => onBrokerTabChange("atendimento")}
-              className={cn(
-                "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
-                brokerInboxTab === "atendimento"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+          <div className="space-y-1.5">
+            <div className="flex rounded-lg border border-border bg-muted/40 p-0.5 overflow-hidden">
+              <button
+                onClick={() => onBrokerTabChange("atendimento")}
+                className={cn(
+                  "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
+                  brokerInboxTab === "atendimento"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Headphones className="h-3 w-3 shrink-0" />
+                <span className="truncate">Atendimento</span>
+                {brokerAtendimentoCount > 0 && (
+                  <Badge variant={brokerInboxTab === "atendimento" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
+                    {brokerAtendimentoCount}
+                  </Badge>
+                )}
+              </button>
+              <button
+                onClick={() => onBrokerTabChange("novos")}
+                className={cn(
+                  "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
+                  brokerInboxTab === "novos"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <UserPlus className="h-3 w-3 shrink-0" />
+                <span className="truncate">Novos</span>
+                {brokerNovosCount > 0 && (
+                  <Badge variant={brokerInboxTab === "novos" ? "secondary" : "destructive"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
+                    {brokerNovosCount}
+                  </Badge>
+                )}
+              </button>
+              {showEquipeTab && (
+                <button
+                  onClick={() => onBrokerTabChange("equipe")}
+                  className={cn(
+                    "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
+                    brokerInboxTab === "equipe"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Users className="h-3 w-3 shrink-0" />
+                  <span className="truncate">Equipe</span>
+                  {brokerEquipeCount > 0 && (
+                    <Badge variant={brokerInboxTab === "equipe" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
+                      {brokerEquipeCount}
+                    </Badge>
+                  )}
+                </button>
               )}
-            >
-              <Headphones className="h-3 w-3 shrink-0" />
-              <span className="truncate">Atendimento</span>
-              {brokerAtendimentoCount > 0 && (
-                <Badge variant={brokerInboxTab === "atendimento" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
-                  {brokerAtendimentoCount}
-                </Badge>
-              )}
-            </button>
-            <button
-              onClick={() => onBrokerTabChange("novos")}
-              className={cn(
-                "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
-                brokerInboxTab === "novos"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <UserPlus className="h-3 w-3 shrink-0" />
-              <span className="truncate">Novos</span>
-              {brokerNovosCount > 0 && (
-                <Badge variant={brokerInboxTab === "novos" ? "secondary" : "destructive"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
-                  {brokerNovosCount}
-                </Badge>
-              )}
-            </button>
-            <button
-              onClick={() => onBrokerTabChange("arquivados")}
-              className={cn(
-                "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
-                brokerInboxTab === "arquivados"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Archive className="h-3 w-3 shrink-0" />
-              <span className="truncate">Arquivados</span>
-            </button>
+              <button
+                onClick={() => onBrokerTabChange("arquivados")}
+                className={cn(
+                  "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
+                  brokerInboxTab === "arquivados"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Archive className="h-3 w-3 shrink-0" />
+                <span className="truncate">Arquivados</span>
+              </button>
+            </div>
+
+            {/* Broker filter for equipe tab */}
+            {brokerInboxTab === "equipe" && onTeamBrokerFilterChange && teamBrokerOptions.length > 0 && (
+              <select
+                value={teamBrokerFilter || ""}
+                onChange={(e) => onTeamBrokerFilterChange(e.target.value)}
+                className="w-full h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+              >
+                <option value="">Todos os corretores</option>
+                {teamBrokerOptions.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            )}
           </div>
         )}
 
@@ -510,7 +556,7 @@ export function ConversationList({
                               {conv.unread_count}
                             </Badge>
                           )}
-                          {/* Broker attribution badge for global conversations */}
+                          {/* Broker attribution badge for global or equipe conversations */}
                           {(conv as any).source_instance === "global" && (
                             (conv as any).attendance_started && (conv as any).broker?.name ? (
                               <Badge className="h-4 px-1.5 text-[10px] bg-emerald-600/20 text-emerald-400 border-emerald-500/30 border">
@@ -521,6 +567,12 @@ export function ConversationList({
                                 <Clock className="mr-1 h-3 w-3" /> Aguardando
                               </Badge>
                             ) : null
+                          )}
+                          {/* Show broker name on equipe tab */}
+                          {brokerInboxTab === "equipe" && (conv as any).broker?.name && (
+                            <Badge className="h-4 px-1.5 text-[10px] bg-purple-600/20 text-purple-400 border-purple-500/30 border">
+                              <User className="mr-1 h-3 w-3" /> {(conv as any).broker.name}
+                            </Badge>
                           )}
                           {conv.lead_id ? (
                             <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">

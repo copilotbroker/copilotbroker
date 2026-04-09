@@ -10,6 +10,7 @@ import { useConversations, useConversationMessages, Conversation, BrokerInboxTab
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useLogout } from "@/hooks/use-logout";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
+import { useUserRole } from "@/hooks/use-user-role";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Lock, Loader2 } from "lucide-react";
@@ -33,7 +34,9 @@ export default function BrokerInbox() {
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
+  const [teamBrokerFilter, setTeamBrokerFilter] = useState("");
 
+  const { isLeader } = useUserRole();
   const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
   useEffect(() => {
@@ -60,6 +63,7 @@ export default function BrokerInbox() {
   }, []);
 
   const isArchived = activeTab === "arquivados";
+  const isEquipe = activeTab === "equipe";
 
   const {
     conversations: allPersonalConversations, isLoading, totalUnread, markAsRead, archiveConversation,
@@ -70,13 +74,29 @@ export default function BrokerInbox() {
     statusFilter: "all",
     isArchived,
     sourceInstance: "personal",
-    enabled: !!brokerId,
+    enabled: !!brokerId && !isEquipe,
+  });
+
+  // Team conversations (equipe tab — leaders only)
+  const {
+    conversations: teamConversations, isLoading: teamLoading,
+    markAsRead: teamMarkAsRead, fetchConversations: fetchTeamConversations,
+  } = useConversations({
+    brokerId: brokerId || undefined,
+    search,
+    statusFilter: "all",
+    isArchived: false,
+    teamMode: true,
+    teamBrokerFilter: teamBrokerFilter || undefined,
+    enabled: !!brokerId && isEquipe && isLeader,
   });
 
   const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
   const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
 
-  const activeConversations = activeTab === "novos"
+  const activeConversations = isEquipe
+    ? teamConversations
+    : activeTab === "novos"
     ? novosConversations
     : activeTab === "atendimento"
     ? atendimentoConversations
@@ -109,13 +129,14 @@ export default function BrokerInbox() {
 
   useEffect(() => {
     if (!selectedConversation) return;
-    const refreshed = allPersonalConversations.find((c) => c.id === selectedConversation.id);
+    const allConvs = isEquipe ? teamConversations : allPersonalConversations;
+    const refreshed = allConvs.find((c) => c.id === selectedConversation.id);
     if (!refreshed) return;
     setSelectedConversation((current) => {
       if (!current) return current;
       return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
     });
-  }, [allPersonalConversations, selectedConversation?.id]);
+  }, [allPersonalConversations, teamConversations, isEquipe, selectedConversation?.id]);
 
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelectedConversation(conv);
@@ -313,15 +334,20 @@ export default function BrokerInbox() {
               onSearchChange={setSearch}
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
-              isLoading={isLoading}
+              isLoading={isEquipe ? teamLoading : isLoading}
               totalUnread={totalUnread}
-              onMarkAsRead={(id) => markAsRead(id)}
+              onMarkAsRead={(id) => isEquipe ? teamMarkAsRead(id) : markAsRead(id)}
               onArchive={(id) => archiveConversation(id)}
               brokerInboxTab={activeTab}
               onBrokerTabChange={handleTabChange}
               brokerNovosCount={novosConversations.length}
               brokerAtendimentoCount={atendimentoConversations.length}
+              brokerEquipeCount={teamConversations.length}
               brokerId={brokerId}
+              showEquipeTab={isLeader}
+              teamBrokerFilter={teamBrokerFilter}
+              onTeamBrokerFilterChange={setTeamBrokerFilter}
+              teamBrokerOptions={allBrokers}
             />
           </div>
         )}
