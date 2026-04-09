@@ -249,15 +249,19 @@ const BrokerDashboard = () => {
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
 
   const isCustom = period === "custom";
-  const { start, end } = isCustom && customStart && customEnd
-    ? { start: customStart, end: customEnd }
-    : getPeriodDates(period);
+  const periodDates = useMemo(() => {
+    if (isCustom && customStart && customEnd) {
+      return { start: customStart, end: customEnd };
+    }
+    return getPeriodDates(period);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, customStart?.getTime(), customEnd?.getTime()]);
 
   const { funnel, followUp, insights, isLoading } = useBrokerDashboard({
     brokerId: brokerId || "",
     projectId,
-    periodStart: start,
-    periodEnd: end,
+    periodStart: periodDates.start,
+    periodEnd: periodDates.end,
   });
 
   // Redirect
