@@ -33,7 +33,7 @@ export default function AdminInbox() {
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
   const [isReturningToGlobal, setIsReturningToGlobal] = useState(false);
-  const [teamBrokerFilter, setTeamBrokerFilter] = useState("");
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -48,6 +48,7 @@ export default function AdminInbox() {
 
       const brokerIdFound = (myBrokerRes?.data as any)?.id || null;
       setMyBrokerId(brokerIdFound);
+      setSelectedBrokerId(brokerIdFound);
       if (brokersRes.data) setAllBrokers(brokersRes.data as any);
       if (roletasRes.data) setActiveRoletas(roletasRes.data as any);
     };
@@ -55,41 +56,23 @@ export default function AdminInbox() {
   }, []);
 
   const isArchived = activeTab === "arquivados";
-  const isEquipe = activeTab === "equipe";
 
-  // Personal conversations only (sourceInstance: "personal") — for own tabs
   const {
     conversations: allPersonalConversations, isLoading, totalUnread, markAsRead, archiveConversation,
     unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
   } = useConversations({
-    brokerId: myBrokerId || undefined,
+    brokerId: selectedBrokerId || undefined,
     search,
     statusFilter: "all",
     isArchived,
     sourceInstance: "personal",
-    enabled: !!myBrokerId && !isEquipe,
-  });
-
-  // Team conversations (equipe tab)
-  const {
-    conversations: teamConversations, isLoading: teamLoading, fetchConversations: fetchTeamConversations,
-    markAsRead: teamMarkAsRead,
-  } = useConversations({
-    brokerId: myBrokerId || undefined,
-    search,
-    statusFilter: "all",
-    isArchived: false,
-    teamMode: true,
-    teamBrokerFilter: teamBrokerFilter || undefined,
-    enabled: !!myBrokerId && isEquipe,
+    enabled: !!selectedBrokerId,
   });
 
   const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
   const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
 
-  const activeConversations = isEquipe
-    ? teamConversations
-    : activeTab === "novos"
+  const activeConversations = activeTab === "novos"
     ? novosConversations
     : activeTab === "atendimento"
     ? atendimentoConversations
@@ -122,14 +105,13 @@ export default function AdminInbox() {
 
   useEffect(() => {
     if (!selectedConversation) return;
-    const allConvs = isEquipe ? teamConversations : allPersonalConversations;
-    const refreshed = allConvs.find((c) => c.id === selectedConversation.id);
+    const refreshed = allPersonalConversations.find((c) => c.id === selectedConversation.id);
     if (!refreshed) return;
     setSelectedConversation((current) => {
       if (!current) return current;
       return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
     });
-  }, [allPersonalConversations, teamConversations, isEquipe, selectedConversation?.id]);
+  }, [allPersonalConversations, selectedConversation?.id]);
 
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelectedConversation(conv);
@@ -150,6 +132,11 @@ export default function AdminInbox() {
     setSelectedConversation(null);
     setShowLeadPanel(false);
   }, []);
+
+  const handleBrokerFilterChange = useCallback((brokerId: string) => {
+    setSelectedBrokerId(brokerId || myBrokerId);
+    setSelectedConversation(null);
+  }, [myBrokerId]);
 
   const handleStartAttendance = useCallback(async () => {
     if (!selectedConversation || !myBrokerId) return;
@@ -295,20 +282,19 @@ export default function AdminInbox() {
                 onSearchChange={setSearch}
                 statusFilter={statusFilter}
                 onStatusFilterChange={setStatusFilter}
-                isLoading={isEquipe ? teamLoading : isLoading}
+                isLoading={isLoading}
                 totalUnread={totalUnread}
-                onMarkAsRead={(id) => isEquipe ? teamMarkAsRead(id) : markAsRead(id)}
+                onMarkAsRead={(id) => markAsRead(id)}
                 onArchive={(id) => archiveConversation(id)}
                 brokerInboxTab={activeTab}
                 onBrokerTabChange={handleTabChange}
                 brokerNovosCount={novosConversations.length}
                 brokerAtendimentoCount={atendimentoConversations.length}
-                brokerEquipeCount={teamConversations.length}
-                brokerId={myBrokerId}
-                showEquipeTab={true}
-                teamBrokerFilter={teamBrokerFilter}
-                onTeamBrokerFilterChange={setTeamBrokerFilter}
-                teamBrokerOptions={allBrokers}
+                brokerId={selectedBrokerId}
+                brokerFilter={selectedBrokerId || ""}
+                onBrokerFilterChange={handleBrokerFilterChange}
+                brokerOptions={allBrokers}
+                myBrokerId={myBrokerId}
               />
             </div>
           )}
