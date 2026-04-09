@@ -108,6 +108,14 @@ function FunnelVisualization({ funnel }: { funnel: FunnelData }) {
             </defs>
             <path d={shapePath} fill="url(#funnelGrad)" />
 
+            {/* Vertical divider lines between stages */}
+            {steps.slice(1).map((_, i) => {
+              const x = colW * (i + 1);
+              return (
+                <line key={`div-${i}`} x1={x} y1={0} x2={x} y2={H} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+              );
+            })}
+
             {/* Rate labels inside the wave */}
             {steps.map((step, i) => {
               if (i === 0) return null;
