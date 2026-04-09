@@ -1053,12 +1053,19 @@ async function getOrCreateCanonicalConversation(
   const canonicalNormalized = getCanonicalPhoneNormalized(phone);
   const phoneVariants = getPhoneVariants(phone);
 
-  const { data: existing } = await supabase
+  let query = supabase
     .from("conversations")
     .select("id, lead_id, ai_mode, created_at, phone, phone_normalized, source_instance, display_name, display_name_source")
     .eq("broker_id", brokerId)
-    .in("phone_normalized", phoneVariants.map((value) => value.replace(/\D/g, "")))
-    .order("created_at", { ascending: true });
+    .in("phone_normalized", phoneVariants.map((value) => value.replace(/\D/g, "")));
+
+  // When sourceInstance is specified, only match conversations of that same instance
+  // This prevents global messages from contaminating personal conversations and vice-versa
+  if (sourceInstance) {
+    query = query.eq("source_instance", sourceInstance);
+  }
+
+  const { data: existing } = await query.order("created_at", { ascending: true });
 
   if (existing && existing.length > 0) {
     const primary = existing[0] as { id: string; lead_id: string | null; ai_mode: string; phone: string; phone_normalized: string; source_instance: string | null; display_name: string | null; display_name_source: string | null };
