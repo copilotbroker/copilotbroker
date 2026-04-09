@@ -46,13 +46,13 @@ interface ConversationListProps {
   onBrokerTabChange?: (tab: BrokerInboxTab) => void;
   brokerNovosCount?: number;
   brokerAtendimentoCount?: number;
-  brokerEquipeCount?: number;
   brokerId?: string | null;
-  showEquipeTab?: boolean;
-  /** Broker filter for equipe tab */
-  teamBrokerFilter?: string;
-  onTeamBrokerFilterChange?: (brokerId: string) => void;
-  teamBrokerOptions?: { id: string; name: string }[];
+  /** Broker filter for atendimento tab (admin/leader) */
+  brokerFilter?: string;
+  onBrokerFilterChange?: (brokerId: string) => void;
+  brokerOptions?: { id: string; name: string }[];
+  /** The logged-in user's own broker ID, to show badge when viewing others */
+  myBrokerId?: string | null;
 }
 
 interface BrokerLabel {
@@ -88,12 +88,11 @@ export function ConversationList({
   onBrokerTabChange,
   brokerNovosCount = 0,
   brokerAtendimentoCount = 0,
-  brokerEquipeCount = 0,
   brokerId,
-  showEquipeTab = false,
-  teamBrokerFilter,
-  onTeamBrokerFilterChange,
-  teamBrokerOptions = [],
+  brokerFilter,
+  onBrokerFilterChange,
+  brokerOptions = [],
+  myBrokerId,
 }: ConversationListProps) {
   const [cadenciaLeadIds, setCadenciaLeadIds] = useState<Set<string>>(new Set());
   const [leadLabelMap, setLeadLabelMap] = useState<Map<string, string[]>>(new Map());
@@ -319,25 +318,6 @@ export function ConversationList({
                   </Badge>
                 )}
               </button>
-              {showEquipeTab && (
-                <button
-                  onClick={() => onBrokerTabChange("equipe")}
-                  className={cn(
-                    "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
-                    brokerInboxTab === "equipe"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Users className="h-3 w-3 shrink-0" />
-                  <span className="truncate">Equipe</span>
-                  {brokerEquipeCount > 0 && (
-                    <Badge variant={brokerInboxTab === "equipe" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
-                      {brokerEquipeCount}
-                    </Badge>
-                  )}
-                </button>
-              )}
               <button
                 onClick={() => onBrokerTabChange("arquivados")}
                 className={cn(
@@ -352,15 +332,14 @@ export function ConversationList({
               </button>
             </div>
 
-            {/* Broker filter for equipe tab */}
-            {brokerInboxTab === "equipe" && onTeamBrokerFilterChange && teamBrokerOptions.length > 0 && (
+            {/* Broker filter for atendimento tab (admin/leader) */}
+            {brokerInboxTab === "atendimento" && onBrokerFilterChange && brokerOptions.length > 0 && (
               <select
-                value={teamBrokerFilter || ""}
-                onChange={(e) => onTeamBrokerFilterChange(e.target.value)}
+                value={brokerFilter || ""}
+                onChange={(e) => onBrokerFilterChange(e.target.value)}
                 className="w-full h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
               >
-                <option value="">Todos os corretores</option>
-                {teamBrokerOptions.map((b) => (
+                {brokerOptions.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
@@ -556,7 +535,7 @@ export function ConversationList({
                               {conv.unread_count}
                             </Badge>
                           )}
-                          {/* Broker attribution badge for global or equipe conversations */}
+                          {/* Broker attribution badge for global or supervision conversations */}
                           {(conv as any).source_instance === "global" && (
                             (conv as any).attendance_started && (conv as any).broker?.name ? (
                               <Badge className="h-4 px-1.5 text-[10px] bg-emerald-600/20 text-emerald-400 border-emerald-500/30 border">
@@ -568,8 +547,8 @@ export function ConversationList({
                               </Badge>
                             ) : null
                           )}
-                          {/* Show broker name on equipe tab */}
-                          {brokerInboxTab === "equipe" && (conv as any).broker?.name && (
+                          {/* Show broker name when viewing another broker's conversations */}
+                          {myBrokerId && brokerFilter && brokerFilter !== myBrokerId && (conv as any).broker?.name && (
                             <Badge className="h-4 px-1.5 text-[10px] bg-purple-600/20 text-purple-400 border-purple-500/30 border">
                               <User className="mr-1 h-3 w-3" /> {(conv as any).broker.name}
                             </Badge>

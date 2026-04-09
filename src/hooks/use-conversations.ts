@@ -71,7 +71,7 @@ export interface OutboundMessagePayload {
 }
 
 export type InboxTab = "novos" | "meus" | "outros";
-export type BrokerInboxTab = "novos" | "atendimento" | "arquivados" | "equipe";
+export type BrokerInboxTab = "novos" | "atendimento" | "arquivados";
 
 interface UseConversationsOptions {
   brokerId?: string;
@@ -85,10 +85,6 @@ interface UseConversationsOptions {
   sourceInstance?: "global" | "personal";
   /** When false, skip fetching entirely */
   enabled?: boolean;
-  /** Team mode: fetch all personal conversations with lead_id (for admin/leader supervision) */
-  teamMode?: boolean;
-  /** In team mode, optionally filter by specific broker */
-  teamBrokerFilter?: string;
 }
 
 const sortMessagesAsc = (items: ConversationMessage[]) => (
@@ -197,19 +193,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
         .eq("is_archived", options.isArchived ?? false)
         .order("last_message_at", { ascending: false });
 
-      if (options.teamMode) {
-        // Team supervision mode: personal conversations with lead_id, excluding own
-        query = query
-          .or("source_instance.is.null,source_instance.eq.personal")
-          .not("lead_id", "is", null);
-        if (options.brokerId) {
-          query = query.neq("broker_id", options.brokerId);
-        }
-        if (options.teamBrokerFilter) {
-          query = query.eq("broker_id", options.teamBrokerFilter);
-        }
-        // RLS handles admin (all) vs leader (team only)
-      } else if (options.inboxTab === "novos") {
+      if (options.inboxTab === "novos") {
         // Global conversations pending attendance
         query = query.eq("source_instance", "global").eq("attendance_started", false);
         // Admins see ALL pending global conversations; brokers see only their assigned or disputa
@@ -403,7 +387,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
         setIsLoading(false);
       }
     }
-  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance, options.enabled, options.teamMode, options.teamBrokerFilter]);
+  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance, options.enabled]);
 
   useEffect(() => {
     fetchConversations();

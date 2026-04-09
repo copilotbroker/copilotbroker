@@ -34,7 +34,8 @@ export default function BrokerInbox() {
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
-  const [teamBrokerFilter, setTeamBrokerFilter] = useState("");
+  const [teamMembers, setTeamMembers] = useState<{ id: string; name: string }[]>([]);
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
 
   const { isLeader } = useUserRole();
   const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
@@ -51,7 +52,7 @@ export default function BrokerInbox() {
 
   useEffect(() => {
     const fetchBrokers = async () => {
-      const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true);
+      const { data } = await supabase.from("brokers").select("id, name").eq("is_active", true).order("name");
       if (data) setAllBrokers(data as any);
     };
     const fetchRoletas = async () => {
@@ -62,41 +63,44 @@ export default function BrokerInbox() {
     fetchRoletas();
   }, []);
 
+  // For leaders: fetch team members
+  useEffect(() => {
+    if (!isLeader || !brokerId) return;
+    const fetchTeam = async () => {
+      const { data } = await supabase.from("brokers").select("id, name").eq("lider_id", brokerId).eq("is_active", true).order("name");
+      const members = (data || []) as { id: string; name: string }[];
+      // Include self at the top
+      const self = allBrokers.find(b => b.id === brokerId);
+      if (self) setTeamMembers([self, ...members]);
+      else setTeamMembers(members);
+    };
+    fetchTeam();
+  }, [isLeader, brokerId, allBrokers]);
+
+  // Default selectedBrokerId to own brokerId
+  useEffect(() => {
+    if (brokerId && !selectedBrokerId) setSelectedBrokerId(brokerId);
+  }, [brokerId, selectedBrokerId]);
+
   const isArchived = activeTab === "arquivados";
-  const isEquipe = activeTab === "equipe";
+  const effectiveBrokerId = isLeader ? (selectedBrokerId || brokerId) : brokerId;
 
   const {
     conversations: allPersonalConversations, isLoading, totalUnread, markAsRead, archiveConversation,
     unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
   } = useConversations({
-    brokerId: brokerId || undefined,
+    brokerId: effectiveBrokerId || undefined,
     search,
     statusFilter: "all",
     isArchived,
     sourceInstance: "personal",
-    enabled: !!brokerId && !isEquipe,
-  });
-
-  // Team conversations (equipe tab — leaders only)
-  const {
-    conversations: teamConversations, isLoading: teamLoading,
-    markAsRead: teamMarkAsRead, fetchConversations: fetchTeamConversations,
-  } = useConversations({
-    brokerId: brokerId || undefined,
-    search,
-    statusFilter: "all",
-    isArchived: false,
-    teamMode: true,
-    teamBrokerFilter: teamBrokerFilter || undefined,
-    enabled: !!brokerId && isEquipe && isLeader,
+    enabled: !!effectiveBrokerId,
   });
 
   const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
   const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
 
-  const activeConversations = isEquipe
-    ? teamConversations
-    : activeTab === "novos"
+  const activeConversations = activeTab === "novos"
     ? novosConversations
     : activeTab === "atendimento"
     ? atendimentoConversations
@@ -129,14 +133,13 @@ export default function BrokerInbox() {
 
   useEffect(() => {
     if (!selectedConversation) return;
-    const allConvs = isEquipe ? teamConversations : allPersonalConversations;
-    const refreshed = allConvs.find((c) => c.id === selectedConversation.id);
+    const refreshed = allPersonalConversations.find((c) => c.id === selectedConversation.id);
     if (!refreshed) return;
     setSelectedConversation((current) => {
       if (!current) return current;
       return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
     });
-  }, [allPersonalConversations, teamConversations, isEquipe, selectedConversation?.id]);
+  }, [allPersonalConversations, selectedConversation?.id]);
 
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelectedConversation(conv);
@@ -334,20 +337,19 @@ export default function BrokerInbox() {
               onSearchChange={setSearch}
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
-              isLoading={isEquipe ? teamLoading : isLoading}
+              isLoading={isLoading}
               totalUnread={totalUnread}
-              onMarkAsRead={(id) => isEquipe ? teamMarkAsRead(id) : markAsRead(id)}
+              onMarkAsRead={(id) => markAsRead(id)}
               onArchive={(id) => archiveConversation(id)}
               brokerInboxTab={activeTab}
               onBrokerTabChange={handleTabChange}
               brokerNovosCount={novosConversations.length}
               brokerAtendimentoCount={atendimentoConversations.length}
-              brokerEquipeCount={teamConversations.length}
-              brokerId={brokerId}
-              showEquipeTab={isLeader}
-              teamBrokerFilter={teamBrokerFilter}
-              onTeamBrokerFilterChange={setTeamBrokerFilter}
-              teamBrokerOptions={allBrokers}
+              brokerId={effectiveBrokerId}
+              brokerFilter={isLeader ? (selectedBrokerId || "") : undefined}
+              onBrokerFilterChange={isLeader ? (id) => { setSelectedBrokerId(id || brokerId); setSelectedConversation(null); } : undefined}
+              brokerOptions={isLeader ? teamMembers : undefined}
+              myBrokerId={brokerId}
             />
           </div>
         )}
