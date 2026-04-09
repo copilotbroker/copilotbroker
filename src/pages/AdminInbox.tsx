@@ -122,13 +122,14 @@ export default function AdminInbox() {
 
   useEffect(() => {
     if (!selectedConversation) return;
-    const refreshed = allPersonalConversations.find((c) => c.id === selectedConversation.id);
+    const allConvs = isEquipe ? teamConversations : allPersonalConversations;
+    const refreshed = allConvs.find((c) => c.id === selectedConversation.id);
     if (!refreshed) return;
     setSelectedConversation((current) => {
       if (!current) return current;
       return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
     });
-  }, [allPersonalConversations, selectedConversation?.id]);
+  }, [allPersonalConversations, teamConversations, isEquipe, selectedConversation?.id]);
 
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelectedConversation(conv);
