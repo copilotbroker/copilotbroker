@@ -63,6 +63,7 @@ export default function BrokerInbox() {
   }, []);
 
   const isArchived = activeTab === "arquivados";
+  const isEquipe = activeTab === "equipe";
 
   const {
     conversations: allPersonalConversations, isLoading, totalUnread, markAsRead, archiveConversation,
@@ -73,13 +74,29 @@ export default function BrokerInbox() {
     statusFilter: "all",
     isArchived,
     sourceInstance: "personal",
-    enabled: !!brokerId,
+    enabled: !!brokerId && !isEquipe,
+  });
+
+  // Team conversations (equipe tab — leaders only)
+  const {
+    conversations: teamConversations, isLoading: teamLoading,
+    markAsRead: teamMarkAsRead, fetchConversations: fetchTeamConversations,
+  } = useConversations({
+    brokerId: brokerId || undefined,
+    search,
+    statusFilter: "all",
+    isArchived: false,
+    teamMode: true,
+    teamBrokerFilter: teamBrokerFilter || undefined,
+    enabled: !!brokerId && isEquipe && isLeader,
   });
 
   const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
   const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
 
-  const activeConversations = activeTab === "novos"
+  const activeConversations = isEquipe
+    ? teamConversations
+    : activeTab === "novos"
     ? novosConversations
     : activeTab === "atendimento"
     ? atendimentoConversations
