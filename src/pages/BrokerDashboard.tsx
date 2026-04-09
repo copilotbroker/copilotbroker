@@ -312,7 +312,7 @@ const BrokerDashboard = () => {
 
   if (role !== "broker") return null;
 
-  const fmtRate = (num: number, den: number) => den > 0 ? `${((num / den) * 100).toFixed(1)}%` : "—";
+  // unused removed
 
   return (
     <>
