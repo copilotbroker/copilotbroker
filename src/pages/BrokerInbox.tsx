@@ -334,15 +334,20 @@ export default function BrokerInbox() {
               onSearchChange={setSearch}
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
-              isLoading={isLoading}
+              isLoading={isEquipe ? teamLoading : isLoading}
               totalUnread={totalUnread}
-              onMarkAsRead={(id) => markAsRead(id)}
+              onMarkAsRead={(id) => isEquipe ? teamMarkAsRead(id) : markAsRead(id)}
               onArchive={(id) => archiveConversation(id)}
               brokerInboxTab={activeTab}
               onBrokerTabChange={handleTabChange}
               brokerNovosCount={novosConversations.length}
               brokerAtendimentoCount={atendimentoConversations.length}
+              brokerEquipeCount={teamConversations.length}
               brokerId={brokerId}
+              showEquipeTab={isLeader}
+              teamBrokerFilter={teamBrokerFilter}
+              onTeamBrokerFilterChange={setTeamBrokerFilter}
+              teamBrokerOptions={allBrokers}
             />
           </div>
         )}
