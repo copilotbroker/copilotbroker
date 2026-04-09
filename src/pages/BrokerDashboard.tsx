@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { RefreshCw, TrendingDown, TrendingUp, AlertTriangle, Lightbulb, Info, MessageSquare, Zap } from "lucide-react";
@@ -227,6 +227,16 @@ const BrokerDashboard = () => {
     periodStart: start,
     periodEnd: end,
   });
+
+  // Redirect logic
+  useEffect(() => {
+    if (isRoleLoading) return;
+    if (role === "admin") {
+      navigate("/admin", { replace: true });
+    } else if (role !== "broker") {
+      navigate("/auth", { replace: true });
+    }
+  }, [role, isRoleLoading, navigate]);
 
   const handleViewChange = useCallback(
     (mode: "kanban" | "list") => {

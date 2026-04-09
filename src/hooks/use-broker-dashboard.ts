@@ -243,11 +243,13 @@ export function useBrokerDashboard(filters: BrokerDashboardFilters) {
     }
   }
 
+  const noData = !brokerId;
+
   return {
     funnel: funnelQuery.data,
     followUp: followUpQuery.data,
     insights,
-    isLoading: funnelQuery.isLoading || followUpQuery.isLoading,
+    isLoading: noData ? false : (funnelQuery.isLoading || followUpQuery.isLoading),
   };
 }
 
