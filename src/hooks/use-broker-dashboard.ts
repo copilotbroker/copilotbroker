@@ -52,14 +52,6 @@ export function useBrokerDashboard(filters: BrokerDashboardFilters) {
   const funnelQuery = useQuery({
     queryKey: ["broker-dashboard-funnel", brokerId, projectId, periodStart.toISOString(), periodEnd.toISOString()],
     queryFn: async () => {
-      let pvQuery = supabase
-        .from("page_views")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", periodStart.toISOString())
-        .lte("created_at", periodEnd.toISOString());
-      if (projectId) pvQuery = pvQuery.eq("project_id", projectId);
-      const { count: visitors } = await pvQuery;
-
       let leadsQuery = supabase
         .from("leads")
         .select("id, status, data_agendamento, comparecimento, data_envio_proposta, data_fechamento, last_interaction_at, created_at")
@@ -78,7 +70,7 @@ export function useBrokerDashboard(filters: BrokerDashboardFilters) {
       const proposals = leadsArr.filter((l) => l.data_envio_proposta).length;
       const sales = leadsArr.filter((l) => l.data_fechamento).length;
 
-      return { visitors: visitors || 0, leads: leadsArr.length, responded, scheduled, visited, proposals, sales } as FunnelData;
+      return { leads: leadsArr.length, responded, scheduled, visited, proposals, sales } as FunnelData;
     },
     enabled,
     staleTime: 60_000,
@@ -168,16 +160,46 @@ export function useBrokerDashboard(filters: BrokerDashboardFilters) {
     staleTime: 60_000,
   });
 
+  // Timeout loss query
+  const timeoutQuery = useQuery({
+    queryKey: ["broker-dashboard-timeout", brokerId, projectId, periodStart.toISOString(), periodEnd.toISOString()],
+    queryFn: async () => {
+      // Get leads lost by timeout from roletas_log
+      const { data: logs } = await supabase
+        .from("roletas_log")
+        .select("lead_id")
+        .eq("de_corretor_id", brokerId)
+        .eq("acao", "timeout_reassinado")
+        .gte("created_at", periodStart.toISOString())
+        .lte("created_at", periodEnd.toISOString());
+
+      const logsArr = (logs || []) as any[];
+      const lostLeadIds = [...new Set(logsArr.map((l: any) => l.lead_id))];
+
+      if (lostLeadIds.length === 0) {
+        return { lostByTimeout: 0, lostThatSold: 0 } as TimeoutLossData;
+      }
+
+      // Check how many of those leads ended up with a sale
+      const { data: soldLeads } = await supabase
+        .from("leads")
+        .select("id")
+        .in("id", lostLeadIds)
+        .not("data_fechamento", "is", null);
+
+      return {
+        lostByTimeout: lostLeadIds.length,
+        lostThatSold: (soldLeads || []).length,
+      } as TimeoutLossData;
+    },
+    enabled,
+    staleTime: 60_000,
+  });
+
   // Generate insights
   const insights: DashboardInsight[] = [];
   const funnel = funnelQuery.data;
   if (funnel) {
-    if (funnel.visitors > 0 && funnel.leads > 0) {
-      const lpRate = (funnel.leads / funnel.visitors) * 100;
-      if (lpRate < 2) {
-        insights.push({ type: "warning", title: "Conversão da LP baixa", description: `Apenas ${lpRate.toFixed(1)}% dos visitantes se cadastraram. Revise o copy e a oferta da landing page.` });
-      }
-    }
     if (funnel.leads > 10 && funnel.responded > 0) {
       const responseRate = (funnel.responded / funnel.leads) * 100;
       if (responseRate < 30) {
@@ -210,12 +232,22 @@ export function useBrokerDashboard(filters: BrokerDashboardFilters) {
     }
   }
 
+  const timeoutLoss = timeoutQuery.data;
+  if (timeoutLoss && timeoutLoss.lostByTimeout > 0) {
+    insights.push({
+      type: "warning",
+      title: "Leads perdidos por timeout",
+      description: `${timeoutLoss.lostByTimeout} leads foram reatribuídos por falta de atendimento no prazo. ${timeoutLoss.lostThatSold > 0 ? `Destes, ${timeoutLoss.lostThatSold} fecharam venda com outro corretor.` : ""}`,
+    });
+  }
+
   return {
     funnel: funnelQuery.data,
     followUp: followUpQuery.data,
+    timeoutLoss: timeoutQuery.data,
     insights,
-    isLoading: !enabled ? false : (funnelQuery.isLoading || followUpQuery.isLoading),
-    isFetching: funnelQuery.isFetching || followUpQuery.isFetching,
+    isLoading: !enabled ? false : (funnelQuery.isLoading || followUpQuery.isLoading || timeoutQuery.isLoading),
+    isFetching: funnelQuery.isFetching || followUpQuery.isFetching || timeoutQuery.isFetching,
   };
 }
 
