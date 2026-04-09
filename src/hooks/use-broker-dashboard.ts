@@ -16,6 +16,7 @@ export interface FunnelData {
   visited: number;
   proposals: number;
   sales: number;
+  avgDaysToSale: number | null;
 }
 
 export interface TimeoutLossData {
