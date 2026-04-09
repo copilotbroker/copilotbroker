@@ -19,12 +19,20 @@ export interface FunnelData {
   sales: number;
 }
 
+export interface AttemptStat {
+  attempt: number;
+  sent: number;
+  replied: number;
+  rate: number;
+}
+
 export interface FollowUpStats {
   totalSent: number;
   totalReplied: number;
   responseRate: number;
   avgTouchesToReply: number;
   lateResponses: number;
+  byAttempt: AttemptStat[];
 }
 
 export interface DashboardInsight {
@@ -73,53 +81,74 @@ export function useBrokerDashboard(filters: BrokerDashboardFilters) {
   });
 
   const followUpQuery = useQuery({
-    queryKey: ["broker-dashboard-followup", brokerId, periodStart.toISOString(), periodEnd.toISOString()],
+    queryKey: ["broker-dashboard-followup", brokerId, projectId, periodStart.toISOString(), periodEnd.toISOString()],
     queryFn: async () => {
-      const { data: followups } = await supabase
+      // Get followups with conversation -> lead join to filter by project
+      let fQuery = supabase
         .from("autopilot_followups")
-        .select("id, conversation_id, attempt_number, sent_at")
+        .select("id, conversation_id, attempt_number, sent_at, conversations!inner(id, last_message_direction, lead_id, leads(project_id))")
         .eq("broker_id", brokerId)
         .gte("sent_at", periodStart.toISOString())
         .lte("sent_at", periodEnd.toISOString())
         .order("sent_at", { ascending: true });
 
-      const followupsArr = (followups || []) as any[];
+      const { data: followups } = await fQuery;
+      let followupsArr = (followups || []) as any[];
+
+      // Filter by project if selected
+      if (projectId) {
+        followupsArr = followupsArr.filter((f: any) => {
+          const lead = f.conversations?.leads;
+          return lead && lead.project_id === projectId;
+        });
+      }
+
       const totalSent = followupsArr.length;
 
+      // Map conversation -> max attempt
       const convMap = new Map<string, number>();
       for (const f of followupsArr) {
         const current = convMap.get(f.conversation_id) || 0;
         convMap.set(f.conversation_id, Math.max(current, f.attempt_number));
       }
 
-      const convIds = Array.from(convMap.keys());
-      let totalReplied = 0;
+      // Build set of replied conversation IDs from the joined data
+      const repliedConvIds = new Set<string>();
+      for (const f of followupsArr) {
+        if (f.conversations?.last_message_direction === "inbound") {
+          repliedConvIds.add(f.conversation_id);
+        }
+      }
+
+      const totalReplied = repliedConvIds.size;
       let lateResponses = 0;
+      for (const cid of repliedConvIds) {
+        if ((convMap.get(cid) || 0) >= 3) lateResponses++;
+      }
 
-      if (convIds.length > 0) {
-        const chunkSize = 50;
-        for (let i = 0; i < convIds.length; i += chunkSize) {
-          const chunk = convIds.slice(i, i + chunkSize);
-          const { data: convs } = await supabase
-            .from("conversations")
-            .select("id, last_message_direction")
-            .in("id", chunk)
-            .eq("last_message_direction", "inbound");
-
-          const repliedConvs = (convs || []) as any[];
-          totalReplied += repliedConvs.length;
-          for (const c of repliedConvs) {
-            const maxAttempt = convMap.get(c.id) || 0;
-            if (maxAttempt >= 3) lateResponses++;
+      // Per-attempt breakdown (1-7)
+      const byAttempt: AttemptStat[] = [];
+      for (let a = 1; a <= 7; a++) {
+        const sentAtAttempt = followupsArr.filter((f: any) => f.attempt_number === a);
+        const convIdsAtAttempt = new Set(sentAtAttempt.map((f: any) => f.conversation_id));
+        // Conversations whose max attempt == a AND replied (meaning they responded at this touch)
+        let repliedAtAttempt = 0;
+        for (const cid of convIdsAtAttempt) {
+          if (convMap.get(cid) === a && repliedConvIds.has(cid)) {
+            repliedAtAttempt++;
           }
         }
+        byAttempt.push({
+          attempt: a,
+          sent: sentAtAttempt.length,
+          replied: repliedAtAttempt,
+          rate: sentAtAttempt.length > 0 ? Math.round((repliedAtAttempt / convIdsAtAttempt.size) * 1000) / 10 : 0,
+        });
       }
 
       const responseRate = convMap.size > 0 ? (totalReplied / convMap.size) * 100 : 0;
       const avgTouchesToReply = totalReplied > 0
-        ? followupsArr
-            .filter((f) => convIds.includes(f.conversation_id))
-            .reduce((sum: number, f: any) => sum + f.attempt_number, 0) / totalReplied
+        ? [...repliedConvIds].reduce((sum, cid) => sum + (convMap.get(cid) || 0), 0) / totalReplied
         : 0;
 
       return {
@@ -128,6 +157,7 @@ export function useBrokerDashboard(filters: BrokerDashboardFilters) {
         responseRate: Math.round(responseRate * 10) / 10,
         avgTouchesToReply: Math.round(avgTouchesToReply * 10) / 10,
         lateResponses,
+        byAttempt,
       } as FollowUpStats;
     },
     enabled,
