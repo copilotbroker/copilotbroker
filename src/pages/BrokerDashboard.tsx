@@ -112,7 +112,6 @@ function MiniCalendar({ month, year, selectedStart, selectedEnd, onSelect, onMon
             </button>
           );
         })}
-        ))}
       </div>
     </div>
   );
