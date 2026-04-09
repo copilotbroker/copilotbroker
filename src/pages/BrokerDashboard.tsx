@@ -469,8 +469,13 @@ const BrokerDashboard = () => {
 
   const [period, setPeriod] = useState<Period>("30d");
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
+  const [customPickerOpen, setCustomPickerOpen] = useState(false);
 
-  const periodDates = useMemo(() => getPeriodDates(period), [period]);
+  const periodDates = useMemo(() => {
+    if (period === "custom" && customRange) return customRange;
+    return getPeriodDates(period as "today" | "7d" | "30d");
+  }, [period, customRange]);
 
   const { funnel, followUp, timeoutLoss, insights, isLoading } = useBrokerDashboard({
     brokerId: brokerId || "",
