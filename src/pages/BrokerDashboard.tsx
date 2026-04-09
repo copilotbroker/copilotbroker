@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { RefreshCw, TrendingDown, TrendingUp, AlertTriangle, Lightbulb, Info, MessageSquare, Zap } from "lucide-react";
@@ -229,7 +229,7 @@ const BrokerDashboard = () => {
   });
 
   // Redirect logic
-  React.useEffect(() => {
+  useEffect(() => {
     if (isRoleLoading) return;
     if (role === "admin") {
       navigate("/admin", { replace: true });
