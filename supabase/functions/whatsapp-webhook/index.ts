@@ -1138,7 +1138,7 @@ async function getOrCreateCanonicalConversation(
       phone_normalized: canonicalNormalized,
       ai_mode: "copilot",
       status: "active",
-      source_instance: sourceInstance || null,
+      source_instance: sourceInstance || 'personal',
       ...(resolvedDisplayName ? { display_name: resolvedDisplayName, display_name_source: resolvedDisplaySource } : {}),
     })
     .select("id")
