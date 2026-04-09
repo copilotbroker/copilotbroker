@@ -295,15 +295,20 @@ export default function AdminInbox() {
                 onSearchChange={setSearch}
                 statusFilter={statusFilter}
                 onStatusFilterChange={setStatusFilter}
-                isLoading={isLoading}
+                isLoading={isEquipe ? teamLoading : isLoading}
                 totalUnread={totalUnread}
-                onMarkAsRead={(id) => markAsRead(id)}
+                onMarkAsRead={(id) => isEquipe ? teamMarkAsRead(id) : markAsRead(id)}
                 onArchive={(id) => archiveConversation(id)}
                 brokerInboxTab={activeTab}
                 onBrokerTabChange={handleTabChange}
                 brokerNovosCount={novosConversations.length}
                 brokerAtendimentoCount={atendimentoConversations.length}
+                brokerEquipeCount={teamConversations.length}
                 brokerId={myBrokerId}
+                showEquipeTab={true}
+                teamBrokerFilter={teamBrokerFilter}
+                onTeamBrokerFilterChange={setTeamBrokerFilter}
+                teamBrokerOptions={allBrokers}
               />
             </div>
           )}
