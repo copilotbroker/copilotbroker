@@ -403,7 +403,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
         setIsLoading(false);
       }
     }
-  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance, options.enabled]);
+  }, [options.brokerId, options.statusFilter, options.search, options.isArchived, options.inboxTab, options.userRole, options.sourceInstance, options.enabled, options.teamMode, options.teamBrokerFilter]);
 
   useEffect(() => {
     fetchConversations();
