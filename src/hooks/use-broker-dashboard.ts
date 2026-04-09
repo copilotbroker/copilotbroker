@@ -16,6 +16,7 @@ export interface FunnelData {
   visited: number;
   proposals: number;
   sales: number;
+  avgDaysToSale: number | null;
 }
 
 export interface TimeoutLossData {
@@ -70,7 +71,18 @@ export function useBrokerDashboard(filters: BrokerDashboardFilters) {
       const proposals = leadsArr.filter((l) => l.data_envio_proposta).length;
       const sales = leadsArr.filter((l) => l.data_fechamento).length;
 
-      return { leads: leadsArr.length, responded, scheduled, visited, proposals, sales } as FunnelData;
+      // Average days to sale
+      const soldLeads = leadsArr.filter((l) => l.data_fechamento);
+      let avgDaysToSale: number | null = null;
+      if (soldLeads.length > 0) {
+        const totalDays = soldLeads.reduce((sum, l) => {
+          const diff = (new Date(l.data_fechamento).getTime() - new Date(l.created_at).getTime()) / (1000 * 60 * 60 * 24);
+          return sum + Math.max(diff, 0);
+        }, 0);
+        avgDaysToSale = Math.round((totalDays / soldLeads.length) * 10) / 10;
+      }
+
+      return { leads: leadsArr.length, responded, scheduled, visited, proposals, sales, avgDaysToSale } as FunnelData;
     },
     enabled,
     staleTime: 60_000,

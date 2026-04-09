@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 import {
   RefreshCw, TrendingDown, TrendingUp, AlertTriangle, Lightbulb, Info,
   MessageSquare, Zap, UserCheck, Eye, CalendarCheck, FileText,
-  Handshake, BarChart3, Loader2, UserX, ShieldAlert,
+  Handshake, BarChart3, Loader2, UserX, ShieldAlert, Timer,
 } from "lucide-react";
 import { useLogout } from "@/hooks/use-logout";
 import { useUserRole } from "@/hooks/use-user-role";
@@ -373,6 +373,12 @@ const BrokerDashboard = () => {
                 <KpiCard icon={Eye} label="Visitas" value={funnel.visited} color="text-cyan-400" />
                 <KpiCard icon={FileText} label="Propostas" value={funnel.proposals} color="text-violet-400" />
                 <KpiCard icon={Handshake} label="Vendas" value={funnel.sales} color="text-emerald-400" />
+                <KpiCard
+                  icon={Timer}
+                  label="Tempo médio de venda"
+                  value={funnel.avgDaysToSale !== null ? `${funnel.avgDaysToSale} dias` : "—"}
+                  color={funnel.avgDaysToSale !== null && funnel.avgDaysToSale <= 15 ? "text-emerald-400" : funnel.avgDaysToSale !== null && funnel.avgDaysToSale <= 30 ? "text-yellow-400" : "text-slate-300"}
+                />
                 {timeoutLoss && timeoutLoss.lostByTimeout > 0 && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 sm:p-4">
                     <div className="flex items-start gap-2 sm:gap-3">
