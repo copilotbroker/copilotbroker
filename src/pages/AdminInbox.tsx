@@ -27,7 +27,7 @@ export default function AdminInbox() {
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
   const [myBrokerId, setMyBrokerId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<BrokerInboxTab>("atendimento");
+  const [activeTab, setActiveTab] = useState<BrokerInboxTab>("novos");
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);

@@ -226,7 +226,20 @@ export function ConversationList({
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="space-y-2 px-3 pb-1 pt-3">
-        {/* Inbox Tabs */}
+        {/* Broker filter selector (admin/leader) — above tabs */}
+        {onBrokerFilterChange && brokerOptions.length > 0 && (
+          <select
+            value={brokerFilter || ""}
+            onChange={(e) => onBrokerFilterChange(e.target.value)}
+            className="w-full h-8 rounded-md border border-border bg-background px-2 text-xs text-muted-foreground"
+          >
+            {brokerOptions.map((b) => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+        )}
+
+        {/* Plantão Tabs (Novos | Atendimento) */}
         {onTabChange && (
           <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
             <button
@@ -255,8 +268,8 @@ export function ConversationList({
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <MessageSquare className="h-3.5 w-3.5" />
-              Meus
+              <Headphones className="h-3.5 w-3.5" />
+              Atendimento
               {totalUnread > 0 && inboxTab !== "meus" && (
                 <Badge variant="destructive" className="h-4 min-w-[16px] px-1 py-0 text-[10px]">
                   {totalUnread}
@@ -266,58 +279,43 @@ export function ConversationList({
           </div>
         )}
 
-        {/* Broker Inbox Tabs (Atendimento | Novos | Equipe | Arquivados) */}
+        {/* Personal Inbox Tabs (Novos | Atendimento) */}
         {onBrokerTabChange && (
-          <div className="space-y-1.5">
-            <div className="flex rounded-lg border border-border bg-muted/40 p-0.5 overflow-hidden">
-              <button
-                onClick={() => onBrokerTabChange("atendimento")}
-                className={cn(
-                  "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
-                  brokerInboxTab === "atendimento"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Headphones className="h-3 w-3 shrink-0" />
-                <span className="truncate">Atendimento</span>
-                {brokerAtendimentoCount > 0 && (
-                  <Badge variant={brokerInboxTab === "atendimento" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
-                    {brokerAtendimentoCount}
-                  </Badge>
-                )}
-              </button>
-              <button
-                onClick={() => onBrokerTabChange("novos")}
-                className={cn(
-                  "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
-                  brokerInboxTab === "novos"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <UserPlus className="h-3 w-3 shrink-0" />
-                <span className="truncate">Novos</span>
-                {brokerNovosCount > 0 && (
-                  <Badge variant={brokerInboxTab === "novos" ? "secondary" : "destructive"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
-                    {brokerNovosCount}
-                  </Badge>
-                )}
-              </button>
-            </div>
-
-            {/* Broker filter for atendimento tab (admin/leader) */}
-            {brokerInboxTab === "atendimento" && onBrokerFilterChange && brokerOptions.length > 0 && (
-              <select
-                value={brokerFilter || ""}
-                onChange={(e) => onBrokerFilterChange(e.target.value)}
-                className="w-full h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
-              >
-                {brokerOptions.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
-            )}
+          <div className="flex rounded-lg border border-border bg-muted/40 p-0.5 overflow-hidden">
+            <button
+              onClick={() => onBrokerTabChange("novos")}
+              className={cn(
+                "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
+                brokerInboxTab === "novos"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <UserPlus className="h-3 w-3 shrink-0" />
+              <span className="truncate">Novos</span>
+              {brokerNovosCount > 0 && (
+                <Badge variant={brokerInboxTab === "novos" ? "secondary" : "destructive"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
+                  {brokerNovosCount}
+                </Badge>
+              )}
+            </button>
+            <button
+              onClick={() => onBrokerTabChange("atendimento")}
+              className={cn(
+                "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
+                brokerInboxTab === "atendimento"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Headphones className="h-3 w-3 shrink-0" />
+              <span className="truncate">Atendimento</span>
+              {brokerAtendimentoCount > 0 && (
+                <Badge variant={brokerInboxTab === "atendimento" ? "secondary" : "outline"} className="h-4 min-w-[16px] px-1 py-0 text-[10px] shrink-0">
+                  {brokerAtendimentoCount}
+                </Badge>
+              )}
+            </button>
           </div>
         )}
 
@@ -331,14 +329,14 @@ export function ConversationList({
           />
         </div>
 
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setQuickFilter(quickFilter === "unread" ? null : "unread")}
             className={cn(
-              "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+              "flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors whitespace-nowrap shrink-0",
               quickFilter === "unread"
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                ? "bg-primary/15 text-primary border border-primary/30"
+                : "text-muted-foreground hover:text-foreground bg-muted/30 border border-transparent"
             )}
           >
             <Eye className="h-3 w-3" /> Não lidas
@@ -347,10 +345,10 @@ export function ConversationList({
             <PopoverTrigger asChild>
               <button
                 className={cn(
-                  "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors whitespace-nowrap shrink-0",
                   selectedLabelId
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    ? "bg-primary/15 text-primary border border-primary/30"
+                    : "text-muted-foreground hover:text-foreground bg-muted/30 border border-transparent"
                 )}
               >
                 <Tag className="h-3 w-3" />
@@ -412,10 +410,10 @@ export function ConversationList({
           <button
             onClick={() => setQuickFilter(quickFilter === "oldest" ? null : "oldest")}
             className={cn(
-              "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+              "flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors whitespace-nowrap shrink-0",
               quickFilter === "oldest"
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                ? "bg-primary/15 text-primary border border-primary/30"
+                : "text-muted-foreground hover:text-foreground bg-muted/30 border border-transparent"
             )}
           >
             <Clock className="h-3 w-3" /> Mais antigas
@@ -424,16 +422,16 @@ export function ConversationList({
             <button
               onClick={() => {
                 if (brokerInboxTab === "arquivados") {
-                  onBrokerTabChange("atendimento");
+                  onBrokerTabChange("novos");
                 } else {
                   onBrokerTabChange("arquivados");
                 }
               }}
               className={cn(
-                "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                "flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors whitespace-nowrap shrink-0",
                 brokerInboxTab === "arquivados"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  ? "bg-primary/15 text-primary border border-primary/30"
+                  : "text-muted-foreground hover:text-foreground bg-muted/30 border border-transparent"
               )}
             >
               <Archive className="h-3 w-3" /> Arquivadas
