@@ -378,12 +378,16 @@ export default function BrokerPlantao() {
               <div className="px-3 pt-3 pb-1">
                 <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
                   <SelectTrigger className="h-8 bg-background border-border text-sm text-muted-foreground">
-                    <SelectValue placeholder="Minhas conversas" />
+                    <SelectValue placeholder="Selecionar corretor" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
                     <SelectItem value="all" className="text-muted-foreground text-sm">Todas as conversas</SelectItem>
-                    <SelectItem value="_self" className="text-foreground text-sm">Minhas conversas</SelectItem>
-                    {teamBrokers.map(b => (
+                    {brokerId && (
+                      <SelectItem value={brokerId} className="text-foreground text-sm">
+                        {allBrokers.find(b => b.id === brokerId)?.name || "Minhas conversas"}
+                      </SelectItem>
+                    )}
+                    {teamBrokers.filter(b => b.id !== brokerId).map(b => (
                       <SelectItem key={b.id} value={b.id} className="text-foreground text-sm">{b.name}</SelectItem>
                     ))}
                   </SelectContent>
