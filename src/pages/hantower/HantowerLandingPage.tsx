@@ -24,6 +24,16 @@ import coberturaPiscinaImg from "@/assets/hantower/cobertura-piscina.jpg";
 import planta84 from "@/assets/hantower/planta-84.jpg";
 import planta128 from "@/assets/hantower/planta-128.jpg";
 import logoFooter from "@/assets/hantower/logo-footer.png";
+import cozinha1 from "@/assets/hantower/cozinha-1.jpg";
+import salaoJantar1 from "@/assets/hantower/salao-jantar-1.jpg";
+import salaoJantar2 from "@/assets/hantower/salao-jantar-2.jpg";
+import coworking1 from "@/assets/hantower/coworking-1.jpg";
+import coworking2 from "@/assets/hantower/coworking-2.jpg";
+import coworking3 from "@/assets/hantower/coworking-3.jpg";
+import rooftop1 from "@/assets/hantower/rooftop-1.jpg";
+import rooftop2 from "@/assets/hantower/rooftop-2.jpg";
+import spa1 from "@/assets/hantower/spa-1.jpg";
+import spa2 from "@/assets/hantower/spa-2.jpg";
 
 const GOLD = "#C9A84C";
 
@@ -38,6 +48,16 @@ const galleryImages = [
   { src: garagemImg, alt: "Hall e garagem" },
   { src: academiaImg, alt: "Academia completa" },
   { src: salaoFestasImg, alt: "Salão de festas" },
+  { src: cozinha1, alt: "Cozinha gourmet integrada" },
+  { src: salaoJantar1, alt: "Salão de jantar com lustres" },
+  { src: salaoJantar2, alt: "Salão de jantar panorâmico" },
+  { src: coworking1, alt: "Coworking lounge" },
+  { src: coworking2, alt: "Coworking estações de trabalho" },
+  { src: coworking3, alt: "Sala de reuniões" },
+  { src: rooftop1, alt: "Rooftop lounge com vista" },
+  { src: rooftop2, alt: "Rooftop deck panorâmico" },
+  { src: spa1, alt: "Spa com hidromassagem" },
+  { src: spa2, alt: "Spa e ofurô com vista" },
 ];
 
 /* ── Lightbox ── */
