@@ -90,18 +90,20 @@ export default function AdminPlantao() {
     search,
     statusFilter: isArchived ? "all" : statusFilter,
     isArchived,
-    inboxTab,
+    inboxTab: inboxTab === "novos" ? "novos" : inboxTab,
     userRole: "admin",
     sourceInstance: "global",
     enabled: selectedBrokerId !== "_loading",
   });
+
+  const novosEffectiveBrokerId = selectedBrokerId === "_loading" ? undefined : (selectedBrokerId !== "all" ? selectedBrokerId : undefined);
 
   const {
     conversations: novosConversations,
     isLoading: novosLoading,
     fetchConversations: fetchNovos,
   } = useConversations({
-    brokerId: undefined,
+    brokerId: novosEffectiveBrokerId,
     search: inboxTab === "novos" ? search : "",
     statusFilter: "all",
     isArchived: false,
@@ -314,6 +316,7 @@ export default function AdminPlantao() {
 
   const isNewLeadConversation = inboxTab === "novos" && !!selectedConversation;
   const isReadOnlyConversation = false;
+  const showBrokerSelector = inboxTab === "novos" || inboxTab === "meus";
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
   const showContext = showLeadPanel && !isMobile;
@@ -326,14 +329,14 @@ export default function AdminPlantao() {
         <div className="flex h-[calc(100vh-64px)] md:h-screen overflow-hidden">
           {showList && (
             <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0 flex flex-col`}>
-              {inboxTab === "meus" && (
+              {showBrokerSelector && (
                 <div className="px-3 pt-3 pb-1">
                   <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
                     <SelectTrigger className="h-8 bg-card border-border text-sm text-foreground">
                       <SelectValue placeholder="Todos os corretores" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">
-                      <SelectItem value="all" className="text-muted-foreground text-sm">Todos os corretores</SelectItem>
+                      <SelectItem value="all" className="text-muted-foreground text-sm">Todas as conversas</SelectItem>
                       {brokers.map(b => (
                         <SelectItem key={b.id} value={b.id} className="text-foreground text-sm">{b.name}</SelectItem>
                       ))}
@@ -358,7 +361,7 @@ export default function AdminPlantao() {
                   isAdminView
                   inboxTab={inboxTab}
                   onTabChange={handleTabChange}
-                  showOthersTab={true}
+                  showOthersTab={false}
                   novosCount={novosConversations.length}
                   brokerId={selectedBrokerId !== "all" && selectedBrokerId !== "_loading" ? selectedBrokerId : myBrokerId}
                 />

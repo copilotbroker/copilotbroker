@@ -263,20 +263,6 @@ export function ConversationList({
                 </Badge>
               )}
             </button>
-            {showOthersTab && (
-              <button
-                onClick={() => onTabChange("outros")}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                  inboxTab === "outros"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Users className="h-3.5 w-3.5" />
-                Outros
-              </button>
-            )}
           </div>
         )}
 

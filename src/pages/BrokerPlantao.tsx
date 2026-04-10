@@ -32,6 +32,8 @@ export default function BrokerPlantao() {
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
   const [isCheckedInGlobal, setIsCheckedInGlobal] = useState<boolean | null>(null);
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("_self");
+  const [teamBrokers, setTeamBrokers] = useState<{ id: string; name: string }[]>([]);
 
   const { role, isLeader } = useUserRole();
 
@@ -58,6 +60,16 @@ export default function BrokerPlantao() {
     fetchRoletas();
   }, []);
 
+  // Fetch team brokers for leaders
+  useEffect(() => {
+    if (!brokerId || !isLeader) { setTeamBrokers([]); return; }
+    const fetchTeam = async () => {
+      const { data } = await supabase.from("brokers").select("id, name").eq("lider_id", brokerId).eq("is_active", true).order("name");
+      if (data) setTeamBrokers(data as any);
+    };
+    fetchTeam();
+  }, [brokerId, isLeader]);
+
   // Check if broker has active check-in in a whatsapp_global roulette
   useEffect(() => {
     if (!brokerId) return;
@@ -77,34 +89,42 @@ export default function BrokerPlantao() {
   }, [brokerId]);
 
   const isArchived = statusFilter === "archived";
-  const showOthersTab = role === "admin" || isLeader;
+  const canSelectBroker = role === "admin" || isLeader;
+  const resolvedBrokerId = canSelectBroker
+    ? (selectedBrokerId === "all" ? undefined : selectedBrokerId === "_self" ? brokerId : selectedBrokerId)
+    : brokerId;
 
   // Main conversations (meus / outros) — global only
   const {
     conversations, isLoading, totalUnread, markAsRead, archiveConversation,
     unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
   } = useConversations({
-    brokerId: brokerId || undefined,
+    brokerId: resolvedBrokerId || undefined,
     search,
     statusFilter: isArchived ? "all" : statusFilter,
     isArchived,
-    inboxTab,
+    inboxTab: inboxTab === "novos" ? "novos" : inboxTab,
     userRole: role as "admin" | "leader" | null,
     sourceInstance: "global",
     enabled: !!brokerId,
   });
 
   // Novos conversations (separate query) — only fetch if checked in to a whatsapp_global roulette
+  const novosResolvedBrokerId = canSelectBroker
+    ? (selectedBrokerId === "all" ? undefined : selectedBrokerId === "_self" ? brokerId : selectedBrokerId)
+    : brokerId;
+
   const {
     conversations: novosConversations,
     isLoading: novosLoading,
     fetchConversations: fetchNovos,
   } = useConversations({
-    brokerId: brokerId || undefined,
+    brokerId: novosResolvedBrokerId || undefined,
     search: inboxTab === "novos" ? search : "",
     statusFilter: "all",
     isArchived: false,
     inboxTab: "novos",
+    userRole: canSelectBroker ? (role as "admin" | "leader" | null) : null,
     sourceInstance: "global",
     enabled: !!brokerId && isCheckedInGlobal === true,
   });
@@ -330,7 +350,7 @@ export default function BrokerPlantao() {
   }
 
   const isNewLeadConversation = inboxTab === "novos" && !!selectedConversation;
-  const isReadOnlyConversation = inboxTab === "outros" && !isLeader;
+  const isReadOnlyConversation = false;
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
   const showContext = showLeadPanel && !isMobile;
