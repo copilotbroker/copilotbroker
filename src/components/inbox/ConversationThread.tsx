@@ -728,7 +728,7 @@ export function ConversationThread({
                 el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
               }}
               onKeyDown={handleKeyDown}
-              placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem..."}
+              placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem... (Ctrl+Enter para enviar)"}
               className={cn(
                 "max-h-[160px] min-h-[36px] resize-none overflow-y-auto py-2 text-sm",
                 (conversation as any).source_instance === "global"
