@@ -374,7 +374,7 @@ export default function BrokerPlantao() {
             {canSelectBroker && (inboxTab === "novos" || inboxTab === "meus") && (
               <div className="px-3 pt-3 pb-1">
                 <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-                  <SelectTrigger className="h-8 bg-card border-border text-sm text-foreground">
+                  <SelectTrigger className="h-8 bg-background border-border text-sm text-muted-foreground">
                     <SelectValue placeholder="Minhas conversas" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
