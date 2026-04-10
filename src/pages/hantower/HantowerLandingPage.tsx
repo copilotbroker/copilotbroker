@@ -182,7 +182,7 @@ const HantowerLandingPage = () => {
         {/* ═══ HEADER ═══ */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100/80">
           <div className="flex items-center justify-center h-16 md:h-20">
-            <img src={logoImg} alt="Hantower" className="h-6 md:h-7" />
+            <img src={logoImg} alt="Hantower" className="h-4 md:h-5" />
           </div>
         </header>
 
