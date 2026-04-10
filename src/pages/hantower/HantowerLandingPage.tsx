@@ -200,7 +200,7 @@ const HantowerLandingPage = () => {
               <p className="text-lg md:text-xl text-white/80 font-light mb-8 leading-relaxed">
                 Redefinindo o mercado imobiliário de Estância Velha
               </p>
-              <ScrollCTA />
+              <ScrollCTA target="sobre" />
             </div>
           </div>
         </section>
