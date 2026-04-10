@@ -25,7 +25,7 @@ const INTERACTION_META: Record<string, {
   isHighlight?: boolean;
 }> = {
   status_change: { icon: ArrowRight, label: "Mudança de Status", color: "text-slate-400", dotColor: "bg-slate-500" },
-  note_added: { icon: MessageSquare, label: "Observação", color: "text-slate-400", dotColor: "bg-slate-500" },
+  note_added: { icon: MessageSquare, label: "Anotação", color: "text-slate-400", dotColor: "bg-slate-500" },
   document_request: { icon: FileText, label: "Docs Solicitados", color: "text-slate-400", dotColor: "bg-slate-500" },
   document_received: { icon: CheckCircle, label: "Doc Recebido", color: "text-emerald-400", dotColor: "bg-emerald-500" },
   info_sent: { icon: Send, label: "Info Enviada", color: "text-slate-400", dotColor: "bg-slate-500" },
