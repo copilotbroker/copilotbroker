@@ -907,6 +907,41 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
               </div>
             </section>
 
+
+
+          </div>
+
+          {/* ━━━━ RIGHT COLUMN (40%) ━━━━ */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Sold state */}
+            {isSold && (
+              <section className="bg-emerald-500/5 rounded-2xl border border-emerald-500/20 p-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-3"><Trophy className="w-6 h-6 text-emerald-400" /></div>
+                <h3 className="text-base font-semibold text-emerald-400 mb-1">Venda Concluída</h3>
+                {lead.valor_final_venda && <p className="text-2xl font-bold text-white">{formatCurrency(lead.valor_final_venda)}</p>}
+                {lead.data_fechamento && <p className="text-xs text-slate-500 mt-2">{new Date(lead.data_fechamento).toLocaleDateString("pt-BR")}</p>}
+              </section>
+            )}
+
+            {/* Lost state */}
+            {isLost && (
+              <section className="bg-red-500/5 rounded-2xl border border-red-500/20 p-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-3"><UserX className="w-6 h-6 text-red-400" /></div>
+                <h3 className="text-base font-semibold text-red-400 mb-1">Lead Perdido</h3>
+                {lead.inactivation_reason && <p className="text-sm text-slate-400 mt-1">{lead.inactivation_reason}</p>}
+                <Button
+                  onClick={async () => {
+                    const ok = await reactivateLead(lead.id);
+                    if (ok) refreshLead();
+                  }}
+                  className="mt-4 h-9 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                >
+                  <RotateCw className="w-3.5 h-3.5 mr-1.5" />Reativar Lead
+                </Button>
+              </section>
+            )}
+
             {/* Notes */}
             <section className="bg-[#111114] rounded-2xl border border-[#1e1e22] p-5 space-y-3">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Notas</h2>
@@ -942,38 +977,6 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                 {savingNote ? "Salvando..." : "Salvar Nota"}
               </Button>
             </section>
-          </div>
-
-          {/* ━━━━ RIGHT COLUMN (40%) ━━━━ */}
-          <div className="lg:col-span-2 space-y-6">
-
-            {/* Sold state */}
-            {isSold && (
-              <section className="bg-emerald-500/5 rounded-2xl border border-emerald-500/20 p-6 text-center">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-3"><Trophy className="w-6 h-6 text-emerald-400" /></div>
-                <h3 className="text-base font-semibold text-emerald-400 mb-1">Venda Concluída</h3>
-                {lead.valor_final_venda && <p className="text-2xl font-bold text-white">{formatCurrency(lead.valor_final_venda)}</p>}
-                {lead.data_fechamento && <p className="text-xs text-slate-500 mt-2">{new Date(lead.data_fechamento).toLocaleDateString("pt-BR")}</p>}
-              </section>
-            )}
-
-            {/* Lost state */}
-            {isLost && (
-              <section className="bg-red-500/5 rounded-2xl border border-red-500/20 p-6 text-center">
-                <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-3"><UserX className="w-6 h-6 text-red-400" /></div>
-                <h3 className="text-base font-semibold text-red-400 mb-1">Lead Perdido</h3>
-                {lead.inactivation_reason && <p className="text-sm text-slate-400 mt-1">{lead.inactivation_reason}</p>}
-                <Button
-                  onClick={async () => {
-                    const ok = await reactivateLead(lead.id);
-                    if (ok) refreshLead();
-                  }}
-                  className="mt-4 h-9 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
-                >
-                  <RotateCw className="w-3.5 h-3.5 mr-1.5" />Reativar Lead
-                </Button>
-              </section>
-            )}
 
             {/* Timeline */}
             <section className="bg-[#111114] rounded-2xl border border-[#1e1e22] overflow-hidden">
