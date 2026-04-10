@@ -242,33 +242,41 @@ const HantowerLandingPage = () => {
         </section>
 
         {/* ═══ SEÇÃO 3 — Um empreendimento que impõe presença ═══ */}
-        <section ref={s3.ref as any} id="diferenciais" className="py-20 md:py-28 px-4 bg-gray-50">
+        <section ref={s3.ref as any} id="diferenciais" className="py-24 md:py-32 px-6 bg-gray-50">
           <div className={`max-w-6xl mx-auto ${fade(s3.visible)}`}>
-            <div className="text-center mb-14">
-              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <div className="text-center mb-16">
+              <p className="text-xs tracking-[0.2em] uppercase mb-4" style={{ color: GOLD }}>Diferenciais</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Um empreendimento raro.
               </h2>
-              <p className="text-gray-400 text-sm md:text-base">Em um endereço que se destaca naturalmente.</p>
-              <p className="text-gray-500 text-sm md:text-base mt-4 max-w-2xl mx-auto">
-                No Hantower, cada detalhe foi pensado para unir imponência, estilo de vida e funcionalidade:
-              </p>
+              <p className="text-gray-400 text-base">Em um endereço que se destaca naturalmente.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
                 { icon: Building2, text: "Maior prédio de Estância Velha" },
                 { icon: Star, text: "Primeiro Home Club da região" },
-                { icon: Waves, text: "Rooftop com piscina aquecida, borda infinita e raia de 20 metros" },
+                { icon: Waves, text: "Rooftop com piscina aquecida, borda infinita e raia de 20m" },
                 { icon: CheckCircle2, text: "Apartamentos amplos, com 2 e 3 suítes" },
                 { icon: ChefHat, text: "Sacada gourmet com churrasqueira" },
                 { icon: Sparkles, text: "Spa com hidromassagem em unidades selecionadas" },
-                { icon: MapPin, text: "Localização privilegiada no Centro de Estância Velha" },
+                { icon: MapPin, text: "Centro de Estância Velha" },
               ].map((item, i) => (
-                <div key={i} className="flex items-start gap-4 p-5 rounded-lg bg-white border border-gray-100 hover:shadow-md transition-shadow">
+                <div key={i} className="flex items-start gap-4 p-6 rounded-xl bg-white border border-gray-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                   <item.icon className="w-6 h-6 shrink-0 mt-0.5" style={{ color: GOLD }} />
                   <span className="text-gray-700 text-sm md:text-base">{item.text}</span>
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ═══ IMAGEM BREAK — Cobertura ═══ */}
+        <section className="relative h-[45vh] md:h-[55vh] overflow-hidden cursor-pointer" onClick={() => setLightboxIdx(2)}>
+          <img src={coberturaPiscinaImg} alt="Piscina na cobertura" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
+          <div className="absolute bottom-8 left-8 md:bottom-12 md:left-12">
+            <p className="text-white/60 text-xs tracking-[0.15em] uppercase mb-2">Rooftop</p>
+            <p className="text-white text-lg md:text-2xl font-light" style={{ fontFamily: "'Playfair Display', serif" }}>Piscina de borda infinita com vista</p>
           </div>
         </section>
 
