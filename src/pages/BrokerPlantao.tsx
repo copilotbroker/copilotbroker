@@ -39,7 +39,7 @@ export default function BrokerPlantao() {
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
   const [isCheckedInGlobal, setIsCheckedInGlobal] = useState<boolean | null>(null);
-  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("_self");
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
   const [teamBrokers, setTeamBrokers] = useState<{ id: string; name: string }[]>([]);
 
   const { role, isLeader } = useUserRole();
@@ -49,7 +49,10 @@ export default function BrokerPlantao() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) { navigate("/auth"); return; }
       const { data } = await supabase.from("brokers").select("id").eq("user_id", session.user.id).maybeSingle();
-      if (data) setBrokerId((data as any).id);
+      if (data) {
+        setBrokerId((data as any).id);
+        setSelectedBrokerId((data as any).id);
+      }
     };
     getBrokerId();
   }, [navigate]);
@@ -98,7 +101,7 @@ export default function BrokerPlantao() {
   const isArchived = statusFilter === "archived";
   const canSelectBroker = role === "admin" || isLeader;
   const resolvedBrokerId = canSelectBroker
-    ? (selectedBrokerId === "all" ? undefined : selectedBrokerId === "_self" ? brokerId : selectedBrokerId)
+    ? (selectedBrokerId === "all" ? undefined : selectedBrokerId || brokerId)
     : brokerId;
 
   // Main conversations (meus / outros) — global only
@@ -118,7 +121,7 @@ export default function BrokerPlantao() {
 
   // Novos conversations (separate query) — only fetch if checked in to a whatsapp_global roulette
   const novosResolvedBrokerId = canSelectBroker
-    ? (selectedBrokerId === "all" ? undefined : selectedBrokerId === "_self" ? brokerId : selectedBrokerId)
+    ? (selectedBrokerId === "all" ? undefined : selectedBrokerId || brokerId)
     : brokerId;
 
   const {
