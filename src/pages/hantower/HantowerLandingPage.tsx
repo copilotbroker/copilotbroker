@@ -605,6 +605,22 @@ const HantowerLandingPage = () => {
                 Receba informações exclusivas em primeira mão.
               </p>
             </div>
+            <style>{`
+              #formulario .card-luxury, #formulario form { background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(201,168,76,0.15) !important; backdrop-filter: blur(10px); }
+              #formulario label { color: rgba(255,255,255,0.7) !important; }
+              #formulario input, #formulario button[role="combobox"] { background: rgba(255,255,255,0.06) !important; border-color: rgba(255,255,255,0.12) !important; color: #fff !important; }
+              #formulario input::placeholder { color: rgba(255,255,255,0.3) !important; }
+              #formulario input:focus { ring-color: rgba(201,168,76,0.5) !important; border-color: #C9A84C !important; }
+              #formulario .btn-primary, #formulario button[type="submit"] { background: #C9A84C !important; color: #111 !important; font-weight: 600; }
+              #formulario .btn-primary:hover, #formulario button[type="submit"]:hover { background: #b8953e !important; }
+              #formulario .text-primary { color: #C9A84C !important; }
+              #formulario .text-muted-foreground, #formulario .text-foreground\\/80, #formulario p { color: rgba(255,255,255,0.5) !important; }
+              #formulario .section-title, #formulario h2 { color: #fff !important; }
+              #formulario > .container > div > header { display: none !important; }
+              #formulario > .max-w-lg { max-width: 32rem; }
+              #formulario [data-slot="control"] { border-color: rgba(255,255,255,0.12) !important; }
+              #formulario .bg-background { background: transparent !important; }
+            `}</style>
             <FormSection
               projectId={projectId}
               projectSlug="hantower"
