@@ -198,8 +198,7 @@ const HantowerLandingPage = () => {
                 HANTOWER
               </h1>
               <p className="text-lg md:text-xl text-white/80 font-light mb-8 leading-relaxed">
-                O primeiro Home Club de Estância Velha.<br className="hidden md:block" />
-                24 andares. 70 metros de altura.
+                Redefinindo o mercado imobiliário de Estância Velha
               </p>
               <ScrollCTA />
             </div>
