@@ -334,7 +334,8 @@ export function ConversationThread({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // Ctrl+Enter or Meta+Enter to send; plain Enter inserts newline
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSend();
     }
