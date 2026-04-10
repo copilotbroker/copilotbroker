@@ -76,6 +76,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
   const [iniciarAtendimentoOpen, setIniciarAtendimentoOpen] = useState(false);
   const [iniciarAtendimentoMsg, setIniciarAtendimentoMsg] = useState("");
   const [iniciarAtendimentoSending, setIniciarAtendimentoSending] = useState(false);
+  const [newNote, setNewNote] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
 
   // Return stage states
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
