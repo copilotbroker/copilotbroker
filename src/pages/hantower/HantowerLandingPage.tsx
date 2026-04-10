@@ -11,16 +11,16 @@ import {
 } from "lucide-react";
 
 import logoImg from "@/assets/hantower/logo.png";
-import heroImg from "@/assets/hantower/hero-fachada.jpg";
-import renderNoturna from "@/assets/hantower/render-noturna.jpg";
-import renderAerea from "@/assets/hantower/render-aerea.jpg";
-import img10 from "@/assets/hantower/img-10.jpg";
-import img12 from "@/assets/hantower/img-12.jpg";
-import img14 from "@/assets/hantower/img-14.jpg";
-import img15 from "@/assets/hantower/img-15.jpg";
-import img23 from "@/assets/hantower/img-23.jpg";
-import img24 from "@/assets/hantower/img-24.jpg";
-import img26 from "@/assets/hantower/img-26.jpg";
+import fachadaImg from "@/assets/hantower/fachada.jpg";
+import sacadasImg from "@/assets/hantower/sacadas.jpg";
+import salaoGourmet1 from "@/assets/hantower/salao-gourmet-1.jpg";
+import salaoGourmet2 from "@/assets/hantower/salao-gourmet-2.jpg";
+import piscinaImg from "@/assets/hantower/piscina.jpg";
+import hallImg from "@/assets/hantower/hall.jpg";
+import garagemImg from "@/assets/hantower/garagem.jpg";
+import academiaImg from "@/assets/hantower/academia.jpg";
+import salaoFestasImg from "@/assets/hantower/salao-festas.jpg";
+import coberturaPiscinaImg from "@/assets/hantower/cobertura-piscina.jpg";
 import planta84 from "@/assets/hantower/planta-84.jpg";
 import planta128 from "@/assets/hantower/planta-128.jpg";
 import logoFooter from "@/assets/hantower/logo-footer.png";
@@ -28,16 +28,16 @@ import logoFooter from "@/assets/hantower/logo-footer.png";
 const GOLD = "#C9A84C";
 
 const galleryImages = [
-  { src: heroImg, alt: "Fachada Hantower" },
-  { src: renderNoturna, alt: "Vista noturna do Hantower" },
-  { src: renderAerea, alt: "Vista aérea do empreendimento" },
-  { src: img10, alt: "Hall de entrada" },
-  { src: img12, alt: "Hall social" },
-  { src: img14, alt: "Academia" },
-  { src: img15, alt: "Rooftop" },
-  { src: img23, alt: "Cozinha gourmet" },
-  { src: img24, alt: "Coworking" },
-  { src: img26, alt: "Detalhes do empreendimento" },
+  { src: fachadaImg, alt: "Fachada Hantower" },
+  { src: sacadasImg, alt: "Sacadas com vista panorâmica" },
+  { src: coberturaPiscinaImg, alt: "Piscina na cobertura com borda infinita" },
+  { src: hallImg, alt: "Hall de entrada sofisticado" },
+  { src: salaoGourmet1, alt: "Salão gourmet" },
+  { src: salaoGourmet2, alt: "Espaço gourmet completo" },
+  { src: piscinaImg, alt: "Área da piscina vista aérea" },
+  { src: garagemImg, alt: "Hall e garagem" },
+  { src: academiaImg, alt: "Academia completa" },
+  { src: salaoFestasImg, alt: "Salão de festas" },
 ];
 
 /* ── Lightbox ── */
@@ -182,7 +182,7 @@ const HantowerLandingPage = () => {
 
         {/* ═══ SEÇÃO 1 — HERO ═══ */}
         <section className="relative min-h-screen flex items-center pt-20">
-          <img src={heroImg} alt="Hantower – fachada" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={fachadaImg} alt="Hantower – fachada" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-white/65 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/70" />
 
@@ -227,7 +227,7 @@ const HantowerLandingPage = () => {
 
         {/* ═══ IMAGEM DESTAQUE ═══ */}
         <section className="relative h-[50vh] md:h-[65vh] cursor-pointer" onClick={() => setLightboxIdx(1)}>
-          <img src={renderNoturna} alt="Hantower vista noturna" className="w-full h-full object-cover" loading="lazy" />
+          <img src={sacadasImg} alt="Hantower sacadas" className="w-full h-full object-cover" loading="lazy" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         </section>
 
