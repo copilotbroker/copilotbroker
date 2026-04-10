@@ -182,7 +182,7 @@ const HantowerLandingPage = () => {
 
         {/* ═══ SEÇÃO 1 — HERO ═══ */}
         <section className="relative min-h-screen flex items-center pt-20">
-          <img src={heroImg} alt="Hantower – fachada" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={fachadaImg} alt="Hantower – fachada" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-white/65 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/70" />
 
@@ -227,7 +227,7 @@ const HantowerLandingPage = () => {
 
         {/* ═══ IMAGEM DESTAQUE ═══ */}
         <section className="relative h-[50vh] md:h-[65vh] cursor-pointer" onClick={() => setLightboxIdx(1)}>
-          <img src={renderNoturna} alt="Hantower vista noturna" className="w-full h-full object-cover" loading="lazy" />
+          <img src={sacadasImg} alt="Hantower sacadas" className="w-full h-full object-cover" loading="lazy" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         </section>
 
