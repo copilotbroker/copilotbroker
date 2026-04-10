@@ -593,11 +593,41 @@ const HantowerLandingPage = () => {
         </section>
 
         {/* ═══ FORMULÁRIO CRM ═══ */}
-        <FormSection
-          projectId={projectId}
-          projectSlug="hantower"
-          allowBrokerSelection={true}
-        />
+        <section id="formulario" className="py-20 md:py-28 bg-[#111] relative overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9A84C'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+          <div className="max-w-lg mx-auto px-6 relative z-10">
+            <div className="text-center mb-10">
+              <div className="w-12 h-[2px] mx-auto mb-6" style={{ backgroundColor: GOLD }} />
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+                Cadastre-se
+              </h2>
+              <p className="text-white/50 text-sm tracking-wide">
+                Receba informações exclusivas em primeira mão.
+              </p>
+            </div>
+            <style>{`
+              #formulario .card-luxury, #formulario form { background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(201,168,76,0.15) !important; backdrop-filter: blur(10px); }
+              #formulario label { color: rgba(255,255,255,0.7) !important; }
+              #formulario input, #formulario button[role="combobox"] { background: rgba(255,255,255,0.06) !important; border-color: rgba(255,255,255,0.12) !important; color: #fff !important; }
+              #formulario input::placeholder { color: rgba(255,255,255,0.3) !important; }
+              #formulario input:focus { ring-color: rgba(201,168,76,0.5) !important; border-color: #C9A84C !important; }
+              #formulario .btn-primary, #formulario button[type="submit"] { background: #C9A84C !important; color: #111 !important; font-weight: 600; }
+              #formulario .btn-primary:hover, #formulario button[type="submit"]:hover { background: #b8953e !important; }
+              #formulario .text-primary { color: #C9A84C !important; }
+              #formulario .text-muted-foreground, #formulario .text-foreground\\/80, #formulario p { color: rgba(255,255,255,0.5) !important; }
+              #formulario .section-title, #formulario h2 { color: #fff !important; }
+              #formulario > .container > div > header { display: none !important; }
+              #formulario > .max-w-lg { max-width: 32rem; }
+              #formulario [data-slot="control"] { border-color: rgba(255,255,255,0.12) !important; }
+              #formulario .bg-background { background: transparent !important; }
+            `}</style>
+            <FormSection
+              projectId={projectId}
+              projectSlug="hantower"
+              allowBrokerSelection={true}
+            />
+          </div>
+        </section>
 
         {/* ═══ FOOTER ═══ */}
         <footer className="py-8 px-4 border-t border-gray-100 text-center bg-white">
