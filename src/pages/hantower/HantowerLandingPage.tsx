@@ -312,18 +312,29 @@ const HantowerLandingPage = () => {
         </section>
 
         {/* ═══ GALERIA ═══ */}
-        <section id="fotos" className="py-16 md:py-24 px-4 bg-gray-50">
+        <section id="fotos" className="py-20 md:py-28 px-6 bg-gray-50">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-10" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Galeria do Empreendimento
+            <p className="text-xs tracking-[0.2em] uppercase text-center mb-3" style={{ color: GOLD }}>Galeria</p>
+            <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-12" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Conheça cada espaço
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-              {galleryImages.map((img, i) => (
-                <div key={i} className="relative overflow-hidden rounded-md cursor-pointer group aspect-[4/3]" onClick={() => setLightboxIdx(i)}>
-                  <img src={img.src} alt={img.alt} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-                </div>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {galleryImages.map((img, i) => {
+                const isLarge = i === 0 || i === 5;
+                return (
+                  <div
+                    key={i}
+                    className={`relative overflow-hidden rounded-lg cursor-pointer group ${
+                      isLarge ? "col-span-2 row-span-2 aspect-[4/3]" : "aspect-square"
+                    }`}
+                    onClick={() => setLightboxIdx(i)}
+                  >
+                    <img src={img.src} alt={img.alt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <p className="absolute bottom-3 left-4 text-white text-xs tracking-wide opacity-0 group-hover:opacity-100 transition-opacity duration-500">{img.alt}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
