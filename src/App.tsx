@@ -48,6 +48,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
+import HantowerLandingPage from "./pages/hantower/HantowerLandingPage";
 import NotFound from "./pages/NotFound";
 import NAULandingPage from "./pages/nau/NAULandingPage";
 import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
@@ -93,6 +94,7 @@ const App = () => (
             {/* Backup: rota desativada - reativar quando necessário */}
             {/* <Route path="/estanciavelha/privado" element={<EstanciaVelha />} /> */}
             <Route path="/estanciavelha" element={<EstanciaVelhaTeaser />} />
+            <Route path="/estanciavelha/hantower" element={<HantowerLandingPage />} />
             <Route path="/estanciavelha/bairrodasrosas" element={<BairrodasRosas />} />
             <Route path="/estanciavelha/:brokerSlug" element={<EstanciaVelhaBrokerTeaser />} />
             
