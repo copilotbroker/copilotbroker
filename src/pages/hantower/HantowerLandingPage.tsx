@@ -111,11 +111,11 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 }
 
 /* ── CTA Button ── */
-function ScrollCTA({ text = "Quero saber tudo!", variant = "gold" }: { text?: string; variant?: "gold" | "outline" }) {
+function ScrollCTA({ text = "Quero saber tudo!", variant = "gold", target = "formulario" }: { text?: string; variant?: "gold" | "outline"; target?: string }) {
   const isOutline = variant === "outline";
   return (
     <button
-      onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
+      onClick={() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth" })}
       className={`group inline-flex items-center gap-2 px-8 py-4 rounded-sm font-semibold text-sm tracking-wider uppercase transition-all duration-300 hover:scale-[1.02] ${
         isOutline ? "border-2 bg-transparent" : "text-white hover:shadow-lg"
       }`}
