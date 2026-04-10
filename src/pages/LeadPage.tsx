@@ -76,6 +76,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
   const [iniciarAtendimentoOpen, setIniciarAtendimentoOpen] = useState(false);
   const [iniciarAtendimentoMsg, setIniciarAtendimentoMsg] = useState("");
   const [iniciarAtendimentoSending, setIniciarAtendimentoSending] = useState(false);
+  const [newNote, setNewNote] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
 
   // Return stage states
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
@@ -906,12 +908,40 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
             </section>
 
             {/* Notes */}
-            {lead.notes && (
-              <section className="bg-[#111114] rounded-2xl border border-[#1e1e22] p-5">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Observações</h2>
-                <p className="text-sm text-slate-300 leading-relaxed">{lead.notes}</p>
-              </section>
-            )}
+            <section className="bg-[#111114] rounded-2xl border border-[#1e1e22] p-5 space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Notas</h2>
+              {lead.notes && (
+                <p className="text-sm text-slate-300 leading-relaxed bg-[#0a0a0f] p-3 rounded-lg border border-[#1e1e22]">{lead.notes}</p>
+              )}
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Adicionar nota à linha do tempo..."
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  className="min-h-[60px] bg-[#0a0a0f] border-[#1e1e22] text-slate-200 placeholder:text-slate-500 focus:border-[#FFFF00]/50 resize-none"
+                />
+              </div>
+              <Button
+                disabled={!newNote.trim() || savingNote}
+                onClick={async () => {
+                  if (!newNote.trim()) return;
+                  setSavingNote(true);
+                  const userId = (await supabase.auth.getUser()).data.user?.id;
+                  const ok = await addInteraction("note_added" as any, {
+                    notes: newNote.trim(),
+                    createdBy: userId,
+                  });
+                  if (ok) {
+                    toast.success("Nota adicionada!");
+                    setNewNote("");
+                  }
+                  setSavingNote(false);
+                }}
+                className="w-full h-9 text-xs font-semibold bg-[#FFFF00] text-black hover:bg-[#FFFF00]/90"
+              >
+                {savingNote ? "Salvando..." : "Salvar Nota"}
+              </Button>
+            </section>
           </div>
 
           {/* ━━━━ RIGHT COLUMN (40%) ━━━━ */}
