@@ -161,22 +161,8 @@ const HantowerLandingPage = () => {
 
         {/* ═══ HEADER ═══ */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100/80">
-          <div className="max-w-7xl mx-auto px-6 md:px-10 flex items-center justify-between h-20 md:h-24">
-            <img src={logoImg} alt="Hantower" className="h-9 md:h-11" />
-            <nav className="hidden md:flex items-center gap-10 text-[13px] tracking-[0.08em] uppercase text-gray-500 font-medium">
-              <a href="#sobre" className="hover:text-gray-900 transition-colors duration-300">Sobre</a>
-              <a href="#fotos" className="hover:text-gray-900 transition-colors duration-300">Fotos</a>
-              <a href="#diferenciais" className="hover:text-gray-900 transition-colors duration-300">Diferenciais</a>
-              <a href="#localizacao" className="hover:text-gray-900 transition-colors duration-300">Localização</a>
-              <a href="#formulario" className="hover:text-gray-900 transition-colors duration-300">Contato</a>
-            </nav>
-            <button
-              onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-              className="px-6 py-3 rounded text-[11px] font-semibold tracking-[0.12em] uppercase text-white transition-all hover:shadow-lg hover:scale-[1.02]"
-              style={{ backgroundColor: GOLD }}
-            >
-              Falar com corretor
-            </button>
+          <div className="flex items-center justify-center h-16 md:h-20">
+            <img src={logoImg} alt="Hantower" className="h-6 md:h-7" />
           </div>
         </header>
 
@@ -186,7 +172,7 @@ const HantowerLandingPage = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
 
           <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 w-full">
-            <div className="max-w-xl">
+            <div className="max-w-xl" style={{ textShadow: "0 2px 30px rgba(0,0,0,0.6), 0 4px 60px rgba(0,0,0,0.4)" }}>
               <div className="w-12 h-[2px] mb-6" style={{ backgroundColor: GOLD }} />
               <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold text-white leading-[0.95] mb-5" style={{ fontFamily: "'Playfair Display', serif" }}>
                 HANTOWER
@@ -606,14 +592,6 @@ const HantowerLandingPage = () => {
         </footer>
       </div>
 
-      {/* Floating CTA mobile */}
-      <button
-        onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-        className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-full font-semibold text-xs tracking-wider uppercase shadow-xl transition-all hover:scale-105 md:hidden text-white"
-        style={{ backgroundColor: GOLD, boxShadow: `0 8px 30px ${GOLD}40` }}
-      >
-        Quero saber tudo!
-      </button>
     </>
   );
 };
