@@ -160,105 +160,123 @@ const HantowerLandingPage = () => {
       <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', sans-serif" }}>
 
         {/* ═══ HEADER ═══ */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between h-16 md:h-20">
-            <img src={logoImg} alt="Hantower" className="h-8 md:h-10" />
-            <nav className="hidden md:flex items-center gap-8 text-sm text-gray-600">
-              <a href="#sobre" className="hover:text-gray-900 transition-colors">Sobre</a>
-              <a href="#fotos" className="hover:text-gray-900 transition-colors">Fotos</a>
-              <a href="#diferenciais" className="hover:text-gray-900 transition-colors">Diferenciais</a>
-              <a href="#localizacao" className="hover:text-gray-900 transition-colors">Localização</a>
-              <a href="#formulario" className="hover:text-gray-900 transition-colors">Contato</a>
+        <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100/80">
+          <div className="max-w-7xl mx-auto px-6 md:px-10 flex items-center justify-between h-20 md:h-24">
+            <img src={logoImg} alt="Hantower" className="h-9 md:h-11" />
+            <nav className="hidden md:flex items-center gap-10 text-[13px] tracking-[0.08em] uppercase text-gray-500 font-medium">
+              <a href="#sobre" className="hover:text-gray-900 transition-colors duration-300">Sobre</a>
+              <a href="#fotos" className="hover:text-gray-900 transition-colors duration-300">Fotos</a>
+              <a href="#diferenciais" className="hover:text-gray-900 transition-colors duration-300">Diferenciais</a>
+              <a href="#localizacao" className="hover:text-gray-900 transition-colors duration-300">Localização</a>
+              <a href="#formulario" className="hover:text-gray-900 transition-colors duration-300">Contato</a>
             </nav>
             <button
               onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-              className="px-5 py-2.5 rounded-sm text-xs font-semibold tracking-wider uppercase text-white transition-all hover:shadow-lg"
+              className="px-6 py-3 rounded text-[11px] font-semibold tracking-[0.12em] uppercase text-white transition-all hover:shadow-lg hover:scale-[1.02]"
               style={{ backgroundColor: GOLD }}
             >
-              Falar com um corretor
+              Falar com corretor
             </button>
           </div>
         </header>
 
         {/* ═══ SEÇÃO 1 — HERO ═══ */}
-        <section className="relative min-h-screen flex items-center pt-20">
+        <section className="relative h-screen flex items-end pb-16 md:pb-24">
           <img src={fachadaImg} alt="Hantower – fachada" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-white/65 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/70" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
 
-          <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 w-full">
-            <div className="max-w-2xl">
-              <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold text-gray-900 leading-[1.05] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 w-full">
+            <div className="max-w-xl">
+              <div className="w-12 h-[2px] mb-6" style={{ backgroundColor: GOLD }} />
+              <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold text-white leading-[0.95] mb-5" style={{ fontFamily: "'Playfair Display', serif" }}>
                 HANTOWER
               </h1>
-              <p className="text-lg md:text-2xl text-gray-700 font-light mb-6">
-                Redefinindo o mercado imobiliário de Estância Velha
-              </p>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed mb-4 max-w-lg">
-                Chegou a hora de conhecer um novo marco do alto padrão na cidade. Um empreendimento criado para quem quer morar com imponência, conforto, sofisticação e uma experiência de lazer acima do comum.
-              </p>
-              <p className="text-base md:text-lg font-semibold text-gray-800 mb-2">
-                O primeiro Home Club da região, no maior prédio de Estância Velha.
-              </p>
-              <p className="text-sm text-gray-500 max-w-lg mb-8">
-                Com 70 metros de altura, 24 andares, apartamentos de 2 e 3 suítes, metragens de 84m² a 128m² privativos, sacada gourmet com churrasqueira e opções de plantas com spa com hidromassagem.
+              <p className="text-lg md:text-xl text-white/80 font-light mb-8 leading-relaxed">
+                O primeiro Home Club de Estância Velha.<br className="hidden md:block" />
+                24 andares. 70 metros de altura.
               </p>
               <ScrollCTA />
-              <p className="mt-3 text-xs text-gray-400">Receba agora mesmo todos os detalhes do Hantower.</p>
             </div>
           </div>
         </section>
 
+        {/* ═══ STATS BAR ═══ */}
+        <section className="bg-gray-900 py-6 md:py-8">
+          <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            {[
+              { value: "24", label: "Andares" },
+              { value: "70m", label: "De altura" },
+              { value: "2 e 3", label: "Suítes" },
+              { value: "84-128m²", label: "Privativos" },
+            ].map((s, i) => (
+              <div key={i}>
+                <p className="text-2xl md:text-3xl font-bold mb-1" style={{ color: GOLD, fontFamily: "'Playfair Display', serif" }}>{s.value}</p>
+                <p className="text-white/50 text-xs tracking-[0.1em] uppercase">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* ═══ SEÇÃO 2 — Posicionamento e desejo ═══ */}
-        <section ref={s2.ref as any} id="sobre" className="py-20 md:py-28 px-4">
-          <div className={`max-w-4xl mx-auto text-center ${fade(s2.visible)}`}>
-            <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+        <section ref={s2.ref as any} id="sobre" className="py-24 md:py-32 px-6">
+          <div className={`max-w-3xl mx-auto text-center ${fade(s2.visible)}`}>
+            <p className="text-xs tracking-[0.2em] uppercase mb-6" style={{ color: GOLD }}>Um novo patamar</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-8 leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
               Não é só um apartamento.<br />
-              <span style={{ color: GOLD }}>É um novo patamar de vida em Estância Velha.</span>
+              <span style={{ color: GOLD }}>É um novo patamar de vida.</span>
             </h2>
-            <p className="text-gray-500 leading-relaxed mb-4 text-sm md:text-base max-w-3xl mx-auto">
+            <p className="text-gray-500 leading-[1.8] text-base md:text-lg max-w-2xl mx-auto">
               O Hantower nasce para quem não aceita o comum. Para quem valoriza arquitetura marcante, ambientes sofisticados, lazer completo e a sensação de viver em um endereço que naturalmente se destaca na cidade.
-            </p>
-            <p className="text-gray-500 leading-relaxed text-sm md:text-base max-w-3xl mx-auto">
-              Inspirado em referências arquitetônicas nacionais e internacionais, o empreendimento foi concebido para entregar uma experiência de bem-estar, conforto e exclusividade todos os dias.
             </p>
           </div>
         </section>
 
         {/* ═══ IMAGEM DESTAQUE ═══ */}
-        <section className="relative h-[50vh] md:h-[65vh] cursor-pointer" onClick={() => setLightboxIdx(1)}>
-          <img src={sacadasImg} alt="Hantower sacadas" className="w-full h-full object-cover" loading="lazy" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+        <section className="relative h-[60vh] md:h-[75vh] cursor-pointer overflow-hidden" onClick={() => setLightboxIdx(1)}>
+          <img src={sacadasImg} alt="Hantower sacadas" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
+          <div className="absolute bottom-8 left-8 md:bottom-12 md:left-12">
+            <p className="text-white/60 text-xs tracking-[0.15em] uppercase mb-2">Vista das sacadas</p>
+            <p className="text-white text-lg md:text-2xl font-light" style={{ fontFamily: "'Playfair Display', serif" }}>Sofisticação em cada detalhe</p>
+          </div>
         </section>
 
         {/* ═══ SEÇÃO 3 — Um empreendimento que impõe presença ═══ */}
-        <section ref={s3.ref as any} id="diferenciais" className="py-20 md:py-28 px-4 bg-gray-50">
+        <section ref={s3.ref as any} id="diferenciais" className="py-24 md:py-32 px-6 bg-gray-50">
           <div className={`max-w-6xl mx-auto ${fade(s3.visible)}`}>
-            <div className="text-center mb-14">
-              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <div className="text-center mb-16">
+              <p className="text-xs tracking-[0.2em] uppercase mb-4" style={{ color: GOLD }}>Diferenciais</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Um empreendimento raro.
               </h2>
-              <p className="text-gray-400 text-sm md:text-base">Em um endereço que se destaca naturalmente.</p>
-              <p className="text-gray-500 text-sm md:text-base mt-4 max-w-2xl mx-auto">
-                No Hantower, cada detalhe foi pensado para unir imponência, estilo de vida e funcionalidade:
-              </p>
+              <p className="text-gray-400 text-base">Em um endereço que se destaca naturalmente.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
                 { icon: Building2, text: "Maior prédio de Estância Velha" },
                 { icon: Star, text: "Primeiro Home Club da região" },
-                { icon: Waves, text: "Rooftop com piscina aquecida, borda infinita e raia de 20 metros" },
+                { icon: Waves, text: "Rooftop com piscina aquecida, borda infinita e raia de 20m" },
                 { icon: CheckCircle2, text: "Apartamentos amplos, com 2 e 3 suítes" },
                 { icon: ChefHat, text: "Sacada gourmet com churrasqueira" },
                 { icon: Sparkles, text: "Spa com hidromassagem em unidades selecionadas" },
-                { icon: MapPin, text: "Localização privilegiada no Centro de Estância Velha" },
+                { icon: MapPin, text: "Centro de Estância Velha" },
               ].map((item, i) => (
-                <div key={i} className="flex items-start gap-4 p-5 rounded-lg bg-white border border-gray-100 hover:shadow-md transition-shadow">
+                <div key={i} className="flex items-start gap-4 p-6 rounded-xl bg-white border border-gray-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                   <item.icon className="w-6 h-6 shrink-0 mt-0.5" style={{ color: GOLD }} />
                   <span className="text-gray-700 text-sm md:text-base">{item.text}</span>
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ═══ IMAGEM BREAK — Cobertura ═══ */}
+        <section className="relative h-[45vh] md:h-[55vh] overflow-hidden cursor-pointer" onClick={() => setLightboxIdx(2)}>
+          <img src={coberturaPiscinaImg} alt="Piscina na cobertura" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
+          <div className="absolute bottom-8 left-8 md:bottom-12 md:left-12">
+            <p className="text-white/60 text-xs tracking-[0.15em] uppercase mb-2">Rooftop</p>
+            <p className="text-white text-lg md:text-2xl font-light" style={{ fontFamily: "'Playfair Display', serif" }}>Piscina de borda infinita com vista</p>
           </div>
         </section>
 
@@ -302,18 +320,29 @@ const HantowerLandingPage = () => {
         </section>
 
         {/* ═══ GALERIA ═══ */}
-        <section id="fotos" className="py-16 md:py-24 px-4 bg-gray-50">
+        <section id="fotos" className="py-20 md:py-28 px-6 bg-gray-50">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-10" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Galeria do Empreendimento
+            <p className="text-xs tracking-[0.2em] uppercase text-center mb-3" style={{ color: GOLD }}>Galeria</p>
+            <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-12" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Conheça cada espaço
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-              {galleryImages.map((img, i) => (
-                <div key={i} className="relative overflow-hidden rounded-md cursor-pointer group aspect-[4/3]" onClick={() => setLightboxIdx(i)}>
-                  <img src={img.src} alt={img.alt} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-                </div>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {galleryImages.map((img, i) => {
+                const isLarge = i === 0 || i === 5;
+                return (
+                  <div
+                    key={i}
+                    className={`relative overflow-hidden rounded-lg cursor-pointer group ${
+                      isLarge ? "col-span-2 row-span-2 aspect-[4/3]" : "aspect-square"
+                    }`}
+                    onClick={() => setLightboxIdx(i)}
+                  >
+                    <img src={img.src} alt={img.alt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <p className="absolute bottom-3 left-4 text-white text-xs tracking-wide opacity-0 group-hover:opacity-100 transition-opacity duration-500">{img.alt}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
