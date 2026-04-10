@@ -334,10 +334,20 @@ export function ConversationThread({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Ctrl+Enter or Meta+Enter to send; plain Enter inserts newline
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleSend();
+    if (e.key === "Enter") {
+      const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      if (isTouchDevice) {
+        // Mobile: Enter = newline, Ctrl/Meta+Enter = send
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      } else {
+        // Desktop: Enter = send, Shift+Enter = newline
+        if (e.shiftKey) return; // allow newline
+        e.preventDefault();
+        handleSend();
+      }
     }
   };
 
@@ -728,7 +738,7 @@ export function ConversationThread({
                 el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
               }}
               onKeyDown={handleKeyDown}
-              placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem... (Ctrl+Enter para enviar)"}
+              placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem... (Enter para enviar, Shift+Enter para quebrar linha)"}
               className={cn(
                 "max-h-[160px] min-h-[36px] resize-none overflow-y-auto py-2 text-sm",
                 (conversation as any).source_instance === "global"
