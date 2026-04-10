@@ -48,6 +48,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
+import HantowerLandingPage from "./pages/hantower/HantowerLandingPage";
 import NotFound from "./pages/NotFound";
 import NAULandingPage from "./pages/nau/NAULandingPage";
 import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
