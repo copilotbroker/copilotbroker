@@ -13,6 +13,13 @@ import { useLogout } from "@/hooks/use-logout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Loader2 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
@@ -363,30 +370,48 @@ export default function BrokerPlantao() {
     >
       <div className="flex h-[calc(100vh-64px)] lg:h-[calc(100vh-72px)] overflow-hidden -m-3 lg:-m-6">
         {showList && (
-          <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0`}>
-            <ConversationList
-              conversations={activeConversations}
-              selectedId={selectedConversation?.id || null}
-              onSelect={handleSelectConversation}
-              search={search}
-              onSearchChange={setSearch}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              isLoading={activeLoading}
-              totalUnread={totalUnread}
-              onMarkAsRead={(id) => markAsRead(id)}
-              onArchive={(id) => archiveConversation(id)}
-              inboxTab={inboxTab}
-              onTabChange={handleTabChange}
-              showOthersTab={showOthersTab}
-              novosCount={novosConversations.length}
-              emptyMessage={
-                inboxTab === "novos" && isCheckedInGlobal === false
-                  ? "Você precisa fazer check-in na roleta do Plantão para ver novos contatos."
-                  : undefined
-              }
-              brokerId={brokerId}
-            />
+          <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0 flex flex-col`}>
+            {canSelectBroker && (inboxTab === "novos" || inboxTab === "meus") && (
+              <div className="px-3 pt-3 pb-1">
+                <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
+                  <SelectTrigger className="h-8 bg-card border-border text-sm text-foreground">
+                    <SelectValue placeholder="Minhas conversas" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="all" className="text-muted-foreground text-sm">Todas as conversas</SelectItem>
+                    <SelectItem value="_self" className="text-foreground text-sm">Minhas conversas</SelectItem>
+                    {teamBrokers.map(b => (
+                      <SelectItem key={b.id} value={b.id} className="text-foreground text-sm">{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="flex-1 min-h-0">
+              <ConversationList
+                conversations={activeConversations}
+                selectedId={selectedConversation?.id || null}
+                onSelect={handleSelectConversation}
+                search={search}
+                onSearchChange={setSearch}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                isLoading={activeLoading}
+                totalUnread={totalUnread}
+                onMarkAsRead={(id) => markAsRead(id)}
+                onArchive={(id) => archiveConversation(id)}
+                inboxTab={inboxTab}
+                onTabChange={handleTabChange}
+                showOthersTab={false}
+                novosCount={novosConversations.length}
+                emptyMessage={
+                  inboxTab === "novos" && isCheckedInGlobal === false
+                    ? "Você precisa fazer check-in na roleta do Plantão para ver novos contatos."
+                    : undefined
+                }
+                brokerId={resolvedBrokerId || brokerId}
+              />
+            </div>
           </div>
         )}
 
