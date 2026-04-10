@@ -11,7 +11,7 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        outline: "border border-input bg-background hover:bg-accent/10",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         success: "border border-crm-success/35 bg-crm-success text-crm-success-foreground shadow-[0_8px_20px_hsl(var(--crm-success)/0.22)] hover:bg-crm-success/90 hover:shadow-[0_12px_28px_hsl(var(--crm-success)/0.28)]",
         warning: "border border-crm-warning/35 bg-crm-warning text-crm-warning-foreground shadow-[0_8px_20px_hsl(var(--crm-warning)/0.22)] hover:bg-crm-warning/90 hover:shadow-[0_12px_28px_hsl(var(--crm-warning)/0.28)]",
