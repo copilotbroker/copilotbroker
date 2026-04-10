@@ -228,15 +228,16 @@ export function ConversationList({
       <div className="space-y-2 px-3 pb-1 pt-3">
         {/* Broker filter selector (admin/leader) — above tabs */}
         {onBrokerFilterChange && brokerOptions.length > 0 && (
-          <select
-            value={brokerFilter || ""}
-            onChange={(e) => onBrokerFilterChange(e.target.value)}
-            className="w-full h-8 rounded-md border border-border bg-background px-2 text-xs text-muted-foreground"
-          >
-            {brokerOptions.map((b) => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
+          <Select value={brokerFilter || ""} onValueChange={onBrokerFilterChange}>
+            <SelectTrigger className="h-8 bg-background border-border text-sm text-muted-foreground">
+              <SelectValue placeholder="Selecionar corretor" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              {brokerOptions.map((b) => (
+                <SelectItem key={b.id} value={b.id} className="text-foreground text-sm">{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
 
         {/* Plantão Tabs (Novos | Atendimento) */}
