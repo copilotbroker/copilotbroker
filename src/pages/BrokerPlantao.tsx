@@ -13,6 +13,13 @@ import { useLogout } from "@/hooks/use-logout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Loader2 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
@@ -32,6 +39,8 @@ export default function BrokerPlantao() {
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
   const [isCheckedInGlobal, setIsCheckedInGlobal] = useState<boolean | null>(null);
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>("_self");
+  const [teamBrokers, setTeamBrokers] = useState<{ id: string; name: string }[]>([]);
 
   const { role, isLeader } = useUserRole();
 
@@ -58,6 +67,16 @@ export default function BrokerPlantao() {
     fetchRoletas();
   }, []);
 
+  // Fetch team brokers for leaders
+  useEffect(() => {
+    if (!brokerId || !isLeader) { setTeamBrokers([]); return; }
+    const fetchTeam = async () => {
+      const { data } = await supabase.from("brokers").select("id, name").eq("lider_id", brokerId).eq("is_active", true).order("name");
+      if (data) setTeamBrokers(data as any);
+    };
+    fetchTeam();
+  }, [brokerId, isLeader]);
+
   // Check if broker has active check-in in a whatsapp_global roulette
   useEffect(() => {
     if (!brokerId) return;
@@ -77,34 +96,42 @@ export default function BrokerPlantao() {
   }, [brokerId]);
 
   const isArchived = statusFilter === "archived";
-  const showOthersTab = role === "admin" || isLeader;
+  const canSelectBroker = role === "admin" || isLeader;
+  const resolvedBrokerId = canSelectBroker
+    ? (selectedBrokerId === "all" ? undefined : selectedBrokerId === "_self" ? brokerId : selectedBrokerId)
+    : brokerId;
 
   // Main conversations (meus / outros) — global only
   const {
     conversations, isLoading, totalUnread, markAsRead, archiveConversation,
     unarchiveConversation, updateAiMode, updateConversationState, fetchConversations,
   } = useConversations({
-    brokerId: brokerId || undefined,
+    brokerId: resolvedBrokerId || undefined,
     search,
     statusFilter: isArchived ? "all" : statusFilter,
     isArchived,
-    inboxTab,
+    inboxTab: inboxTab === "novos" ? "novos" : inboxTab,
     userRole: role as "admin" | "leader" | null,
     sourceInstance: "global",
     enabled: !!brokerId,
   });
 
   // Novos conversations (separate query) — only fetch if checked in to a whatsapp_global roulette
+  const novosResolvedBrokerId = canSelectBroker
+    ? (selectedBrokerId === "all" ? undefined : selectedBrokerId === "_self" ? brokerId : selectedBrokerId)
+    : brokerId;
+
   const {
     conversations: novosConversations,
     isLoading: novosLoading,
     fetchConversations: fetchNovos,
   } = useConversations({
-    brokerId: brokerId || undefined,
+    brokerId: novosResolvedBrokerId || undefined,
     search: inboxTab === "novos" ? search : "",
     statusFilter: "all",
     isArchived: false,
     inboxTab: "novos",
+    userRole: canSelectBroker ? (role as "admin" | "leader" | null) : null,
     sourceInstance: "global",
     enabled: !!brokerId && isCheckedInGlobal === true,
   });
@@ -330,7 +357,7 @@ export default function BrokerPlantao() {
   }
 
   const isNewLeadConversation = inboxTab === "novos" && !!selectedConversation;
-  const isReadOnlyConversation = inboxTab === "outros" && !isLeader;
+  const isReadOnlyConversation = false;
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
   const showContext = showLeadPanel && !isMobile;
@@ -343,30 +370,48 @@ export default function BrokerPlantao() {
     >
       <div className="flex h-[calc(100vh-64px)] lg:h-[calc(100vh-72px)] overflow-hidden -m-3 lg:-m-6">
         {showList && (
-          <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0`}>
-            <ConversationList
-              conversations={activeConversations}
-              selectedId={selectedConversation?.id || null}
-              onSelect={handleSelectConversation}
-              search={search}
-              onSearchChange={setSearch}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              isLoading={activeLoading}
-              totalUnread={totalUnread}
-              onMarkAsRead={(id) => markAsRead(id)}
-              onArchive={(id) => archiveConversation(id)}
-              inboxTab={inboxTab}
-              onTabChange={handleTabChange}
-              showOthersTab={showOthersTab}
-              novosCount={novosConversations.length}
-              emptyMessage={
-                inboxTab === "novos" && isCheckedInGlobal === false
-                  ? "Você precisa fazer check-in na roleta do Plantão para ver novos contatos."
-                  : undefined
-              }
-              brokerId={brokerId}
-            />
+          <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0 flex flex-col`}>
+            {canSelectBroker && (inboxTab === "novos" || inboxTab === "meus") && (
+              <div className="px-3 pt-3 pb-1">
+                <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
+                  <SelectTrigger className="h-8 bg-card border-border text-sm text-foreground">
+                    <SelectValue placeholder="Minhas conversas" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="all" className="text-muted-foreground text-sm">Todas as conversas</SelectItem>
+                    <SelectItem value="_self" className="text-foreground text-sm">Minhas conversas</SelectItem>
+                    {teamBrokers.map(b => (
+                      <SelectItem key={b.id} value={b.id} className="text-foreground text-sm">{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="flex-1 min-h-0">
+              <ConversationList
+                conversations={activeConversations}
+                selectedId={selectedConversation?.id || null}
+                onSelect={handleSelectConversation}
+                search={search}
+                onSearchChange={setSearch}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                isLoading={activeLoading}
+                totalUnread={totalUnread}
+                onMarkAsRead={(id) => markAsRead(id)}
+                onArchive={(id) => archiveConversation(id)}
+                inboxTab={inboxTab}
+                onTabChange={handleTabChange}
+                showOthersTab={false}
+                novosCount={novosConversations.length}
+                emptyMessage={
+                  inboxTab === "novos" && isCheckedInGlobal === false
+                    ? "Você precisa fazer check-in na roleta do Plantão para ver novos contatos."
+                    : undefined
+                }
+                brokerId={resolvedBrokerId || brokerId}
+              />
+            </div>
           </div>
         )}
 

@@ -196,9 +196,13 @@ export function useConversations(options: UseConversationsOptions = {}) {
       if (options.inboxTab === "novos") {
         // Global conversations pending attendance
         query = query.eq("source_instance", "global").eq("attendance_started", false);
-        // Admins see ALL pending global conversations; brokers see only their assigned or disputa
-        if (options.userRole !== "admin" && options.brokerId) {
-          query = query.or(`broker_id.eq.${options.brokerId},roleta_modo.eq.disputa`);
+        // When a specific broker is selected, filter by that broker; otherwise admin sees all
+        if (options.brokerId) {
+          if (options.userRole === "admin") {
+            query = query.eq("broker_id", options.brokerId);
+          } else {
+            query = query.or(`broker_id.eq.${options.brokerId},roleta_modo.eq.disputa`);
+          }
         }
       } else if (options.inboxTab === "outros") {
         // Team conversations (exclude own)
