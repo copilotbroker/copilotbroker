@@ -304,18 +304,6 @@ export function ConversationList({
                   </Badge>
                 )}
               </button>
-              <button
-                onClick={() => onBrokerTabChange("arquivados")}
-                className={cn(
-                  "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors truncate",
-                  brokerInboxTab === "arquivados"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Archive className="h-3 w-3 shrink-0" />
-                <span className="truncate">Arquivados</span>
-              </button>
             </div>
 
             {/* Broker filter for atendimento tab (admin/leader) */}
@@ -432,6 +420,25 @@ export function ConversationList({
           >
             <Clock className="h-3 w-3" /> Mais antigas
           </button>
+          {onBrokerTabChange && (
+            <button
+              onClick={() => {
+                if (brokerInboxTab === "arquivados") {
+                  onBrokerTabChange("atendimento");
+                } else {
+                  onBrokerTabChange("arquivados");
+                }
+              }}
+              className={cn(
+                "flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                brokerInboxTab === "arquivados"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+            >
+              <Archive className="h-3 w-3" /> Arquivadas
+            </button>
+          )}
         </div>
       </div>
 
