@@ -179,7 +179,7 @@ const HantowerLandingPage = () => {
 
         {/* ═══ HERO ═══ */}
         <section
-          className="relative min-h-[110vh] sm:min-h-[120vh] flex items-start justify-center overflow-hidden"
+          className="relative min-h-[70vh] sm:min-h-[75vh] flex items-center justify-center overflow-hidden"
           aria-labelledby="hero-heading"
         >
           <div
