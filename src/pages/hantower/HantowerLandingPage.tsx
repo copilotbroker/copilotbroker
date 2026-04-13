@@ -125,6 +125,7 @@ const HantowerLandingPage = () => {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [selectedPlanta, setSelectedPlanta] = useState<"84" | "128">("84");
+  const [plantaExpanded, setPlantaExpanded] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -450,8 +451,31 @@ const HantowerLandingPage = () => {
                   <img
                     src={selectedPlanta === "84" ? planta84 : planta128}
                     alt={`Planta ${selectedPlanta}m²`}
-                    className="w-full max-h-[450px] object-contain rounded-lg"
+                    className="w-full max-h-[450px] object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setPlantaExpanded(true)}
                   />
+
+                  {/* Planta Lightbox */}
+                  {plantaExpanded && (
+                    <div
+                      className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+                      onClick={() => setPlantaExpanded(false)}
+                    >
+                      <button
+                        className="absolute top-4 right-4 text-white/80 hover:text-white z-10"
+                        onClick={() => setPlantaExpanded(false)}
+                        aria-label="Fechar"
+                      >
+                        <X className="w-8 h-8" />
+                      </button>
+                      <img
+                        src={selectedPlanta === "84" ? planta84 : planta128}
+                        alt={`Planta ${selectedPlanta}m²`}
+                        className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
