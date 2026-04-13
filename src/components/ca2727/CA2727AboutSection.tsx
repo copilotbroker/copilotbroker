@@ -173,11 +173,6 @@ const CA2727AboutSection = () => {
                     loading={i === 0 ? "eager" : "lazy"}
                   />
                 ))}
-                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                  <span className="text-white/0 group-hover:text-white/80 text-sm font-medium transition-colors bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">
-                    Clique para ampliar
-                  </span>
-                </div>
               </div>
 
               <button
