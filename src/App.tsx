@@ -96,6 +96,8 @@ const App = () => (
             {/* Backup: rota desativada - reativar quando necessário */}
             {/* <Route path="/estanciavelha/privado" element={<EstanciaVelha />} /> */}
             <Route path="/estanciavelha" element={<EstanciaVelhaTeaser />} />
+            <Route path="/estanciavelha/ca2727" element={<CA2727LandingPage />} />
+            <Route path="/estanciavelha/ca2727/obrigado" element={<CA2727LandingPage />} />
             <Route path="/estanciavelha/hantower" element={<HantowerLandingPage />} />
             <Route path="/estanciavelha/bairrodasrosas" element={<BairrodasRosas />} />
             <Route path="/estanciavelha/:brokerSlug" element={<EstanciaVelhaBrokerTeaser />} />
