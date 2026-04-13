@@ -580,7 +580,7 @@ const SentowerLandingPage = () => {
                   <span className="text-gold-gradient">FREQUENTES</span>
                 </h2>
                 <FAQItem q="Onde fica o Sentower?" a="Em Estância Velha, em localização estratégica e valorizada." />
-                <FAQItem q="Quais são as tipologias?" a="Lofts de luxo, apartamentos de 2 suítes e apartamentos de 3 dormitórios com até 124,4 m²." />
+                <FAQItem q="Quais são as tipologias?" a="Lofts de luxo, apartamentos de 2 suítes e apartamentos de 3 dormitórios com até 124 m²." />
                 <FAQItem q="Quais os diferenciais?" a="Planta livre, hidromassagem integrada, rooftop com piscina infinita, Home Club completo e vista garantida." />
                 <FAQItem q="Como faço para receber informações?" a="Basta preencher o cadastro e você recebe o contato imediatamente." />
               </div>
