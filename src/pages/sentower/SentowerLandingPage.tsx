@@ -404,8 +404,8 @@ const SentowerLandingPage = () => {
                   return (
                     <div
                       key={i}
-                      className={`relative overflow-hidden rounded-lg cursor-pointer group ${
-                        isLarge ? "col-span-2 row-span-2 aspect-[4/3]" : "aspect-square"
+                      className={`relative overflow-hidden rounded-lg cursor-pointer group aspect-square ${
+                        isLarge ? "md:col-span-2 md:row-span-2 md:aspect-[4/3]" : ""
                       }`}
                       onClick={() => setLightboxIdx(i)}
                     >
