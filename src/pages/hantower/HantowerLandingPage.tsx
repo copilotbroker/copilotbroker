@@ -696,12 +696,6 @@ const HantowerLandingPage = () => {
             <div className="max-w-lg mx-auto px-6 relative z-10">
               <div className="text-center mb-10">
                 <div className="divider-gold mx-auto mb-6" />
-                <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-3">
-                  CADASTRE-SE
-                </h2>
-                <p className="text-muted-foreground text-sm tracking-wide">
-                  Receba informações exclusivas em primeira mão.
-                </p>
               </div>
               <FormSection
                 projectId={projectId}
