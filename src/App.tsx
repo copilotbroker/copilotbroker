@@ -54,6 +54,7 @@ import NAULandingPage from "./pages/nau/NAULandingPage";
 import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
 import TermosNAU from "./pages/nau/TermosNAU";
 import MonacoLandingPage from "./pages/monaco/MonacoLandingPage";
+import MonacoBrokerLandingPage from "./pages/monaco/MonacoBrokerLandingPage";
 import TermosMonaco from "./pages/monaco/TermosMonaco";
 import VivaParkLandingPage from "./pages/vivapark/VivaParkLandingPage";
 import VivaParkBrokerLandingPage from "./pages/vivapark/VivaParkBrokerLandingPage";
