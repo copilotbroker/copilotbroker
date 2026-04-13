@@ -179,7 +179,7 @@ const HantowerLandingPage = () => {
 
         {/* ═══ HERO ═══ */}
         <section
-          className="relative min-h-[110vh] sm:min-h-[120vh] flex items-start justify-center overflow-hidden"
+          className="relative min-h-[70vh] sm:min-h-[75vh] flex items-center justify-center overflow-hidden"
           aria-labelledby="hero-heading"
         >
           <div
@@ -195,7 +195,7 @@ const HantowerLandingPage = () => {
             <img src={logoImg} alt="Hantower" className="h-4 sm:h-5 w-auto brightness-0 invert" />
           </div>
 
-          <div className="relative z-10 container px-4 pt-32 sm:pt-40 md:pt-48 pb-16 text-center">
+          <div className="relative z-10 container px-4 py-16 sm:py-20 text-center">
             <div className="max-w-4xl mx-auto">
 
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-6 border border-white/30 rounded-full bg-white/10 backdrop-blur-sm">
