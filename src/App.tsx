@@ -54,6 +54,7 @@ import NAULandingPage from "./pages/nau/NAULandingPage";
 import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
 import TermosNAU from "./pages/nau/TermosNAU";
 import MonacoLandingPage from "./pages/monaco/MonacoLandingPage";
+import MonacoBrokerLandingPage from "./pages/monaco/MonacoBrokerLandingPage";
 import TermosMonaco from "./pages/monaco/TermosMonaco";
 import VivaParkLandingPage from "./pages/vivapark/VivaParkLandingPage";
 import VivaParkBrokerLandingPage from "./pages/vivapark/VivaParkBrokerLandingPage";
@@ -112,6 +113,8 @@ const App = () => (
             <Route path="/xangrila/monaco" element={<MonacoLandingPage />} />
             <Route path="/xangrila/monaco/obrigado" element={<MonacoLandingPage />} />
             <Route path="/xangrila/monaco/termos" element={<TermosMonaco />} />
+            <Route path="/xangrila/monaco/:brokerSlug/obrigado" element={<MonacoBrokerLandingPage />} />
+            <Route path="/xangrila/monaco/:brokerSlug" element={<MonacoBrokerLandingPage />} />
             
             {/* Vivapark Porto Belo — multilingual investment landing */}
             <Route path="/portobelo/vivapark" element={<VivaParkLandingPage />} />
