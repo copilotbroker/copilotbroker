@@ -284,7 +284,7 @@ const SentowerLandingPage = () => {
 
           {/* ═══ IMAGEM DESTAQUE — Rooftop ═══ */}
           <section className="relative h-[60vh] md:h-[75vh] cursor-pointer overflow-hidden" onClick={() => setLightboxIdx(1)}>
-            <img src={rooftopPiscinaImg} alt="Rooftop com piscina infinita" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
+            <img src={img05} alt="Rooftop com piscina infinita" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
             <div className="absolute bottom-8 left-8 md:bottom-12 md:left-12">
               <p className="text-white/60 text-xs tracking-[0.15em] uppercase mb-2">Rooftop</p>
@@ -332,7 +332,7 @@ const SentowerLandingPage = () => {
 
           {/* ═══ IMAGEM BREAK — Living com Hidro ═══ */}
           <section className="relative h-[45vh] md:h-[55vh] overflow-hidden cursor-pointer" onClick={() => setLightboxIdx(2)}>
-            <img src={livingHidroImg} alt="Living com hidromassagem" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
+            <img src={img08} alt="Living com hidromassagem" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
             <div className="absolute bottom-8 left-8 md:bottom-12 md:left-12">
               <p className="text-white/60 text-xs tracking-[0.15em] uppercase mb-2">Diferencial exclusivo</p>
