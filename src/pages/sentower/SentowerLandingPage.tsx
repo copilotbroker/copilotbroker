@@ -436,9 +436,9 @@ const SentowerLandingPage = () => {
 
                 <div className="grid md:grid-cols-3 gap-6">
                   {[
-                    { tipo: "Loft de luxo", quartos: "1 suíte", area: "76,5 m²", destaque: "Hidromassagem integrada ao living" },
-                    { tipo: "Apartamento", quartos: "2 suítes", area: "100,5 m²", destaque: "Hidromassagem na área gourmet" },
-                    { tipo: "Apartamento", quartos: "3 dormitórios (2 suítes)", area: "124,4 m²", destaque: "Hidromassagem integrada ao living" },
+                    { tipo: "Loft de luxo", quartos: "1 suíte", area: "76 m²", destaque: "Hidromassagem integrada ao living" },
+                    { tipo: "Apartamento", quartos: "2 suítes", area: "100 m²", destaque: "Hidromassagem na área gourmet" },
+                    { tipo: "Apartamento", quartos: "3 dormitórios (2 suítes)", area: "124 m²", destaque: "Hidromassagem integrada ao living" },
                   ].map((t, i) => (
                     <div key={i} className="card-luxury text-center">
                       <p className="text-primary font-serif text-lg font-semibold mb-1">{t.tipo}</p>
