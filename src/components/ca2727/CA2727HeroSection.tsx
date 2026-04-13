@@ -60,13 +60,13 @@ const CA2727HeroSection = () => {
             3 suítes, piscina, energia solar e vista para o pôr do sol.
           </p>
 
-          <button
-            onClick={scrollToForm}
-            className="btn-primary text-sm sm:text-base px-8 py-4 sm:px-10 sm:py-5"
+          <a
+            href="#sobre"
+            className="btn-primary text-sm sm:text-base px-8 py-4 sm:px-10 sm:py-5 inline-block"
             aria-label="Quero conhecer este imóvel"
           >
             Quero Conhecer
-          </button>
+          </a>
         </div>
 
         <button
