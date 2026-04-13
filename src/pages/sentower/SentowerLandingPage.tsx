@@ -226,7 +226,7 @@ const SentowerLandingPage = () => {
               </p>
 
               <button
-                onClick={scrollToForm}
+                onClick={() => document.getElementById("sobre")?.scrollIntoView({ behavior: "smooth" })}
                 className="btn-primary text-sm sm:text-base px-8 py-4 sm:px-10 sm:py-5"
               >
                 Quero Conhecer o Sentower
