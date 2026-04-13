@@ -1,46 +1,31 @@
 
 
-## Substituir aba "Equipe" por seletor de corretor na aba "Atendimento"
+## Problem
 
-### Problema
-1. Líderes na Inbox pessoal estão vendo conversas de **todos** os corretores na aba Equipe, quando deveriam ver apenas os da sua equipe (RLS filtra, mas a UI não restringe corretamente a lista de opções)
-2. A aba "Equipe" separada adiciona complexidade desnecessária — o mesmo objetivo pode ser atingido com um seletor de corretor dentro da aba "Atendimento"
+The Monaco landing page was built as a custom hardcoded page (`MonacoLandingPage`), not through the dynamic CRM system. There is no broker route for Monaco in the router.
 
-### Solução
-Remover a aba "Equipe" e adicionar um **seletor de corretor** dentro da aba "Atendimento" para admin e líder. O seletor vem pré-selecionado no próprio usuário. Ao mudar, busca conversas pessoais daquele corretor (com lead_id).
+When a broker adds Monaco to their portfolio, the system generates URLs like `/xangrila/monaco/davi`. This URL falls through to the catch-all route `/:citySlug/:projectSlug/:brokerSlug`, which renders `ProjectBrokerLandingPage` -- a generic layout with Estancia Velha sections (Header, HeroSection, etc.) instead of the custom Monaco design. The page either looks wrong or redirects away.
 
-### Mudanças
+## Solution
 
-**1. `src/hooks/use-conversations.ts`**
-- Remover `"equipe"` do tipo `BrokerInboxTab` (volta a ser `"novos" | "atendimento" | "arquivados"`)
-- Remover lógica de `teamMode` — substituir por: quando `brokerId` for passado (qualquer corretor), buscar conversas daquele corretor normalmente (RLS já garante acesso)
-- Manter o parâmetro `teamBrokerFilter` renomeado para algo como `overrideBrokerId` ou simplesmente usar o `brokerId` existente
+Follow the same pattern used for NAU, VivaPark, and Mauricio Cardoso: create a dedicated `MonacoBrokerLandingPage` component and add broker routes in the router.
 
-**2. `src/pages/AdminInbox.tsx`**
-- Remover estado `isEquipe`, a segunda chamada de `useConversations` com `teamMode`, e a aba "equipe"
-- Adicionar estado `selectedBrokerId` (default: `myBrokerId`)
-- Passar `selectedBrokerId` como `brokerId` na chamada principal de `useConversations`
-- Passar lista de corretores + seletor para `ConversationList`
-- Na aba "Atendimento": mostrar seletor com "Todos os corretores" + lista de corretores
+### Changes
 
-**3. `src/pages/BrokerInbox.tsx`**
-- Remover lógica de `isEquipe` e segunda chamada de `useConversations` com `teamMode`
-- Para líderes (`isLeader`): adicionar `selectedBrokerId` (default: próprio `brokerId`)
-- Na aba "Atendimento": mostrar seletor apenas para líderes, com opções limitadas aos membros da equipe (RLS já garante isso no backend)
+1. **Create `src/pages/monaco/MonacoBrokerLandingPage.tsx`**
+   - Accepts `brokerSlug` from URL params
+   - Fetches the Monaco project from `projects` table (slug=monaco, city_slug=xangrila)
+   - Fetches the broker by slug and validates `broker_projects` association
+   - Renders the full Monaco layout (all custom Monaco sections) with `brokerId` passed to `MonacoFormSection`
+   - Includes SEO metadata and Facebook Pixel (same as the main Monaco page)
 
-**4. `src/components/inbox/ConversationList.tsx`**
-- Remover aba "Equipe" e props relacionadas (`showEquipeTab`, `brokerEquipeCount`)
-- Mover o seletor de corretor para dentro da aba "Atendimento" — visível apenas quando `brokerInboxTab === "atendimento"` e o seletor de corretores estiver disponível
-- Renomear/simplificar props: `teamBrokerFilter` → `brokerFilter`, `teamBrokerOptions` → `brokerOptions`
-- O badge de corretor nas conversas continua aparecendo quando o corretor selecionado não é o próprio usuário
+2. **Update `src/App.tsx`**
+   - Import `MonacoBrokerLandingPage`
+   - Add two routes right after the existing Monaco routes (before the catch-all):
+     ```
+     /xangrila/monaco/:brokerSlug/obrigado → MonacoBrokerLandingPage
+     /xangrila/monaco/:brokerSlug → MonacoBrokerLandingPage
+     ```
 
-### Fluxo resultante
-- Admin abre Inbox pessoal → aba "Atendimento" pré-selecionada com ele mesmo → vê suas conversas → pode trocar o seletor para qualquer corretor
-- Líder abre Inbox pessoal → aba "Atendimento" pré-selecionada com ele mesmo → pode trocar para corretores da sua equipe
-- Corretor normal → sem seletor, vê apenas as próprias conversas (comportamento atual)
-
-### O que NÃO muda
-- RLS policies (já cobrem admin e líder)
-- Tipo `BrokerInboxTab` simplifica removendo `"equipe"`
-- Aba "Novos" e "Arquivados" continuam iguais
+This ensures broker links render the full custom Monaco design with proper lead attribution to the broker.
 
