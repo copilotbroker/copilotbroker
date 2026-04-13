@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const GALLERY_IMAGES = [
-  { src: "https://flip-prod-fotos.s3.amazonaws.com/dddaa801-5f1c-4920-b343-6c22e23f0baa.jpeg", alt: "Vista frontal da casa" },
   { src: "https://flip-prod-fotos.s3.amazonaws.com/f59bfe48-ffc9-4cbb-add5-d4be0e0e8da1.jpeg", alt: "Fachada principal" },
   { src: "https://flip-prod-fotos.s3.amazonaws.com/fe78429d-b427-4639-86f5-5cb572c06394.jpeg", alt: "Detalhe da fachada" },
   { src: "https://flip-prod-fotos.s3.amazonaws.com/cb25fb26-3d1f-4082-832d-94cc17844129.jpeg", alt: "Vista lateral" },
@@ -69,6 +68,7 @@ const GALLERY_IMAGES = [
   { src: "https://flip-prod-fotos.s3.amazonaws.com/45655420-973c-4eee-bd03-edb806cd302c.jpeg", alt: "Vista do bairro" },
   { src: "https://flip-prod-fotos.s3.amazonaws.com/638d8725-3908-47e1-876f-b409b11ba847.jpeg", alt: "Região" },
   { src: "https://flip-prod-fotos.s3.amazonaws.com/888ca174-9659-4779-ad7d-de0ad4c6c984.jpeg", alt: "Vista geral" },
+  { src: "https://flip-prod-fotos.s3.amazonaws.com/dddaa801-5f1c-4920-b343-6c22e23f0baa.jpeg", alt: "Vista frontal da casa" },
 ];
 
 const CA2727AboutSection = () => {
