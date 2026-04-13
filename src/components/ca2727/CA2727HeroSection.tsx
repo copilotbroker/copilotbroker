@@ -24,7 +24,7 @@ const CA2727HeroSection = () => {
 
   return (
     <section
-      className="relative min-h-[110vh] sm:min-h-[120vh] flex items-start justify-center overflow-hidden"
+      className="relative min-h-[90vh] sm:min-h-screen flex items-start justify-center overflow-hidden"
       aria-labelledby="hero-heading"
     >
       <div
