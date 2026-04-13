@@ -214,15 +214,15 @@ const SentowerLandingPage = () => {
 
               <h1
                 id="hero-heading"
-                className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-3 text-white leading-[0.95]"
+                className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 text-white leading-[1.05] uppercase"
               >
-                SENTOWER
+                Existe um antes e um depois de conhecer o Sentower.
               </h1>
 
               <div className="w-16 h-px bg-white/40 mx-auto mb-4" />
 
               <p className="text-sm sm:text-base text-white/70 mb-6 max-w-2xl mx-auto">
-                Existe um antes e um depois de conhecer o Sentower. Apartamentos de 2 e 3 dormitórios e lofts de luxo, com hidromassagem integrada aos ambientes.
+                Apartamentos de 2 e 3 dormitórios e lofts de luxo, com hidromassagem integrada aos ambientes.
               </p>
 
               <button
