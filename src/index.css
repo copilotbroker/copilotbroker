@@ -204,6 +204,42 @@
     --shadow-gold: 0 0 40px hsl(35 55% 55% / 0.25);
   }
 
+  /* Hantower — Light Elegance & Warm Gold */
+  .hantower-theme {
+    --background: 0 0% 100%;
+    --foreground: 220 15% 15%;
+
+    --card: 40 15% 97%;
+    --card-foreground: 220 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+
+    --primary: 42 60% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 10% 94%;
+    --secondary-foreground: 220 15% 15%;
+
+    --muted: 40 8% 94%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 42 60% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --border: 40 10% 88%;
+    --input: 40 10% 88%;
+    --ring: 42 60% 50%;
+
+    --gold: 42 60% 50%;
+    --gold-light: 45 55% 60%;
+    --gold-dark: 38 65% 38%;
+
+    --gradient-gold: linear-gradient(135deg, hsl(42, 60%, 50%) 0%, hsl(45, 55%, 60%) 50%, hsl(42, 60%, 50%) 100%);
+    --shadow-gold: 0 0 40px hsl(42 60% 50% / 0.2);
+    --shadow-elegant: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+  }
+
   /* CA2727 Horizon Clube — Deep Forest Green & Warm Gold */
   .ca2727-theme {
     --background: 160 30% 7%;
