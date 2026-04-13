@@ -436,9 +436,9 @@ const SentowerLandingPage = () => {
 
                 <div className="grid md:grid-cols-3 gap-6">
                   {[
-                    { tipo: "Loft de luxo", quartos: "1 suíte", area: "76,5 m²", destaque: "Hidromassagem integrada ao living" },
-                    { tipo: "Apartamento", quartos: "2 suítes", area: "100,5 m²", destaque: "Hidromassagem na área gourmet" },
-                    { tipo: "Apartamento", quartos: "3 dormitórios (2 suítes)", area: "124,4 m²", destaque: "Hidromassagem integrada ao living" },
+                    { tipo: "Loft de luxo", quartos: "1 suíte", area: "76 m²", destaque: "Hidromassagem integrada ao living" },
+                    { tipo: "Apartamento", quartos: "2 suítes", area: "100 m²", destaque: "Hidromassagem na área gourmet" },
+                    { tipo: "Apartamento", quartos: "3 dormitórios (2 suítes)", area: "124 m²", destaque: "Hidromassagem integrada ao living" },
                   ].map((t, i) => (
                     <div key={i} className="card-luxury text-center">
                       <p className="text-primary font-serif text-lg font-semibold mb-1">{t.tipo}</p>
@@ -580,7 +580,7 @@ const SentowerLandingPage = () => {
                   <span className="text-gold-gradient">FREQUENTES</span>
                 </h2>
                 <FAQItem q="Onde fica o Sentower?" a="Em Estância Velha, em localização estratégica e valorizada." />
-                <FAQItem q="Quais são as tipologias?" a="Lofts de luxo, apartamentos de 2 suítes e apartamentos de 3 dormitórios com até 124,4 m²." />
+                <FAQItem q="Quais são as tipologias?" a="Lofts de luxo, apartamentos de 2 suítes e apartamentos de 3 dormitórios com até 124 m²." />
                 <FAQItem q="Quais os diferenciais?" a="Planta livre, hidromassagem integrada, rooftop com piscina infinita, Home Club completo e vista garantida." />
                 <FAQItem q="Como faço para receber informações?" a="Basta preencher o cadastro e você recebe o contato imediatamente." />
               </div>
