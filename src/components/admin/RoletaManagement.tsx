@@ -243,15 +243,33 @@ const RoletaManagement = () => {
                 </p>
                 {formTimeoutAtivo && (
                   <>
-                    <Label className="mt-3 block">Tempo de Reserva: {formTimeout} min</Label>
-                    <Slider
-                      value={[formTimeout]}
-                      onValueChange={([v]) => setFormTimeout(v)}
-                      min={1}
-                      max={60}
-                      step={1}
-                      className="mt-2"
-                    />
+                    <Label className="mt-3 block">Tempo de Reserva</Label>
+                    <div className="flex items-center gap-3 mt-2">
+                      <Slider
+                        value={[formTimeout]}
+                        onValueChange={([v]) => setFormTimeout(v)}
+                        min={1}
+                        max={60}
+                        step={1}
+                        className="flex-1"
+                      />
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={60}
+                          value={formTimeout}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val >= 1 && val <= 60) {
+                              setFormTimeout(val);
+                            }
+                          }}
+                          className="w-16 h-8 text-xs text-center bg-[#141417] border-[#2a2a2e]"
+                        />
+                        <span className="text-xs text-muted-foreground">min</span>
+                      </div>
+                    </div>
                     <div className="mt-3">
                       <Label className="text-xs">Horário sem transferência</Label>
                       <div className="flex items-center gap-2 mt-1">
@@ -477,15 +495,33 @@ const RoletaManagement = () => {
                       {(roleta as any).timeout_ativo !== false && (
                         <>
                           <div>
-                            <Label className="text-xs">Tempo: {roleta.tempo_reserva_minutos} min</Label>
-                            <Slider
-                              value={[roleta.tempo_reserva_minutos]}
-                              onValueChange={([v]) => updateRoleta(roleta.id, { tempo_reserva_minutos: v } as any)}
-                              min={1}
-                              max={60}
-                              step={1}
-                              className="mt-1"
-                            />
+                            <Label className="text-xs">Tempo de Reserva</Label>
+                            <div className="flex items-center gap-3 mt-1">
+                              <Slider
+                                value={[roleta.tempo_reserva_minutos]}
+                                onValueChange={([v]) => updateRoleta(roleta.id, { tempo_reserva_minutos: v } as any)}
+                                min={1}
+                                max={60}
+                                step={1}
+                                className="flex-1"
+                              />
+                              <div className="flex items-center gap-1 shrink-0">
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={60}
+                                  value={roleta.tempo_reserva_minutos}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value, 10);
+                                    if (!isNaN(val) && val >= 1 && val <= 60) {
+                                      updateRoleta(roleta.id, { tempo_reserva_minutos: val } as any);
+                                    }
+                                  }}
+                                  className="w-16 h-8 text-xs text-center bg-[#0e0e11] border-[#2a2a2e]"
+                                />
+                                <span className="text-xs text-muted-foreground">min</span>
+                              </div>
+                            </div>
                           </div>
                           <div>
                             <Label className="text-xs">Horário sem transferência</Label>
