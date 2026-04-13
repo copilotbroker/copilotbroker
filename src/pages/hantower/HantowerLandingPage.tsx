@@ -125,6 +125,7 @@ const HantowerLandingPage = () => {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [selectedPlanta, setSelectedPlanta] = useState<"84" | "128">("84");
+  const [plantaExpanded, setPlantaExpanded] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
