@@ -224,6 +224,21 @@ const HantowerLandingPage = () => {
               >
                 Quero Saber Tudo
               </button>
+
+              {/* Stats inline */}
+              <div className="grid grid-cols-4 gap-3 sm:gap-6 mt-8 max-w-lg mx-auto">
+                {[
+                  { value: "24", label: "Andares" },
+                  { value: "70m", label: "De altura" },
+                  { value: "2 e 3", label: "Suítes" },
+                  { value: "84-128m²", label: "Privativos" },
+                ].map((s, i) => (
+                  <div key={i}>
+                    <p className="text-lg sm:text-xl font-bold font-serif text-primary">{s.value}</p>
+                    <p className="text-white/50 text-[9px] sm:text-[10px] tracking-[0.1em] uppercase">{s.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <button
@@ -233,23 +248,6 @@ const HantowerLandingPage = () => {
             >
               <ChevronDown className="w-8 h-8" />
             </button>
-          </div>
-        </section>
-
-        {/* ═══ STATS BAR ═══ */}
-        <section className="py-8 md:py-10 bg-primary">
-          <div className="max-w-5xl mx-auto px-6 grid grid-cols-4 gap-4 sm:gap-6 text-center">
-            {[
-              { value: "24", label: "Andares" },
-              { value: "70m", label: "De altura" },
-              { value: "2 e 3", label: "Suítes" },
-              { value: "84-128m²", label: "Privativos" },
-            ].map((s, i) => (
-              <div key={i}>
-                <p className="text-2xl md:text-3xl font-bold mb-1 font-serif text-white">{s.value}</p>
-                <p className="text-white/70 text-xs tracking-[0.1em] uppercase">{s.label}</p>
-              </div>
-            ))}
           </div>
         </section>
 
