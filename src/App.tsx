@@ -49,6 +49,7 @@ import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
 import HantowerLandingPage from "./pages/hantower/HantowerLandingPage";
+import SentowerLandingPage from "./pages/sentower/SentowerLandingPage";
 import CA2727LandingPage from "./pages/CA2727LandingPage";
 import NotFound from "./pages/NotFound";
 import NAULandingPage from "./pages/nau/NAULandingPage";
@@ -99,6 +100,7 @@ const App = () => (
             <Route path="/estanciavelha/ca2727" element={<CA2727LandingPage />} />
             <Route path="/estanciavelha/ca2727/obrigado" element={<CA2727LandingPage />} />
             <Route path="/estanciavelha/hantower" element={<HantowerLandingPage />} />
+            <Route path="/estanciavelha/sentower" element={<SentowerLandingPage />} />
             <Route path="/estanciavelha/bairrodasrosas" element={<BairrodasRosas />} />
             <Route path="/estanciavelha/:brokerSlug" element={<EstanciaVelhaBrokerTeaser />} />
             
