@@ -10,7 +10,7 @@ const HomeHero = () => {
   }, []);
 
   const scrollToCTA = () => {
-    document.getElementById("contato")?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("posicionamento")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (

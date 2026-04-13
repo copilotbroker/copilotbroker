@@ -25,6 +25,7 @@ const HomePositioning = () => {
   return (
     <section
       ref={sectionRef}
+      id="posicionamento"
       className="py-12 sm:py-16 px-4"
       aria-labelledby="positioning-heading">
 
