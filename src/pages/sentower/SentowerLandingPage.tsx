@@ -216,7 +216,7 @@ const SentowerLandingPage = () => {
                 id="hero-heading"
                 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 text-white leading-[1.05] uppercase"
               >
-                Existe um antes e um depois de conhecer o Sentower.
+                <span className="text-amber-400">Existe um antes e um depois</span> de conhecer o Sentower.
               </h1>
 
               <div className="w-16 h-px bg-white/40 mx-auto mb-4" />
