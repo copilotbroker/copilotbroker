@@ -188,11 +188,15 @@ const HantowerLandingPage = () => {
             role="img"
             aria-label="Fachada do Hantower"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-white" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80" />
+
+          {/* Logo fixa no topo */}
+          <div className="absolute top-0 left-0 right-0 z-20 flex justify-center pt-5">
+            <img src={logoImg} alt="Hantower" className="h-4 sm:h-5 w-auto brightness-0 invert" />
+          </div>
 
           <div className="relative z-10 container px-4 pt-32 sm:pt-40 md:pt-48 pb-16 text-center">
             <div className="max-w-4xl mx-auto">
-              <img src={logoImg} alt="Hantower" className="h-8 sm:h-10 md:h-12 w-auto mx-auto mb-8 brightness-0 invert" />
 
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-6 border border-white/30 rounded-full bg-white/10 backdrop-blur-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
