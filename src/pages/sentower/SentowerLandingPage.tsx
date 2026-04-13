@@ -10,7 +10,7 @@ import {
   Zap, Maximize, LayoutGrid, Store, ParkingCircle, Plug
 } from "lucide-react";
 
-import logoImg from "@/assets/sentower/logo.png";
+
 import img01 from "@/assets/sentower/gallery/img-01.jpg";
 import img02 from "@/assets/sentower/gallery/img-02.jpg";
 import img03 from "@/assets/sentower/gallery/img-03.jpg";
@@ -201,10 +201,6 @@ const SentowerLandingPage = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80" />
 
-          {/* Logo fixa no topo */}
-          <div className="absolute top-0 left-0 right-0 z-20 flex justify-center pt-5">
-            <img src={logoImg} alt="Sentower" className="h-6 sm:h-8 w-auto" />
-          </div>
 
           <div className="relative z-10 container px-4 pt-16 sm:pt-20 text-center flex-1 flex items-center justify-center">
             <div className="max-w-4xl mx-auto">
@@ -639,7 +635,7 @@ const SentowerLandingPage = () => {
               </p>
             </div>
             <div className="flex flex-col items-center gap-6 mb-8">
-              <img src={logoImg} alt="Sentower" className="h-10 w-auto opacity-60" />
+              <span className="font-serif text-2xl font-bold text-muted-foreground/60 tracking-wider">SENTOWER</span>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-1">Estância Velha – RS</p>
               </div>
