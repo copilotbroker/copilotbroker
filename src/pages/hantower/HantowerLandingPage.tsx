@@ -207,15 +207,15 @@ const HantowerLandingPage = () => {
 
               <h1
                 id="hero-heading"
-                className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-3 text-white leading-[0.95]"
+                className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 text-white leading-[1.05]"
               >
-                HANTOWER
+                Redefinindo o mercado imobiliário de Estância Velha.
               </h1>
 
               <div className="w-16 h-px bg-white/40 mx-auto mb-4" />
 
               <p className="text-sm sm:text-base text-white/70 mb-6 max-w-2xl mx-auto">
-                Redefinindo o mercado imobiliário de Estância Velha. 24 andares, rooftop com piscina infinita e apartamentos de 2 e 3 suítes.
+                24 andares, rooftop com piscina infinita e apartamentos de 2 e 3 suítes.
               </p>
 
               <button
