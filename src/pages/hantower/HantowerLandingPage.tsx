@@ -238,7 +238,7 @@ const HantowerLandingPage = () => {
 
         {/* ═══ STATS BAR ═══ */}
         <section className="py-8 md:py-10 bg-primary">
-          <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="max-w-5xl mx-auto px-6 grid grid-cols-4 gap-4 sm:gap-6 text-center">
             {[
               { value: "24", label: "Andares" },
               { value: "70m", label: "De altura" },
