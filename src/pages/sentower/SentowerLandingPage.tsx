@@ -11,24 +11,63 @@ import {
 } from "lucide-react";
 
 import logoImg from "@/assets/sentower/logo.png";
-import fachadaImg from "@/assets/sentower/fachada.jpg";
-import rooftopPiscinaImg from "@/assets/sentower/rooftop-piscina.jpg";
-import livingHidroImg from "@/assets/sentower/living-hidro.jpg";
-import academiaImg from "@/assets/sentower/academia.jpg";
-import gourmetImg from "@/assets/sentower/gourmet.jpg";
-import coworkingImg from "@/assets/sentower/coworking.jpg";
-import spaImg from "@/assets/sentower/spa.jpg";
-import salaoEventosImg from "@/assets/sentower/salao-eventos.jpg";
+import img01 from "@/assets/sentower/gallery/img-01.jpg";
+import img02 from "@/assets/sentower/gallery/img-02.jpg";
+import img03 from "@/assets/sentower/gallery/img-03.jpg";
+import img04 from "@/assets/sentower/gallery/img-04.jpg";
+import img05 from "@/assets/sentower/gallery/img-05.jpg";
+import img06 from "@/assets/sentower/gallery/img-06.jpg";
+import img07 from "@/assets/sentower/gallery/img-07.jpg";
+import img08 from "@/assets/sentower/gallery/img-08.jpg";
+import img09 from "@/assets/sentower/gallery/img-09.jpg";
+import img10 from "@/assets/sentower/gallery/img-10.jpg";
+import img11 from "@/assets/sentower/gallery/img-11.jpg";
+import img12 from "@/assets/sentower/gallery/img-12.jpg";
+import img13 from "@/assets/sentower/gallery/img-13.jpg";
+import img14 from "@/assets/sentower/gallery/img-14.jpg";
+import img15 from "@/assets/sentower/gallery/img-15.jpg";
+import img16 from "@/assets/sentower/gallery/img-16.jpg";
+import img17 from "@/assets/sentower/gallery/img-17.jpg";
+import img18 from "@/assets/sentower/gallery/img-18.jpg";
+import img19 from "@/assets/sentower/gallery/img-19.jpg";
+import img20 from "@/assets/sentower/gallery/img-20.jpg";
+import img21 from "@/assets/sentower/gallery/img-21.jpg";
+import img22 from "@/assets/sentower/gallery/img-22.jpg";
+import img23 from "@/assets/sentower/gallery/img-23.jpg";
+import img24 from "@/assets/sentower/gallery/img-24.jpg";
+import img25 from "@/assets/sentower/gallery/img-25.jpg";
+import img26 from "@/assets/sentower/gallery/img-26.jpg";
+
+// img-01 = fachada (hero)
+const fachadaImg = img01;
 
 const galleryImages = [
-  { src: fachadaImg, alt: "Fachada Sentower" },
-  { src: rooftopPiscinaImg, alt: "Piscina de borda infinita no rooftop" },
-  { src: livingHidroImg, alt: "Living com hidromassagem integrada" },
-  { src: academiaImg, alt: "Academia com vista panorâmica" },
-  { src: gourmetImg, alt: "Área gourmet panorâmica" },
-  { src: coworkingImg, alt: "Coworking" },
-  { src: spaImg, alt: "Spa e sauna" },
-  { src: salaoEventosImg, alt: "Salão Supreme para eventos" },
+  { src: img01, alt: "Fachada Sentower" },
+  { src: img02, alt: "Vista lateral do empreendimento" },
+  { src: img03, alt: "Perspectiva do Sentower" },
+  { src: img04, alt: "Detalhe arquitetônico" },
+  { src: img05, alt: "Área externa" },
+  { src: img06, alt: "Espaço de lazer" },
+  { src: img07, alt: "Área gourmet" },
+  { src: img08, alt: "Living decorado" },
+  { src: img09, alt: "Sala de estar" },
+  { src: img10, alt: "Cozinha integrada" },
+  { src: img11, alt: "Suíte master" },
+  { src: img12, alt: "Banheiro" },
+  { src: img13, alt: "Sacada gourmet" },
+  { src: img14, alt: "Área de convivência" },
+  { src: img15, alt: "Piscina" },
+  { src: img16, alt: "Academia" },
+  { src: img17, alt: "Salão de festas" },
+  { src: img18, alt: "Espaço coworking" },
+  { src: img19, alt: "Spa e sauna" },
+  { src: img20, alt: "Brinquedoteca" },
+  { src: img21, alt: "Rooftop" },
+  { src: img22, alt: "Hall de entrada" },
+  { src: img23, alt: "Planta do apartamento" },
+  { src: img24, alt: "Planta do loft" },
+  { src: img25, alt: "Implantação" },
+  { src: img26, alt: "Vista panorâmica" },
 ];
 
 /* ── Lightbox ── */
@@ -245,7 +284,7 @@ const SentowerLandingPage = () => {
 
           {/* ═══ IMAGEM DESTAQUE — Rooftop ═══ */}
           <section className="relative h-[60vh] md:h-[75vh] cursor-pointer overflow-hidden" onClick={() => setLightboxIdx(1)}>
-            <img src={rooftopPiscinaImg} alt="Rooftop com piscina infinita" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
+            <img src={img05} alt="Rooftop com piscina infinita" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
             <div className="absolute bottom-8 left-8 md:bottom-12 md:left-12">
               <p className="text-white/60 text-xs tracking-[0.15em] uppercase mb-2">Rooftop</p>
@@ -293,7 +332,7 @@ const SentowerLandingPage = () => {
 
           {/* ═══ IMAGEM BREAK — Living com Hidro ═══ */}
           <section className="relative h-[45vh] md:h-[55vh] overflow-hidden cursor-pointer" onClick={() => setLightboxIdx(2)}>
-            <img src={livingHidroImg} alt="Living com hidromassagem" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
+            <img src={img08} alt="Living com hidromassagem" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
             <div className="absolute bottom-8 left-8 md:bottom-12 md:left-12">
               <p className="text-white/60 text-xs tracking-[0.15em] uppercase mb-2">Diferencial exclusivo</p>
