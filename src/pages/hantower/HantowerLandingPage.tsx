@@ -195,7 +195,7 @@ const HantowerLandingPage = () => {
             <img src={logoImg} alt="Hantower" className="h-4 sm:h-5 w-auto brightness-0 invert" />
           </div>
 
-          <div className="relative z-10 container px-4 py-16 sm:py-20 text-center">
+          <div className="relative z-10 container px-4 pt-16 sm:pt-20 text-center flex-1 flex items-center justify-center">
             <div className="max-w-4xl mx-auto">
 
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-6 border border-white/30 rounded-full bg-white/10 backdrop-blur-sm">
@@ -224,30 +224,24 @@ const HantowerLandingPage = () => {
               >
                 Quero Saber Tudo
               </button>
-
-              {/* Stats inline */}
-              <div className="grid grid-cols-4 gap-3 sm:gap-6 mt-8 max-w-lg mx-auto">
-                {[
-                  { value: "24", label: "Andares" },
-                  { value: "70m", label: "De altura" },
-                  { value: "2 e 3", label: "Suítes" },
-                  { value: "84-128m²", label: "Privativos" },
-                ].map((s, i) => (
-                  <div key={i}>
-                    <p className="text-lg sm:text-xl font-bold font-serif text-primary">{s.value}</p>
-                    <p className="text-white/50 text-[9px] sm:text-[10px] tracking-[0.1em] uppercase">{s.label}</p>
-                  </div>
-                ))}
-              </div>
             </div>
+          </div>
 
-            <button
-              onClick={() => document.getElementById("sobre")?.scrollIntoView({ behavior: "smooth" })}
-              className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/50 hover:text-primary transition-colors animate-bounce"
-              aria-label="Rolar para baixo"
-            >
-              <ChevronDown className="w-8 h-8" />
-            </button>
+          {/* Stats no rodapé do hero */}
+          <div className="relative z-10 w-full pb-6 sm:pb-8">
+            <div className="grid grid-cols-4 gap-3 sm:gap-6 max-w-lg mx-auto text-center">
+              {[
+                { value: "24", label: "Andares" },
+                { value: "70m", label: "De altura" },
+                { value: "2 e 3", label: "Suítes" },
+                { value: "84-128m²", label: "Privativos" },
+              ].map((s, i) => (
+                <div key={i}>
+                  <p className="text-lg sm:text-xl font-bold font-serif text-primary">{s.value}</p>
+                  <p className="text-white/50 text-[9px] sm:text-[10px] tracking-[0.1em] uppercase">{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
