@@ -237,7 +237,7 @@ const HantowerLandingPage = () => {
         </section>
 
         {/* ═══ STATS BAR ═══ */}
-        <section className="py-8 md:py-10 bg-card border-y border-border/50">
+        <section className="py-8 md:py-10 bg-primary">
           <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
               { value: "24", label: "Andares" },
@@ -246,8 +246,8 @@ const HantowerLandingPage = () => {
               { value: "84-128m²", label: "Privativos" },
             ].map((s, i) => (
               <div key={i}>
-                <p className="text-2xl md:text-3xl font-bold mb-1 font-serif text-gold-gradient">{s.value}</p>
-                <p className="text-muted-foreground text-xs tracking-[0.1em] uppercase">{s.label}</p>
+                <p className="text-2xl md:text-3xl font-bold mb-1 font-serif text-white">{s.value}</p>
+                <p className="text-white/70 text-xs tracking-[0.1em] uppercase">{s.label}</p>
               </div>
             ))}
           </div>
