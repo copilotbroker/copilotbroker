@@ -209,7 +209,7 @@ const HantowerLandingPage = () => {
                 id="hero-heading"
                 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 text-white leading-[1.05] uppercase"
               >
-                Redefinindo o mercado imobiliário de Estância Velha.
+                Redefinindo o <span className="text-gold-gradient">mercado imobiliário</span> de Estância Velha.
               </h1>
 
               <div className="w-16 h-px bg-white/40 mx-auto mb-4" />
