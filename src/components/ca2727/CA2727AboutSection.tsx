@@ -203,15 +203,13 @@ const CA2727AboutSection = () => {
 
       {/* Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="w-[95vw] max-w-[95vw] h-[95vh] max-h-[95vh] p-0 bg-black/95 border-none overflow-hidden [&>button]:hidden">
-          <div className="relative w-full h-full overflow-auto">
-            <div className="min-w-full min-h-full flex items-start justify-start p-4 sm:p-6">
-              <img
-                src={GALLERY_IMAGES[lightboxIndex].src}
-                alt={GALLERY_IMAGES[lightboxIndex].alt}
-                className="w-auto h-auto max-w-none max-h-none object-none"
-              />
-            </div>
+        <DialogContent className="w-[95vw] max-w-[95vw] h-[95vh] max-h-[95vh] p-0 bg-black/95 border-none overflow-auto [&>button]:hidden">
+          <div className="relative min-h-full flex items-center justify-center p-2 sm:p-6">
+            <img
+              src={GALLERY_IMAGES[lightboxIndex].src}
+              alt={GALLERY_IMAGES[lightboxIndex].alt}
+              className="w-full sm:w-auto sm:max-w-none sm:max-h-none object-contain sm:object-none"
+            />
 
             <button
               onClick={() => setLightboxOpen(false)}
