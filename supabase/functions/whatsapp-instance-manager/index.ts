@@ -267,6 +267,45 @@ const getBrokerId = async (supabase: SupabaseClient<any, any, any>, userId: stri
   return info.id;
 };
 
+// Helper: Configure webhook for a broker instance on UAZAPI
+const configureInstanceWebhook = async (
+  token: string,
+  isAdminMode: boolean,
+): Promise<{ success: boolean; webhookUrl: string; details?: string }> => {
+  const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
+  
+  try {
+    const webhookResponse = await uazapiFetchWithAuthFallback(
+      `${UAZAPI_BASE_URL}/webhook`,
+      {
+        method: "POST",
+        includeJson: true,
+        bodyString: JSON.stringify({
+          url: webhookUrl,
+          enabled: true,
+          events: ["messages", "connection", "messages_update"],
+          excludeMessages: ["wasSentByApi"],
+        }),
+      },
+      token,
+      isAdminMode,
+    );
+
+    if (webhookResponse.ok) {
+      console.log(`[WEBHOOK] Configured successfully: ${webhookUrl}`);
+      return { success: true, webhookUrl };
+    }
+
+    const errorText = await webhookResponse.text().catch(() => "");
+    console.error(`[WEBHOOK] Failed to configure: ${webhookResponse.status} - ${errorText.substring(0, 200)}`);
+    return { success: false, webhookUrl, details: errorText.substring(0, 200) };
+  } catch (err) {
+    const error = err as Error;
+    console.error(`[WEBHOOK] Error: ${error.message}`);
+    return { success: false, webhookUrl, details: error.message };
+  }
+};
+
 // CORS preflight
 app.options("/*", (c) => {
   return c.json({}, 200, getHonoCors(c));
