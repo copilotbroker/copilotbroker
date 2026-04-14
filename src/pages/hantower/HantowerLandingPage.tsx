@@ -144,7 +144,7 @@ const HantowerLandingPage = () => {
   useEffect(() => {
     const img = new Image();
     img.onload = () => setImageLoaded(true);
-    img.src = fachadaImg;
+    img.src = heroPredioImg;
   }, []);
 
   useEffect(() => {
