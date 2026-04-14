@@ -6,17 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, RefreshCw, Power, RotateCcw, Wifi, AlertTriangle } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { formatDistanceToNow } from "date-fns";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -33,8 +23,6 @@ export function ConnectionTab() {
     fetchQRCode,
     logout,
     restart,
-    deleteInstance,
-    configureWebhook,
   } = useWhatsAppInstance();
 
   if (isLoading && !instance) {
