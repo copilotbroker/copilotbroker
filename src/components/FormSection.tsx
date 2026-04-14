@@ -226,7 +226,7 @@ const FormSection = ({
     <section 
       id="formulario"
       ref={sectionRef} 
-      className="py-16 sm:py-20 md:py-32 bg-background relative overflow-hidden"
+      className="py-10 sm:py-12 md:py-16 bg-background relative overflow-hidden"
       aria-labelledby="form-title"
     >
       {/* Background Elements */}
