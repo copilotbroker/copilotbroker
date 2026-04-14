@@ -5,7 +5,7 @@ import { HealthScoreCard } from "./HealthScoreCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, RefreshCw, Power, RotateCcw, Wifi, AlertTriangle, Trash2 } from "lucide-react";
+import { Loader2, RefreshCw, Power, RotateCcw, Wifi, AlertTriangle, Trash2, Webhook } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +34,7 @@ export function ConnectionTab() {
     logout,
     restart,
     deleteInstance,
+    configureWebhook,
   } = useWhatsAppInstance();
 
   if (isLoading && !instance) {
@@ -181,6 +182,17 @@ export function ConnectionTab() {
                   >
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Reiniciar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={configureWebhook}
+                    disabled={isLoading}
+                    className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]"
+                    title="Reconfigurar webhook para receber mensagens"
+                  >
+                    <Webhook className="w-4 h-4 mr-2" />
+                    Webhook
                   </Button>
                   <Button
                     variant="outline"
