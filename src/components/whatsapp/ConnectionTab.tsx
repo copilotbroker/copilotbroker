@@ -5,7 +5,7 @@ import { HealthScoreCard } from "./HealthScoreCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, RefreshCw, Power, RotateCcw, Wifi, AlertTriangle, Trash2, Webhook } from "lucide-react";
+import { Loader2, RefreshCw, Power, RotateCcw, Wifi, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -186,17 +186,6 @@ export function ConnectionTab() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={configureWebhook}
-                    disabled={isLoading}
-                    className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]"
-                    title="Reconfigurar webhook para receber mensagens"
-                  >
-                    <Webhook className="w-4 h-4 mr-2" />
-                    Webhook
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
                     onClick={logout}
                     disabled={isLoading}
                     className="border-red-500/30 text-red-400 hover:bg-red-500/10"
@@ -204,39 +193,6 @@ export function ConnectionTab() {
                     <Power className="w-4 h-4 mr-2" />
                     Desconectar
                   </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={isLoading}
-                        className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Deletar
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-[#111114] border-[#1e1e22]">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-white">Deletar instância?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-slate-400">
-                          Esta ação é irreversível. A instância será removida permanentemente 
-                          e você precisará criar uma nova conexão do zero.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="border-[#1e1e22] text-slate-300 hover:bg-[#1e1e22]">
-                          Cancelar
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={deleteInstance}
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          Deletar permanentemente
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                 </>
               )}
             </div>
