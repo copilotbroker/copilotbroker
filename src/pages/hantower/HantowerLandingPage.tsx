@@ -204,7 +204,7 @@ const HantowerLandingPage = () => {
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-6 border border-white/30 rounded-full bg-white/10 backdrop-blur-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-white/90">
-                  Primeiro Home Club de Estância Velha
+                  Futuro Lançamento do 1º Home Club de Estância Velha
                 </span>
               </div>
 
