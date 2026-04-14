@@ -12,6 +12,7 @@ import {
 
 import logoImg from "@/assets/hantower/logo.png";
 import fachadaImg from "@/assets/hantower/fachada.jpg";
+import heroPredioImg from "@/assets/hantower/hero-predio.jpg";
 import sacadasImg from "@/assets/hantower/sacadas.jpg";
 import salaoGourmet1 from "@/assets/hantower/salao-gourmet-1.jpg";
 import salaoGourmet2 from "@/assets/hantower/salao-gourmet-2.jpg";
@@ -143,7 +144,7 @@ const HantowerLandingPage = () => {
   useEffect(() => {
     const img = new Image();
     img.onload = () => setImageLoaded(true);
-    img.src = fachadaImg;
+    img.src = heroPredioImg;
   }, []);
 
   useEffect(() => {
@@ -186,7 +187,7 @@ const HantowerLandingPage = () => {
         >
           <div
             className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-            style={{ backgroundImage: `url(${fachadaImg})`, backgroundSize: "cover", backgroundPosition: "center bottom" }}
+            style={{ backgroundImage: `url(${heroPredioImg})`, backgroundSize: "cover", backgroundPosition: "center bottom" }}
             role="img"
             aria-label="Fachada do Hantower"
           />
