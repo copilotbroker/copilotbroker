@@ -1142,6 +1142,13 @@ app.post("/restart", async (c) => {
       return c.json({ error: "Failed to restart", details: restartError }, 500, corsHeaders);
     }
 
+    // Also reconfigure webhook on restart
+    const webhookConfigResult = await configureInstanceWebhook(
+      instance.instance_token || UAZAPI_DEFAULT_TOKEN,
+      !instance.instance_token,
+    );
+    console.log(`[RESTART] Webhook reconfigured: ${webhookConfigResult.success}`);
+
     // Update status
     await supabase
       .from("broker_whatsapp_instances")
@@ -1154,11 +1161,61 @@ app.post("/restart", async (c) => {
     return c.json({
       success: true,
       message: "Instance restarting",
+      webhookReconfigured: webhookConfigResult.success,
     }, 200, corsHeaders);
 
   } catch (err) {
     const error = err as Error;
     console.error("Restart Error:", error);
+    return c.json({ error: error.message }, 500, corsHeaders);
+  }
+});
+
+// POST /configure-webhook - Reconfigure webhook for an existing instance
+app.post("/configure-webhook", async (c) => {
+  try {
+    if (!UAZAPI_BASE_URL) {
+      return c.json({ error: "UAZAPI not configured" }, 500, corsHeaders);
+    }
+
+    const authHeader = c.req.header("Authorization");
+    const supabase = getSupabaseClient(authHeader);
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return c.json({ error: "Unauthorized" }, 401, corsHeaders);
+    }
+
+    const brokerId = await getBrokerId(supabase, user.id);
+
+    // Get broker instance
+    const { data: instanceData } = await supabase
+      .from("broker_whatsapp_instances")
+      .select("*")
+      .eq("broker_id", brokerId)
+      .maybeSingle();
+
+    if (!instanceData) {
+      return c.json({ error: "No instance configured" }, 400, corsHeaders);
+    }
+
+    const instance = instanceData as { id: string; instance_name: string; instance_token: string | null };
+
+    const result = await configureInstanceWebhook(
+      instance.instance_token || UAZAPI_DEFAULT_TOKEN,
+      !instance.instance_token,
+    );
+
+    return c.json({
+      success: result.success,
+      message: result.success ? "Webhook configured successfully" : "Failed to configure webhook",
+      webhookUrl: result.webhookUrl,
+      details: result.details,
+    }, result.success ? 200 : 500, corsHeaders);
+
+  } catch (err) {
+    const error = err as Error;
+    console.error("Configure Webhook Error:", error);
     return c.json({ error: error.message }, 500, corsHeaders);
   }
 });
