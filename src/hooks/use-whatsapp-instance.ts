@@ -202,7 +202,23 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
     }
   }, [queryClient, toast]);
 
-  const togglePause = useCallback(async (pause: boolean, reason?: string) => {
+  const configureWebhook = useCallback(async () => {
+    try {
+      setIsMutating(true);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${FUNCTION_URL}/configure-webhook`, { method: "POST", headers });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to configure webhook");
+      toast({ title: "Webhook configurado", description: "O webhook foi reconfigurado com sucesso." });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Erro ao configurar webhook", description: message, variant: "destructive" });
+    } finally {
+      setIsMutating(false);
+    }
+  }, [toast]);
+
+
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(`${FUNCTION_URL}/pause`, {
