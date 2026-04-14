@@ -208,7 +208,7 @@ const SentowerLandingPage = () => {
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-6 border border-white/30 rounded-full bg-white/10 backdrop-blur-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-white/90">
-                  O novo nível do alto padrão
+                  Futuro Lançamento
                 </span>
               </div>
 
@@ -222,7 +222,7 @@ const SentowerLandingPage = () => {
               <div className="w-16 h-px bg-white/40 mx-auto mb-4" />
 
               <p className="text-sm sm:text-base text-white/70 mb-6 max-w-2xl mx-auto">
-                Apartamentos de 2 e 3 dormitórios e lofts de luxo, com hidromassagem integrada aos ambientes.
+                O novo nível do alto padrão com apartamentos de 2 e 3 dormitórios e lofts de luxo, com hidromassagem integrada aos ambientes.
               </p>
 
               <button
