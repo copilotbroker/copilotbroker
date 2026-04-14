@@ -21,6 +21,7 @@ interface UseWhatsAppInstanceReturn {
   logout: () => Promise<void>;
   restart: () => Promise<void>;
   deleteInstance: () => Promise<void>;
+  configureWebhook: () => Promise<void>;
   togglePause: (pause: boolean, reason?: string) => Promise<void>;
   updateSettings: (settings: Partial<Pick<BrokerWhatsAppInstance, 'hourly_limit' | 'daily_limit' | 'working_hours_start' | 'working_hours_end'>>) => Promise<void>;
 }
@@ -255,6 +256,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
     logout,
     restart,
     deleteInstance,
+    configureWebhook,
     togglePause,
     updateSettings,
   };
