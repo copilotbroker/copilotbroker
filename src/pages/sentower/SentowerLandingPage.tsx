@@ -11,37 +11,37 @@ import {
 } from "lucide-react";
 
 
-import img01 from "@/assets/sentower/gallery/img-01.jpg";
-import img02 from "@/assets/sentower/gallery/img-02.jpg";
-import img03 from "@/assets/sentower/gallery/img-03.jpg";
-import img04 from "@/assets/sentower/gallery/img-04.jpg";
-import img05 from "@/assets/sentower/piscina-borda-infinita.png";
-import img06 from "@/assets/sentower/gallery/img-06.jpg";
-import img07 from "@/assets/sentower/gallery/img-07.jpg";
-import img08 from "@/assets/sentower/hidromassagem-living.png";
-import img09 from "@/assets/sentower/gallery/img-09.jpg";
-import img10 from "@/assets/sentower/gallery/img-10.jpg";
-import img11 from "@/assets/sentower/gallery/img-11.jpg";
-import img12 from "@/assets/sentower/gallery/img-12.jpg";
-import img13 from "@/assets/sentower/gallery/img-13.jpg";
-import img14 from "@/assets/sentower/gallery/img-14.jpg";
-import img15 from "@/assets/sentower/gallery/img-15.jpg";
-import img16 from "@/assets/sentower/gallery/img-16.jpg";
-import img17 from "@/assets/sentower/gallery/img-17.jpg";
-import img18 from "@/assets/sentower/gallery/img-18.jpg";
-import img19 from "@/assets/sentower/gallery/img-19.jpg";
-import img20 from "@/assets/sentower/gallery/img-20.jpg";
-import img21 from "@/assets/sentower/gallery/img-21.jpg";
-import img22 from "@/assets/sentower/gallery/img-22.jpg";
-import img23 from "@/assets/sentower/gallery/img-23.jpg";
-import img24 from "@/assets/sentower/gallery/img-24.jpg";
-import img25 from "@/assets/sentower/gallery/img-25.jpg";
-import img26 from "@/assets/sentower/gallery/img-26.jpg";
+import img01 from "@/assets/sentower/gallery/img-01.webp";
+import img02 from "@/assets/sentower/gallery/img-02.webp";
+import img03 from "@/assets/sentower/gallery/img-03.webp";
+import img04 from "@/assets/sentower/gallery/img-04.webp";
+import img05 from "@/assets/sentower/piscina-borda-infinita.webp";
+import img06 from "@/assets/sentower/gallery/img-06.webp";
+import img07 from "@/assets/sentower/gallery/img-07.webp";
+import img08 from "@/assets/sentower/hidromassagem-living.webp";
+import img09 from "@/assets/sentower/gallery/img-09.webp";
+import img10 from "@/assets/sentower/gallery/img-10.webp";
+import img11 from "@/assets/sentower/gallery/img-11.webp";
+import img12 from "@/assets/sentower/gallery/img-12.webp";
+import img13 from "@/assets/sentower/gallery/img-13.webp";
+import img14 from "@/assets/sentower/gallery/img-14.webp";
+import img15 from "@/assets/sentower/gallery/img-15.webp";
+import img16 from "@/assets/sentower/gallery/img-16.webp";
+import img17 from "@/assets/sentower/gallery/img-17.webp";
+import img18 from "@/assets/sentower/gallery/img-18.webp";
+import img19 from "@/assets/sentower/gallery/img-19.webp";
+import img20 from "@/assets/sentower/gallery/img-20.webp";
+import img21 from "@/assets/sentower/gallery/img-21.webp";
+import img22 from "@/assets/sentower/gallery/img-22.webp";
+import img23 from "@/assets/sentower/gallery/img-23.webp";
+import img24 from "@/assets/sentower/gallery/img-24.webp";
+import img25 from "@/assets/sentower/gallery/img-25.webp";
+import img26 from "@/assets/sentower/gallery/img-26.webp";
 
-import planta76 from "@/assets/sentower/planta-76.jpg";
-import planta100 from "@/assets/sentower/planta-100.jpg";
-import planta118 from "@/assets/sentower/planta-118.jpg";
-import planta124 from "@/assets/sentower/planta-124.jpg";
+import planta76 from "@/assets/sentower/planta-76.webp";
+import planta100 from "@/assets/sentower/planta-100.webp";
+import planta118 from "@/assets/sentower/planta-118.webp";
+import planta124 from "@/assets/sentower/planta-124.webp";
 
 // img-01 = fachada (hero)
 const fachadaImg = img01;
