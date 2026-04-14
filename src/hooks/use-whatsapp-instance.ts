@@ -218,7 +218,7 @@ export function useWhatsAppInstance(): UseWhatsAppInstanceReturn {
     }
   }, [toast]);
 
-
+  const togglePause = useCallback(async (pause: boolean, reason?: string) => {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(`${FUNCTION_URL}/pause`, {
