@@ -412,6 +412,16 @@ const BrokerDashboard = () => {
               {/* Funnel */}
               <FunnelVisualization funnel={funnel} />
 
+              {/* Individual Performance */}
+              {brokerId && (
+                <BrokerIndividualPerformance
+                  brokerId={brokerId}
+                  projectId={projectId}
+                  periodStart={periodDates.start}
+                  periodEnd={periodDates.end}
+                />
+              )}
+
               {/* Follow-up */}
               {followUp && <FollowUpCard stats={followUp} />}
 
