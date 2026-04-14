@@ -217,7 +217,7 @@ const HantowerLandingPage = () => {
               <div className="w-16 h-px bg-white/40 mx-auto mb-4" />
 
               <p className="text-sm sm:text-base text-white/70 mb-6 max-w-2xl mx-auto">
-                24 andares, rooftop com piscina com borda infinita e apartamentos de 2 e 3 suítes.
+                24 andares, rooftop com piscina de borda infinita e apartamentos de 2 e 3 suítes.
               </p>
 
               <button
