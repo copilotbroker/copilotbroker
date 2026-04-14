@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
 import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight, type AttemptStat, type TimeoutLossData } from "@/hooks/use-broker-dashboard";
 import { cn } from "@/lib/utils";
+import { BrokerIndividualPerformance } from "@/components/broker/BrokerIndividualPerformance";
 
 type Period = "today" | "7d" | "30d" | "all" | "custom";
 /* ── KPI Card (same style as admin PerformanceDashboard) ── */
@@ -410,6 +411,16 @@ const BrokerDashboard = () => {
 
               {/* Funnel */}
               <FunnelVisualization funnel={funnel} />
+
+              {/* Individual Performance */}
+              {brokerId && (
+                <BrokerIndividualPerformance
+                  brokerId={brokerId}
+                  projectId={projectId}
+                  periodStart={periodDates.start}
+                  periodEnd={periodDates.end}
+                />
+              )}
 
               {/* Follow-up */}
               {followUp && <FollowUpCard stats={followUp} />}
