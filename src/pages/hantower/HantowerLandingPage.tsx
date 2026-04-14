@@ -204,7 +204,7 @@ const HantowerLandingPage = () => {
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-6 border border-white/30 rounded-full bg-white/10 backdrop-blur-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-white/90">
-                  Futuro Lançamento<br />1º Home Club de Estância Velha
+                  Futuro Lançamento
                 </span>
               </div>
 
@@ -218,7 +218,7 @@ const HantowerLandingPage = () => {
               <div className="w-16 h-px bg-white/40 mx-auto mb-4" />
 
               <p className="text-sm sm:text-base text-white/70 mb-6 max-w-2xl mx-auto">
-                24 andares, rooftop com piscina de borda infinita e apartamentos de 2 e 3 suítes.
+                1º Home Club de Estância Velha — 24 andares, rooftop com piscina de borda infinita e apartamentos de 2 e 3 suítes.
               </p>
 
               <button
