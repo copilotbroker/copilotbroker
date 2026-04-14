@@ -38,8 +38,20 @@ import img24 from "@/assets/sentower/gallery/img-24.jpg";
 import img25 from "@/assets/sentower/gallery/img-25.jpg";
 import img26 from "@/assets/sentower/gallery/img-26.jpg";
 
+import planta76 from "@/assets/sentower/planta-76.jpg";
+import planta100 from "@/assets/sentower/planta-100.jpg";
+import planta118 from "@/assets/sentower/planta-118.jpg";
+import planta124 from "@/assets/sentower/planta-124.jpg";
+
 // img-01 = fachada (hero)
 const fachadaImg = img01;
+
+const plantasConfig = [
+  { key: "76", label: "76m²", img: planta76, tipo: "Loft de luxo", quartos: "1 suíte", destaque: "Hidromassagem integrada ao living" },
+  { key: "100", label: "100m²", img: planta100, tipo: "Apartamento", quartos: "2 suítes", destaque: "Hidromassagem na área gourmet" },
+  { key: "118", label: "118m²", img: planta118, tipo: "Apartamento", quartos: "3 dorms (2 suítes)", destaque: "Hidromassagem integrada ao living" },
+  { key: "124", label: "124m²", img: planta124, tipo: "Apartamento", quartos: "3 dorms (2 suítes)", destaque: "Hidromassagem integrada ao living" },
+] as const;
 
 const galleryImages = [
   { src: img01, alt: "Fachada Sentower" },
@@ -138,6 +150,8 @@ const SentowerLandingPage = () => {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [selectedPlanta, setSelectedPlanta] = useState<string>("76");
+  const [plantaExpanded, setPlantaExpanded] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -418,43 +432,88 @@ const SentowerLandingPage = () => {
             </div>
           </section>
 
-          {/* ═══ SEÇÃO 5 — Tipologias ═══ */}
+          {/* ═══ SEÇÃO 5 — Tipologias / Plantas ═══ */}
           <section ref={s5.ref as any} className="py-24 md:py-32 relative overflow-hidden">
             <div className="absolute top-1/2 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
 
             <div className={`container px-4 relative z-10 ${fade(s5.visible)}`}>
-              <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-16">
+              <div className="grid md:grid-cols-2 gap-12 items-start max-w-6xl mx-auto">
+                <div>
                   <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold mb-4 leading-tight">
                     PLANTAS QUE SE ADAPTAM{" "}
                     <span className="text-gold-gradient">AO SEU ESTILO DE VIDA.</span>
                   </h2>
-                  <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+                  <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
                     O Sentower oferece opções exclusivas, pensadas para diferentes perfis, mas com o mesmo padrão de sofisticação.
                   </p>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-6">
-                  {[
-                    { tipo: "Loft de luxo", quartos: "1 suíte", area: "76 m²", destaque: "Hidromassagem integrada ao living" },
-                    { tipo: "Apartamento", quartos: "2 suítes", area: "100 m²", destaque: "Hidromassagem na área gourmet" },
-                    { tipo: "Apartamento", quartos: "3 dormitórios (2 suítes)", area: "124 m²", destaque: "Hidromassagem integrada ao living" },
-                  ].map((t, i) => (
-                    <div key={i} className="card-luxury text-center">
-                      <p className="text-primary font-serif text-lg font-semibold mb-1">{t.tipo}</p>
-                      <p className="text-foreground font-medium text-sm mb-1">{t.quartos}</p>
-                      <p className="text-3xl font-bold font-serif text-foreground mb-3">{t.area}</p>
-                      <div className="w-10 h-px bg-primary/40 mx-auto mb-3" />
-                      <p className="text-muted-foreground text-xs">{t.destaque}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="text-center mt-8">
+                  <div className="space-y-4 mb-8">
+                    {plantasConfig.map((p) => (
+                      <button
+                        key={p.key}
+                        onClick={() => setSelectedPlanta(p.key)}
+                        className={`w-full flex items-start gap-3 p-3 rounded-lg text-left transition-all ${
+                          selectedPlanta === p.key
+                            ? "bg-primary/10 border border-primary/40"
+                            : "bg-card border border-border/50 hover:border-primary/20"
+                        }`}
+                      >
+                        <div className="w-8 h-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                          <CheckCircle2 className={`w-4 h-4 ${selectedPlanta === p.key ? "text-primary" : "text-muted-foreground"}`} />
+                        </div>
+                        <div>
+                          <p className="text-foreground font-semibold text-sm">{p.tipo} — {p.label}</p>
+                          <p className="text-muted-foreground text-xs">{p.quartos} · {p.destaque}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/5">
                     <LayoutGrid className="w-4 h-4 text-primary" />
                     <span className="text-sm text-foreground">Planta livre, sem pilares internos — personalização total</span>
                   </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-center gap-2 mb-6 flex-wrap">
+                    {plantasConfig.map((p) => (
+                      <button
+                        key={p.key}
+                        onClick={() => setSelectedPlanta(p.key)}
+                        className={`px-5 py-2 rounded-sm text-sm font-semibold tracking-wider transition-all ${
+                          selectedPlanta === p.key ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                  <img
+                    src={plantasConfig.find(p => p.key === selectedPlanta)?.img}
+                    alt={`Planta ${selectedPlanta}m²`}
+                    className="w-full max-h-[450px] object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setPlantaExpanded(true)}
+                  />
+
+                  {plantaExpanded && (
+                    <div
+                      className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+                      onClick={() => setPlantaExpanded(false)}
+                    >
+                      <button
+                        className="absolute top-4 right-4 text-white/80 hover:text-white z-10"
+                        onClick={() => setPlantaExpanded(false)}
+                        aria-label="Fechar"
+                      >
+                        <X className="w-8 h-8" />
+                      </button>
+                      <img
+                        src={plantasConfig.find(p => p.key === selectedPlanta)?.img}
+                        alt={`Planta ${selectedPlanta}m²`}
+                        className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
