@@ -397,7 +397,7 @@ export function ConversationThread({
                   {conversation.lead_id ? "Lead vinculado" : hasResolvedName ? "Nome identificado" : "WhatsApp direto"}
                 </Badge>
                 {(conversation as any).source_instance === "global" && (conversation as any).broker?.name && (
-                  <Badge className="h-4 px-1.5 text-[10px] bg-purple-600/20 text-purple-400 border-emerald-500/30 border">
+                  <Badge className="h-4 px-1.5 text-[10px] bg-purple-600/20 text-purple-400 border-purple-500/30 border">
                     Atribuído a: {(conversation as any).broker.name}
                   </Badge>
                 )}
@@ -430,7 +430,7 @@ export function ConversationThread({
                 size="sm"
                 onClick={onReturnToGlobal}
                 disabled={isReturningToGlobal}
-                className="h-8 gap-1.5 text-xs text-purple-400 hover:text-emerald-300 hover:bg-purple-500/10"
+                className="h-8 gap-1.5 text-xs text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
                 title="Devolver ao WhatsApp do Plantão"
               >
                 <Wifi className="h-4 w-4" />
@@ -586,12 +586,12 @@ export function ConversationThread({
 
                   {instanceChanged && (
                     <div className="my-3 flex items-center gap-2">
-                      <div className={cn("h-px flex-1", isGlobalInstance ? "bg-emerald-500/30" : "bg-purple-500/30")} />
+                      <div className={cn("h-px flex-1", isGlobalInstance ? "bg-purple-500/30" : "bg-emerald-500/30")} />
                       <span className={cn(
                         "flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-medium",
                         isGlobalInstance
-                          ? "border-emerald-500/30 bg-purple-500/10 text-purple-400"
-                          : "border-purple-500/30 bg-emerald-500/10 text-emerald-400"
+                          ? "border-purple-500/30 bg-purple-500/10 text-purple-400"
+                          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                       )}>
                         {isGlobalInstance ? (
                           <>
@@ -605,7 +605,7 @@ export function ConversationThread({
                           </>
                         )}
                       </span>
-                      <div className={cn("h-px flex-1", isGlobalInstance ? "bg-emerald-500/30" : "bg-purple-500/30")} />
+                      <div className={cn("h-px flex-1", isGlobalInstance ? "bg-purple-500/30" : "bg-emerald-500/30")} />
                     </div>
                   )}
 
@@ -628,8 +628,8 @@ export function ConversationThread({
                         ? isAi
                           ? "rounded-br-sm border border-border bg-card text-foreground"
                           : isGlobalInstance
-                            ? "rounded-br-sm border border-emerald-500/30 bg-purple-900/20 text-foreground"
-                            : "rounded-br-sm border border-purple-500/30 bg-emerald-900/20 text-foreground"
+                            ? "rounded-br-sm border border-purple-500/30 bg-purple-900/20 text-foreground"
+                            : "rounded-br-sm border border-emerald-500/30 bg-emerald-900/20 text-foreground"
                         : "rounded-bl-sm border border-border bg-card text-card-foreground"
                     )}>
                       {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-muted-foreground"><Bot className="h-3 w-3" /> Copiloto</span>}
