@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, RefreshCw, Power, RotateCcw, Wifi, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export function ConnectionTab() {
