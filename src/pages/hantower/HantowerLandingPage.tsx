@@ -12,6 +12,7 @@ import {
 
 import logoImg from "@/assets/hantower/logo.png";
 import fachadaImg from "@/assets/hantower/fachada.jpg";
+import heroPredioImg from "@/assets/hantower/hero-predio.jpg";
 import sacadasImg from "@/assets/hantower/sacadas.jpg";
 import salaoGourmet1 from "@/assets/hantower/salao-gourmet-1.jpg";
 import salaoGourmet2 from "@/assets/hantower/salao-gourmet-2.jpg";
