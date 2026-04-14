@@ -187,7 +187,7 @@ const HantowerLandingPage = () => {
         >
           <div
             className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-            style={{ backgroundImage: `url(${fachadaImg})`, backgroundSize: "cover", backgroundPosition: "center bottom" }}
+            style={{ backgroundImage: `url(${heroPredioImg})`, backgroundSize: "cover", backgroundPosition: "center bottom" }}
             role="img"
             aria-label="Fachada do Hantower"
           />
