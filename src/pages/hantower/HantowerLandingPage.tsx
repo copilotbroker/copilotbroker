@@ -11,31 +11,31 @@ import {
 } from "lucide-react";
 
 import logoImg from "@/assets/hantower/logo.png";
-import fachadaImg from "@/assets/hantower/fachada.jpg";
-import heroPredioImg from "@/assets/hantower/hero-predio.jpg";
-import sacadasImg from "@/assets/hantower/sacadas.jpg";
-import salaoGourmet1 from "@/assets/hantower/salao-gourmet-1.jpg";
-import salaoGourmet2 from "@/assets/hantower/salao-gourmet-2.jpg";
-import piscinaImg from "@/assets/hantower/piscina.jpg";
-import piscinaBordaInfinitaImg from "@/assets/hantower/piscina-borda-infinita.jpg";
-import hallImg from "@/assets/hantower/hall.jpg";
-import garagemImg from "@/assets/hantower/garagem.jpg";
-import academiaImg from "@/assets/hantower/academia.jpg";
-import salaoFestasImg from "@/assets/hantower/salao-festas.jpg";
-import coberturaPiscinaImg from "@/assets/hantower/cobertura-piscina.jpg";
-import planta84 from "@/assets/hantower/planta-84.jpg";
-import planta128 from "@/assets/hantower/planta-128.jpg";
+import fachadaImg from "@/assets/hantower/fachada.webp";
+import heroPredioImg from "@/assets/hantower/hero-predio.webp";
+import sacadasImg from "@/assets/hantower/sacadas.webp";
+import salaoGourmet1 from "@/assets/hantower/salao-gourmet-1.webp";
+import salaoGourmet2 from "@/assets/hantower/salao-gourmet-2.webp";
+import piscinaImg from "@/assets/hantower/piscina.webp";
+import piscinaBordaInfinitaImg from "@/assets/hantower/piscina-borda-infinita.webp";
+import hallImg from "@/assets/hantower/hall.webp";
+import garagemImg from "@/assets/hantower/garagem.webp";
+import academiaImg from "@/assets/hantower/academia.webp";
+import salaoFestasImg from "@/assets/hantower/salao-festas.webp";
+import coberturaPiscinaImg from "@/assets/hantower/cobertura-piscina.webp";
+import planta84 from "@/assets/hantower/planta-84.webp";
+import planta128 from "@/assets/hantower/planta-128.webp";
 import logoFooter from "@/assets/hantower/logo-footer.png";
-import cozinha1 from "@/assets/hantower/cozinha-1.jpg";
-import salaoJantar1 from "@/assets/hantower/salao-jantar-1.jpg";
-import salaoJantar2 from "@/assets/hantower/salao-jantar-2.jpg";
-import coworking1 from "@/assets/hantower/coworking-1.jpg";
-import coworking2 from "@/assets/hantower/coworking-2.jpg";
-import coworking3 from "@/assets/hantower/coworking-3.jpg";
-import rooftop1 from "@/assets/hantower/rooftop-1.jpg";
-import rooftop2 from "@/assets/hantower/rooftop-2.jpg";
-import spa1 from "@/assets/hantower/spa-1.jpg";
-import spa2 from "@/assets/hantower/spa-2.jpg";
+import cozinha1 from "@/assets/hantower/cozinha-1.webp";
+import salaoJantar1 from "@/assets/hantower/salao-jantar-1.webp";
+import salaoJantar2 from "@/assets/hantower/salao-jantar-2.webp";
+import coworking1 from "@/assets/hantower/coworking-1.webp";
+import coworking2 from "@/assets/hantower/coworking-2.webp";
+import coworking3 from "@/assets/hantower/coworking-3.webp";
+import rooftop1 from "@/assets/hantower/rooftop-1.webp";
+import rooftop2 from "@/assets/hantower/rooftop-2.webp";
+import spa1 from "@/assets/hantower/spa-1.webp";
+import spa2 from "@/assets/hantower/spa-2.webp";
 
 const galleryImages = [
   { src: fachadaImg, alt: "Fachada Hantower" },
