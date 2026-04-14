@@ -336,11 +336,11 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
 
   const slaColor = useMemo(() => {
     if (!lead) return "text-slate-500";
-    if (lead.status === "registered") return "text-emerald-400";
+    if (lead.status === "registered") return "text-purple-400";
     const lastInteraction = lead.last_interaction_at || lead.updated_at;
     const diff = Date.now() - new Date(lastInteraction).getTime();
     const hours = diff / (1000 * 60 * 60);
-    if (hours < 360) return "text-emerald-400";
+    if (hours < 360) return "text-purple-400";
     if (hours < 720) return "text-yellow-400";
     return "text-red-400";
   }, [lead]);
@@ -365,11 +365,11 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
   const primaryAction = useMemo(() => {
     if (!lead) return null;
     switch (lead.status) {
-      case "new": return { label: "Iniciar Atendimento", icon: Play, color: "bg-emerald-500 hover:bg-emerald-600", action: "iniciar" };
+      case "new": return { label: "Iniciar Atendimento", icon: Play, color: "bg-emerald-500 hover:bg-purple-600", action: "iniciar" };
       case "info_sent": return { label: "Agendar Reunião", icon: Calendar, color: "bg-yellow-500 hover:bg-yellow-600 text-black", action: "agendar" };
       case "scheduling":
         if (lead.comparecimento === true) {
-          return { label: "Inserir Proposta", icon: DollarSign, color: "bg-purple-500 hover:bg-purple-600", action: "proposta" };
+          return { label: "Inserir Proposta", icon: DollarSign, color: "bg-purple-500 hover:bg-emerald-600", action: "proposta" };
         }
         if (lead.comparecimento === false) {
           return { label: "Reagendar", icon: RotateCw, color: "bg-amber-500 hover:bg-amber-600 text-black", action: "reagendar" };
@@ -377,7 +377,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
         return { label: "Registrar Comparecimento", icon: Eye, color: "bg-blue-500 hover:bg-blue-600", action: "comparecimento" };
       case "docs_received":
         if (hasApprovedProposta) {
-          return { label: "Confirmar Venda", icon: Trophy, color: "bg-emerald-500 hover:bg-emerald-600", action: "venda" };
+          return { label: "Confirmar Venda", icon: Trophy, color: "bg-emerald-500 hover:bg-purple-600", action: "venda" };
         }
         return { label: "Nova Proposta", icon: DollarSign, color: "bg-yellow-500 hover:bg-yellow-600 text-black", action: "proposta" };
       default: return null;
@@ -465,7 +465,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                 <h1 className="text-lg sm:text-xl font-semibold truncate">{lead.name}</h1>
                 <span className={cn(
                   "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide uppercase",
-                  isSold && "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30",
+                  isSold && "bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30",
                   isLost && "bg-red-500/15 text-red-400 ring-1 ring-red-500/30",
                   !isSold && !isLost && "bg-yellow-500/10 text-yellow-400 ring-1 ring-yellow-500/20"
                 )}>
@@ -490,8 +490,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   className={cn(
                     "inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-all",
                     isGlobalInstance
-                      ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20"
-                      : "text-purple-400 bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/20"
+                      ? "text-purple-400 bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/20"
+                      : "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20"
                   )}
                 >
                   <MessageCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">Chat</span>
@@ -501,7 +501,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                 href={`https://wa.me/55${lead.whatsapp.replace(/\D/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 transition-all"
+                className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium text-purple-400 bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/20 transition-all"
               >
                 <ExternalLink className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">WhatsApp</span>
               </a>
@@ -616,8 +616,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
 
         {/* Cadência ativa indicator */}
         {cadencia.isActive && (
-          <div className="flex items-center gap-3 mb-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="flex items-center gap-3 mb-4 bg-purple-500/10 border border-purple-500/20 rounded-xl px-4 py-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
             <p className="text-xs text-emerald-300 flex-1">
               Cadência ativa
               {cadencia.nextMessageAt && (
@@ -658,11 +658,11 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                 <Calendar className="w-3.5 h-3.5 mr-1.5" />Reagendar
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => setFollowUpOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10">
+            <Button variant="outline" size="sm" onClick={() => setFollowUpOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-purple-500/20 text-purple-400 hover:bg-purple-500/10">
               <MessageCircle className="w-3.5 h-3.5 mr-1.5" />Follow-Up
             </Button>
             {!cadencia.isActive && (
-              <Button variant="outline" size="sm" onClick={() => setCadenciaPickerOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10">
+              <Button variant="outline" size="sm" onClick={() => setCadenciaPickerOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-purple-500/20 text-purple-400 hover:bg-purple-500/10">
                 <Zap className="w-3.5 h-3.5 mr-1.5" />+ Cadência
               </Button>
             )}
@@ -721,7 +721,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                     <Button
                       size="sm"
                       onClick={() => setWhatsappMsgOpen(!whatsappMsgOpen)}
-                      className="h-8 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-md shadow-emerald-900/30 transition-all"
+                      className="h-8 px-3 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-md shadow-emerald-900/30 transition-all"
                     >
                       <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
                       Enviar WhatsApp
@@ -732,17 +732,17 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                   <div id="whatsapp-msg-form" className={cn(
                     "sm:col-span-2 bg-[#0f0f12] rounded-xl p-4 space-y-3 border",
                     isGlobalInstance
-                      ? "border-emerald-500/30"
-                      : "border-purple-500/30"
+                      ? "border-purple-500/30"
+                      : "border-emerald-500/30"
                   )}>
                     <div className="flex items-center gap-2">
                       <div className={cn(
                         "w-2 h-2 rounded-full",
-                        isGlobalInstance ? "bg-emerald-400" : "bg-purple-400"
+                        isGlobalInstance ? "bg-purple-400" : "bg-emerald-400"
                       )} />
                       <p className={cn(
                         "text-xs font-medium",
-                        isGlobalInstance ? "text-emerald-400" : "text-purple-400"
+                        isGlobalInstance ? "text-purple-400" : "text-emerald-400"
                       )}>
                         {isGlobalInstance ? "Enviando pelo Plantão (Instância Global)" : "Enviando pelo WhatsApp do Corretor"}
                       </p>
@@ -755,8 +755,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                       className={cn(
                         "min-h-[80px] bg-[#111114] text-sm text-slate-200 placeholder:text-slate-600 resize-none",
                         isGlobalInstance
-                          ? "border-emerald-500/20 focus-visible:ring-emerald-500/40"
-                          : "border-purple-500/20 focus-visible:ring-purple-500/40"
+                          ? "border-purple-500/20 focus-visible:ring-purple-500/40"
+                          : "border-emerald-500/20 focus-visible:ring-emerald-500/40"
                       )}
                     />
                     <div className="flex items-center gap-2">
@@ -793,8 +793,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                         className={cn(
                           "h-9 px-4 text-xs font-semibold text-white rounded-lg",
                           isGlobalInstance
-                            ? "bg-emerald-600 hover:bg-emerald-700"
-                            : "bg-purple-600 hover:bg-purple-700"
+                            ? "bg-purple-600 hover:bg-purple-700"
+                            : "bg-emerald-600 hover:bg-emerald-700"
                         )}
                       >
                         <Send className="w-3.5 h-3.5 mr-1.5" />
@@ -900,7 +900,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Métricas</h2>
               </div>
               <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <MetricCard label="1º Atendimento" value={slaPrimeiroAtendimento || (lead.status === "new" ? "Aguardando" : "—")} color={slaPrimeiroAtendimento ? "text-emerald-400" : "text-slate-500"} />
+                <MetricCard label="1º Atendimento" value={slaPrimeiroAtendimento || (lead.status === "new" ? "Aguardando" : "—")} color={slaPrimeiroAtendimento ? "text-purple-400" : "text-slate-500"} />
                 <MetricCard label="Na etapa atual" value={tempoNaEtapa} color="text-slate-300" />
                 <MetricCard label="No funil" value={tempoNoFunil} color="text-slate-300" />
                 <MetricCard label="Interações" value={String(interactions.length)} color="text-yellow-400" />
@@ -916,9 +916,9 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
 
             {/* Sold state */}
             {isSold && (
-              <section className="bg-emerald-500/5 rounded-2xl border border-emerald-500/20 p-6 text-center">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-3"><Trophy className="w-6 h-6 text-emerald-400" /></div>
-                <h3 className="text-base font-semibold text-emerald-400 mb-1">Venda Concluída</h3>
+              <section className="bg-emerald-500/5 rounded-2xl border border-purple-500/20 p-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-purple-500/15 flex items-center justify-center mx-auto mb-3"><Trophy className="w-6 h-6 text-purple-400" /></div>
+                <h3 className="text-base font-semibold text-purple-400 mb-1">Venda Concluída</h3>
                 {lead.valor_final_venda && <p className="text-2xl font-bold text-white">{formatCurrency(lead.valor_final_venda)}</p>}
                 {lead.data_fechamento && <p className="text-xs text-slate-500 mt-2">{new Date(lead.data_fechamento).toLocaleDateString("pt-BR")}</p>}
               </section>
@@ -935,7 +935,7 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                     const ok = await reactivateLead(lead.id);
                     if (ok) refreshLead();
                   }}
-                  className="mt-4 h-9 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                  className="mt-4 h-9 px-4 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
                 >
                   <RotateCw className="w-3.5 h-3.5 mr-1.5" />Reativar Lead
                 </Button>
@@ -1187,7 +1187,7 @@ function EditableField({ icon: Icon, label, field, value, placeholder, action, h
               onKeyDown={(e) => { if (e.key === "Enter") onSave(field, editValues[field] ?? value); if (e.key === "Escape") onCancel(); }}
               className="h-8 text-sm bg-[#0f0f12] border-[#2a2a2e] text-white"
             />
-            <button onClick={() => onSave(field, editValues[field] ?? value)} className="p-1.5 rounded-md hover:bg-emerald-500/10 text-emerald-400 transition-colors">
+            <button onClick={() => onSave(field, editValues[field] ?? value)} className="p-1.5 rounded-md hover:bg-purple-500/10 text-purple-400 transition-colors">
               <Check className="w-3.5 h-3.5" />
             </button>
             <button onClick={onCancel} className="p-1.5 rounded-md hover:bg-red-500/10 text-red-400 transition-colors">
@@ -1293,14 +1293,14 @@ function CommercialCard({ label, value, sub, icon: Icon, highlight, variant = "d
   highlight?: boolean;
   variant?: "default" | "success" | "danger";
 }) {
-  const variantStyles = { default: "border-[#1e1e22]", success: "border-emerald-500/20 bg-emerald-500/5", danger: "border-red-500/20 bg-red-500/5" };
+  const variantStyles = { default: "border-[#1e1e22]", success: "border-purple-500/20 bg-emerald-500/5", danger: "border-red-500/20 bg-red-500/5" };
   return (
     <div className={cn("rounded-xl border p-3.5 bg-[#0f0f12] transition-colors", variantStyles[variant])}>
       <div className="flex items-center gap-2 mb-2">
-        <Icon className={cn("w-3.5 h-3.5", variant === "success" ? "text-emerald-400" : variant === "danger" ? "text-red-400" : "text-slate-500")} />
+        <Icon className={cn("w-3.5 h-3.5", variant === "success" ? "text-purple-400" : variant === "danger" ? "text-red-400" : "text-slate-500")} />
         <span className="text-[10px] uppercase tracking-wider text-slate-600">{label}</span>
       </div>
-      <p className={cn("text-sm font-medium", !value && "text-slate-600 italic text-xs", value && highlight && "text-yellow-400", value && variant === "success" && "text-emerald-400", value && variant === "danger" && "text-red-400", value && variant === "default" && !highlight && "text-slate-200")}>
+      <p className={cn("text-sm font-medium", !value && "text-slate-600 italic text-xs", value && highlight && "text-yellow-400", value && variant === "success" && "text-purple-400", value && variant === "danger" && "text-red-400", value && variant === "default" && !highlight && "text-slate-200")}>
         {value || "—"}
       </p>
       {sub && <p className="text-[10px] text-slate-500 mt-0.5">{sub}</p>}

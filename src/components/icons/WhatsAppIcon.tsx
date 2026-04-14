@@ -23,14 +23,14 @@ const WhatsAppSvg = forwardRef<SVGSVGElement, LucideProps>(
 );
 WhatsAppSvg.displayName = "WhatsAppSvg";
 
-/** Green WhatsApp icon for Plantão (global instance) */
+/** Purple WhatsApp icon for Plantão (global instance) */
 export const WhatsAppPlantaoIcon = forwardRef<SVGSVGElement, LucideProps>(
-  (props, ref) => <WhatsAppSvg ref={ref} color="#22c55e" {...props} />
+  (props, ref) => <WhatsAppSvg ref={ref} color="#a855f7" {...props} />
 );
 WhatsAppPlantaoIcon.displayName = "WhatsAppPlantaoIcon";
 
-/** Purple WhatsApp icon for Inbox (personal instance) */
+/** Green WhatsApp icon for Inbox (personal instance) */
 export const WhatsAppInboxIcon = forwardRef<SVGSVGElement, LucideProps>(
-  (props, ref) => <WhatsAppSvg ref={ref} color="#a855f7" {...props} />
+  (props, ref) => <WhatsAppSvg ref={ref} color="#22c55e" {...props} />
 );
 WhatsAppInboxIcon.displayName = "WhatsAppInboxIcon";

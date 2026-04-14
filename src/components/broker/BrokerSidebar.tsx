@@ -113,12 +113,12 @@ export function BrokerSidebar({
                     : isCopilot
                       ? "bg-[#2a2a2e] text-blue-400"
                       : item.id === "plantao"
-                        ? "bg-[#2a2a2e] text-orange-400"
+                        ? "bg-[#2a2a2e] text-purple-400"
                         : "bg-[#2a2a2e] text-[#FFFF00]"
                   : isInbox
                     ? "text-[hsl(145,80%,55%)]/70 hover:text-[hsl(145,80%,55%)]"
                     : item.id === "plantao"
-                      ? "text-orange-400/70 hover:text-orange-400"
+                      ? "text-purple-400/70 hover:text-purple-400"
                       : "text-slate-400 hover:text-white"
               )}
               title={item.label}

@@ -92,7 +92,7 @@ export function BrokerBottomNav({
   const getItemColor = (id: string) => {
     const isActive = getActiveIndicator(id);
     // Plantão always orange
-    if (id === "plantao") return isActive ? "text-orange-400" : "text-orange-400/70";
+    if (id === "plantao") return isActive ? "text-purple-400" : "text-purple-400/70";
     // Inbox always green
     if (id === "inbox") return isActive ? "text-[hsl(145,80%,55%)]" : "text-[hsl(145,80%,55%)]/70";
     // Copilot always blue
@@ -172,7 +172,7 @@ export function BrokerBottomNav({
                 {getActiveIndicator(item.id) && (
                   <div className={cn(
                     "absolute bottom-1.5 w-1 h-1 rounded-full",
-                    item.id === "copilot" ? "bg-blue-400" : item.id === "plantao" ? "bg-orange-400" : "bg-[#FFFF00]"
+                    item.id === "copilot" ? "bg-blue-400" : item.id === "plantao" ? "bg-purple-400" : "bg-[#FFFF00]"
                   )} />
                 )}
               </button>
