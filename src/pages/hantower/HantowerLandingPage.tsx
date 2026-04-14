@@ -16,6 +16,7 @@ import sacadasImg from "@/assets/hantower/sacadas.jpg";
 import salaoGourmet1 from "@/assets/hantower/salao-gourmet-1.jpg";
 import salaoGourmet2 from "@/assets/hantower/salao-gourmet-2.jpg";
 import piscinaImg from "@/assets/hantower/piscina.jpg";
+import piscinaBordaInfinitaImg from "@/assets/hantower/piscina-borda-infinita.jpg";
 import hallImg from "@/assets/hantower/hall.jpg";
 import garagemImg from "@/assets/hantower/garagem.jpg";
 import academiaImg from "@/assets/hantower/academia.jpg";
@@ -216,7 +217,7 @@ const HantowerLandingPage = () => {
               <div className="w-16 h-px bg-white/40 mx-auto mb-4" />
 
               <p className="text-sm sm:text-base text-white/70 mb-6 max-w-2xl mx-auto">
-                24 andares, rooftop com piscina infinita e apartamentos de 2 e 3 suítes.
+                24 andares, rooftop com piscina com borda infinita e apartamentos de 2 e 3 suítes.
               </p>
 
               <button
@@ -314,7 +315,7 @@ const HantowerLandingPage = () => {
 
           {/* ═══ IMAGEM BREAK — Cobertura ═══ */}
           <section className="relative h-[45vh] md:h-[55vh] overflow-hidden cursor-pointer" onClick={() => setLightboxIdx(2)}>
-            <img src={coberturaPiscinaImg} alt="Piscina na cobertura" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
+            <img src={piscinaBordaInfinitaImg} alt="Piscina de borda infinita com vista" className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
             <div className="absolute bottom-8 left-8 md:bottom-12 md:left-12">
               <p className="text-white/60 text-xs tracking-[0.15em] uppercase mb-2">Rooftop</p>
