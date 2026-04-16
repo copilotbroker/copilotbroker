@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import heroImage from "@/assets/auralegano/hero.jpg";
+import heroImage from "@/assets/auralegano/hero.webp";
 
 const ALHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
