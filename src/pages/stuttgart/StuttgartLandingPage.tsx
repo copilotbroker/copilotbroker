@@ -10,6 +10,7 @@ import {
   STClubSection,
   STIntelligenceSection,
   STPlantsSection,
+  STQualityOfLifeSection,
   STTargetSection,
   STUrgencySection,
   STBenefitsSection,
@@ -78,6 +79,7 @@ const StuttgartLandingPage = () => {
           <STClubSection />
           <STIntelligenceSection />
           <STPlantsSection />
+          <STQualityOfLifeSection />
           <STTargetSection />
           <STUrgencySection />
           <STBenefitsSection />

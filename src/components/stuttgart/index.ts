@@ -4,6 +4,7 @@ export { default as STAboutSection } from "./STAboutSection";
 export { default as STClubSection } from "./STClubSection";
 export { default as STIntelligenceSection } from "./STIntelligenceSection";
 export { default as STPlantsSection } from "./STPlantsSection";
+export { default as STQualityOfLifeSection } from "./STQualityOfLifeSection";
 export { default as STTargetSection } from "./STTargetSection";
 export { default as STUrgencySection } from "./STUrgencySection";
 export { default as STBenefitsSection } from "./STBenefitsSection";
