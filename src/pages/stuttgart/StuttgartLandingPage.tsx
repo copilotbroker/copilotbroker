@@ -52,7 +52,7 @@ const StuttgartLandingPage = () => {
     <>
       <Helmet>
         <title>Jardins de Stuttgart | Condomínio Clube em Ivoti</title>
-        <meta name="description" content="Residencial Jardins de Stuttgart em Ivoti. Condomínio clube com piscina, academia, coworking e lazer completo. 2 e 3 dormitórios e coberturas duplex. Unidades a partir de R$ 634.664." />
+        <meta name="description" content="Residencial Jardins de Stuttgart em Ivoti. Condomínio clube com piscina, academia, coworking e lazer completo. 2 e 3 dormitórios e coberturas duplex. Unidades a partir de R$ 690.000." />
         <meta name="keywords" content="apartamentos Ivoti, condomínio clube Ivoti, Jardins de Stuttgart, residencial Ivoti, lançamento imobiliário, 2 dormitórios Ivoti, 3 dormitórios Ivoti, cobertura duplex" />
         <meta name="robots" content="index, follow, max-image-preview:large" />
         <link rel="canonical" href={canonicalUrl} />
