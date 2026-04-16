@@ -32,7 +32,7 @@ const STQualityOfLifeSection = () => {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
 
       <div className="container px-4 relative z-10">
-        <div className={`max-w-4xl mx-auto text-center mb-16 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+        <div className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <p className="text-primary text-xs font-semibold uppercase tracking-wider mb-4">Reconhecimento nacional</p>
           <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
             IVOTI ESTÁ ENTRE AS CIDADES COM{" "}
