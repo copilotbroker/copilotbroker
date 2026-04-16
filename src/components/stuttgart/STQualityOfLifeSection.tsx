@@ -44,39 +44,7 @@ const STQualityOfLifeSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16">
-          {stats.map((stat, index) => (
-            <div
-              key={stat.label}
-              className={`card-luxury p-8 text-center transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
-              style={{ transitionDelay: `${index * 120}ms` }}
-            >
-              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                <stat.icon className="w-7 h-7 text-primary" />
-              </div>
-              <p className="font-serif text-4xl md:text-5xl font-bold text-gold-gradient mb-2">{stat.value}</p>
-              <p className="text-sm text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {highlights.map((h, index) => (
-            <div
-              key={h.title}
-              className={`card-luxury p-6 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
-              style={{ transitionDelay: `${300 + index * 120}ms` }}
-            >
-              <div className="w-12 h-12 mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                <h.icon className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="font-serif text-lg font-semibold text-foreground mb-2">{h.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{h.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className={`mt-12 max-w-3xl mx-auto text-center transition-all duration-1000 delay-700 ${isVisible ? "opacity-100" : "opacity-0"}`}>
+        <div className={`max-w-3xl mx-auto text-center transition-all duration-1000 delay-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
           <div className="divider-gold mx-auto my-8" />
           <p className="font-serif text-xl md:text-2xl italic text-foreground">
             Morar em Ivoti é viver onde o Brasil vive melhor.
