@@ -56,7 +56,7 @@ const ALHeroSection = () => {
           </p>
 
           <button
-            onClick={scrollToForm}
+            onClick={scrollToContent}
             className="btn-primary text-sm sm:text-base px-8 py-4 sm:px-10 sm:py-5"
             aria-label="Quero garantir meu lote"
           >
