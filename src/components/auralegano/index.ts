@@ -1,8 +1,10 @@
 export { default as ALHeader } from "./ALHeader";
 export { default as ALHeroSection } from "./ALHeroSection";
 export { default as ALAboutSection } from "./ALAboutSection";
+export { default as ALGallerySection } from "./ALGallerySection";
 export { default as ALProjectSection } from "./ALProjectSection";
 export { default as ALClubSection } from "./ALClubSection";
+export { default as ALAdvantagesSection } from "./ALAdvantagesSection";
 export { default as ALNatureSection } from "./ALNatureSection";
 export { default as ALTour360Section } from "./ALTour360Section";
 export { default as ALLotSection } from "./ALLotSection";
