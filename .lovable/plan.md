@@ -1,31 +1,53 @@
 
 
-## Análise dos Botões de Ação do WhatsApp
+# Root Cause Analysis & Fix: Auto-Create Kanban Card on First Reply
 
-### Estado atual: 4 botões quando conectado
-**Reiniciar | Webhook | Desconectar | Deletar**
+## What Happened
 
-### Análise de cada botão
+The lead **Hosana** sent a message via the **WhatsApp Global (Plantão)**. The broker **Gabriel** replied directly to the message without clicking the "Iniciar Atendimento" button. The database trigger `update_conversation_on_message` correctly set `attendance_started = true` on the first outbound message, moving the conversation to the "Meus/Atendimento" tab — but **no lead card was created** because card creation only happens through the explicit UI button.
 
-1. **Reiniciar** — Reinicia a instância na UAZAPI e **já reconfigura o webhook automaticamente** (linha 1184-1187 da edge function). Útil para resolver problemas de conexão.
+## The Gap
 
-2. **Webhook** — Chama `/configure-webhook` que faz exatamente o que o Reiniciar já faz internamente. Foi criado como ferramenta de debug, mas é **redundante** já que o Reiniciar já inclui essa lógica.
+There's a disconnect between two paths:
+- **Path A (Button):** Broker clicks "Iniciar Atendimento" → creates lead, links conversation, logs interaction ✅
+- **Path B (Direct Reply):** Broker just types and sends a message → conversation marked attended, but NO lead created ❌
 
-3. **Desconectar** — Faz logout do WhatsApp na UAZAPI. O corretor precisará escanear QR novamente. Útil se quiser trocar de número.
+Path B is a common real-world scenario — brokers often reply quickly without clicking extra buttons.
 
-4. **Deletar** — Funcionalidade **real e implementada**: apaga a instância na UAZAPI, limpa a fila de mensagens (`whatsapp_message_queue`) e remove o registro do banco. Porém é uma ação **muito destrutiva** e raramente necessária — geralmente só o admin deveria usar.
+## Proposed Fix
 
-### Proposta de simplificação
+Auto-create a Kanban card when a broker sends the **first outbound message** to any conversation that has `lead_id = NULL`. This applies to both:
+- **Plantão (Global)** — `BrokerPlantao.tsx`, `AdminPlantao.tsx`
+- **Inbox Pessoal** — `BrokerInbox.tsx`, `AdminInbox.tsx`
 
-- **Remover o botão "Webhook"** — redundante com Reiniciar
-- **Manter Reiniciar** — resolve 99% dos problemas
-- **Manter Desconectar** — útil para troca de número
-- **Remover "Deletar" da interface do corretor** — manter apenas para admins na aba de visão global, ou esconder completamente (o corretor nunca deveria deletar sua própria instância)
+### Implementation
 
-Resultado: corretor vê apenas **Reiniciar | Desconectar** (interface limpa e segura).
+1. **Modify the `sendMessage` callback** in each inbox page (or centralize in `useConversationMessages`) to check: if `conversation.lead_id` is null and this is the first outbound message, automatically run the same logic as `handleStartAttendance`:
+   - Insert a new lead with `name = display_name || phone`, `source = conversation.source_instance`, `lead_origin` based on instance type
+   - Call `unify_lead` RPC
+   - Update `conversation.lead_id`
+   - Log `atendimento_iniciado` interaction
 
-### Arquivos a alterar
+2. **Files to modify:**
+   - `src/hooks/use-conversations.ts` — Add an optional `onAutoCreateLead` callback parameter to `useConversationMessages`, triggered on first outbound when `lead_id` is null
+   - `src/pages/BrokerInbox.tsx` — Pass auto-create handler
+   - `src/pages/BrokerPlantao.tsx` — Pass auto-create handler
+   - `src/pages/AdminInbox.tsx` — Pass auto-create handler
+   - `src/pages/AdminPlantao.tsx` — Pass auto-create handler
 
-1. **`src/components/whatsapp/ConnectionTab.tsx`** — Remover botão Webhook e botão Deletar (com todo o AlertDialog)
-2. **`src/hooks/use-whatsapp-instance.ts`** — Pode manter `configureWebhook` e `deleteInstance` no hook (usados internamente/admin), apenas não expor na UI do corretor
+3. **Guard against duplicates:** Only trigger if `conversation.lead_id` is still null at the moment of send (check DB before insert).
+
+### Technical Detail
+
+The auto-creation will reuse the existing `handleStartAttendance` logic pattern:
+```
+insert lead → unify_lead RPC → update conversation.lead_id → log interaction
+```
+
+The lead will inherit:
+- `name`: from `conversation.display_name` or phone
+- `source`: `whatsapp` for personal, `whatsapp_global` for global
+- `lead_origin`: `whatsapp_direto` for personal, `whatsapp_plantao` for global
+- `broker_id`: the current broker
+- `status`: `info_sent`
 
