@@ -64,7 +64,7 @@ const STCallToActionSection = () => {
               Unidades a partir de
             </p>
             <p className="font-serif text-3xl md:text-4xl font-bold text-gold-gradient mb-8">
-              R$ 634.664,00
+              R$ 690.000,00
             </p>
             <button onClick={scrollToForm} className="btn-primary text-base px-10 py-5 animate-pulse-slow">
               Garanta Sua Prioridade Agora
