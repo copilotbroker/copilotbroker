@@ -511,6 +511,7 @@ export function useConversations(options: UseConversationsOptions = {}) {
 export function useConversationMessages(
   conversation: Conversation | null,
   onConversationPreviewUpdate?: (update: { preview: string; messageType: string; timestamp: string }) => void,
+  onAutoCreateLead?: (conversation: Conversation) => void,
 ) {
   const conversationId = conversation?.id || null;
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
