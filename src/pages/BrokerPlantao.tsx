@@ -6,6 +6,7 @@ import { ConversationThread } from "@/components/inbox/ConversationThread";
 import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
+import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useUserRole } from "@/hooks/use-user-role";
 import { toast } from "sonner";
