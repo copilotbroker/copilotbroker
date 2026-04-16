@@ -7,8 +7,10 @@ import {
   ALHeader,
   ALHeroSection,
   ALAboutSection,
+  ALGallerySection,
   ALProjectSection,
   ALClubSection,
+  ALAdvantagesSection,
   ALNatureSection,
   ALTour360Section,
   ALLotSection,
@@ -92,8 +94,10 @@ const AuraLeganoLandingPage = () => {
         <main id="main-content" role="main">
           <ALHeroSection />
           <ALAboutSection />
+          <ALGallerySection />
           <ALProjectSection />
           <ALClubSection />
+          <ALAdvantagesSection />
           <ALNatureSection />
           <ALTour360Section />
           <ALLotSection />

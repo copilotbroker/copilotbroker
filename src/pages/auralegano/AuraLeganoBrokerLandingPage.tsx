@@ -7,8 +7,10 @@ import {
   ALHeader,
   ALHeroSection,
   ALAboutSection,
+  ALGallerySection,
   ALProjectSection,
   ALClubSection,
+  ALAdvantagesSection,
   ALNatureSection,
   ALTour360Section,
   ALLotSection,
@@ -96,8 +98,10 @@ const AuraLeganoBrokerLandingPage = () => {
         <ALHeader brokerName={brokerName} />
         <ALHeroSection />
         <ALAboutSection />
+        <ALGallerySection />
         <ALProjectSection />
         <ALClubSection />
+        <ALAdvantagesSection />
         <ALNatureSection />
         <ALTour360Section />
         <ALLotSection />
