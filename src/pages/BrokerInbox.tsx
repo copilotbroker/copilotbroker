@@ -107,6 +107,21 @@ export default function BrokerInbox() {
     ? atendimentoConversations
     : allPersonalConversations;
 
+  const handleAutoLeadCreated = useCallback((conv: Conversation, leadId: string, leadName: string) => {
+    setSelectedConversation((prev) => prev?.id === conv.id ? {
+      ...prev, lead_id: leadId,
+      lead: { id: leadId, name: leadName, status: "info_sent", project_id: null, notes: null, lead_origin: conv.source_instance === "global" ? "whatsapp_plantao" : "whatsapp_direto" },
+    } : prev);
+    setActiveTab("atendimento");
+    fetchConversations();
+  }, [fetchConversations]);
+
+  const autoCreateLead = useAutoCreateLead({
+    brokerId,
+    sourceType: "personal",
+    onLeadCreated: handleAutoLeadCreated,
+  });
+
   const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {
       if (!selectedConversation) return;
@@ -120,7 +135,7 @@ export default function BrokerInbox() {
         last_message_preview: update.preview, last_message_direction: "outbound",
         last_message_type: update.messageType, updated_at: update.timestamp,
       } : prev);
-    });
+    }, autoCreateLead);
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
 
