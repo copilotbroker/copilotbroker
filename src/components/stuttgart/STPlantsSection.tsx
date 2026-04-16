@@ -19,8 +19,7 @@ const plants = [
   "2 dormitórios com suíte e garden",
   "3 dormitórios com suíte",
   "3 dormitórios com suíte e garden",
-  "Coberturas",
-  "Duplex com 3 dormitórios",
+  "Coberturas duplex com 3 dormitórios",
 ];
 
 const gallery: LightboxImage[] = [
