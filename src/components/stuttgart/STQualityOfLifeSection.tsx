@@ -44,12 +44,6 @@ const STQualityOfLifeSection = () => {
           </p>
         </div>
 
-        <div className={`max-w-3xl mx-auto text-center transition-all duration-1000 delay-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
-          <div className="divider-gold mx-auto my-8" />
-          <p className="font-serif text-xl md:text-2xl italic text-foreground">
-            Morar em Ivoti é viver onde o Brasil vive melhor.
-          </p>
-        </div>
       </div>
     </section>
   );
