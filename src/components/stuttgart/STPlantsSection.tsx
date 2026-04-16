@@ -8,6 +8,9 @@ import living04 from "@/assets/stuttgart/living-04.webp";
 import cozinha04 from "@/assets/stuttgart/cozinha-04.webp";
 import dorm04 from "@/assets/stuttgart/dorm-04.webp";
 import sacada04 from "@/assets/stuttgart/sacada-04.webp";
+import duplexImg from "@/assets/stuttgart/duplex.webp";
+import gardenImg from "@/assets/stuttgart/garden.webp";
+import terracoImg from "@/assets/stuttgart/terraco.webp";
 
 const plants = [
   "2 dormitórios com suíte",

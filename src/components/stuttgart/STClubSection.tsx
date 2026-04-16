@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Heart, Users, Sparkles } from "lucide-react";
 import academiaImg from "@/assets/stuttgart/academia.webp";
 import porticoImg from "@/assets/stuttgart/portico.webp";
+import coworkingImg from "@/assets/stuttgart/coworking.webp";
+import brinquedotecaImg from "@/assets/stuttgart/brinquedoteca.webp";
+import zenImg from "@/assets/stuttgart/zen.webp";
+import petImg from "@/assets/stuttgart/pet.webp";
+import estarImg from "@/assets/stuttgart/estar.webp";
+import bicicletarioImg from "@/assets/stuttgart/bicicletario.webp";
 
 const amenities = [
   "Piscina",
@@ -18,6 +24,15 @@ const lifestyle = [
   { icon: Users, title: "Para todas as idades", desc: "Ambientes que acolhem crianças, jovens, adultos e a melhor idade." },
   { icon: Heart, title: "Que conecta famílias", desc: "Espaços de convivência que aproximam quem você ama." },
   { icon: Sparkles, title: "Pensado nos detalhes", desc: "Cada metro foi projetado para o seu dia a dia, não para fotos." },
+];
+
+const galleryAmenities = [
+  { src: coworkingImg, alt: "Coworking equipado do condomínio", caption: "Coworking", span: "md:col-span-2 md:row-span-2 aspect-[4/3]" },
+  { src: brinquedotecaImg, alt: "Brinquedoteca infantil colorida", caption: "Brinquedoteca", span: "aspect-square" },
+  { src: zenImg, alt: "Espaço zen com massagem e yoga", caption: "Espaço Zen", span: "aspect-square" },
+  { src: estarImg, alt: "Estar externo com fireplace", caption: "Estar externo · Fireplace", span: "md:col-span-2 aspect-[16/10]" },
+  { src: petImg, alt: "Espaço pet ao ar livre", caption: "Espaço Pet", span: "aspect-square" },
+  { src: bicicletarioImg, alt: "Bicicletário do condomínio", caption: "Bicicletário", span: "aspect-square" },
 ];
 
 const STClubSection = () => {
@@ -74,11 +89,39 @@ const STClubSection = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                 <div className="absolute bottom-2 left-2 right-2 text-white/95 text-[11px] font-medium">Academia completa</div>
               </div>
-              <div className="relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3] bg-primary/10 flex items-center justify-center text-center p-4 border border-primary/20">
-                <p className="font-serif text-primary text-sm md:text-base">+ piscina,<br/>coworking,<br/>espaço kids…</p>
+              <div className="relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3]">
+                <img src={coworkingImg} alt="Coworking do condomínio" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <div className="absolute bottom-2 left-2 right-2 text-white/95 text-[11px] font-medium">Coworking</div>
               </div>
             </div>
             <div className="absolute -inset-2 border border-primary/20 rounded-lg -z-10" />
+          </div>
+        </div>
+
+        {/* Galeria expandida das amenidades */}
+        <div className={`max-w-6xl mx-auto mb-20 transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <div className="text-center mb-8">
+            <h3 className="font-serif text-xl md:text-2xl font-semibold text-foreground">
+              Cada espaço com <span className="text-gold-gradient">propósito</span>
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2">Imagens ilustrativas das áreas comuns</p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[140px] md:auto-rows-[180px]">
+            {galleryAmenities.map((img, i) => (
+              <div
+                key={img.src}
+                className={`group relative rounded-lg overflow-hidden shadow-elegant ${img.span} transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+                style={{ transitionDelay: `${i * 80}ms` }}
+              >
+                <img src={img.src} alt={img.alt} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute bottom-2 left-3 right-3 text-white text-xs md:text-sm font-medium">
+                  {img.caption}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
