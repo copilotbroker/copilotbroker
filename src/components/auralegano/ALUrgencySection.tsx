@@ -40,6 +40,17 @@ const ALUrgencySection = () => {
               E cada nova reserva reduz as opções disponíveis.
             </p>
 
+            <div className="grid sm:grid-cols-2 gap-4 mb-6">
+              <div className="bg-card border border-primary/20 rounded-lg p-5 text-center">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">A partir de</p>
+                <p className="font-serif text-2xl md:text-3xl font-bold text-gold-gradient">R$ 422 mil</p>
+              </div>
+              <div className="bg-card border border-primary/20 rounded-lg p-5 text-center">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Lotes a partir de</p>
+                <p className="font-serif text-2xl md:text-3xl font-bold text-gold-gradient">427 m²</p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-3 mb-2">
               {Array.from({ length: 15 }).map((_, i) => (
                 <div
@@ -50,6 +61,7 @@ const ALUrgencySection = () => {
               ))}
             </div>
             <p className="text-xs text-muted-foreground text-center mt-3">15 lotes remanescentes</p>
+
           </div>
 
           <div className={`text-center space-y-4 transition-all duration-1000 delay-500 ${isVisible ? "opacity-100" : "opacity-0"}`}>
