@@ -34,14 +34,14 @@ const STHeroSection = () => {
 
       <div className="relative z-10 container px-4 pt-24 pb-16 text-center">
         <div className={`max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 border border-primary/40 rounded-full bg-primary/10 backdrop-blur-sm">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs sm:text-sm font-medium tracking-widest uppercase text-primary">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-6 border border-primary/40 rounded-full bg-primary/10 backdrop-blur-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[9px] sm:text-xs font-medium tracking-widest uppercase text-primary">
               Lançamento · Obras em Andamento
             </span>
           </div>
 
-          <h1 id="hero-heading" className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white leading-tight">
+          <h1 id="hero-heading" className="font-serif text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-bold mb-4 text-white leading-tight">
             VOCÊ NÃO PRECISA MAIS{" "}
             <span className="text-gold-gradient">SAIR DE CASA PARA VIVER BEM</span>
           </h1>
