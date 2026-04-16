@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Compass, Move3d } from "lucide-react";
+import { Compass, Move3d, Maximize2 } from "lucide-react";
 
 const ALTour360Section = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [loadIframe, setLoadIframe] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -19,6 +21,31 @@ const ALTour360Section = () => {
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
+
+  const handleFullscreen = () => {
+    const iframe = iframeRef.current as (HTMLIFrameElement & {
+      webkitRequestFullscreen?: () => Promise<void>;
+      webkitEnterFullscreen?: () => void;
+      msRequestFullscreen?: () => Promise<void>;
+    }) | null;
+    const container = containerRef.current as (HTMLDivElement & {
+      webkitRequestFullscreen?: () => Promise<void>;
+      msRequestFullscreen?: () => Promise<void>;
+    }) | null;
+
+    if (iframe?.webkitEnterFullscreen) {
+      iframe.webkitEnterFullscreen();
+      return;
+    }
+
+    const target = container ?? iframe;
+    if (!target) return;
+
+    if (target.requestFullscreen) target.requestFullscreen();
+    else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+    else if (target.msRequestFullscreen) target.msRequestFullscreen();
+    else window.open("https://tour360.meupasseiovirtual.com/0102/243439/tourvirtual/", "_blank");
+  };
 
   return (
     <section
@@ -54,15 +81,26 @@ const ALTour360Section = () => {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
           }`}
         >
-          <div className="relative rounded-2xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10 bg-card group">
-            <div className="absolute top-4 right-4 z-10 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-primary/20 pointer-events-none">
+          <div ref={containerRef} className="relative rounded-2xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10 bg-card group">
+            <div className="absolute top-4 left-4 z-10 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-primary/20 pointer-events-none">
               <Move3d className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-medium text-foreground">Arraste para explorar</span>
             </div>
 
+            <button
+              type="button"
+              onClick={handleFullscreen}
+              aria-label="Ampliar tour 360 em tela cheia"
+              className="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all shadow-lg shadow-primary/30 border border-primary-foreground/10"
+            >
+              <Maximize2 className="w-4 h-4" />
+              <span className="text-xs font-semibold hidden sm:inline">Tela cheia</span>
+            </button>
+
             <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
               {loadIframe ? (
                 <iframe
+                  ref={iframeRef}
                   src="https://tour360.meupasseiovirtual.com/0102/243439/tourvirtual/"
                   title="Tour Virtual 360° - Aura Legano"
                   className="absolute inset-0 w-full h-full"
