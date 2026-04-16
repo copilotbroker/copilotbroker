@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import predioImage from "@/assets/stuttgart/predio.jpg";
+import predioImage from "@/assets/stuttgart/fachada.webp";
 
 const STHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
