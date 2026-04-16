@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/use-page-tracking";
@@ -7,7 +8,7 @@ import {
   Building2, Waves, Dumbbell, ChefHat, Star, CheckCircle2, ChevronDown, ChevronUp, X, ChevronLeft,
   ChevronRight, Flame, Baby, Sparkles, Gamepad2, ShoppingCart,
   Car, ArrowRight, Clock, BadgePercent, MapPin, ArrowUp, Briefcase, Eye,
-  Zap, Maximize, LayoutGrid, Store, ParkingCircle, Plug
+  Zap, Maximize, LayoutGrid, Store, ParkingCircle, Plug, CheckCircle
 } from "lucide-react";
 
 
@@ -146,6 +147,8 @@ function useInView(threshold = 0.15) {
 
 /* ══════════════════════════════════════════════ */
 const SentowerLandingPage = () => {
+  const location = useLocation();
+  const submitted = location.pathname.endsWith("/obrigado");
   const [projectId, setProjectId] = useState<string | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -675,11 +678,28 @@ const SentowerLandingPage = () => {
               <div className="text-center mb-10">
                 <div className="divider-gold mx-auto mb-6" />
               </div>
-              <FormSection
-                projectId={projectId}
-                projectSlug="sentower"
-                allowBrokerSelection={true}
-              />
+              {submitted ? (
+                <div className="card-luxury p-8 sm:p-10 text-center space-y-4">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8 text-primary" />
+                  </div>
+                  <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+                    Cadastro <span className="text-gold-gradient">recebido!</span>
+                  </h2>
+                  <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                    Em instantes um especialista Enove entrará em contato com você pelo WhatsApp para apresentar todos os detalhes exclusivos do Sentower.
+                  </p>
+                  <p className="text-xs text-muted-foreground/70">
+                    Fique de olho no seu WhatsApp.
+                  </p>
+                </div>
+              ) : (
+                <FormSection
+                  projectId={projectId}
+                  projectSlug="sentower"
+                  allowBrokerSelection={true}
+                />
+              )}
             </div>
           </section>
         </main>
