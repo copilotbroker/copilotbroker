@@ -81,7 +81,35 @@ const STAboutSection = () => {
             </p>
           </div>
         </div>
+
+        {/* Faixa visual de contexto */}
+        <div className={`mt-20 max-w-6xl mx-auto transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            {contextImages.map((img, i) => (
+              <button
+                type="button"
+                key={img.src}
+                onClick={() => setLightboxIndex(i)}
+                className="group relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3] cursor-zoom-in"
+                aria-label={`Ampliar ${img.caption}`}
+              >
+                <img src={img.src} alt={img.alt} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute bottom-3 left-4 right-4 text-white text-xs md:text-sm font-medium text-left">
+                  {img.caption}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
+
+      <STImageLightbox
+        images={contextImages}
+        startIndex={lightboxIndex ?? 0}
+        open={lightboxIndex !== null}
+        onClose={() => setLightboxIndex(null)}
+      />
     </section>
   );
 };
