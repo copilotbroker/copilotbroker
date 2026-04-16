@@ -66,6 +66,9 @@ import NC1BrokerLandingPage from "./pages/vivapark/NC1BrokerLandingPage";
 import StuttgartLandingPage from "./pages/stuttgart/StuttgartLandingPage";
 import StuttgartBrokerLandingPage from "./pages/stuttgart/StuttgartBrokerLandingPage";
 import TermosStuttgart from "./pages/stuttgart/TermosStuttgart";
+import AuraLeganoLandingPage from "./pages/auralegano/AuraLeganoLandingPage";
+import AuraLeganoBrokerLandingPage from "./pages/auralegano/AuraLeganoBrokerLandingPage";
+import TermosAuraLegano from "./pages/auralegano/TermosAuraLegano";
 
 const queryClient = new QueryClient();
 
@@ -146,7 +149,14 @@ const App = () => (
             <Route path="/ivoti/stuttgart/termos" element={<TermosStuttgart />} />
             <Route path="/ivoti/stuttgart/:brokerSlug/obrigado" element={<StuttgartBrokerLandingPage />} />
             <Route path="/ivoti/stuttgart/:brokerSlug" element={<StuttgartBrokerLandingPage />} />
-            
+
+            {/* Aura Legano - Loteamento de alto padrão em Nova Santa Rita */}
+            <Route path="/novasantarita/auralegano" element={<AuraLeganoLandingPage />} />
+            <Route path="/novasantarita/auralegano/obrigado" element={<AuraLeganoLandingPage />} />
+            <Route path="/novasantarita/auralegano/termos" element={<TermosAuraLegano />} />
+            <Route path="/novasantarita/auralegano/:brokerSlug/obrigado" element={<AuraLeganoBrokerLandingPage />} />
+            <Route path="/novasantarita/auralegano/:brokerSlug" element={<AuraLeganoBrokerLandingPage />} />
+
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
