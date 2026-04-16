@@ -32,7 +32,7 @@ const ALLotSection = () => {
 
         <div className={`max-w-6xl mx-auto transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-2xl bg-card">
-            <div className="aspect-[4/3] sm:aspect-[16/10] md:aspect-[16/9] w-full">
+            <div className="h-[80vh] min-h-[600px] sm:h-auto sm:min-h-0 sm:aspect-[16/10] md:aspect-[16/9] w-full">
               <iframe
                 src="https://avivaurbanismo.com.br/mapa-aura-legano/"
                 title="Mapa Interativo Aura Legano - Terrenos Disponíveis"
