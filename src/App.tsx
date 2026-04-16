@@ -63,6 +63,9 @@ import VivaParkBrokerLandingPage from "./pages/vivapark/VivaParkBrokerLandingPag
 import TermosVivaPark from "./pages/vivapark/TermosVivaPark";
 import NC1LandingPage from "./pages/vivapark/NC1LandingPage";
 import NC1BrokerLandingPage from "./pages/vivapark/NC1BrokerLandingPage";
+import StuttgartLandingPage from "./pages/stuttgart/StuttgartLandingPage";
+import StuttgartBrokerLandingPage from "./pages/stuttgart/StuttgartBrokerLandingPage";
+import TermosStuttgart from "./pages/stuttgart/TermosStuttgart";
 
 const queryClient = new QueryClient();
 
@@ -136,6 +139,13 @@ const App = () => (
             {/* Legacy redirect */}
             <Route path="/portobelo/asramos" element={<Navigate to="/portobelo/nc1" replace />} />
             <Route path="/portobelo/asramos/:brokerSlug" element={<Navigate to="/portobelo/nc1" replace />} />
+
+            {/* Jardins de Stuttgart - Condomínio clube em Ivoti */}
+            <Route path="/ivoti/stuttgart" element={<StuttgartLandingPage />} />
+            <Route path="/ivoti/stuttgart/obrigado" element={<StuttgartLandingPage />} />
+            <Route path="/ivoti/stuttgart/termos" element={<TermosStuttgart />} />
+            <Route path="/ivoti/stuttgart/:brokerSlug/obrigado" element={<StuttgartBrokerLandingPage />} />
+            <Route path="/ivoti/stuttgart/:brokerSlug" element={<StuttgartBrokerLandingPage />} />
             
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
