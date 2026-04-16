@@ -712,6 +712,11 @@ export function useConversationMessages(
       timestamp: createdAt,
     });
 
+    // Auto-create lead if conversation has no lead_id (fire-and-forget)
+    if (conversation && !conversation.lead_id && onAutoCreateLead) {
+      void onAutoCreateLead(conversation);
+    }
+
     // Fire-and-forget: upload file (if any) then call edge function
     void (async () => {
       try {
