@@ -132,10 +132,10 @@ const STFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = 
         <div className={`max-w-xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <div className="text-center mb-10">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-              QUERO{" "}
-              <span className="text-gold-gradient">ACESSO ANTECIPADO</span>
+              QUERO CONHECER AS{" "}
+              <span className="text-gold-gradient">UNIDADES DISPONÍVEIS</span>
             </h2>
-            <p className="text-muted-foreground">Cadastro gratuito. Acesso limitado.</p>
+            <p className="text-muted-foreground">Receba tabela, plantas e condições atualizadas.</p>
           </div>
 
           {submitted ? (
@@ -243,7 +243,7 @@ const STFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = 
                     Enviando...
                   </span>
                 ) : (
-                  "Quero Acesso Antecipado"
+                  "Quero Conhecer as Unidades"
                 )}
               </button>
 

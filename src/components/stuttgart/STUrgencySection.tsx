@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { UserCheck, Mail, MousePointerClick, ShoppingCart, AlertTriangle } from "lucide-react";
 
 const priorities = [
-  { icon: UserCheck, text: "Se cadastra antes" },
-  { icon: Mail, text: "Recebe as informações primeiro" },
-  { icon: MousePointerClick, text: "Escolhe as melhores unidades" },
-  { icon: ShoppingCart, text: "Garante condições diferenciadas" },
+  { icon: UserCheck, text: "Agem rápido enquanto há disponibilidade" },
+  { icon: Mail, text: "Recebem tabela atualizada e plantas em primeira mão" },
+  { icon: MousePointerClick, text: "Escolhem as melhores unidades remanescentes" },
+  { icon: ShoppingCart, text: "Garantem condições especiais desta etapa de obra" },
 ];
 
 const STUrgencySection = () => {
@@ -38,11 +38,11 @@ const STUrgencySection = () => {
             <div className="flex items-center gap-3 mb-6">
               <AlertTriangle className="w-8 h-8 text-primary" />
               <h3 className="font-serif text-xl md:text-2xl font-bold text-foreground">
-                OS MELHORES APARTAMENTOS NÃO CHEGAM PARA TODO MUNDO.
+                AS MELHORES UNIDADES JÁ ESTÃO SENDO ESCOLHIDAS.
               </h3>
             </div>
 
-            <p className="text-muted-foreground mb-6">Eles ficam com quem:</p>
+            <p className="text-muted-foreground mb-6">As melhores opções ficam com quem:</p>
 
             <div className="grid sm:grid-cols-2 gap-4">
               {priorities.map((item, index) => (
@@ -62,11 +62,11 @@ const STUrgencySection = () => {
 
           <div className={`text-center space-y-6 transition-all duration-1000 delay-500 ${isVisible ? "opacity-100" : "opacity-0"}`}>
             <p className="text-lg text-muted-foreground">
-              <span className="text-primary">👉</span> Quando o público geral descobrir…
+              <span className="text-primary">👉</span> A obra avança e cada etapa concluída valoriza o imóvel…
             </p>
             <div className="inline-block bg-primary/10 border border-primary/30 rounded-lg px-8 py-4">
               <p className="font-serif text-xl md:text-2xl font-bold text-primary">
-                As melhores opções já terão sido escolhidas.
+                Quem entra agora, garante a melhor condição.
               </p>
             </div>
           </div>

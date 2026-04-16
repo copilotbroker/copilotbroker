@@ -36,7 +36,7 @@ const STFloatingCTA = () => {
         aria-hidden={!isVisible}
         tabIndex={isVisible ? 0 : -1}
       >
-        Quero Acesso Antecipado
+        Quero Conhecer as Unidades
       </button>
 
       <button

@@ -37,7 +37,7 @@ const STHeroSection = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 border border-primary/40 rounded-full bg-primary/10 backdrop-blur-sm">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span className="text-xs sm:text-sm font-medium tracking-widest uppercase text-primary">
-              Pré-Lançamento Exclusivo
+              Lançamento · Obras em Andamento
             </span>
           </div>
 
@@ -58,9 +58,9 @@ const STHeroSection = () => {
           <button
             onClick={scrollToForm}
             className="btn-primary text-sm sm:text-base px-8 py-4 sm:px-10 sm:py-5"
-            aria-label="Quero acesso antecipado ao Stuttgart"
+            aria-label="Quero conhecer as unidades disponíveis"
           >
-            Quero Acesso Antecipado
+            Quero Conhecer as Unidades
           </button>
         </div>
 

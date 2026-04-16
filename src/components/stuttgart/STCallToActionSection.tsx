@@ -55,7 +55,7 @@ const STCallToActionSection = () => {
             </div>
 
             <p className="text-muted-foreground">
-              <span className="text-primary">👉</span> Não ficam disponíveis por muito tempo.
+              <span className="text-primary">👉</span> Com a obra em andamento, as unidades remanescentes vão rápido.
             </p>
           </div>
 
