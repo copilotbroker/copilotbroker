@@ -4,6 +4,7 @@ export { default as ALAboutSection } from "./ALAboutSection";
 export { default as ALProjectSection } from "./ALProjectSection";
 export { default as ALClubSection } from "./ALClubSection";
 export { default as ALNatureSection } from "./ALNatureSection";
+export { default as ALTour360Section } from "./ALTour360Section";
 export { default as ALLotSection } from "./ALLotSection";
 export { default as ALTargetSection } from "./ALTargetSection";
 export { default as ALDeliverySection } from "./ALDeliverySection";
