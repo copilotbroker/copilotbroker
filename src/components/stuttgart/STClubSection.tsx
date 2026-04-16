@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import lazerImage from "@/assets/stuttgart/lazer.jpg";
+import { Heart, Users, Sparkles } from "lucide-react";
+import academiaImg from "@/assets/stuttgart/academia.webp";
+import porticoImg from "@/assets/stuttgart/portico.webp";
 
 const amenities = [
   "Piscina",
@@ -12,9 +14,14 @@ const amenities = [
   "Área social com jacuzzi e fireplace",
 ];
 
+const lifestyle = [
+  { icon: Users, title: "Para todas as idades", desc: "Ambientes que acolhem crianças, jovens, adultos e a melhor idade." },
+  { icon: Heart, title: "Que conecta famílias", desc: "Espaços de convivência que aproximam quem você ama." },
+  { icon: Sparkles, title: "Pensado nos detalhes", desc: "Cada metro foi projetado para o seu dia a dia, não para fotos." },
+];
+
 const STClubSection = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -24,12 +31,6 @@ const STClubSection = () => {
     );
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const img = new Image();
-    img.onload = () => setImageLoaded(true);
-    img.src = lazerImage;
   }, []);
 
   return (
@@ -47,7 +48,7 @@ const STClubSection = () => {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
           <div className={`grid grid-cols-2 gap-3 sm:gap-4 transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"}`}>
             {amenities.map((item, index) => (
               <div
@@ -62,30 +63,46 @@ const STClubSection = () => {
           </div>
 
           <div className={`relative transition-all duration-1000 delay-400 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`}>
-            <div className="relative rounded-lg overflow-hidden shadow-elegant">
-              <div className={`aspect-[4/3] bg-muted transition-opacity duration-500 ${imageLoaded ? "opacity-0" : "opacity-100"}`}>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative rounded-lg overflow-hidden shadow-elegant aspect-[3/4] col-span-1 row-span-2">
+                <img src={porticoImg} alt="Acesso e pórtico do Jardins de Stuttgart" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3 text-white/95 text-xs font-medium">Pórtico exclusivo</div>
               </div>
-              {imageLoaded && (
-                <img
-                  src={lazerImage}
-                  alt="Área de lazer e wellness do Stuttgart"
-                  className="absolute inset-0 w-full h-full object-cover animate-fade-in"
-                  loading="lazy"
-                />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              <div className="relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3]">
+                <img src={academiaImg} alt="Academia equipada do condomínio" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <div className="absolute bottom-2 left-2 right-2 text-white/95 text-[11px] font-medium">Academia completa</div>
+              </div>
+              <div className="relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3] bg-primary/10 flex items-center justify-center text-center p-4 border border-primary/20">
+                <p className="font-serif text-primary text-sm md:text-base">+ piscina,<br/>coworking,<br/>espaço kids…</p>
+              </div>
             </div>
             <div className="absolute -inset-2 border border-primary/20 rounded-lg -z-10" />
           </div>
         </div>
 
-        <div className={`mt-12 max-w-3xl mx-auto text-center space-y-3 transition-all duration-1000 delay-500 ${isVisible ? "opacity-100" : "opacity-0"}`}>
-          <p className="text-muted-foreground"><span className="text-primary">👉</span> Um ambiente que atende todas as idades</p>
-          <p className="text-muted-foreground"><span className="text-primary">👉</span> Um espaço que conecta famílias</p>
-          <p className="text-muted-foreground"><span className="text-primary">👉</span> Um lugar onde cada detalhe foi pensado para o dia a dia</p>
+        <div className={`max-w-5xl mx-auto transition-all duration-1000 delay-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <div className="text-center mb-10">
+            <p className="font-serif text-xl md:text-2xl text-foreground">
+              Mais que estrutura. <span className="text-gold-gradient italic">É um jeito de viver.</span>
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {lifestyle.map((item, i) => (
+              <div
+                key={item.title}
+                className="card-luxury p-6 text-center"
+                style={{ transitionDelay: `${i * 120}ms` }}
+              >
+                <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                  <item.icon className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="font-serif text-lg font-semibold mb-2 text-foreground">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
