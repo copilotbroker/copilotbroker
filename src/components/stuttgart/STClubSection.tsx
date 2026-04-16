@@ -8,6 +8,11 @@ import zenImg from "@/assets/stuttgart/zen.webp";
 import petImg from "@/assets/stuttgart/pet.webp";
 import estarImg from "@/assets/stuttgart/estar.webp";
 import bicicletarioImg from "@/assets/stuttgart/bicicletario.webp";
+import salaoImg from "@/assets/stuttgart/salao.webp";
+import piscinaImg from "@/assets/stuttgart/piscina.webp";
+import jacuzziImg from "@/assets/stuttgart/jacuzzi.webp";
+import playgroundImg from "@/assets/stuttgart/playground.webp";
+import STImageLightbox, { LightboxImage } from "./STImageLightbox";
 
 const amenities = [
   "Piscina",
@@ -26,18 +31,28 @@ const lifestyle = [
   { icon: Sparkles, title: "Pensado nos detalhes", desc: "Cada metro foi projetado para o seu dia a dia, não para fotos." },
 ];
 
-const galleryAmenities = [
-  { src: coworkingImg, alt: "Coworking equipado do condomínio", caption: "Coworking", span: "md:col-span-2 md:row-span-2 aspect-[4/3]" },
-  { src: brinquedotecaImg, alt: "Brinquedoteca infantil colorida", caption: "Brinquedoteca", span: "aspect-square" },
-  { src: zenImg, alt: "Espaço zen com massagem e yoga", caption: "Espaço Zen", span: "aspect-square" },
-  { src: estarImg, alt: "Estar externo com fireplace", caption: "Estar externo · Fireplace", span: "md:col-span-2 aspect-[16/10]" },
-  { src: petImg, alt: "Espaço pet ao ar livre", caption: "Espaço Pet", span: "aspect-square" },
-  { src: bicicletarioImg, alt: "Bicicletário do condomínio", caption: "Bicicletário", span: "aspect-square" },
+const heroImages: LightboxImage[] = [
+  { src: porticoImg, alt: "Pórtico", caption: "Pórtico exclusivo" },
+  { src: academiaImg, alt: "Academia", caption: "Academia completa" },
+  { src: salaoImg, alt: "Salão de festas", caption: "Salão de festas" },
+];
+
+const galleryAmenities: LightboxImage[] = [
+  { src: piscinaImg, alt: "Piscina externa com solarium", caption: "Piscina" },
+  { src: jacuzziImg, alt: "Jacuzzi externa", caption: "Jacuzzi" },
+  { src: coworkingImg, alt: "Coworking equipado", caption: "Coworking" },
+  { src: brinquedotecaImg, alt: "Brinquedoteca infantil", caption: "Brinquedoteca" },
+  { src: zenImg, alt: "Espaço zen", caption: "Espaço Zen" },
+  { src: estarImg, alt: "Estar externo com fireplace", caption: "Estar externo · Fireplace" },
+  { src: petImg, alt: "Espaço pet", caption: "Espaço Pet" },
+  { src: playgroundImg, alt: "Playground infantil", caption: "Playground" },
+  { src: bicicletarioImg, alt: "Bicicletário", caption: "Bicicletário" },
 ];
 
 const STClubSection = () => {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+  const [lightbox, setLightbox] = useState<{ images: LightboxImage[]; index: number } | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -79,48 +94,66 @@ const STClubSection = () => {
 
           <div className={`relative transition-all duration-1000 delay-400 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`}>
             <div className="grid grid-cols-2 gap-3">
-              <div className="relative rounded-lg overflow-hidden shadow-elegant aspect-[3/4] col-span-1 row-span-2">
-                <img src={porticoImg} alt="Acesso e pórtico do Jardins de Stuttgart" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+              <button
+                type="button"
+                onClick={() => setLightbox({ images: heroImages, index: 0 })}
+                className="relative rounded-lg overflow-hidden shadow-elegant aspect-[3/4] col-span-1 row-span-2 group cursor-zoom-in"
+                aria-label="Ampliar imagem do pórtico"
+              >
+                <img src={porticoImg} alt="Acesso e pórtico do Jardins de Stuttgart" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3 text-white/95 text-xs font-medium">Pórtico exclusivo</div>
-              </div>
-              <div className="relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3]">
-                <img src={academiaImg} alt="Academia equipada do condomínio" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                <div className="absolute bottom-3 left-3 right-3 text-white/95 text-xs font-medium text-left">Pórtico exclusivo</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLightbox({ images: heroImages, index: 1 })}
+                className="relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3] group cursor-zoom-in"
+                aria-label="Ampliar imagem da academia"
+              >
+                <img src={academiaImg} alt="Academia equipada do condomínio" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <div className="absolute bottom-2 left-2 right-2 text-white/95 text-[11px] font-medium">Academia completa</div>
-              </div>
-              <div className="relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3]">
-                <img src={coworkingImg} alt="Coworking do condomínio" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                <div className="absolute bottom-2 left-2 right-2 text-white/95 text-[11px] font-medium text-left">Academia completa</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLightbox({ images: heroImages, index: 2 })}
+                className="relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3] group cursor-zoom-in"
+                aria-label="Ampliar imagem do salão de festas"
+              >
+                <img src={salaoImg} alt="Salão de festas do condomínio" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <div className="absolute bottom-2 left-2 right-2 text-white/95 text-[11px] font-medium">Coworking</div>
-              </div>
+                <div className="absolute bottom-2 left-2 right-2 text-white/95 text-[11px] font-medium text-left">Salão de festas</div>
+              </button>
             </div>
             <div className="absolute -inset-2 border border-primary/20 rounded-lg -z-10" />
           </div>
         </div>
 
-        {/* Galeria expandida das amenidades */}
+        {/* Galeria expandida das amenidades — grid simétrico, sem auto-rows quebrado em mobile */}
         <div className={`max-w-6xl mx-auto mb-20 transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <div className="text-center mb-8">
             <h3 className="font-serif text-xl md:text-2xl font-semibold text-foreground">
               Cada espaço com <span className="text-gold-gradient">propósito</span>
             </h3>
-            <p className="text-sm text-muted-foreground mt-2">Imagens ilustrativas das áreas comuns</p>
+            <p className="text-sm text-muted-foreground mt-2">Toque em qualquer imagem para ampliar · Imagens ilustrativas</p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[140px] md:auto-rows-[180px]">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             {galleryAmenities.map((img, i) => (
-              <div
+              <button
+                type="button"
                 key={img.src}
-                className={`group relative rounded-lg overflow-hidden shadow-elegant ${img.span} transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
-                style={{ transitionDelay: `${i * 80}ms` }}
+                onClick={() => setLightbox({ images: galleryAmenities, index: i })}
+                className={`group relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3] cursor-zoom-in transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+                style={{ transitionDelay: `${i * 60}ms` }}
+                aria-label={`Ampliar ${img.caption}`}
               >
                 <img src={img.src} alt={img.alt} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute bottom-2 left-3 right-3 text-white text-xs md:text-sm font-medium">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute bottom-2 left-3 right-3 text-white text-xs md:text-sm font-medium text-left">
                   {img.caption}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -148,6 +181,13 @@ const STClubSection = () => {
           </div>
         </div>
       </div>
+
+      <STImageLightbox
+        images={lightbox?.images ?? []}
+        startIndex={lightbox?.index ?? 0}
+        open={!!lightbox}
+        onClose={() => setLightbox(null)}
+      />
     </section>
   );
 };
