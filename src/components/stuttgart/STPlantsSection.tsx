@@ -101,6 +101,47 @@ const STPlantsSection = () => {
           </div>
         </div>
 
+        <div className={`mt-20 max-w-6xl mx-auto transition-all duration-1000 delay-400 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          <div className="text-center mb-10">
+            <h3 className="font-serif text-xl md:text-3xl font-semibold text-foreground">
+              Tipologias <span className="text-gold-gradient">exclusivas</span>
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2">Para quem busca algo além do convencional</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4 md:gap-6">
+            <div className="group relative rounded-lg overflow-hidden shadow-elegant aspect-[4/5]">
+              <img src={gardenImg} alt="Apartamento garden com terraço privativo e ofurô" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <p className="text-primary text-xs font-semibold uppercase tracking-wider mb-1">Garden</p>
+                <h4 className="font-serif text-white text-lg md:text-xl font-semibold">Térreo com terraço privativo</h4>
+                <p className="text-white/80 text-sm mt-1">Spa, área externa e jardim só seu.</p>
+              </div>
+            </div>
+
+            <div className="group relative rounded-lg overflow-hidden shadow-elegant aspect-[4/5]">
+              <img src={duplexImg} alt="Cobertura duplex com pé-direito alto e living amplo" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <p className="text-primary text-xs font-semibold uppercase tracking-wider mb-1">Duplex</p>
+                <h4 className="font-serif text-white text-lg md:text-xl font-semibold">Coberturas em dois pavimentos</h4>
+                <p className="text-white/80 text-sm mt-1">Pé-direito generoso e vista panorâmica.</p>
+              </div>
+            </div>
+
+            <div className="group relative rounded-lg overflow-hidden shadow-elegant aspect-[4/5]">
+              <img src={terracoImg} alt="Terraço gourmet de cobertura visto de cima" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <p className="text-primary text-xs font-semibold uppercase tracking-wider mb-1">Terraço</p>
+                <h4 className="font-serif text-white text-lg md:text-xl font-semibold">Espaço gourmet ao ar livre</h4>
+                <p className="text-white/80 text-sm mt-1">Spa, deck e gastronomia em casa.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className={`mt-12 text-center transition-all duration-1000 delay-500 ${isVisible ? "opacity-100" : "opacity-0"}`}>
           <p className="font-serif text-lg md:text-xl italic text-muted-foreground">
             <span className="text-primary">👉</span> Ambientes inteligentes, pensados para o seu dia a dia.
