@@ -39,9 +39,10 @@ const STImageLightbox = ({ images, startIndex, open, onClose }: STImageLightboxP
     };
   }, [open, onClose, next, prev]);
 
-  if (!open) return null;
+  if (!open || !images || images.length === 0) return null;
 
-  const current = images[index];
+  const current = images[Math.min(index, images.length - 1)];
+  if (!current) return null;
 
   return (
     <div
