@@ -7,6 +7,7 @@ import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatModal";
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
+import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { toast } from "sonner";
 import { useLogout } from "@/hooks/use-logout";
@@ -116,6 +117,22 @@ export default function AdminPlantao() {
   const activeConversations = inboxTab === "novos" ? novosConversations : conversations;
   const activeLoading = inboxTab === "novos" ? novosLoading : isLoading;
 
+  const handleAutoLeadCreated = useCallback((conv: Conversation, leadId: string, leadName: string) => {
+    setSelectedConversation((prev) => prev?.id === conv.id ? {
+      ...prev, lead_id: leadId,
+      lead: { id: leadId, name: leadName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
+    } : prev);
+    setInboxTab("meus");
+    fetchConversations();
+    fetchNovos();
+  }, [fetchConversations, fetchNovos]);
+
+  const autoCreateLead = useAutoCreateLead({
+    brokerId: myBrokerId,
+    sourceType: "global",
+    onLeadCreated: handleAutoLeadCreated,
+  });
+
   const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {
       if (!selectedConversation) return;
@@ -129,7 +146,7 @@ export default function AdminPlantao() {
         last_message_preview: update.preview, last_message_direction: "outbound",
         last_message_type: update.messageType, updated_at: update.timestamp,
       } : prev);
-    });
+    }, autoCreateLead);
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
 

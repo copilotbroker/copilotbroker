@@ -7,6 +7,7 @@ import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatModal";
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, BrokerInboxTab } from "@/hooks/use-conversations";
+import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { toast } from "sonner";
 import { useLogout } from "@/hooks/use-logout";
@@ -78,6 +79,21 @@ export default function AdminInbox() {
     ? atendimentoConversations
     : allPersonalConversations;
 
+  const handleAutoLeadCreated = useCallback((conv: Conversation, leadId: string, leadName: string) => {
+    setSelectedConversation((prev) => prev?.id === conv.id ? {
+      ...prev, lead_id: leadId,
+      lead: { id: leadId, name: leadName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_direto" },
+    } : prev);
+    setActiveTab("atendimento");
+    fetchConversations();
+  }, [fetchConversations]);
+
+  const autoCreateLead = useAutoCreateLead({
+    brokerId: selectedBrokerId,
+    sourceType: "personal",
+    onLeadCreated: handleAutoLeadCreated,
+  });
+
   const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {
       if (!selectedConversation) return;
@@ -91,7 +107,7 @@ export default function AdminInbox() {
         last_message_preview: update.preview, last_message_direction: "outbound",
         last_message_type: update.messageType, updated_at: update.timestamp,
       } : prev);
-    });
+    }, autoCreateLead);
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
 
