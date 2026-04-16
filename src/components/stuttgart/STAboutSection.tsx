@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Waves, Users, Briefcase, Dumbbell, Sofa } from "lucide-react";
+import insercaoImg from "@/assets/stuttgart/insercao.webp";
+import fachadaNoturnaImg from "@/assets/stuttgart/fachada-noturna.webp";
+import ramblaImg from "@/assets/stuttgart/rambla.webp";
+import STImageLightbox, { LightboxImage } from "./STImageLightbox";
+
+const contextImages: LightboxImage[] = [
+  { src: insercaoImg, alt: "Vista aérea de Ivoti com o Jardins de Stuttgart inserido na paisagem", caption: "Localização privilegiada em Ivoti" },
+  { src: fachadaNoturnaImg, alt: "Fachada noturna iluminada do Jardins de Stuttgart", caption: "Fachada noturna" },
+  { src: ramblaImg, alt: "Rambla externa com bancos e jardim vertical", caption: "Rambla de convivência" },
+];
 
 const items = [
   { icon: Waves, text: "Piscina" },
