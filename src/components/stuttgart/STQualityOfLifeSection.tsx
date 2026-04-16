@@ -36,11 +36,11 @@ const STQualityOfLifeSection = () => {
           <p className="text-primary text-xs font-semibold uppercase tracking-wider mb-4">Reconhecimento nacional</p>
           <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
             IVOTI ESTÁ ENTRE AS CIDADES COM{" "}
-            <span className="text-gold-gradient">MELHOR QUALIDADE DE VIDA DO BRASIL</span>
+            <span className="text-gold-gradient">MELHOR QUALIDADE DE VIDA DO RIO GRANDE DO SUL</span>
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
             Ivoti é o <strong className="text-foreground">1º município do Vale do Sinos</strong> e o{" "}
-            <strong className="text-foreground">8º do Rio Grande do Sul</strong> com melhor qualidade de vida do país.
+            <strong className="text-foreground">8º do Rio Grande do Sul</strong>.
           </p>
         </div>
 
