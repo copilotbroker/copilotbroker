@@ -10,6 +10,7 @@ import {
   ALProjectSection,
   ALClubSection,
   ALNatureSection,
+  ALTour360Section,
   ALLotSection,
   ALTargetSection,
   ALDeliverySection,
@@ -98,6 +99,7 @@ const AuraLeganoBrokerLandingPage = () => {
         <ALProjectSection />
         <ALClubSection />
         <ALNatureSection />
+        <ALTour360Section />
         <ALLotSection />
         <ALTargetSection />
         <ALDeliverySection />
