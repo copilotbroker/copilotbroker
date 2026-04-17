@@ -616,8 +616,8 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
 
         {/* Cadência ativa indicator */}
         {cadencia.isActive && (
-          <div className="flex items-center gap-3 mb-4 bg-purple-500/10 border border-purple-500/20 rounded-xl px-4 py-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
+          <div className="flex items-center gap-3 mb-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
             <p className="text-xs text-emerald-300 flex-1">
               Cadência ativa
               {cadencia.nextMessageAt && (
@@ -658,11 +658,11 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                 <Calendar className="w-3.5 h-3.5 mr-1.5" />Reagendar
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => setFollowUpOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-purple-500/20 text-purple-400 hover:bg-purple-500/10">
+            <Button variant="outline" size="sm" onClick={() => setFollowUpOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10">
               <MessageCircle className="w-3.5 h-3.5 mr-1.5" />Follow-Up
             </Button>
             {!cadencia.isActive && (
-              <Button variant="outline" size="sm" onClick={() => setCadenciaPickerOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-purple-500/20 text-purple-400 hover:bg-purple-500/10">
+              <Button variant="outline" size="sm" onClick={() => setCadenciaPickerOpen(true)} className="w-full sm:w-auto h-11 sm:h-9 text-sm sm:text-xs border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10">
                 <Zap className="w-3.5 h-3.5 mr-1.5" />+ Cadência
               </Button>
             )}
@@ -721,7 +721,12 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                     <Button
                       size="sm"
                       onClick={() => setWhatsappMsgOpen(!whatsappMsgOpen)}
-                      className="h-8 px-3 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-md shadow-emerald-900/30 transition-all"
+                      className={cn(
+                        "h-8 px-3 text-xs font-semibold text-white rounded-lg shadow-md transition-all",
+                        isGlobalInstance
+                          ? "bg-purple-600 hover:bg-purple-700 shadow-purple-900/30"
+                          : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/30"
+                      )}
                     >
                       <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
                       Enviar WhatsApp
