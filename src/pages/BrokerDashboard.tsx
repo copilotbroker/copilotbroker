@@ -9,10 +9,8 @@ import {
 import { useLogout } from "@/hooks/use-logout";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
-import { useBrokerProjects } from "@/hooks/use-broker-projects";
 import { BrokerLayout } from "@/components/broker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
 import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight, type AttemptStat, type TimeoutLossData } from "@/hooks/use-broker-dashboard";
 import { cn } from "@/lib/utils";
