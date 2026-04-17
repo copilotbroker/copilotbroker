@@ -797,42 +797,43 @@ app.get("/qrcode", async (c) => {
     
     console.log(`[UAZAPI] Phone for pairing: ${phoneDigits || "(none)"} (requested: ${requestedNumber || "none"}, stored: ${instance.phone_number || "none"})`);
 
+    // UAZAPI v2 expects: POST /instance/connect with JSON body { phone: "<digits>" }
+    // The phone is REQUIRED to receive a numeric pairing code (paircode).
+    // GET variants return 404 on uazapi v2 deployments.
     const attempts: QrAttempt[] = [
+      {
+        name: "connect_post_phone",
+        path: `/instance/connect`,
+        opts: {
+          method: "POST",
+          includeJson: true,
+          bodyString: JSON.stringify(phoneDigits ? { phone: phoneDigits } : {}),
+        },
+      },
+      // Legacy / alternative deployments — kept as fallback only
+      {
+        name: "connect_post_legacy",
+        path: `/instance/connect`,
+        opts: {
+          method: "POST",
+          includeJson: true,
+          bodyString: JSON.stringify({
+            name: instance.instance_name,
+            instance: instance.instance_name,
+            number: phoneDigits || undefined,
+            phone: phoneDigits || undefined,
+          }),
+        },
+      },
       {
         name: "connect_get_with_number",
         path: `/instance/connect/${instanceNameEnc}${qsConnect}`,
-        opts: { method: "GET" },
-      },
-      // Some deployments use the instance name as a query parameter instead of a path param
-      {
-        name: "connect_get_q_instance",
-        path: `/instance/connect?instance=${instanceNameEnc}${numberParam ? "&" + numberParam : ""}`,
-        opts: { method: "GET" },
-      },
-      {
-        name: "connect_get_q_name",
-        path: `/instance/connect?name=${instanceNameEnc}${numberParam ? "&" + numberParam : ""}`,
         opts: { method: "GET" },
       },
       {
         name: "connection_state",
         path: `/instance/connectionState/${instanceNameEnc}`,
         opts: { method: "GET" },
-      },
-      {
-        name: "connection_state_kebab",
-        path: `/instance/connection-state/${instanceNameEnc}`,
-        opts: { method: "GET" },
-      },
-      // Some variants accept POST /instance/connect with instance name in the body
-      {
-        name: "connect_post",
-        path: `/instance/connect`,
-        opts: {
-          method: "POST",
-          includeJson: true,
-          bodyString: JSON.stringify({ name: instance.instance_name, instance: instance.instance_name, number: phoneDigits || undefined }),
-        },
       },
     ];
 
