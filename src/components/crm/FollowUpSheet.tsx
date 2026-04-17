@@ -99,12 +99,16 @@ export function FollowUpSheet({
         scheduledTime.setHours(h, m, 0, 0);
       }
 
+      // Delays são SEMPRE relativos à PRIMEIRA mensagem (cumulativos), não encadeados.
+      const firstMessageTime = new Date(scheduledTime);
       const queueItems = steps.map((step, i) => {
-        if (i > 0) scheduledTime = new Date(scheduledTime.getTime() + step.delayMinutes * 60 * 1000 + Math.floor(Math.random() * 60) * 1000);
+        const stepTime = i === 0
+          ? firstMessageTime
+          : new Date(firstMessageTime.getTime() + step.delayMinutes * 60 * 1000 + Math.floor(Math.random() * 60) * 1000);
         return {
           broker_id: brokerId, campaign_id: campaign.id, lead_id: leadId, phone,
           message: replaceTemplateVariables(step.messageContent, { nome: leadName.split(" ")[0], empreendimento: projectName || "", corretor_nome: brokerName?.split(" ")[0] || "Corretor" }),
-          status: "scheduled", scheduled_at: scheduledTime.toISOString(), step_number: i + 1,
+          status: "scheduled", scheduled_at: stepTime.toISOString(), step_number: i + 1,
         };
       });
 
