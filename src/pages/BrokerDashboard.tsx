@@ -9,10 +9,8 @@ import {
 import { useLogout } from "@/hooks/use-logout";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
-import { useBrokerProjects } from "@/hooks/use-broker-projects";
 import { BrokerLayout } from "@/components/broker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
 import { useBrokerDashboard, getPeriodDates, type FunnelData, type FollowUpStats, type DashboardInsight, type AttemptStat, type TimeoutLossData } from "@/hooks/use-broker-dashboard";
 import { cn } from "@/lib/utils";
@@ -270,13 +268,11 @@ const BrokerDashboard = () => {
   const navigate = useNavigate();
   const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
   const { inboxEnabled, copilotEnabled } = useBrokerFeatures(brokerId);
-  const brokerProjectsResult = useBrokerProjects(brokerId);
-  const projects = brokerProjectsResult.brokerProjects || [];
   const handleLogout = useLogout();
 
   const [period, setPeriod] = useState<Period>("30d");
-  const [projectId, setProjectId] = useState<string | null>(null);
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
+  const projectId: string | null = null;
 
   const periodDates = useMemo(() => {
     if (period === "custom" && customRange) return customRange;
@@ -334,22 +330,9 @@ const BrokerDashboard = () => {
         brokerId={brokerId || undefined}
       >
         <div className="space-y-6 pb-20 lg:pb-0">
-          {/* Header + Period + Project filter */}
+          {/* Header + Period filter */}
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="text-lg font-bold text-white">Meu Dashboard</h2>
-              <Select value={projectId || "all"} onValueChange={(v) => setProjectId(v === "all" ? null : v)}>
-                <SelectTrigger className="w-[180px] bg-[#1e1e22] border-[#2a2a2e] text-slate-200 text-xs h-8">
-                  <SelectValue placeholder="Todos empreendimentos" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                  <SelectItem value="all">Todos empreendimentos</SelectItem>
-                  {projects.map((p) => (
-                    <SelectItem key={p.project.id} value={p.project.id}>{p.project.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <h2 className="text-lg font-bold text-white">Meu Dashboard</h2>
             <PeriodFilterWithCustom
               period={period}
               onPeriodChange={(v) => setPeriod(v as Period)}
