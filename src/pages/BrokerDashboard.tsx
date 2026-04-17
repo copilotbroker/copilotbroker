@@ -268,13 +268,11 @@ const BrokerDashboard = () => {
   const navigate = useNavigate();
   const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
   const { inboxEnabled, copilotEnabled } = useBrokerFeatures(brokerId);
-  const brokerProjectsResult = useBrokerProjects(brokerId);
-  const projects = brokerProjectsResult.brokerProjects || [];
   const handleLogout = useLogout();
 
   const [period, setPeriod] = useState<Period>("30d");
-  const [projectId, setProjectId] = useState<string | null>(null);
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
+  const projectId: string | null = null;
 
   const periodDates = useMemo(() => {
     if (period === "custom" && customRange) return customRange;
