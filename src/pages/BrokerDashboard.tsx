@@ -422,9 +422,6 @@ const BrokerDashboard = () => {
                 />
               )}
 
-              {/* Follow-up */}
-              {followUp && <FollowUpCard stats={followUp} />}
-
               {/* Insights */}
               <InsightsCard insights={insights} />
             </>
