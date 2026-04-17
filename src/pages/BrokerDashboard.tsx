@@ -334,22 +334,9 @@ const BrokerDashboard = () => {
         brokerId={brokerId || undefined}
       >
         <div className="space-y-6 pb-20 lg:pb-0">
-          {/* Header + Period + Project filter */}
+          {/* Header + Period filter */}
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="text-lg font-bold text-white">Meu Dashboard</h2>
-              <Select value={projectId || "all"} onValueChange={(v) => setProjectId(v === "all" ? null : v)}>
-                <SelectTrigger className="w-[180px] bg-[#1e1e22] border-[#2a2a2e] text-slate-200 text-xs h-8">
-                  <SelectValue placeholder="Todos empreendimentos" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-                  <SelectItem value="all">Todos empreendimentos</SelectItem>
-                  {projects.map((p) => (
-                    <SelectItem key={p.project.id} value={p.project.id}>{p.project.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <h2 className="text-lg font-bold text-white">Meu Dashboard</h2>
             <PeriodFilterWithCustom
               period={period}
               onPeriodChange={(v) => setPeriod(v as Period)}
