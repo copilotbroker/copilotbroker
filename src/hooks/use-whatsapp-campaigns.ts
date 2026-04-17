@@ -244,21 +244,19 @@ export function useWhatsAppCampaigns(adminBrokerFilterId?: string) {
       }> = [];
       
       for (const lead of uniqueLeads) {
-        let previousScheduledTime = new Date();
-        // Add initial random interval for step 1
-        previousScheduledTime = new Date(previousScheduledTime.getTime() + getRandomInterval());
+        // Delays são SEMPRE relativos à PRIMEIRA mensagem (cumulativos desde o início), não encadeados.
+        const firstMessageTime = new Date(Date.now() + getRandomInterval());
 
         for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
           const step = steps[stepIndex];
-          
-          // For steps after the first, add the delay
-          if (stepIndex > 0) {
-            previousScheduledTime = new Date(
-              previousScheduledTime.getTime() + 
-              step.delayMinutes * 60 * 1000 + 
-              Math.floor(Math.random() * 60) * 1000 // small jitter
-            );
-          }
+
+          const stepTime = stepIndex === 0
+            ? firstMessageTime
+            : new Date(
+                firstMessageTime.getTime() +
+                step.delayMinutes * 60 * 1000 +
+                Math.floor(Math.random() * 60) * 1000 // small jitter
+              );
 
           const personalizedMessage = replaceTemplateVariables(step.messageContent, {
             nome: lead.name.split(" ")[0],
@@ -273,7 +271,7 @@ export function useWhatsAppCampaigns(adminBrokerFilterId?: string) {
             phone: formatPhoneE164(lead.whatsapp),
             message: personalizedMessage,
             status: "scheduled",
-            scheduled_at: previousScheduledTime.toISOString(),
+            scheduled_at: stepTime.toISOString(),
             step_number: stepIndex + 1,
           });
         }
