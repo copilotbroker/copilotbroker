@@ -244,7 +244,7 @@ export function PeriodFilterWithCustom({
             <Calendar className="w-3.5 h-3.5" />
             {isCustom && customRange
               ? `${format(customRange.start, "dd/MM")} - ${format(customRange.end, "dd/MM")}`
-              : "Personalizado"
+              : null
             }
           </button>
         </PopoverTrigger>
