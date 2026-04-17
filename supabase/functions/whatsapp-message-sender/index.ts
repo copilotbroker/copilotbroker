@@ -197,7 +197,10 @@ function formatBRT(date: Date): string {
 }
 
 /**
- * After sending step N, recalculate step N+1's scheduled_at based on actual send time + delay + working hours.
+ * After sending step N, recalculate step N+1's scheduled_at.
+ * REGRA: o delay configurado no editor é SEMPRE relativo ao envio da PRIMEIRA mensagem
+ * (delays cumulativos desde o início), e NÃO em relação à última mensagem enviada.
+ * Por isso, buscamos a primeira mensagem enviada da campanha e somamos o delay da próxima etapa a ela.
  */
 async function rescheduleNextStep(
   supabase: ReturnType<typeof createClient>,
@@ -208,14 +211,17 @@ async function rescheduleNextStep(
   try {
     const nextStepNumber = sentStepNumber + 1;
 
-    // Find next scheduled message in same campaign
-    const { data: nextMsg } = await supabase
+    // Find next scheduled message in same campaign (mesmo lead, se houver)
+    const nextQuery = supabase
       .from("whatsapp_message_queue")
       .select("id, scheduled_at, lead_id")
       .eq("campaign_id", sentMsg.campaign_id)
       .eq("step_number", nextStepNumber)
-      .eq("status", "scheduled")
-      .maybeSingle();
+      .eq("status", "scheduled");
+
+    if (sentMsg.lead_id) nextQuery.eq("lead_id", sentMsg.lead_id);
+
+    const { data: nextMsg } = await nextQuery.maybeSingle();
 
     if (!nextMsg) return; // No next step or already processed
 
@@ -229,8 +235,27 @@ async function rescheduleNextStep(
 
     if (!nextStep) return;
 
-    const sentAt = new Date();
-    const newScheduled = new Date(sentAt.getTime() + (nextStep as { delay_minutes: number }).delay_minutes * 60 * 1000);
+    // Buscar a PRIMEIRA mensagem enviada da campanha (etapa 1) para esse lead.
+    // O delay da próxima etapa é cumulativo desde a primeira, não desde a anterior.
+    const firstMsgQuery = supabase
+      .from("whatsapp_message_queue")
+      .select("sent_at, scheduled_at, step_number")
+      .eq("campaign_id", sentMsg.campaign_id)
+      .eq("step_number", 1);
+
+    if (sentMsg.lead_id) firstMsgQuery.eq("lead_id", sentMsg.lead_id);
+
+    const { data: firstMsg } = await firstMsgQuery.maybeSingle();
+
+    // Base de cálculo: sent_at da etapa 1 (preferencial) ou scheduled_at como fallback.
+    const firstSentRaw = (firstMsg as { sent_at: string | null; scheduled_at: string } | null);
+    const firstBaseIso = firstSentRaw?.sent_at || firstSentRaw?.scheduled_at;
+    if (!firstBaseIso) return;
+
+    const firstBase = new Date(firstBaseIso);
+    const newScheduled = new Date(
+      firstBase.getTime() + (nextStep as { delay_minutes: number }).delay_minutes * 60 * 1000
+    );
     const whStart = instance.working_hours_start || "09:00";
     const whEnd = instance.working_hours_end || "21:00";
 
@@ -247,7 +272,7 @@ async function rescheduleNextStep(
       .update({ scheduled_at: adjusted.toISOString(), updated_at: new Date().toISOString() })
       .eq("id", (nextMsg as { id: string }).id);
 
-    console.log(`🔄 Reschedule step ${nextStepNumber}: ${originalScheduled.toISOString()} → ${adjusted.toISOString()} (wasAdjusted: ${wasAdjusted})`);
+    console.log(`🔄 Reschedule step ${nextStepNumber} (base=primeira msg ${firstBase.toISOString()}): ${originalScheduled.toISOString()} → ${adjusted.toISOString()} (wasAdjusted: ${wasAdjusted})`);
 
     // Log adjustment if it was shifted due to working hours
     if (wasAdjusted && (nextMsg as { lead_id: string | null }).lead_id) {

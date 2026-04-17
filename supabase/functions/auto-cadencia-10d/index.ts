@@ -302,27 +302,25 @@ Deno.serve(async (req) => {
     await supabase.from("campaign_steps").insert(stepsToInsert);
 
     // 11. Schedule messages with working hours adjustment
+    // Delays são SEMPRE relativos à PRIMEIRA mensagem (cumulativos), não encadeados.
     const phone = formatPhoneE164(lead.whatsapp);
-    let scheduledTime = new Date(Date.now() + Math.floor(Math.random() * 30 + 15) * 1000);
+    const firstMessageTime = new Date(Date.now() + Math.floor(Math.random() * 30 + 15) * 1000);
     const adjustmentLogs: string[] = [];
 
     const queueItems = stepsToUse.map((step, i) => {
-      if (i > 0) {
-        scheduledTime = new Date(
-          scheduledTime.getTime() + step.delayMinutes * 60 * 1000 + Math.floor(Math.random() * 60) * 1000
-        );
-      }
+      // Calcula tempo desejado: etapa 1 = imediato; demais = primeira + delay cumulativo
+      const desiredTime = i === 0
+        ? new Date(firstMessageTime)
+        : new Date(firstMessageTime.getTime() + step.delayMinutes * 60 * 1000 + Math.floor(Math.random() * 60) * 1000);
 
-      // Apply working hours adjustment
-      const originalTime = new Date(scheduledTime);
-      const { adjusted, wasAdjusted } = adjustToWorkingHours(scheduledTime, whStart, whEnd);
-      scheduledTime = adjusted; // Chain from adjusted time for next step
+      // Apply working hours adjustment (não encadeia — cada etapa ajusta independente)
+      const { adjusted, wasAdjusted } = adjustToWorkingHours(desiredTime, whStart, whEnd);
 
       if (wasAdjusted) {
         adjustmentLogs.push(
-          `⏰ Etapa ${i + 1} reagendada: previsto ${formatBRT(originalTime)} → ajustado para ${formatBRT(adjusted)} (fora da janela permitida ${whStart}-${whEnd})`
+          `⏰ Etapa ${i + 1} reagendada: previsto ${formatBRT(desiredTime)} → ajustado para ${formatBRT(adjusted)} (fora da janela permitida ${whStart}-${whEnd})`
         );
-        console.log(`Adjusted step ${i + 1}: ${originalTime.toISOString()} → ${adjusted.toISOString()}`);
+        console.log(`Adjusted step ${i + 1}: ${desiredTime.toISOString()} → ${adjusted.toISOString()}`);
       }
 
       return {
@@ -332,7 +330,7 @@ Deno.serve(async (req) => {
         phone,
         message: replaceVars(step.messageContent, vars),
         status: "scheduled",
-        scheduled_at: scheduledTime.toISOString(),
+        scheduled_at: adjusted.toISOString(),
         step_number: i + 1,
       };
     });
