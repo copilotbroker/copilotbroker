@@ -219,14 +219,14 @@ export function PeriodFilterWithCustom({
   const isCustom = period === "custom";
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="inline-flex items-center rounded-md bg-[#1e1e22] border border-[#2a2a2e] p-1 max-w-full overflow-x-auto whatsapp-scrollbar">
       <Tabs value={isCustom ? "" : period} onValueChange={(v) => { onPeriodChange(v); setOpen(false); }}>
-        <TabsList className="bg-[#1e1e22] border border-[#2a2a2e]">
-          <TabsTrigger value="today" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Hoje</TabsTrigger>
-          <TabsTrigger value="7d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">7 dias</TabsTrigger>
-          <TabsTrigger value="30d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">30 dias</TabsTrigger>
+        <TabsList className="bg-transparent border-0 p-0 h-auto gap-0">
+          <TabsTrigger value="today" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs h-7 px-2.5 rounded-sm">Hoje</TabsTrigger>
+          <TabsTrigger value="7d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs h-7 px-2.5 rounded-sm">7 dias</TabsTrigger>
+          <TabsTrigger value="30d" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs h-7 px-2.5 rounded-sm">30 dias</TabsTrigger>
           {showAllPeriod && (
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs">Todo período</TabsTrigger>
+            <TabsTrigger value="all" className="data-[state=active]:bg-[#FFFF00] data-[state=active]:text-black text-xs h-7 px-2.5 rounded-sm whitespace-nowrap">Todo período</TabsTrigger>
           )}
         </TabsList>
       </Tabs>
@@ -235,10 +235,10 @@ export function PeriodFilterWithCustom({
           <button
             onClick={() => setOpen(true)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-3 h-8 text-xs font-medium transition-colors border",
+              "inline-flex items-center gap-1.5 rounded-sm px-2.5 h-7 text-xs font-medium transition-colors whitespace-nowrap",
               isCustom
-                ? "bg-[#FFFF00] text-black border-[#FFFF00]"
-                : "bg-[#1e1e22] text-slate-300 border-[#2a2a2e] hover:bg-[#2a2a2e]"
+                ? "bg-[#FFFF00] text-black"
+                : "bg-transparent text-slate-300 hover:bg-[#2a2a2e]"
             )}
           >
             <Calendar className="w-3.5 h-3.5" />
