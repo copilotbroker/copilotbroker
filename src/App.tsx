@@ -12,6 +12,7 @@ import EstanciaVelha from "./pages/EstanciaVelha";
 // import BrokerLandingPage from "./pages/BrokerLandingPage";
 import EstanciaVelhaTeaser from "./pages/EstanciaVelhaTeaser";
 import BairrodasRosas from "./pages/BairrodasRosas";
+import Canela from "./pages/Canela";
 import EstanciaVelhaBrokerTeaser from "./pages/EstanciaVelhaBrokerTeaser";
 import ProjectLandingPage from "./pages/ProjectLandingPage";
 import ProjectBrokerLandingPage from "./pages/ProjectBrokerLandingPage";
@@ -109,6 +110,7 @@ const App = () => (
             <Route path="/estanciavelha/sentower" element={<SentowerLandingPage />} />
             <Route path="/estanciavelha/sentower/obrigado" element={<SentowerLandingPage />} />
             <Route path="/estanciavelha/bairrodasrosas" element={<BairrodasRosas />} />
+            <Route path="/canela" element={<Canela />} />
             <Route path="/estanciavelha/:brokerSlug" element={<EstanciaVelhaBrokerTeaser />} />
             
             {/* Imóveis Prontos - lead capture for ready-to-move-in properties */}
