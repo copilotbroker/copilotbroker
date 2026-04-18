@@ -373,48 +373,35 @@ const Canela = () => {
         <SectionTitle light>
           Gestão completa da <Highlight>operação do lançamento</Highlight>
         </SectionTitle>
+        <Reveal delay={150}>
+          <p className="text-white/65 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
+            Uma estrutura que combina <strong className="text-white">sistema, processo e pessoas</strong> para
+            organizar cada etapa do lançamento — da reserva à assinatura do contrato.
+          </p>
+        </Reveal>
         <BulletList light items={[
-          "Sistema de gestão do lançamento",
-          "Controle de unidades e espelho de vendas em tempo real",
-          "Fila inteligente de reservas",
-          "Notificação instantânea de propostas",
-          "Aprovação das propostas online",
+          "Sistema de gestão do lançamento com espelho de vendas em tempo real",
+          "Visualização de disponibilidade por unidade",
+          "Fila inteligente e automática de reservas",
+          "Prazo configurável para envio da proposta",
+          "Queda automática da reserva sem conversão",
+          "Notificação instantânea por WhatsApp a cada proposta cadastrada",
+          "Análise e aprovação das propostas online",
           "Fluxo automatizado de documentação",
-          "Gestão do contrato até assinatura",
-          "Curadoria e treinamento das imobiliárias",
+          "Gestão e acompanhamento do contrato até a assinatura",
+          "Curadoria e treinamento das imobiliárias parceiras",
           "Evento de lançamento com lógica de conversão",
           "Processo comercial de alta performance (mesma metodologia utilizada em Itapema)",
         ]} />
         <Divider />
         <Quote light>A incorporadora mantém o comando. Nós estruturamos e operamos a máquina.</Quote>
-      </Section>
-
-      {/* ═══════════ TECNOLOGIA QUE DÁ CONTROLE ═══════════ */}
-      <Section>
-        <SectionLabel>Tecnologia Aplicada ao Lançamento</SectionLabel>
-        <SectionTitle>
-          Tecnologia que dá <Highlight>controle real</Highlight> à incorporadora
-        </SectionTitle>
-        <BulletList items={[
-          "Espelho de vendas em tempo real",
-          "Visualização de disponibilidade por unidade",
-          "Fila automática de reservas",
-          "Prazo configurável para envio da proposta",
-          "Queda automática da reserva sem conversão",
-          "Aviso por WhatsApp a cada proposta cadastrada",
-          "Análise e aprovação online",
-          "Envio automático da documentação",
-          "Acompanhamento do status contratual",
-        ]} />
-        <Divider />
-        <Reveal>
-          <p className="text-[#c9a84c] font-serif italic text-lg md:text-xl">
+        <Reveal delay={200}>
+          <p className="text-[#c9a84c] font-serif italic text-lg md:text-xl mt-6">
             Mais velocidade, menos falha humana, mais governança.
           </p>
         </Reveal>
       </Section>
 
-      {/* ═══════════ CURADORIA COMERCIAL ═══════════ */}
       <Section dark>
         <SectionLabel>Curadoria Comercial</SectionLabel>
         <SectionTitle light>
