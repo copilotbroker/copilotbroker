@@ -420,17 +420,17 @@ const Canela = () => {
       </Section>
 
       {/* ═══════════ EVENTO + OPERAÇÃO ═══════════ */}
-      <Section>
+      <Section dark>
         <SectionLabel>Evento + Operação</SectionLabel>
-        <SectionTitle>
+        <SectionTitle light>
           O evento como <Highlight>pico de absorção</Highlight>
         </SectionTitle>
         <Reveal delay={150}>
-          <p className="text-[#1a1a1a]/70 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
+          <p className="text-white/65 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
             O evento de lançamento como estratégia comercial para fechamento de negócios — desenhado para converter.
           </p>
         </Reveal>
-        <BulletList items={[
+        <BulletList light items={[
           "Evento como ferramenta de venda, não apenas apresentação",
           "Fluxo comercial organizado",
           "Regras claras de atendimento e prioridade",
