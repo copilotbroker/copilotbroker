@@ -472,14 +472,14 @@ const Canela = () => {
       </Section>
 
       {/* ═══════════ FECHAMENTO ═══════════ */}
-      <Section>
+      <Section dark>
         <SectionLabel>Encerramento</SectionLabel>
-        <SectionTitle>
+        <SectionTitle light>
           Uma operação <Highlight>previsível</Highlight>, monitorável e preparada para converter
         </SectionTitle>
         <Reveal delay={150}>
-          <p className="text-[#1a1a1a]/75 text-base md:text-lg leading-relaxed max-w-3xl">
-            Nossa proposta é estruturar e conduzir o lançamento em <strong>Canela</strong> com padrão elevado de
+          <p className="text-white/70 text-base md:text-lg leading-relaxed max-w-3xl">
+            Nossa proposta é estruturar e conduzir o lançamento em <strong className="text-white">Canela</strong> com padrão elevado de
             organização, inteligência e performance — entregando à incorporadora uma operação previsível,
             monitorável e preparada para converter em alta velocidade.
           </p>
