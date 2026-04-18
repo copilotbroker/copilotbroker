@@ -373,54 +373,42 @@ const Canela = () => {
         <SectionTitle light>
           Gestão completa da <Highlight>operação do lançamento</Highlight>
         </SectionTitle>
+        <Reveal delay={150}>
+          <p className="text-white/65 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
+            Uma estrutura que combina <strong className="text-white">sistema, processo e pessoas</strong> para
+            organizar cada etapa do lançamento — da reserva à assinatura do contrato.
+          </p>
+        </Reveal>
         <BulletList light items={[
-          "Sistema de gestão do lançamento",
-          "Controle de unidades e espelho de vendas em tempo real",
-          "Fila inteligente de reservas",
-          "Notificação instantânea de propostas",
-          "Aprovação das propostas online",
+          "Sistema de gestão do lançamento com espelho de vendas em tempo real",
+          "Visualização de disponibilidade por unidade",
+          "Fila inteligente e automática de reservas",
+          "Prazo configurável para envio da proposta",
+          "Queda automática da reserva sem conversão",
+          "Notificação instantânea por WhatsApp a cada proposta cadastrada",
+          "Análise e aprovação das propostas online",
           "Fluxo automatizado de documentação",
-          "Gestão do contrato até assinatura",
-          "Curadoria e treinamento das imobiliárias",
+          "Gestão e acompanhamento do contrato até a assinatura",
+          "Curadoria e treinamento das imobiliárias parceiras",
           "Evento de lançamento com lógica de conversão",
           "Processo comercial de alta performance (mesma metodologia utilizada em Itapema)",
         ]} />
         <Divider />
         <Quote light>A incorporadora mantém o comando. Nós estruturamos e operamos a máquina.</Quote>
-      </Section>
-
-      {/* ═══════════ TECNOLOGIA QUE DÁ CONTROLE ═══════════ */}
-      <Section>
-        <SectionLabel>Tecnologia Aplicada ao Lançamento</SectionLabel>
-        <SectionTitle>
-          Tecnologia que dá <Highlight>controle real</Highlight> à incorporadora
-        </SectionTitle>
-        <BulletList items={[
-          "Espelho de vendas em tempo real",
-          "Visualização de disponibilidade por unidade",
-          "Fila automática de reservas",
-          "Prazo configurável para envio da proposta",
-          "Queda automática da reserva sem conversão",
-          "Aviso por WhatsApp a cada proposta cadastrada",
-          "Análise e aprovação online",
-          "Envio automático da documentação",
-          "Acompanhamento do status contratual",
-        ]} />
-        <Divider />
-        <Reveal>
-          <p className="text-[#c9a84c] font-serif italic text-lg md:text-xl">
+        <Reveal delay={200}>
+          <p className="text-[#c9a84c] font-serif italic text-lg md:text-xl mt-6">
             Mais velocidade, menos falha humana, mais governança.
           </p>
         </Reveal>
       </Section>
 
       {/* ═══════════ CURADORIA COMERCIAL ═══════════ */}
-      <Section dark>
+      <Section>
         <SectionLabel>Curadoria Comercial</SectionLabel>
-        <SectionTitle light>
+        <SectionTitle>
           Estratégia no <Highlight>recrutamento de imobiliárias</Highlight>
         </SectionTitle>
-        <BulletList light items={[
+        <BulletList items={[
           "Análise das imobiliárias com maior fit com o produto e metodologia de lançamento",
           "Seleção por perfil, carteira e aderência ao produto",
           "Treinamento comercial e técnico",
@@ -428,21 +416,21 @@ const Canela = () => {
           "Ativação dos parceiros certos",
         ]} />
         <Divider />
-        <Quote light>Volume sem aderência gera ruído. Curadoria gera resultado.</Quote>
+        <Quote>Volume sem aderência gera ruído. Curadoria gera resultado.</Quote>
       </Section>
 
       {/* ═══════════ EVENTO + OPERAÇÃO ═══════════ */}
-      <Section>
+      <Section dark>
         <SectionLabel>Evento + Operação</SectionLabel>
-        <SectionTitle>
+        <SectionTitle light>
           O evento como <Highlight>pico de absorção</Highlight>
         </SectionTitle>
         <Reveal delay={150}>
-          <p className="text-[#1a1a1a]/70 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
+          <p className="text-white/65 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
             O evento de lançamento como estratégia comercial para fechamento de negócios — desenhado para converter.
           </p>
         </Reveal>
-        <BulletList items={[
+        <BulletList light items={[
           "Evento como ferramenta de venda, não apenas apresentação",
           "Fluxo comercial organizado",
           "Regras claras de atendimento e prioridade",
@@ -453,9 +441,9 @@ const Canela = () => {
       </Section>
 
       {/* ═══════════ RESULTADO PARA A INCORPORADORA ═══════════ */}
-      <Section dark>
+      <Section>
         <SectionLabel>Resultado para a Incorporadora</SectionLabel>
-        <SectionTitle light>
+        <SectionTitle>
           O que a incorporadora <Highlight>ganha</Highlight>
         </SectionTitle>
 
@@ -467,16 +455,16 @@ const Canela = () => {
             { title: "Mais venda", desc: "Maior capacidade de absorção do estoque" },
           ].map((item, i) => (
             <Reveal key={item.title} delay={i * 120}>
-              <div className="border border-white/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/50 transition-colors h-full bg-white/[0.02]">
+              <div className="border border-[#1a1a1a]/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/50 transition-colors h-full bg-white/40">
                 <h3 className="font-serif text-xl md:text-2xl font-semibold text-[#c9a84c] mb-2">{item.title}</h3>
-                <p className="text-sm md:text-base text-white/65 leading-relaxed">{item.desc}</p>
+                <p className="text-sm md:text-base text-[#1a1a1a]/70 leading-relaxed">{item.desc}</p>
               </div>
             </Reveal>
           ))}
         </div>
 
         <div className="mt-12 md:mt-16">
-          <Quote light>
+          <Quote>
             Nossa proposta não é apenas vender o lançamento.<br />
             É fazer o lançamento performar como operação profissional.
           </Quote>
@@ -484,14 +472,14 @@ const Canela = () => {
       </Section>
 
       {/* ═══════════ FECHAMENTO ═══════════ */}
-      <Section>
+      <Section dark>
         <SectionLabel>Encerramento</SectionLabel>
-        <SectionTitle>
+        <SectionTitle light>
           Uma operação <Highlight>previsível</Highlight>, monitorável e preparada para converter
         </SectionTitle>
         <Reveal delay={150}>
-          <p className="text-[#1a1a1a]/75 text-base md:text-lg leading-relaxed max-w-3xl">
-            Nossa proposta é estruturar e conduzir o lançamento em <strong>Canela</strong> com padrão elevado de
+          <p className="text-white/70 text-base md:text-lg leading-relaxed max-w-3xl">
+            Nossa proposta é estruturar e conduzir o lançamento em <strong className="text-white">Canela</strong> com padrão elevado de
             organização, inteligência e performance — entregando à incorporadora uma operação previsível,
             monitorável e preparada para converter em alta velocidade.
           </p>
