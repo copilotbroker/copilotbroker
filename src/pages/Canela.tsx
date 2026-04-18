@@ -441,9 +441,9 @@ const Canela = () => {
       </Section>
 
       {/* ═══════════ RESULTADO PARA A INCORPORADORA ═══════════ */}
-      <Section dark>
+      <Section>
         <SectionLabel>Resultado para a Incorporadora</SectionLabel>
-        <SectionTitle light>
+        <SectionTitle>
           O que a incorporadora <Highlight>ganha</Highlight>
         </SectionTitle>
 
@@ -455,16 +455,16 @@ const Canela = () => {
             { title: "Mais venda", desc: "Maior capacidade de absorção do estoque" },
           ].map((item, i) => (
             <Reveal key={item.title} delay={i * 120}>
-              <div className="border border-white/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/50 transition-colors h-full bg-white/[0.02]">
+              <div className="border border-[#1a1a1a]/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/50 transition-colors h-full bg-white/40">
                 <h3 className="font-serif text-xl md:text-2xl font-semibold text-[#c9a84c] mb-2">{item.title}</h3>
-                <p className="text-sm md:text-base text-white/65 leading-relaxed">{item.desc}</p>
+                <p className="text-sm md:text-base text-[#1a1a1a]/70 leading-relaxed">{item.desc}</p>
               </div>
             </Reveal>
           ))}
         </div>
 
         <div className="mt-12 md:mt-16">
-          <Quote light>
+          <Quote>
             Nossa proposta não é apenas vender o lançamento.<br />
             É fazer o lançamento performar como operação profissional.
           </Quote>
