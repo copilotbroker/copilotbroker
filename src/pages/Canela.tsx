@@ -402,12 +402,13 @@ const Canela = () => {
         </Reveal>
       </Section>
 
-      <Section dark>
+      {/* ═══════════ CURADORIA COMERCIAL ═══════════ */}
+      <Section>
         <SectionLabel>Curadoria Comercial</SectionLabel>
-        <SectionTitle light>
+        <SectionTitle>
           Estratégia no <Highlight>recrutamento de imobiliárias</Highlight>
         </SectionTitle>
-        <BulletList light items={[
+        <BulletList items={[
           "Análise das imobiliárias com maior fit com o produto e metodologia de lançamento",
           "Seleção por perfil, carteira e aderência ao produto",
           "Treinamento comercial e técnico",
@@ -415,7 +416,7 @@ const Canela = () => {
           "Ativação dos parceiros certos",
         ]} />
         <Divider />
-        <Quote light>Volume sem aderência gera ruído. Curadoria gera resultado.</Quote>
+        <Quote>Volume sem aderência gera ruído. Curadoria gera resultado.</Quote>
       </Section>
 
       {/* ═══════════ EVENTO + OPERAÇÃO ═══════════ */}
