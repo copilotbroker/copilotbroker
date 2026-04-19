@@ -480,9 +480,14 @@ const Canela = () => {
           Gestão completa da <Highlight>operação do lançamento</Highlight>
         </SectionTitle>
         <Reveal delay={150}>
-          <p className="text-[#1a1a1a]/75 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
+          <p className="text-[#1a1a1a]/75 text-base md:text-lg leading-relaxed mb-6 max-w-3xl">
             Uma estrutura que combina <strong>sistema, processo e pessoas</strong> para
             organizar cada etapa do lançamento, da reserva à assinatura do contrato.
+          </p>
+        </Reveal>
+        <Reveal delay={200}>
+          <p className="text-[#c9a84c] font-serif italic text-lg md:text-2xl leading-snug mb-10 max-w-3xl border-l-2 border-[#c9a84c]/40 pl-5">
+            Incorporadora com controle absoluto e em tempo real da operação.
           </p>
         </Reveal>
         <BulletList items={[
