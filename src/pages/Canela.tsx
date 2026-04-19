@@ -344,7 +344,7 @@ const Canela = () => {
       <Section>
         <SectionLabel number="08">LGPD e Segurança</SectionLabel>
         <SectionTitle>
-          Primeira imobiliária do RS completamente adaptada à <Highlight>LGPD</Highlight>
+          Processo adaptado à <Highlight>LGPD</Highlight>
         </SectionTitle>
         <BulletList items={[
           "Processos auditáveis",
