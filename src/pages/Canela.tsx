@@ -127,7 +127,7 @@ const Canela = () => {
         <div className="absolute top-6 right-6 md:top-8 md:right-8 w-10 h-10 border-r border-t border-[#c9a84c]/30" />
 
         <div className="relative z-10 max-w-3xl mx-auto space-y-10 animate-[fadeIn_1.2s_ease-out]">
-          <img src={logoEnove} alt="Enove" className="h-40 md:h-48 mx-auto opacity-80" />
+          <img src={logoEnove} alt="Enove" className="h-40 md:h-48 mx-auto opacity-80 mt-16 md:mt-24" />
 
           <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-[#c9a84c]/25 bg-[#c9a84c]/5 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] animate-pulse" />
