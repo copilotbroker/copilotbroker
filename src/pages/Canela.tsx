@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import logoEnove from "@/assets/logo-enove.png";
+import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 
 /* ─── Intersection Observer hook for scroll-triggered animations ─── */
 function useReveal() {
@@ -89,6 +90,8 @@ const Canela = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  const whatsappUrl = "https://wa.me/5551997010323?text=" + encodeURIComponent("Olá! Vim pela apresentação do lançamento em Canela. Quero conversar sobre a parceria.");
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] font-sans antialiased selection:bg-[#c9a84c]/30 selection:text-white">
 
@@ -104,7 +107,7 @@ const Canela = () => {
               Lançamento em <span className="text-[#c9a84c]">Canela</span>
             </h1>
             <p className="text-sm md:text-base text-white/50 tracking-[0.2em] uppercase">
-              Operação completa de lançamento — comercial, tecnologia, evento e governança
+              Operação completa de lançamento. Comercial, tecnologia, evento e governança.
             </p>
           </div>
 
@@ -232,13 +235,34 @@ const Canela = () => {
         </Reveal>
       </Section>
 
-      {/* ═══════════ TECNOLOGIA E DADOS ═══════════ */}
+      {/* ═══════════ PRODUÇÃO ═══════════ */}
       <Section>
-        <SectionLabel>Tecnologia e Dados</SectionLabel>
+        <SectionLabel>Produção</SectionLabel>
         <SectionTitle>
+          Renderização 3D e conteúdo audiovisual de <Highlight>alto padrão</Highlight>
+        </SectionTitle>
+        <Reveal delay={150}>
+          <p className="text-[#1a1a1a]/70 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
+            Produção visual completa para sustentar o posicionamento do produto e potencializar a percepção de valor desde o primeiro contato.
+          </p>
+        </Reveal>
+        <BulletList items={[
+          "Elaboração completa de renderização 3D",
+          "Imagens ultra realistas, com vida",
+          "Vídeos profissionais com narrativa de produto",
+          "Conteúdo visual pronto para campanhas de mídia",
+        ]} />
+        <Divider />
+        <Quote>Imagem é o primeiro contrato emocional do cliente com o produto.</Quote>
+      </Section>
+
+      {/* ═══════════ TECNOLOGIA E DADOS ═══════════ */}
+      <Section dark>
+        <SectionLabel>Tecnologia e Dados</SectionLabel>
+        <SectionTitle light>
           Operação orientada por <Highlight>dados</Highlight>
         </SectionTitle>
-        <BulletList items={[
+        <BulletList light items={[
           "CRM exclusivo para lançamentos",
           "Distribuição inteligente de leads",
           "Monitoramento de tempo de resposta",
@@ -246,16 +270,16 @@ const Canela = () => {
           "Funil comercial rastreável",
         ]} />
         <Divider />
-        <Quote>Decisão baseada em número, não em opinião.</Quote>
+        <Quote light>Decisão baseada em número, não em opinião.</Quote>
       </Section>
 
       {/* ═══════════ LGPD ═══════════ */}
-      <Section dark>
+      <Section>
         <SectionLabel>LGPD e Segurança</SectionLabel>
-        <SectionTitle light>
+        <SectionTitle>
           Primeira imobiliária do RS completamente adaptada à <Highlight>LGPD</Highlight>
         </SectionTitle>
-        <BulletList light items={[
+        <BulletList items={[
           "Processos auditáveis",
           "Tratamento legal de dados",
           "Proteção da incorporadora",
@@ -263,45 +287,45 @@ const Canela = () => {
         ]} />
         <Divider />
         <Reveal>
-          <p className="text-white/60 text-base md:text-lg">
+          <p className="text-[#1a1a1a]/70 text-base md:text-lg">
             Parceiros precisam de segurança.<br />
             <span className="text-[#c9a84c] font-semibold">Nós entregamos.</span>
           </p>
         </Reveal>
       </Section>
 
-      {/* ═══════════ MODELO DE ATUAÇÃO — CICLO COMPLETO ═══════════ */}
-      <Section>
+      {/* ═══════════ MODELO DE ATUAÇÃO ═══════════ */}
+      <Section dark>
         <SectionLabel>Modelo de Atuação</SectionLabel>
-        <SectionTitle>
+        <SectionTitle light>
           Ciclo <Highlight>completo</Highlight> do lançamento
         </SectionTitle>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 mt-12">
           <Reveal delay={0}>
-            <div className="border border-[#1a1a1a]/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/40 transition-colors group">
+            <div className="border border-white/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/40 transition-colors group">
               <div className="text-[#c9a84c] font-serif text-4xl md:text-5xl font-semibold mb-3 group-hover:scale-105 transition-transform">01</div>
-              <h3 className="font-serif text-xl md:text-2xl font-semibold mb-2">Pré-lançamento</h3>
-              <p className="text-xs uppercase tracking-wider text-[#1a1a1a]/40 mb-4">Construção da base de demanda</p>
-              <ul className="space-y-2 text-sm text-[#1a1a1a]/65">
+              <h3 className="font-serif text-xl md:text-2xl font-semibold mb-2 text-white">Pré-lançamento</h3>
+              <p className="text-xs uppercase tracking-wider text-white/40 mb-4">Construção da base de demanda</p>
+              <ul className="space-y-2 text-sm text-white/65">
                 <li>• Estratégia comercial</li>
                 <li>• Jornada do cliente</li>
                 <li>• Captação de leads</li>
                 <li>• Lista qualificada</li>
                 <li>• Testes de preço e aceitação</li>
               </ul>
-              <div className="mt-5 pt-4 border-t border-[#1a1a1a]/10">
+              <div className="mt-5 pt-4 border-t border-white/10">
                 <p className="font-serif italic text-sm text-[#c9a84c]">Antes de vender, construímos mercado.</p>
               </div>
             </div>
           </Reveal>
 
           <Reveal delay={150}>
-            <div className="border border-[#c9a84c]/30 rounded-lg p-6 md:p-8 bg-[#c9a84c]/5 hover:border-[#c9a84c]/60 transition-colors group">
+            <div className="border border-[#c9a84c]/40 rounded-lg p-6 md:p-8 bg-[#c9a84c]/5 hover:border-[#c9a84c]/60 transition-colors group">
               <div className="text-[#c9a84c] font-serif text-4xl md:text-5xl font-semibold mb-3 group-hover:scale-105 transition-transform">02</div>
-              <h3 className="font-serif text-xl md:text-2xl font-semibold mb-2">Lançamento</h3>
-              <p className="text-xs uppercase tracking-wider text-[#1a1a1a]/40 mb-4">Execução coordenada</p>
-              <ul className="space-y-2 text-sm text-[#1a1a1a]/65">
+              <h3 className="font-serif text-xl md:text-2xl font-semibold mb-2 text-white">Lançamento</h3>
+              <p className="text-xs uppercase tracking-wider text-white/40 mb-4">Execução coordenada</p>
+              <ul className="space-y-2 text-sm text-white/75">
                 <li>• Gestão de plantões</li>
                 <li>• Acompanhamento em tempo real</li>
                 <li>• Conversão intensiva</li>
@@ -315,17 +339,17 @@ const Canela = () => {
           </Reveal>
 
           <Reveal delay={300}>
-            <div className="border border-[#1a1a1a]/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/40 transition-colors group">
+            <div className="border border-white/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/40 transition-colors group">
               <div className="text-[#c9a84c] font-serif text-4xl md:text-5xl font-semibold mb-3 group-hover:scale-105 transition-transform">03</div>
-              <h3 className="font-serif text-xl md:text-2xl font-semibold mb-2">Pós-lançamento</h3>
-              <p className="text-xs uppercase tracking-wider text-[#1a1a1a]/40 mb-4">Até a última unidade</p>
-              <ul className="space-y-2 text-sm text-[#1a1a1a]/65">
+              <h3 className="font-serif text-xl md:text-2xl font-semibold mb-2 text-white">Pós-lançamento</h3>
+              <p className="text-xs uppercase tracking-wider text-white/40 mb-4">Até a última unidade</p>
+              <ul className="space-y-2 text-sm text-white/65">
                 <li>• Gestão de estoque</li>
                 <li>• Campanhas específicas</li>
                 <li>• Estratégia de giro</li>
                 <li>• Relacionamento contínuo</li>
               </ul>
-              <div className="mt-5 pt-4 border-t border-[#1a1a1a]/10">
+              <div className="mt-5 pt-4 border-t border-white/10">
                 <p className="font-serif italic text-sm text-[#c9a84c]">Nosso compromisso não termina no evento de lançamento.</p>
               </div>
             </div>
@@ -334,27 +358,27 @@ const Canela = () => {
       </Section>
 
       {/* ═══════════ TRANSIÇÃO PARA CANELA ═══════════ */}
-      <Section dark>
+      <Section>
         <SectionLabel>Proposta para Canela</SectionLabel>
-        <SectionTitle light>
+        <SectionTitle>
           Aplicando o método ao <Highlight>lançamento em Canela</Highlight>
         </SectionTitle>
         <Reveal delay={150}>
-          <p className="text-white/65 text-base md:text-lg leading-relaxed max-w-3xl">
+          <p className="text-[#1a1a1a]/70 text-base md:text-lg leading-relaxed max-w-3xl">
             O foco não é apenas colocar produto no mercado.<br />
-            O foco é criar uma <strong className="text-white">operação de alta performance</strong> que acelere vendas,
-            organize o processo e dê <strong className="text-white">segurança, controle e previsibilidade</strong> à incorporadora.
+            O foco é criar uma <strong>operação de alta performance</strong> que acelere vendas,
+            organize o processo e dê <strong>segurança, controle e previsibilidade</strong> à incorporadora.
           </p>
         </Reveal>
       </Section>
 
       {/* ═══════════ O PROBLEMA ═══════════ */}
-      <Section>
+      <Section dark>
         <SectionLabel>O Problema</SectionLabel>
-        <SectionTitle>
+        <SectionTitle light>
           A maioria dos lançamentos perde resultado <Highlight>na operação</Highlight>
         </SectionTitle>
-        <BulletList items={[
+        <BulletList light items={[
           "Reservas sem regra clara",
           "Unidades travadas sem conversão real",
           "Propostas demoradas",
@@ -364,22 +388,22 @@ const Canela = () => {
           "Retrabalho entre comercial e administrativo",
         ]} />
         <Divider />
-        <Quote>Produto bom sem operação forte vende abaixo do potencial.</Quote>
+        <Quote light>Produto bom sem operação forte vende abaixo do potencial.</Quote>
       </Section>
 
       {/* ═══════════ O QUE PROPOMOS ═══════════ */}
-      <Section dark>
+      <Section>
         <SectionLabel>O Que Propomos</SectionLabel>
-        <SectionTitle light>
+        <SectionTitle>
           Gestão completa da <Highlight>operação do lançamento</Highlight>
         </SectionTitle>
         <Reveal delay={150}>
-          <p className="text-white/65 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
-            Uma estrutura que combina <strong className="text-white">sistema, processo e pessoas</strong> para
-            organizar cada etapa do lançamento — da reserva à assinatura do contrato.
+          <p className="text-[#1a1a1a]/70 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
+            Uma estrutura que combina <strong>sistema, processo e pessoas</strong> para
+            organizar cada etapa do lançamento, da reserva à assinatura do contrato.
           </p>
         </Reveal>
-        <BulletList light items={[
+        <BulletList items={[
           "Sistema de gestão do lançamento com espelho de vendas em tempo real",
           "Visualização de disponibilidade por unidade",
           "Fila inteligente e automática de reservas",
@@ -394,7 +418,7 @@ const Canela = () => {
           "Processo comercial de alta performance (mesma metodologia utilizada em Itapema)",
         ]} />
         <Divider />
-        <Quote light>A incorporadora mantém o comando. Nós estruturamos e operamos a máquina.</Quote>
+        <Quote>A incorporadora mantém o comando. Nós estruturamos e operamos a máquina.</Quote>
         <Reveal delay={200}>
           <p className="text-[#c9a84c] font-serif italic text-lg md:text-xl mt-6">
             Mais velocidade, menos falha humana, mais governança.
@@ -403,12 +427,12 @@ const Canela = () => {
       </Section>
 
       {/* ═══════════ CURADORIA COMERCIAL ═══════════ */}
-      <Section>
+      <Section dark>
         <SectionLabel>Curadoria Comercial</SectionLabel>
-        <SectionTitle>
+        <SectionTitle light>
           Estratégia no <Highlight>recrutamento de imobiliárias</Highlight>
         </SectionTitle>
-        <BulletList items={[
+        <BulletList light items={[
           "Análise das imobiliárias com maior fit com o produto e metodologia de lançamento",
           "Seleção por perfil, carteira e aderência ao produto",
           "Treinamento comercial e técnico",
@@ -416,21 +440,21 @@ const Canela = () => {
           "Ativação dos parceiros certos",
         ]} />
         <Divider />
-        <Quote>Volume sem aderência gera ruído. Curadoria gera resultado.</Quote>
+        <Quote light>Volume sem aderência gera ruído. Curadoria gera resultado.</Quote>
       </Section>
 
       {/* ═══════════ EVENTO + OPERAÇÃO ═══════════ */}
-      <Section dark>
+      <Section>
         <SectionLabel>Evento + Operação</SectionLabel>
-        <SectionTitle light>
+        <SectionTitle>
           O evento como <Highlight>pico de absorção</Highlight>
         </SectionTitle>
         <Reveal delay={150}>
-          <p className="text-white/65 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
-            O evento de lançamento como estratégia comercial para fechamento de negócios — desenhado para converter.
+          <p className="text-[#1a1a1a]/70 text-base md:text-lg leading-relaxed mb-8 max-w-3xl">
+            O evento de lançamento como estratégia comercial para fechamento de negócios, desenhado para converter.
           </p>
         </Reveal>
-        <BulletList light items={[
+        <BulletList items={[
           "Evento como ferramenta de venda, não apenas apresentação",
           "Fluxo comercial organizado",
           "Regras claras de atendimento e prioridade",
@@ -441,9 +465,9 @@ const Canela = () => {
       </Section>
 
       {/* ═══════════ RESULTADO PARA A INCORPORADORA ═══════════ */}
-      <Section>
+      <Section dark>
         <SectionLabel>Resultado para a Incorporadora</SectionLabel>
-        <SectionTitle>
+        <SectionTitle light>
           O que a incorporadora <Highlight>ganha</Highlight>
         </SectionTitle>
 
@@ -455,33 +479,82 @@ const Canela = () => {
             { title: "Mais venda", desc: "Maior capacidade de absorção do estoque" },
           ].map((item, i) => (
             <Reveal key={item.title} delay={i * 120}>
-              <div className="border border-[#1a1a1a]/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/50 transition-colors h-full bg-white/40">
+              <div className="border border-white/10 rounded-lg p-6 md:p-8 hover:border-[#c9a84c]/50 transition-colors h-full bg-white/[0.02]">
                 <h3 className="font-serif text-xl md:text-2xl font-semibold text-[#c9a84c] mb-2">{item.title}</h3>
-                <p className="text-sm md:text-base text-[#1a1a1a]/70 leading-relaxed">{item.desc}</p>
+                <p className="text-sm md:text-base text-white/70 leading-relaxed">{item.desc}</p>
               </div>
             </Reveal>
           ))}
         </div>
 
         <div className="mt-12 md:mt-16">
-          <Quote>
+          <Quote light>
             Nossa proposta não é apenas vender o lançamento.<br />
             É fazer o lançamento performar como operação profissional.
           </Quote>
         </div>
       </Section>
 
-      {/* ═══════════ FECHAMENTO ═══════════ */}
-      <Section dark>
-        <SectionLabel>Encerramento</SectionLabel>
+      {/* ═══════════ CTA FINAL ═══════════ */}
+      <Section dark className="border-t border-white/5">
+        <SectionLabel>Vamos lançar juntos</SectionLabel>
         <SectionTitle light>
-          Uma operação <Highlight>previsível</Highlight>, monitorável e preparada para converter
+          Lançamento estruturado <Highlight>concentra resultado</Highlight>.
         </SectionTitle>
+
         <Reveal delay={150}>
-          <p className="text-white/70 text-base md:text-lg leading-relaxed max-w-3xl">
-            Nossa proposta é estruturar e conduzir o lançamento em <strong className="text-white">Canela</strong> com padrão elevado de
-            organização, inteligência e performance — entregando à incorporadora uma operação previsível,
-            monitorável e preparada para converter em alta velocidade.
+          <p className="font-serif italic text-2xl md:text-3xl text-white/85 mb-8">
+            Vamos lançar juntos?
+          </p>
+        </Reveal>
+
+        <Reveal delay={200}>
+          <p className="text-white/65 text-base md:text-lg leading-relaxed mb-6 max-w-3xl">
+            Nossa proposta é estruturar e conduzir o lançamento em <strong className="text-white">Canela</strong> com
+            padrão elevado de organização, inteligência e performance, entregando à incorporadora uma operação
+            previsível, monitorável e preparada para converter em alta velocidade.
+          </p>
+        </Reveal>
+
+        <Reveal delay={250}>
+          <p className="text-white/70 text-base md:text-lg mb-5">
+            Se vocês buscam um parceiro preparado para:
+          </p>
+        </Reveal>
+
+        <BulletList light items={[
+          "Criar valor onde o mercado ainda não enxerga",
+          "Reposicionar um bairro",
+          "Maximizar velocidade de vendas",
+          "Conduzir o processo com segurança jurídica",
+        ]} />
+
+        <Divider />
+
+        <Reveal delay={300}>
+          <p className="text-[#c9a84c] font-serif italic text-2xl md:text-3xl mb-8">
+            Estamos prontos.
+          </p>
+        </Reveal>
+
+        <Reveal delay={400}>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 bg-[#c9a84c] hover:bg-[#d4b35a] text-[#0a0a0a] font-semibold px-8 py-4 md:px-10 md:py-5 rounded-full text-base md:text-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_10px_40px_-10px_rgba(201,168,76,0.5)]"
+          >
+            <WhatsAppIcon className="w-5 h-5 md:w-6 md:h-6" />
+            Falar no WhatsApp
+            <span className="text-[#0a0a0a]/70 font-normal text-sm md:text-base hidden sm:inline">
+              (51) 99701-0323
+            </span>
+          </a>
+        </Reveal>
+
+        <Reveal delay={500}>
+          <p className="text-white/40 text-xs md:text-sm mt-4 sm:hidden">
+            (51) 99701-0323
           </p>
         </Reveal>
       </Section>
