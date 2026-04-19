@@ -1,22 +1,30 @@
 
-Three changes to `src/pages/Canela.tsx`:
 
-**1. Remove all em-dashes (—)**
-Scan the entire file and replace `—` with appropriate punctuation (period, comma, or line break) preserving readability. Affected sections: hero subtitle, posicionamento, quem somos, o que entregamos, marketing quote, modelo de atuação cards, transição, problema, proposta, fechamento.
+## Onde inserir o conteúdo de reposicionamento de bairros
 
-**2. New "Produção" section** (insert after Marketing/Corretores block, before Tecnologia e Dados — keeps the dark/light alternation)
-- SectionLabel: "Produção"
-- Title: "Renderização 3D e conteúdo audiovisual de **alto padrão**"
-- Bullets: "Elaboração completa de renderização 3D", "Imagens ultra realistas, com vida", "Vídeos profissionais com narrativa de produto", "Conteúdo visual pronto para campanhas de mídia"
-- Quote: "Imagem é o primeiro contrato emocional do cliente com o produto."
+O conteúdo proposto é uma **declaração de crença/posicionamento** — não uma capacidade técnica nova. O lugar natural é dentro da seção **Posicionamento** (linhas 133–151), que hoje fala sobre "Lançamentos exigem método. Não improviso." Acrescentar ali cria continuidade narrativa sem criar seção desconectada nem repetição.
 
-**3. New CTA section at the end** (replace current "Encerramento" with stronger closing + WhatsApp CTA, dark theme)
-- Headline: "Lançamento estruturado concentra resultado."
-- Subheadline: "Vamos lançar juntos?"
-- Paragraph: "Se vocês buscam um parceiro preparado para:" + 4 bullets (Criar valor onde o mercado ainda não enxerga / Reposicionar um bairro / Maximizar velocidade de vendas / Conduzir o processo com segurança jurídica)
-- Final line: "Estamos prontos."
-- Button: gold-filled CTA "Falar no WhatsApp" linking to `https://wa.me/5551997010323?text=...` with `WhatsAppIcon` from `@/components/icons/WhatsAppIcon`, opens in new tab.
+### Mudança única em `src/pages/Canela.tsx` (linhas 133–151)
 
-Footer remains unchanged.
+Expandir a seção **Posicionamento** para incluir, logo após o `Divider` e antes do fecho "A Enove nasceu com esse foco", um bloco curto com:
 
-No routing or other file changes needed.
+1. **Quote em destaque** (usando o componente `Quote light` já existente):  
+   *"Grandes empreendimentos não nascem em bairros consolidados. Eles consolidam bairros."*
+
+2. **Mini-bloco "Nosso Papel"** logo abaixo, com 2 bullets enxutos (usando `BulletList light`):
+   - Criar uma nova narrativa
+   - Elevar a percepção de valor
+
+3. Manter o fecho atual *"A Enove nasceu com esse foco."* — que agora ganha duplo sentido (foco em método **e** em reposicionar regiões).
+
+### Por que aqui e não em outro lugar
+
+- **Não cabe em "Quem Somos"**: aquela seção é histórico/track-record (12 anos, Horizon Clube).
+- **Não cabe em "O Que Entregamos"**: lá é lista de capacidades operacionais.
+- **Não cabe em "Marketing"**: lá é execução tática (mídia, branding, funis).
+- **Cabe em "Posicionamento"**: é exatamente uma declaração de visão de mercado, e dá lastro estratégico ao restante da página antes de entrar em método e operação. Ainda reforça a transição para Canela (cidade em consolidação).
+
+### Resultado visual esperado
+
+Seção "Posicionamento" passa de ~4 elementos para ~6, mantendo o ritmo dark/creme alternado. Sem nova seção, sem repetição, sem quebra de fluxo.
+
