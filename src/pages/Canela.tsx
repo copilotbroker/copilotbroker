@@ -127,7 +127,7 @@ const Canela = () => {
         <div className="absolute top-6 right-6 md:top-8 md:right-8 w-10 h-10 border-r border-t border-[#c9a84c]/30" />
 
         <div className="relative z-10 max-w-3xl mx-auto space-y-10 animate-[fadeIn_1.2s_ease-out]">
-          <img src={logoEnove} alt="Enove" className="h-9 md:h-11 mx-auto opacity-80" />
+          <img src={logoEnove} alt="Enove" className="h-20 md:h-24 mx-auto opacity-80" />
 
           <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-[#c9a84c]/25 bg-[#c9a84c]/5 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] animate-pulse" />
@@ -697,7 +697,7 @@ const Canela = () => {
       {/* ═══════════ FOOTER ═══════════ */}
       <footer className="bg-[#0a0a0a] border-t border-white/5 py-10 md:py-12 px-5">
         <div className="max-w-5xl mx-auto flex flex-col items-center gap-4 text-center">
-          <img src={logoEnove} alt="Enove" className="h-7 md:h-8 opacity-60" />
+          <img src={logoEnove} alt="Enove" className="h-16 md:h-20 opacity-60" />
           <p className="text-xs md:text-sm text-white/40 tracking-[0.2em] uppercase">
             Enove Imobiliária + Enove Select
           </p>
