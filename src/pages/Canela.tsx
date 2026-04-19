@@ -143,6 +143,16 @@ const Canela = () => {
           </p>
         </Reveal>
         <Divider />
+        <Quote>
+          Grandes empreendimentos não nascem em bairros consolidados. Eles consolidam bairros.
+        </Quote>
+        <Reveal delay={250}>
+          <div className="mt-8">
+            <p className="text-white/50 text-xs uppercase tracking-[0.2em] mb-4">Nosso Papel</p>
+            <BulletList items={["Criar uma nova narrativa", "Elevar a percepção de valor"]} />
+          </div>
+        </Reveal>
+        <Divider />
         <Reveal delay={300}>
           <p className="text-[#c9a84c] font-serif italic text-lg md:text-xl">
             A Enove nasceu com esse foco.
