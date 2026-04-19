@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import logoEnove from "@/assets/logo-enove.png";
+import logoEnove from "@/assets/logo-enove-select.png";
 
 const WhatsAppIcon = ({ className = "" }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
