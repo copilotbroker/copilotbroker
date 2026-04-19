@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import logoEnove from "@/assets/logo-enove.png";
-import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
 /* ─── Intersection Observer hook for scroll-triggered animations ─── */
 function useReveal() {
