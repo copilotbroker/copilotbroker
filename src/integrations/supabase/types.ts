@@ -2027,6 +2027,7 @@ export type Database = {
           lead_id: string | null
           max_attempts: number | null
           message: string
+          pause_reason: string | null
           phone: string
           scheduled_at: string
           sent_at: string | null
@@ -2046,6 +2047,7 @@ export type Database = {
           lead_id?: string | null
           max_attempts?: number | null
           message: string
+          pause_reason?: string | null
           phone: string
           scheduled_at: string
           sent_at?: string | null
@@ -2065,6 +2067,7 @@ export type Database = {
           lead_id?: string | null
           max_attempts?: number | null
           message?: string
+          pause_reason?: string | null
           phone?: string
           scheduled_at?: string
           sent_at?: string | null
