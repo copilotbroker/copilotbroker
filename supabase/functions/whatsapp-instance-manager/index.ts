@@ -751,6 +751,11 @@ app.get("/status", async (c) => {
           .eq("id", instance.id);
         
         console.log(`[STATUS] Updated DB: status=${newStatus}, phone=${phoneNumber}`);
+
+        // If we transitioned to disconnected, pause all outgoing messages
+        if (newStatus === "disconnected" && instance.status !== "disconnected") {
+          await pauseMessagesOnDisconnect(supabase, brokerId, user.id);
+        }
       }
     } else {
       console.log(`[STATUS] No valid response from UAZAPI, keeping current status: ${instance.status}`);
@@ -1149,6 +1154,9 @@ app.post("/logout", async (c) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", instance.id);
+
+    // Pause queued/scheduled messages so they don't blast on reconnect
+    await pauseMessagesOnDisconnect(supabase, brokerId, user.id);
 
     return c.json({
       success: true,
@@ -1682,6 +1690,20 @@ app.post("/sync-all", async (c) => {
             .from("broker_whatsapp_instances")
             .update(updateData)
             .eq("id", local.id);
+
+          // If transitioned to disconnected, pause messages and notify the broker
+          if (newStatus === "disconnected" && local.status !== "disconnected") {
+            const { data: brokerRow } = await supabaseAdmin
+              .from("brokers")
+              .select("user_id")
+              .eq("id", local.broker_id)
+              .maybeSingle();
+            await pauseMessagesOnDisconnect(
+              supabaseAdmin,
+              local.broker_id,
+              (brokerRow as { user_id?: string } | null)?.user_id || null,
+            );
+          }
 
           results.push({
             broker_id: local.broker_id,
