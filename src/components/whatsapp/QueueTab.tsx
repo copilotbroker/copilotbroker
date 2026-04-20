@@ -396,6 +396,28 @@ export function QueueTab() {
         </Card>
       ) : (
         <div className="space-y-3">
+          {/* Pausadas por desconexão */}
+          {pausedCount > 0 && (
+            <div className="flex items-center gap-3 w-full py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-amber-200 leading-tight">
+                  Pausadas por desconexão
+                </p>
+                <p className="text-[11px] text-amber-300/70 mt-0.5">
+                  {pausedCount} mensagem{pausedCount > 1 ? "ns" : ""} aguardando sua decisão após reconexão do WhatsApp
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => setReviewOpen(true)}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-medium h-8 text-xs shrink-0"
+              >
+                Revisar
+              </Button>
+            </div>
+          )}
+
           {/* Pendentes */}
           {pendingQueue.length > 0 && (
             <Collapsible defaultOpen>
@@ -487,6 +509,8 @@ export function QueueTab() {
           )}
         </div>
       )}
+
+      <PausedMessagesReviewModal open={reviewOpen} onOpenChange={setReviewOpen} brokerId={myBrokerId} />
     </div>
   );
 }
