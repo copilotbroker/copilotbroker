@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { useWhatsAppQueue } from "@/hooks/use-whatsapp-queue";
 import { useUserRole } from "@/hooks/use-user-role";
+import { usePausedMessages } from "@/hooks/use-paused-messages";
+import { PausedMessagesReviewModal } from "@/components/whatsapp/PausedMessagesReviewModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { QueueStatus } from "@/types/whatsapp";

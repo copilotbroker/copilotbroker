@@ -207,8 +207,8 @@ Deno.serve(async (req) => {
         const interactions = leadIds.map((leadId) => ({
           lead_id: leadId,
           broker_id: broker.brokerId,
-          interaction_type: "cadencia_reativada" as const,
-          notes: "Cadência reativada manualmente após reconexão do WhatsApp",
+          interaction_type: "note_added" as const,
+          notes: "🔄 Cadência reativada manualmente após reconexão do WhatsApp",
           created_by: broker.userId,
         }));
         await adminClient.from("lead_interactions").insert(interactions);
@@ -260,8 +260,8 @@ Deno.serve(async (req) => {
         const interactions = leadIds.map((leadId) => ({
           lead_id: leadId,
           broker_id: broker.brokerId,
-          interaction_type: "cadencia_cancelada" as const,
-          notes: "Mensagem(ns) descartada(s) pelo corretor após desconexão do WhatsApp",
+          interaction_type: "note_added" as const,
+          notes: "🗑️ Mensagem(ns) descartada(s) pelo corretor após desconexão do WhatsApp",
           created_by: broker.userId,
         }));
         await adminClient.from("lead_interactions").insert(interactions);
