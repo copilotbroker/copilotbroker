@@ -510,7 +510,7 @@ export function QueueTab() {
         </div>
       )}
 
-      <PausedMessagesReviewModal open={reviewOpen} onOpenChange={setReviewOpen} />
+      <PausedMessagesReviewModal open={reviewOpen} onOpenChange={setReviewOpen} brokerId={myBrokerId} />
     </div>
   );
 }
