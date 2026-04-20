@@ -215,6 +215,56 @@ const resolveUazapiBase = async (): Promise<string> => {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
+/**
+ * When a broker's WhatsApp instance becomes disconnected, pause all of their
+ * scheduled/queued messages with reason='whatsapp_disconnected' so they don't
+ * get blasted out as a backlog when the instance reconnects. The broker must
+ * manually review and reschedule via /whatsapp-paused-messages.
+ */
+// deno-lint-ignore no-explicit-any
+async function pauseMessagesOnDisconnect(
+  client: SupabaseClient<any, any, any>,
+  brokerId: string,
+  brokerUserId: string | null,
+  reason = "whatsapp_disconnected",
+): Promise<number> {
+  try {
+    const { data: paused, error } = await client
+      .from("whatsapp_message_queue")
+      .update({
+        status: "paused_by_system",
+        pause_reason: reason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("broker_id", brokerId)
+      .in("status", ["scheduled", "queued"])
+      .is("pause_reason", null)
+      .select("id");
+
+    if (error) {
+      console.error("[PAUSE-ON-DISCONNECT] Update error:", error);
+      return 0;
+    }
+
+    const count = paused?.length || 0;
+    console.log(`[PAUSE-ON-DISCONNECT] Paused ${count} messages for broker ${brokerId}`);
+
+    if (count > 0 && brokerUserId) {
+      await client.from("notifications").insert({
+        user_id: brokerUserId,
+        type: "whatsapp_disconnected_pause",
+        title: "Mensagens pausadas por desconexão",
+        message: `${count} mensagem(ns) automática(s) ficaram pausadas porque seu WhatsApp foi desconectado. Reconecte e revise para reativar.`,
+      });
+    }
+
+    return count;
+  } catch (e) {
+    console.error("[PAUSE-ON-DISCONNECT] Exception:", e);
+    return 0;
+  }
+}
+
 // Helper to create authenticated Supabase client
 // deno-lint-ignore no-explicit-any
 const getSupabaseClient = (authHeader?: string): SupabaseClient<any, any, any> => {
