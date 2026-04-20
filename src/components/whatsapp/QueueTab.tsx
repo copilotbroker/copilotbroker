@@ -271,7 +271,10 @@ const SECTIONS: SectionDef[] = [
 
 export function QueueTab() {
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
-  const { role } = useUserRole();
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const { role, brokerId: myBrokerId } = useUserRole();
+  const { data: pausedData } = usePausedMessages(myBrokerId);
+  const pausedCount = pausedData?.count ?? 0;
 
   const { data: brokersList = [] } = useQuery({
     queryKey: ["brokers-list-active"],
