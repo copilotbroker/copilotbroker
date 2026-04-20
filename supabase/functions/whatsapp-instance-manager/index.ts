@@ -215,6 +215,56 @@ const resolveUazapiBase = async (): Promise<string> => {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
+/**
+ * When a broker's WhatsApp instance becomes disconnected, pause all of their
+ * scheduled/queued messages with reason='whatsapp_disconnected' so they don't
+ * get blasted out as a backlog when the instance reconnects. The broker must
+ * manually review and reschedule via /whatsapp-paused-messages.
+ */
+// deno-lint-ignore no-explicit-any
+async function pauseMessagesOnDisconnect(
+  client: SupabaseClient<any, any, any>,
+  brokerId: string,
+  brokerUserId: string | null,
+  reason = "whatsapp_disconnected",
+): Promise<number> {
+  try {
+    const { data: paused, error } = await client
+      .from("whatsapp_message_queue")
+      .update({
+        status: "paused_by_system",
+        pause_reason: reason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("broker_id", brokerId)
+      .in("status", ["scheduled", "queued"])
+      .is("pause_reason", null)
+      .select("id");
+
+    if (error) {
+      console.error("[PAUSE-ON-DISCONNECT] Update error:", error);
+      return 0;
+    }
+
+    const count = paused?.length || 0;
+    console.log(`[PAUSE-ON-DISCONNECT] Paused ${count} messages for broker ${brokerId}`);
+
+    if (count > 0 && brokerUserId) {
+      await client.from("notifications").insert({
+        user_id: brokerUserId,
+        type: "whatsapp_disconnected_pause",
+        title: "Mensagens pausadas por desconexão",
+        message: `${count} mensagem(ns) automática(s) ficaram pausadas porque seu WhatsApp foi desconectado. Reconecte e revise para reativar.`,
+      });
+    }
+
+    return count;
+  } catch (e) {
+    console.error("[PAUSE-ON-DISCONNECT] Exception:", e);
+    return 0;
+  }
+}
+
 // Helper to create authenticated Supabase client
 // deno-lint-ignore no-explicit-any
 const getSupabaseClient = (authHeader?: string): SupabaseClient<any, any, any> => {
@@ -701,6 +751,11 @@ app.get("/status", async (c) => {
           .eq("id", instance.id);
         
         console.log(`[STATUS] Updated DB: status=${newStatus}, phone=${phoneNumber}`);
+
+        // If we transitioned to disconnected, pause all outgoing messages
+        if (newStatus === "disconnected" && instance.status !== "disconnected") {
+          await pauseMessagesOnDisconnect(supabase, brokerId, user.id);
+        }
       }
     } else {
       console.log(`[STATUS] No valid response from UAZAPI, keeping current status: ${instance.status}`);
@@ -1099,6 +1154,9 @@ app.post("/logout", async (c) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", instance.id);
+
+    // Pause queued/scheduled messages so they don't blast on reconnect
+    await pauseMessagesOnDisconnect(supabase, brokerId, user.id);
 
     return c.json({
       success: true,
@@ -1632,6 +1690,20 @@ app.post("/sync-all", async (c) => {
             .from("broker_whatsapp_instances")
             .update(updateData)
             .eq("id", local.id);
+
+          // If transitioned to disconnected, pause messages and notify the broker
+          if (newStatus === "disconnected" && local.status !== "disconnected") {
+            const { data: brokerRow } = await supabaseAdmin
+              .from("brokers")
+              .select("user_id")
+              .eq("id", local.broker_id)
+              .maybeSingle();
+            await pauseMessagesOnDisconnect(
+              supabaseAdmin,
+              local.broker_id,
+              (brokerRow as { user_id?: string } | null)?.user_id || null,
+            );
+          }
 
           results.push({
             broker_id: local.broker_id,

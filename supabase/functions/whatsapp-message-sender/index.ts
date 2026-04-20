@@ -1086,11 +1086,14 @@ app.post("/reset-daily", async (c) => {
       }
     }
 
-    // Also unpause any system-paused messages that were paused
+    // Also unpause any system-paused messages that were paused (manual/limit pauses)
+    // EXCEPT messages paused because the WhatsApp instance was disconnected — those
+    // require explicit broker review via the /whatsapp-paused-messages endpoint.
     await supabase
       .from("whatsapp_message_queue")
       .update({ status: "scheduled" })
-      .eq("status", "paused_by_system");
+      .eq("status", "paused_by_system")
+      .or("pause_reason.is.null,pause_reason.neq.whatsapp_disconnected");
 
     return c.json({
       success: true,

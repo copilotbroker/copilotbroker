@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { useWhatsAppQueue } from "@/hooks/use-whatsapp-queue";
 import { useUserRole } from "@/hooks/use-user-role";
+import { usePausedMessages } from "@/hooks/use-paused-messages";
+import { PausedMessagesReviewModal } from "@/components/whatsapp/PausedMessagesReviewModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { QueueStatus } from "@/types/whatsapp";
@@ -269,7 +271,10 @@ const SECTIONS: SectionDef[] = [
 
 export function QueueTab() {
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
-  const { role } = useUserRole();
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const { role, brokerId: myBrokerId } = useUserRole();
+  const { data: pausedData } = usePausedMessages(myBrokerId);
+  const pausedCount = pausedData?.count ?? 0;
 
   const { data: brokersList = [] } = useQuery({
     queryKey: ["brokers-list-active"],
