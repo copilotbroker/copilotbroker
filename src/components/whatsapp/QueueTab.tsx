@@ -509,6 +509,8 @@ export function QueueTab() {
           )}
         </div>
       )}
+
+      <PausedMessagesReviewModal open={reviewOpen} onOpenChange={setReviewOpen} />
     </div>
   );
 }
