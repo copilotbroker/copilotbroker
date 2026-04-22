@@ -21,8 +21,23 @@ import { usePageTracking } from "@/hooks/use-page-tracking";
 
 import fachada from "@/assets/stuttgart/fachada.webp";
 import insercao from "@/assets/stuttgart/insercao.webp";
+import piscinaImg from "@/assets/stuttgart/piscina.webp";
+import academiaImg from "@/assets/stuttgart/academia.webp";
+import coworkingImg from "@/assets/stuttgart/coworking.webp";
+import salaoImg from "@/assets/stuttgart/salao.webp";
+import jacuzziImg from "@/assets/stuttgart/jacuzzi.webp";
+import estarImg from "@/assets/stuttgart/estar.webp";
 
 const STFormSection = lazy(() => import("@/components/stuttgart/STFormSection"));
+
+const infraestrutura = [
+  { src: piscinaImg, alt: "Piscina externa com solarium", caption: "Piscina" },
+  { src: academiaImg, alt: "Academia equipada do condomínio", caption: "Academia completa" },
+  { src: coworkingImg, alt: "Coworking equipado", caption: "Coworking" },
+  { src: salaoImg, alt: "Salão de festas do condomínio", caption: "Salão de festas" },
+  { src: jacuzziImg, alt: "Jacuzzi externa", caption: "Jacuzzi" },
+  { src: estarImg, alt: "Estar externo com fireplace", caption: "Estar externo · Fireplace" },
+];
 
 const SectionFallback = () => <div className="min-h-[200px]" aria-hidden="true" />;
 
@@ -140,6 +155,7 @@ const StuttgartIvotiV2LandingPage = () => {
 
   // Seções com reveal padrão Stuttgart
   const escassez = useReveal();
+  const infra = useReveal(0.1);
   const diferencial = useReveal();
   const beneficio = useReveal();
   const tipologias = useReveal(0.1);
@@ -298,6 +314,64 @@ const StuttgartIvotiV2LandingPage = () => {
                 </p>
 
                 <CTAButton ariaLabel="Quero ver as opções">Quero Ver as Opções</CTAButton>
+              </div>
+            </div>
+          </section>
+
+          {/* 2.5 INFRAESTRUTURA — galeria padrão STClubSection */}
+          <section
+            ref={infra.ref as React.RefObject<HTMLElement>}
+            className="py-20 md:py-32 bg-background relative overflow-hidden"
+            aria-labelledby="infra-heading"
+          >
+            <div className="absolute top-1/2 right-0 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+
+            <div className="container px-4 relative z-10">
+              <div
+                className={`text-center mb-12 transition-all duration-1000 ${
+                  infra.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+                }`}
+              >
+                <h2
+                  id="infra-heading"
+                  className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
+                >
+                  INFRAESTRUTURA{" "}
+                  <span className="text-gold-gradient">COMPLETA</span>
+                </h2>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  Cada espaço com propósito · Imagens ilustrativas
+                </p>
+                <div className="divider-gold mx-auto my-6" />
+              </div>
+
+              <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-12">
+                {infraestrutura.map((img, i) => (
+                  <div
+                    key={img.src}
+                    className={`group relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3] transition-all duration-700 ${
+                      infra.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+                    }`}
+                    style={{ transitionDelay: `${i * 80}ms` }}
+                  >
+                    <img
+                      src={img.src}
+                      alt={img.alt}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                    <div className="absolute bottom-2 left-3 right-3 text-white text-xs md:text-sm font-medium text-left">
+                      {img.caption}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-center">
+                <CTAButton ariaLabel="Quero conhecer as unidades">
+                  Quero Conhecer as Unidades
+                </CTAButton>
               </div>
             </div>
           </section>
