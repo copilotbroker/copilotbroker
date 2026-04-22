@@ -13,7 +13,6 @@ import {
   UtensilsCrossed,
   Home,
   TreePine,
-  Building2,
   TrendingUp,
   HandCoins,
 } from "lucide-react";
