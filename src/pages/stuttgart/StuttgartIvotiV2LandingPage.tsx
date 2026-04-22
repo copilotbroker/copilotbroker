@@ -159,7 +159,7 @@ const StuttgartIvotiV2LandingPage = () => {
   const escassez = useReveal();
   const infra = useReveal(0.1);
   const diferencial = useReveal();
-  const beneficio = useReveal();
+  
   const tipologias = useReveal(0.1);
   const localizacao = useReveal();
   const preco = useReveal();
@@ -384,42 +384,6 @@ const StuttgartIvotiV2LandingPage = () => {
           {/* 3. DIFERENCIAL — removido a pedido */}
 
           {/* 4. BENEFÍCIO REAL — padrão STUrgencySection */}
-          <section
-            ref={beneficio.ref as React.RefObject<HTMLElement>}
-            className="py-20 md:py-32 bg-card relative overflow-hidden"
-            aria-labelledby="beneficio-heading"
-          >
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
-
-            <div className="container px-4 relative z-10">
-              <div
-                className={`max-w-3xl mx-auto text-center transition-all duration-1000 ${
-                  beneficio.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-                }`}
-              >
-                <div className="w-14 h-14 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-7 h-7 text-primary" />
-                </div>
-
-                <h2
-                  id="beneficio-heading"
-                  className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-8"
-                >
-                  <span className="block mb-3 text-foreground">Menos deslocamento.</span>
-                  <span className="block mb-3 text-foreground">Mais tempo com a família.</span>
-                  <span className="block text-gold-gradient">
-                    Mais qualidade de vida no dia a dia.
-                  </span>
-                </h2>
-
-                <div className="divider-gold mx-auto my-8" />
-
-                <CTAButton ariaLabel="Quero acesso às unidades">
-                  Quero Acesso às Unidades
-                </CTAButton>
-              </div>
-            </div>
-          </section>
 
           {/* 5. TIPOLOGIAS — padrão STPlantsSection (lista com ícone Home) */}
           <section
