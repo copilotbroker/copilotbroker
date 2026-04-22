@@ -381,53 +381,7 @@ const StuttgartIvotiV2LandingPage = () => {
             </div>
           </section>
 
-          {/* 3. DIFERENCIAL — padrão STAboutSection (cards-luxury com ícones) */}
-          <section
-            ref={diferencial.ref as React.RefObject<HTMLElement>}
-            className="py-20 md:py-32 bg-background relative overflow-hidden"
-            aria-labelledby="diferencial-heading"
-          >
-            <div className="container px-4 relative z-10">
-              <div
-                className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${
-                  diferencial.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-                }`}
-              >
-                <h2
-                  id="diferencial-heading"
-                  className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6"
-                >
-                  AQUI VOCÊ NÃO COMPRA SÓ{" "}
-                  <span className="text-gold-gradient">UM APARTAMENTO</span>
-                </h2>
-
-                <p className="text-base sm:text-lg text-muted-foreground mb-12 leading-relaxed">
-                  Você tem no próprio condomínio:
-                </p>
-
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6 mb-12">
-                  {diferenciais.map((item, index) => (
-                    <div
-                      key={item.text}
-                      className={`card-luxury p-5 text-center transition-all duration-700 ${
-                        diferencial.isVisible
-                          ? "opacity-100 translate-y-0"
-                          : "opacity-0 translate-y-10"
-                      }`}
-                      style={{ transitionDelay: `${index * 100}ms` }}
-                    >
-                      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
-                        <item.icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <p className="text-xs sm:text-sm text-foreground">{item.text}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <CTAButton ariaLabel="Ver disponibilidade">Ver Disponibilidade</CTAButton>
-              </div>
-            </div>
-          </section>
+          {/* 3. DIFERENCIAL — removido a pedido */}
 
           {/* 4. BENEFÍCIO REAL — padrão STUrgencySection */}
           <section
