@@ -4,12 +4,8 @@ import predioImage from "@/assets/stuttgart/fachada.webp";
 
 const STHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    const img = new Image();
-    img.onload = () => setImageLoaded(true);
-    img.src = predioImage;
     setIsVisible(true);
   }, []);
 
@@ -23,11 +19,13 @@ const STHeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-labelledby="hero-heading">
-      <div
-        className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-        style={{ backgroundImage: `url(${predioImage})`, backgroundSize: "cover", backgroundPosition: "center" }}
-        role="img"
-        aria-label="Fachada do Residencial Jardins de Stuttgart em Ivoti"
+      {/* Imagem do hero como <img> permite fetchpriority=high e melhora LCP */}
+      <img
+        src={predioImage}
+        alt="Fachada do Residencial Jardins de Stuttgart em Ivoti"
+        className="absolute inset-0 w-full h-full object-cover"
+        fetchPriority="high"
+        decoding="async"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />

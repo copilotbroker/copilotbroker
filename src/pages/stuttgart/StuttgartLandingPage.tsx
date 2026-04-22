@@ -1,24 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/use-page-tracking";
-import {
-  STHeader,
-  STHeroSection,
-  STAboutSection,
-  STClubSection,
-  STIntelligenceSection,
-  STPlantsSection,
-  STQualityOfLifeSection,
-  STTargetSection,
-  STUrgencySection,
-  STBenefitsSection,
-  STCallToActionSection,
-  STFormSection,
-  STFloatingCTA,
-  STFooter,
-} from "@/components/stuttgart";
+
+// Above-the-fold: carregado imediatamente
+import { STHeader, STHeroSection } from "@/components/stuttgart";
+
+// Below-the-fold: lazy-loaded em chunks separados (não vão para o bundle inicial)
+const STAboutSection = lazy(() => import("@/components/stuttgart/STAboutSection"));
+const STClubSection = lazy(() => import("@/components/stuttgart/STClubSection"));
+const STIntelligenceSection = lazy(() => import("@/components/stuttgart/STIntelligenceSection"));
+const STPlantsSection = lazy(() => import("@/components/stuttgart/STPlantsSection"));
+const STQualityOfLifeSection = lazy(() => import("@/components/stuttgart/STQualityOfLifeSection"));
+const STTargetSection = lazy(() => import("@/components/stuttgart/STTargetSection"));
+const STUrgencySection = lazy(() => import("@/components/stuttgart/STUrgencySection"));
+const STBenefitsSection = lazy(() => import("@/components/stuttgart/STBenefitsSection"));
+const STCallToActionSection = lazy(() => import("@/components/stuttgart/STCallToActionSection"));
+const STFormSection = lazy(() => import("@/components/stuttgart/STFormSection"));
+const STFloatingCTA = lazy(() => import("@/components/stuttgart/STFloatingCTA"));
+const STFooter = lazy(() => import("@/components/stuttgart/STFooter"));
+
+const SectionFallback = () => <div className="min-h-[200px]" aria-hidden="true" />;
 
 const StuttgartLandingPage = () => {
   const location = useLocation();
@@ -28,10 +31,65 @@ const StuttgartLandingPage = () => {
   usePageTracking(projectId);
 
   useEffect(() => {
-    if (submitted && typeof window !== "undefined" && window.fbq) {
-      (window.fbq as Function)("track", "PageView");
+    if (submitted && typeof window !== "undefined" && (window as any).fbq) {
+      ((window as any).fbq as Function)("track", "PageView");
     }
   }, [submitted]);
+
+  // Carrega scripts de tracking (Pixel + Clarity) somente após o navegador ficar ocioso,
+  // evitando bloquear o LCP do Hero.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const loadTracking = () => {
+      // Meta Pixel
+      if (!(window as any).fbq) {
+        (function (f: any, b: Document, e: string, v: string) {
+          if (f.fbq) return;
+          const n: any = (f.fbq = function () {
+            n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+          });
+          if (!f._fbq) f._fbq = n;
+          n.push = n;
+          n.loaded = !0;
+          n.version = "2.0";
+          n.queue = [];
+          const t = b.createElement(e) as HTMLScriptElement;
+          t.async = !0;
+          t.src = v;
+          const s = b.getElementsByTagName(e)[0];
+          s.parentNode?.insertBefore(t, s);
+        })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+        (window as any).fbq("init", "2252094488658073");
+        (window as any).fbq("track", "PageView");
+      }
+
+      // Microsoft Clarity
+      if (!(window as any).clarity) {
+        (function (c: any, l: Document, a: string, r: string, i: string) {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          const t = l.createElement(r) as HTMLScriptElement;
+          t.async = 1 as any;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          const y = l.getElementsByTagName(r)[0];
+          y.parentNode?.insertBefore(t, y);
+        })(window, document, "clarity", "script", "wfrjoqhzwc");
+      }
+    };
+
+    const idle = (window as any).requestIdleCallback as
+      | ((cb: () => void, opts?: { timeout: number }) => number)
+      | undefined;
+    if (idle) {
+      idle(loadTracking, { timeout: 3000 });
+    } else {
+      setTimeout(loadTracking, 1500);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -62,28 +120,6 @@ const StuttgartLandingPage = () => {
         <meta property="og:title" content="Jardins de Stuttgart | Condomínio Clube em Ivoti" />
         <meta property="og:description" content="Você não precisa mais sair de casa para viver bem. Condomínio clube completo em Ivoti." />
         <meta property="og:locale" content="pt_BR" />
-        <script>
-          {`!function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '2252094488658073');
-          fbq('track', 'PageView');`}
-        </script>
-        <noscript>
-          {`<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2252094488658073&ev=PageView&noscript=1" />`}
-        </noscript>
-        <script>
-          {`(function(c,l,a,r,i,t,y){
-            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-          })(window, document, "clarity", "script", "wfrjoqhzwc");`}
-        </script>
       </Helmet>
 
       <a
@@ -97,19 +133,23 @@ const StuttgartLandingPage = () => {
         <STHeader />
         <main id="main-content" role="main">
           <STHeroSection />
-          <STAboutSection />
-          <STClubSection />
-          <STIntelligenceSection />
-          <STPlantsSection />
-          <STQualityOfLifeSection />
-          <STTargetSection />
-          <STUrgencySection />
-          <STBenefitsSection />
-          <STCallToActionSection />
-          <STFormSection projectId={projectId} submitted={submitted} />
+          <Suspense fallback={<SectionFallback />}>
+            <STAboutSection />
+            <STClubSection />
+            <STIntelligenceSection />
+            <STPlantsSection />
+            <STQualityOfLifeSection />
+            <STTargetSection />
+            <STUrgencySection />
+            <STBenefitsSection />
+            <STCallToActionSection />
+            <STFormSection projectId={projectId} submitted={submitted} />
+          </Suspense>
         </main>
-        <STFloatingCTA />
-        <STFooter />
+        <Suspense fallback={null}>
+          <STFloatingCTA />
+          <STFooter />
+        </Suspense>
       </div>
     </>
   );
