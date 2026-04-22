@@ -20,10 +20,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/use-page-tracking";
 
 import fachada from "@/assets/stuttgart/fachada.webp";
-import piscina from "@/assets/stuttgart/piscina.webp";
-import salao from "@/assets/stuttgart/salao.webp";
-import duplex from "@/assets/stuttgart/duplex.webp";
-import garden from "@/assets/stuttgart/garden.webp";
 import insercao from "@/assets/stuttgart/insercao.webp";
 
 const STFormSection = lazy(() => import("@/components/stuttgart/STFormSection"));
