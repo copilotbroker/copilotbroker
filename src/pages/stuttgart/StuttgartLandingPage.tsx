@@ -30,64 +30,63 @@ const StuttgartLandingPage = () => {
 
   usePageTracking(projectId);
 
+  // Microsoft Clarity — carregado IMEDIATAMENTE (antes de qualquer outro tracking)
+  // para garantir captura completa de sessão desde o primeiro instante.
+  useEffect(() => {
+    if (typeof window === "undefined" || (window as any).clarity) return;
+    (function (c: any, l: Document, a: string, r: string, i: string) {
+      c[a] =
+        c[a] ||
+        function () {
+          (c[a].q = c[a].q || []).push(arguments);
+        };
+      const t = l.createElement(r) as HTMLScriptElement;
+      t.async = 1 as any;
+      t.src = "https://www.clarity.ms/tag/" + i;
+      const y = l.getElementsByTagName(r)[0];
+      y.parentNode?.insertBefore(t, y);
+    })(window, document, "clarity", "script", "wfrjoqhzwc");
+  }, []);
+
   useEffect(() => {
     if (submitted && typeof window !== "undefined" && (window as any).fbq) {
       ((window as any).fbq as Function)("track", "PageView");
     }
   }, [submitted]);
 
-  // Carrega scripts de tracking (Pixel + Clarity) somente após o navegador ficar ocioso,
-  // evitando bloquear o LCP do Hero.
+  // Meta Pixel — deferido para não bloquear o LCP do Hero.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const loadTracking = () => {
-      // Meta Pixel
-      if (!(window as any).fbq) {
-        (function (f: any, b: Document, e: string, v: string) {
-          if (f.fbq) return;
-          const n: any = (f.fbq = function () {
-            n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-          });
-          if (!f._fbq) f._fbq = n;
-          n.push = n;
-          n.loaded = !0;
-          n.version = "2.0";
-          n.queue = [];
-          const t = b.createElement(e) as HTMLScriptElement;
-          t.async = !0;
-          t.src = v;
-          const s = b.getElementsByTagName(e)[0];
-          s.parentNode?.insertBefore(t, s);
-        })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
-        (window as any).fbq("init", "2252094488658073");
-        (window as any).fbq("track", "PageView");
-      }
-
-      // Microsoft Clarity
-      if (!(window as any).clarity) {
-        (function (c: any, l: Document, a: string, r: string, i: string) {
-          c[a] =
-            c[a] ||
-            function () {
-              (c[a].q = c[a].q || []).push(arguments);
-            };
-          const t = l.createElement(r) as HTMLScriptElement;
-          t.async = 1 as any;
-          t.src = "https://www.clarity.ms/tag/" + i;
-          const y = l.getElementsByTagName(r)[0];
-          y.parentNode?.insertBefore(t, y);
-        })(window, document, "clarity", "script", "wfrjoqhzwc");
-      }
+    const loadPixel = () => {
+      if ((window as any).fbq) return;
+      (function (f: any, b: Document, e: string, v: string) {
+        if (f.fbq) return;
+        const n: any = (f.fbq = function () {
+          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+        });
+        if (!f._fbq) f._fbq = n;
+        n.push = n;
+        n.loaded = !0;
+        n.version = "2.0";
+        n.queue = [];
+        const t = b.createElement(e) as HTMLScriptElement;
+        t.async = !0;
+        t.src = v;
+        const s = b.getElementsByTagName(e)[0];
+        s.parentNode?.insertBefore(t, s);
+      })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+      (window as any).fbq("init", "2252094488658073");
+      (window as any).fbq("track", "PageView");
     };
 
     const idle = (window as any).requestIdleCallback as
       | ((cb: () => void, opts?: { timeout: number }) => number)
       | undefined;
     if (idle) {
-      idle(loadTracking, { timeout: 3000 });
+      idle(loadPixel, { timeout: 3000 });
     } else {
-      setTimeout(loadTracking, 1500);
+      setTimeout(loadPixel, 1500);
     }
   }, []);
 
