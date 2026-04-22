@@ -518,10 +518,7 @@ function StepStrategy({ form, update }: { form: Partial<CopilotConfig>; update: 
           </div>
           <Switch
             checked={followupEnabled}
-            onCheckedChange={(v) => {
-              update("followup_enabled", v);
-              update("followup_auto", v); // keep legacy field in sync
-            }}
+            onCheckedChange={(v) => update("followup_enabled", v)}
           />
         </div>
 
