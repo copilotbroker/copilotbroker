@@ -7,8 +7,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Send, Plus, Trash2, GripVertical, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { replaceTemplateVariables, formatPhoneE164, isValidPhone, getRandomInterval } from "@/types/whatsapp";
+import { replaceTemplateVariables, formatPhoneE164, isValidPhone } from "@/types/whatsapp";
 import { DelayIntervalPicker, formatDelayHuman } from "@/components/whatsapp/DelayIntervalPicker";
+import { adjustToWorkingHours, formatBRT } from "@/lib/whatsapp-scheduling";
 import type { AutoCadenciaStep } from "@/hooks/use-auto-cadencia-rules";
 
 interface CadenciaSheetProps {
@@ -68,20 +69,7 @@ export function CadenciaSheet({
   const stepsValid = steps.every(s => s.messageContent.trim().length > 0);
   const isValid = steps.length > 0 && stepsValid;
 
-  const adjustToWorkingHours = (scheduledDate: Date, whStart: string, whEnd: string) => {
-    const BRT_OFFSET = -3;
-    const brtTime = new Date(scheduledDate.getTime() + BRT_OFFSET * 60 * 60 * 1000);
-    const [startH, startM] = whStart.split(":").map(Number);
-    const [endH, endM] = whEnd.split(":").map(Number);
-    const currentMinutes = brtTime.getUTCHours() * 60 + brtTime.getUTCMinutes();
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-    if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) return { adjusted: scheduledDate, wasAdjusted: false };
-    const targetBRT = new Date(brtTime);
-    targetBRT.setUTCHours(startH, startM, 0, 0);
-    if (currentMinutes > endMinutes) targetBRT.setUTCDate(targetBRT.getUTCDate() + 1);
-    return { adjusted: new Date(targetBRT.getTime() - BRT_OFFSET * 60 * 60 * 1000), wasAdjusted: true };
-  };
+  // adjustToWorkingHours agora vem de @/lib/whatsapp-scheduling
 
   const handleSubmit = async () => {
     if (!isValid || !isValidPhone(leadPhone)) { toast.error("Telefone do lead inválido"); return; }
@@ -104,12 +92,24 @@ export function CadenciaSheet({
       if (stepsErr) throw stepsErr;
 
       const phone = formatPhoneE164(leadPhone);
-      let scheduledTime = new Date(Date.now() + getRandomInterval());
+      // REGRA: effectiveStart = adjustToWorkingHours(now). Demais etapas = effectiveStart + delay cumulativo.
+      const initialTime = new Date(Date.now() + Math.floor(Math.random() * 30 + 15) * 1000);
+      const { adjusted: effectiveStart } = adjustToWorkingHours(initialTime, whStart, whEnd);
+      const adjustmentLogs: string[] = [];
+
       const queueItems = steps.map((step, i) => {
-        if (i > 0) scheduledTime = new Date(scheduledTime.getTime() + step.delayMinutes * 60 * 1000 + Math.floor(Math.random() * 60) * 1000);
-        const { adjusted } = adjustToWorkingHours(scheduledTime, whStart, whEnd);
-        scheduledTime = adjusted;
-        return { broker_id: brokerId, campaign_id: campaign.id, lead_id: leadId, phone, message: replaceTemplateVariables(step.messageContent, { nome: leadName.split(" ")[0], empreendimento: projectName || "", corretor_nome: brokerName?.split(" ")[0] || "Corretor" }), status: "scheduled", scheduled_at: scheduledTime.toISOString(), step_number: i + 1 };
+        const cumulativeDelayMs = i === 0 ? 0 : step.delayMinutes * 60 * 1000;
+        const smallJitterMs = i === 0 ? 0 : Math.floor(Math.random() * 60) * 1000;
+        const desiredTime = new Date(effectiveStart.getTime() + cumulativeDelayMs + smallJitterMs);
+        const { adjusted, wasAdjusted } = adjustToWorkingHours(desiredTime, whStart, whEnd);
+        if (wasAdjusted) {
+          adjustmentLogs.push(`⏰ Etapa ${i + 1}: previsto ${formatBRT(desiredTime)} → ajustado para ${formatBRT(adjusted)}`);
+        }
+        return {
+          broker_id: brokerId, campaign_id: campaign.id, lead_id: leadId, phone,
+          message: replaceTemplateVariables(step.messageContent, { nome: leadName.split(" ")[0], empreendimento: projectName || "", corretor_nome: brokerName?.split(" ")[0] || "Corretor" }),
+          status: "scheduled", scheduled_at: adjusted.toISOString(), step_number: i + 1,
+        };
       });
 
       const { error: qErr } = await supabase.from("whatsapp_message_queue").insert(queueItems);

@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { replaceTemplateVariables, formatPhoneE164, isValidPhone, getRandomInterval } from "@/types/whatsapp";
 import { DelayIntervalPicker, formatDelayHuman } from "@/components/whatsapp/DelayIntervalPicker";
+import { adjustToWorkingHours, formatBRT } from "@/lib/whatsapp-scheduling";
 
 interface FollowUpSheetProps {
   open: boolean;
@@ -90,25 +91,42 @@ export function FollowUpSheet({
       if (stepsErr) throw stepsErr;
 
       const phone = formatPhoneE164(leadPhone);
-      let scheduledTime: Date;
+
+      // Carrega janela comercial do corretor
+      const { data: instanceData } = await supabase
+        .from("broker_whatsapp_instances")
+        .select("working_hours_start, working_hours_end")
+        .eq("broker_id", brokerId)
+        .single();
+      const whStart = instanceData?.working_hours_start || "09:00";
+      const whEnd = instanceData?.working_hours_end || "21:00";
+
+      // Define ponto de partida bruto: agora (com jitter) ou data agendada manualmente
+      let rawStart: Date;
       if (isSendNow) {
-        scheduledTime = new Date(Date.now() + getRandomInterval());
+        rawStart = new Date(Date.now() + getRandomInterval());
       } else {
         const [h, m] = startTime.split(":").map(Number);
-        scheduledTime = new Date(startDate!);
-        scheduledTime.setHours(h, m, 0, 0);
+        rawStart = new Date(startDate!);
+        rawStart.setHours(h, m, 0, 0);
       }
 
-      // Delays são SEMPRE relativos à PRIMEIRA mensagem (cumulativos), não encadeados.
-      const firstMessageTime = new Date(scheduledTime);
+      // REGRA: effectiveStart = adjustToWorkingHours(rawStart). Demais etapas = effectiveStart + delay cumulativo.
+      const { adjusted: effectiveStart } = adjustToWorkingHours(rawStart, whStart, whEnd);
+      const adjustmentLogs: string[] = [];
+
       const queueItems = steps.map((step, i) => {
-        const stepTime = i === 0
-          ? firstMessageTime
-          : new Date(firstMessageTime.getTime() + step.delayMinutes * 60 * 1000 + Math.floor(Math.random() * 60) * 1000);
+        const cumulativeDelayMs = i === 0 ? 0 : step.delayMinutes * 60 * 1000;
+        const smallJitterMs = i === 0 ? 0 : Math.floor(Math.random() * 60) * 1000;
+        const desiredTime = new Date(effectiveStart.getTime() + cumulativeDelayMs + smallJitterMs);
+        const { adjusted, wasAdjusted } = adjustToWorkingHours(desiredTime, whStart, whEnd);
+        if (wasAdjusted) {
+          adjustmentLogs.push(`⏰ Etapa ${i + 1}: previsto ${formatBRT(desiredTime)} → ajustado para ${formatBRT(adjusted)}`);
+        }
         return {
           broker_id: brokerId, campaign_id: campaign.id, lead_id: leadId, phone,
           message: replaceTemplateVariables(step.messageContent, { nome: leadName.split(" ")[0], empreendimento: projectName || "", corretor_nome: brokerName?.split(" ")[0] || "Corretor" }),
-          status: "scheduled", scheduled_at: stepTime.toISOString(), step_number: i + 1,
+          status: "scheduled", scheduled_at: adjusted.toISOString(), step_number: i + 1,
         };
       });
 
