@@ -29,6 +29,7 @@ import jacuzziImg from "@/assets/stuttgart/jacuzzi.webp";
 import estarImg from "@/assets/stuttgart/estar.webp";
 
 const STFormSection = lazy(() => import("@/components/stuttgart/STFormSection"));
+import STImageLightbox, { LightboxImage } from "@/components/stuttgart/STImageLightbox";
 
 const infraestrutura = [
   { src: piscinaImg, alt: "Piscina externa com solarium", caption: "Piscina" },
@@ -77,6 +78,7 @@ const StuttgartIvotiV2LandingPage = () => {
   const submitted = location.pathname.endsWith("/obrigado");
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
   const [heroVisible, setHeroVisible] = useState(false);
+  const [lightbox, setLightbox] = useState<{ images: LightboxImage[]; index: number } | null>(null);
 
   usePageTracking(projectId);
 
@@ -255,7 +257,7 @@ const StuttgartIvotiV2LandingPage = () => {
                   ÚLTIMAS UNIDADES NO{" "}
                   <span className="text-gold-gradient">JARDINS DE STUTTGART</span>
                   <span className="block text-white/90 text-2xl sm:text-3xl md:text-4xl mt-3">
-                    | IVOTI
+                    IVOTI
                   </span>
                 </h1>
 
@@ -265,7 +267,7 @@ const StuttgartIvotiV2LandingPage = () => {
                   Um condomínio clube completo para quem quer viver com conforto, lazer e
                   valorização — todos os dias.
                 </p>
-                <p className="text-base sm:text-lg text-white font-serif italic mb-10 max-w-2xl mx-auto">
+                <p className="text-lg sm:text-xl md:text-2xl text-white font-serif italic mb-10 max-w-2xl mx-auto">
                   Unidades a partir de <span className="text-gold-gradient not-italic font-bold">R$ 690.000</span>
                 </p>
 
@@ -347,12 +349,15 @@ const StuttgartIvotiV2LandingPage = () => {
 
               <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-12">
                 {infraestrutura.map((img, i) => (
-                  <div
+                  <button
+                    type="button"
                     key={img.src}
-                    className={`group relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3] transition-all duration-700 ${
+                    onClick={() => setLightbox({ images: infraestrutura, index: i })}
+                    className={`group relative rounded-lg overflow-hidden shadow-elegant aspect-[4/3] cursor-zoom-in transition-all duration-700 ${
                       infra.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
                     }`}
                     style={{ transitionDelay: `${i * 80}ms` }}
+                    aria-label={`Ampliar ${img.caption}`}
                   >
                     <img
                       src={img.src}
@@ -364,7 +369,7 @@ const StuttgartIvotiV2LandingPage = () => {
                     <div className="absolute bottom-2 left-3 right-3 text-white text-xs md:text-sm font-medium text-left">
                       {img.caption}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
 
@@ -704,6 +709,14 @@ const StuttgartIvotiV2LandingPage = () => {
             <STFormSection projectId={projectId} submitted={submitted} />
           </Suspense>
         </main>
+
+        {/* Lightbox infraestrutura */}
+        <STImageLightbox
+          images={lightbox?.images ?? []}
+          startIndex={lightbox?.index ?? 0}
+          open={!!lightbox}
+          onClose={() => setLightbox(null)}
+        />
 
         {/* Footer minimal — mantendo padrão Stuttgart */}
         <footer className="py-12 bg-card border-t border-border/50">
