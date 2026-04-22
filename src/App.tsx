@@ -148,12 +148,12 @@ const App = () => (
             <Route path="/portobelo/asramos" element={<Navigate to="/portobelo/nc1" replace />} />
             <Route path="/portobelo/asramos/:brokerSlug" element={<Navigate to="/portobelo/nc1" replace />} />
 
-            {/* Jardins de Stuttgart - Condomínio clube em Ivoti */}
-            <Route path="/ivoti/stuttgart" element={<StuttgartLandingPage />} />
-            <Route path="/ivoti/stuttgart/obrigado" element={<StuttgartLandingPage />} />
-            <Route path="/ivoti/stuttgart/termos" element={<TermosStuttgart />} />
-            <Route path="/ivoti/stuttgart/:brokerSlug/obrigado" element={<StuttgartBrokerLandingPage />} />
-            <Route path="/ivoti/stuttgart/:brokerSlug" element={<StuttgartBrokerLandingPage />} />
+            {/* Jardins de Stuttgart - Condomínio clube em Ivoti (lazy-loaded) */}
+            <Route path="/ivoti/stuttgart" element={<Suspense fallback={null}><StuttgartLandingPage /></Suspense>} />
+            <Route path="/ivoti/stuttgart/obrigado" element={<Suspense fallback={null}><StuttgartLandingPage /></Suspense>} />
+            <Route path="/ivoti/stuttgart/termos" element={<Suspense fallback={null}><TermosStuttgart /></Suspense>} />
+            <Route path="/ivoti/stuttgart/:brokerSlug/obrigado" element={<Suspense fallback={null}><StuttgartBrokerLandingPage /></Suspense>} />
+            <Route path="/ivoti/stuttgart/:brokerSlug" element={<Suspense fallback={null}><StuttgartBrokerLandingPage /></Suspense>} />
 
             {/* Aura Legano - Loteamento de alto padrão em Nova Santa Rita */}
             <Route path="/novasantarita/auralegano" element={<AuraLeganoLandingPage />} />
