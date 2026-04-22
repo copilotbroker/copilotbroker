@@ -1,93 +1,71 @@
 
 
-## Pausa automática de cadências em desconexão do WhatsApp
+## Correção: cadência respeita a janela comercial mesmo quando lead chega de madrugada
 
-Quando o WhatsApp do corretor cair, **todas as mensagens programadas serão pausadas automaticamente** e ficarão aguardando uma decisão manual. Ao reconectar, o corretor verá um aviso destacado com a lista de mensagens pausadas e poderá escolher, uma a uma (ou em lote), quais reativar e quais descartar.
+### Problema atual
 
-### Fluxo do corretor
+Hoje, quando um lead chega às 02:00 da madrugada e tem uma cadência com etapas em 0min / 1h / 3h / 24h, o sistema calcula `firstMessageTime = 02:00` e marca:
 
-```text
-1. WhatsApp desconecta (logout, queda, sessão expirada)
-        │
-        ▼
-2. Sistema detecta a mudança de status → "disconnected"
-        │
-        ▼
-3. Todas mensagens com status "scheduled"/"queued" do corretor
-   são marcadas como "paused_by_system" (motivo: desconexão)
-        │
-        ▼
-4. Corretor reconecta o WhatsApp
-        │
-        ▼
-5. Banner amarelo aparece: "Você tem N mensagens pausadas
-   aguardando sua decisão" → botão "Revisar mensagens"
-        │
-        ▼
-6. Modal lista cada mensagem pausada com:
-   - Nome do lead + preview da mensagem
-   - Etapa da cadência + horário original
-   - Ações: [Reagendar agora] [Reagendar em...] [Descartar]
-        │
-        ▼
-7. Reagendamento respeita janela de horário comercial
-   e aplica delay anti-spam entre mensagens
-```
+| Etapa | Desejado | Após "ajuste" atual | Real (após cron) |
+|---|---|---|---|
+| 1 | 02:00 | 09:00 | 09:00 |
+| 2 (+1h) | 03:00 | **09:00** | 09:01 |
+| 3 (+3h) | 05:00 | **09:00** | 09:02 |
+| 4 (+24h) | 02:00 dia seguinte | 09:00 dia seguinte | 09:00 dia seguinte |
 
-### O que muda no backend
+Resultado: o lead recebe 3 mensagens em 2 minutos no horário de abertura, em vez de espaçadas conforme a cadência.
 
-**1. Detecção da desconexão (gatilho da pausa)**
-Hoje, `whatsapp-instance-manager` já atualiza o status para `disconnected` em três pontos: `/status` (linha ~685), `/logout` (linha ~1093) e `/sync-all`. Vamos adicionar nesses três pontos uma chamada que:
-- Marca todas as mensagens `scheduled`/`queued` daquele `broker_id` como `paused_by_system`.
-- Grava `pause_reason = 'whatsapp_disconnected'` numa nova coluna `pause_reason` em `whatsapp_message_queue` (já existe campo similar no instance, mas precisamos rastrear por mensagem para diferenciar pausa manual vs. desconexão).
-- Cria 1 notificação (tabela `notifications`) para o `user_id` do corretor: tipo `whatsapp_disconnected_pause` com a contagem.
+### Causa raiz
 
-**2. Não retomar automaticamente ao reconectar**
-Hoje o `/reset-daily` faz `UPDATE ... SET status='scheduled' WHERE status='paused_by_system'` (linha ~1091 do `whatsapp-message-sender`). Vamos restringir isso para **não** descongelar mensagens com `pause_reason='whatsapp_disconnected'` — essas só voltam por ação manual do corretor.
+Em **5 lugares** do código, ao agendar etapas com horário fora da janela:
+1. O `firstMessageTime` é fixado no instante atual (madrugada), e
+2. Cada etapa é "ajustada" individualmente para o início da próxima janela (09:00),
+3. Sem reaplicar o delay relativo à etapa 1 já reagendada.
 
-**3. Endpoint de revisão e reagendamento**
-Nova edge function `whatsapp-paused-messages` com três rotas:
-- `GET /list` — retorna mensagens pausadas por desconexão do corretor logado, com dados do lead e da campanha.
-- `POST /reschedule` — recebe `{ messageIds[], strategy: 'now' | 'spread' | 'datetime', datetime? }`. Aplica horário comercial e jitter anti-spam (60–240s entre mensagens) e devolve para `scheduled`.
-- `POST /discard` — recebe `{ messageIds[] }`, marca como `cancelled` com motivo `discarded_after_disconnect` e registra em `lead_interactions`.
+### Correção proposta
 
-### O que muda no frontend
+**Nova regra unificada:** ao agendar uma cadência, calcular o "ponto de partida efetivo" (`effectiveStart`) **uma única vez** = `adjustToWorkingHours(now)`. Todas as etapas seguintes são calculadas como `effectiveStart + delay_cumulativo` e cada uma passa novamente pelo ajuste de janela (para casos onde o delay grande joga uma etapa para fora do dia).
 
-**1. Banner de aviso (`WhatsAppDisconnectedBanner.tsx` já existe)**
-Hoje só aparece quando desconectado. Vamos adicionar uma **segunda variante** (vermelho-âmbar) que aparece **após reconexão** enquanto houver mensagens com `pause_reason='whatsapp_disconnected'`. Texto: *"Você tem N mensagens que ficaram pausadas durante a desconexão. Revise e escolha o que fazer."* + botão **"Revisar mensagens"**.
+| Etapa | Desejado | Corrigido |
+|---|---|---|
+| 1 | 02:00 → ajustado | **09:00** |
+| 2 (+1h da etapa 1) | 09:00 + 1h | **10:00** |
+| 3 (+3h da etapa 1) | 09:00 + 3h | **12:00** |
+| 4 (+24h da etapa 1) | 09:00 +24h = 09:00 dia seguinte | **09:00 dia seguinte** |
 
-**2. Novo modal `PausedMessagesReviewModal`**
-Aberto pelo banner, listando mensagens agrupadas por lead. Cada item mostra:
-- Avatar + nome do lead, preview da mensagem (truncado).
-- Etapa N da cadência "[nome]", horário programado original.
-- Checkbox para seleção em lote.
-- Ações individuais: **Reagendar agora**, **Reagendar para...** (popover com calendário/hora), **Descartar**.
+### Arquivos a editar
 
-Barra inferior com ações em lote: **Reagendar todas selecionadas (escalonado)**, **Descartar selecionadas**.
+**Backend (edge functions)**
+- `supabase/functions/auto-cadencia-10d/index.ts` — substituir bloco linhas 305-336 pela nova lógica `effectiveStart`.
 
-**3. Indicador na tela "Fila de Envio" (`QueueTab.tsx`)**
-Nova seção colapsável **"Pausadas por desconexão"** acima das outras, com badge de aviso, para o corretor poder revisar também por lá.
+**Frontend (3 entry points de criação manual)**
+- `src/hooks/use-whatsapp-campaigns.ts` (campanhas em massa) — bloco ~linhas 246-260: adicionar ajuste de janela com `effectiveStart` (hoje não aplica nenhum ajuste).
+- `src/components/crm/FollowUpSheet.tsx` (follow-up manual de 1 lead) — bloco linhas 93-113: idem.
+- `src/components/crm/CadenciaSheet.tsx` (cadência manual de 1 lead) — bloco linhas 71-115: substituir o ajuste encadeado atual pela mesma regra `effectiveStart + delay_cumulativo`.
+
+**Helper compartilhado**
+- Em `src/hooks/use-whatsapp-campaigns.ts`, `FollowUpSheet.tsx` e `CadenciaSheet.tsx`, extrair a função `adjustToWorkingHours` para um util único em `src/lib/whatsapp-scheduling.ts` (já existe a versão JS/TS espalhada em 3 lugares). Edge functions mantêm sua própria cópia (Deno não importa de `src/`).
 
 ### Detalhes técnicos
 
-- **Migração de schema**: adicionar `pause_reason text` em `whatsapp_message_queue` (nullable). Indexar `(broker_id, status, pause_reason)` para listagem rápida.
-- **RLS**: política existente já cobre — corretor só vê suas próprias mensagens via `broker_id = get_my_broker_id()`.
-- **Reagendamento "spread"**: distribui as N mensagens a partir de `now()` com intervalos aleatórios de 60–240s (regra anti-spam já existente em `getRandomInterval`), respeitando `working_hours_start`/`end` da instância (reaproveita `adjustToWorkingHours` já existente em `whatsapp-message-sender`).
-- **`lead_interactions`**: registrar nota tipo "Cadência reativada após reconexão" ou "Mensagem descartada após desconexão" para rastreabilidade no timeline do lead.
-- **Hook React Query**: `usePausedMessages(brokerId)` com `refetchInterval: 30s` para atualizar contador no banner.
-- **Edge case — pausa manual existente**: se o corretor já tinha pausado manualmente a instância (via aba Segurança), aquelas mensagens mantêm `pause_reason=null` e continuam sob o fluxo atual de retomada manual via "Despausar". Não confundimos os dois fluxos.
+**Algoritmo em pseudo-código:**
+```text
+effectiveStart = adjustToWorkingHours(now + jitter)
+for each step i:
+  desired = effectiveStart + (step[i].delayMinutes * 60s) + smallJitter
+  scheduled[i] = adjustToWorkingHours(desired)   // ainda necessário: se delay grande estourar a janela do dia
+```
 
-### Arquivos afetados
+**Para campanhas em massa** (`use-whatsapp-campaigns.ts`): a função `createCampaignMutation` precisa **carregar `working_hours_start/end` da instância do corretor** antes do loop de leads (hoje só usa `getRandomInterval`). Adicionar uma query a `broker_whatsapp_instances` no início do `mutationFn`.
 
-**Backend (edge functions)**
-- `supabase/functions/whatsapp-instance-manager/index.ts` — disparar pausa nos pontos de detecção de desconexão.
-- `supabase/functions/whatsapp-message-sender/index.ts` — `/reset-daily` ignora mensagens pausadas por desconexão.
-- `supabase/functions/whatsapp-paused-messages/index.ts` — **nova** função (list/reschedule/discard).
-- 1 migração SQL para adicionar `pause_reason` em `whatsapp_message_queue` + índice.
+**Logging:** registrar em `lead_interactions` (tipo `note_added`) sempre que pelo menos uma etapa for reagendada por cair fora da janela, listando "Etapa N: previsto HH:MM → ajustado para HH:MM". Já é o padrão do `auto-cadencia-10d`; replicar nos outros 3 entry points.
 
-**Frontend**
-- `src/components/broker/WhatsAppDisconnectedBanner.tsx` — adicionar variante "tem mensagens pausadas para revisar".
-- `src/components/whatsapp/PausedMessagesReviewModal.tsx` — **novo**.
-- `src/components/whatsapp/QueueTab.tsx` — nova seção "Pausadas por desconexão".
-- `src/hooks/use-paused-messages.ts` — **novo** hook.
+**Sem migração de banco** — apenas mudança de lógica de agendamento.
+
+**Mensagens já em fila (legado):** as mensagens já agendadas erroneamente para "todas no mesmo 09:00" continuarão como estão. Como são minoria de casos passados e o anti-spam do `/process` já garante 1 por minuto, optamos por **não fazer backfill** automático — o efeito ruim para leads existentes vai se diluir. Posso adicionar um script SQL one-shot opcional se preferir.
+
+**Edge cases cobertos:**
+- Lead chega dentro da janela (ex.: 14:00) → `effectiveStart = 14:00`, comportamento atual mantido.
+- Lead chega após o fechamento (ex.: 22:00) → `effectiveStart = 09:00 do dia seguinte`, demais etapas somadas a partir daí.
+- Etapas com delays muito grandes (24h+) que naturalmente caem em outro dia → `adjustToWorkingHours` em cada etapa garante que mesmo essas continuem dentro da janela.
 
