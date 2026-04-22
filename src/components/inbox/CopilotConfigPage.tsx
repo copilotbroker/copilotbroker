@@ -637,7 +637,6 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
     commercial_focus: "presencial",
     incentive_visit: true,
     incentive_call: false,
-    followup_auto: false,
     followup_enabled: true,
     followup_max_attempts: 7,
     followup_period_days: 10,

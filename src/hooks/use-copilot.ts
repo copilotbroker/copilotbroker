@@ -17,7 +17,6 @@ export interface CopilotConfig {
   commercial_focus: string;
   incentive_visit: boolean;
   incentive_call: boolean;
-  followup_auto: boolean;
   followup_enabled: boolean;
   followup_max_attempts: number;
   followup_period_days: number;
