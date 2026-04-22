@@ -155,6 +155,7 @@ const StuttgartIvotiV2LandingPage = () => {
 
   // Seções com reveal padrão Stuttgart
   const escassez = useReveal();
+  const infra = useReveal(0.1);
   const diferencial = useReveal();
   const beneficio = useReveal();
   const tipologias = useReveal(0.1);
