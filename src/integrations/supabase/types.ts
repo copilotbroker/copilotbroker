@@ -740,7 +740,6 @@ export type Database = {
           copilot_mode: string
           created_at: string
           custom_system_prompt: string | null
-          followup_auto: boolean
           followup_enabled: boolean
           followup_max_attempts: number
           followup_period_days: number
@@ -771,7 +770,6 @@ export type Database = {
           copilot_mode?: string
           created_at?: string
           custom_system_prompt?: string | null
-          followup_auto?: boolean
           followup_enabled?: boolean
           followup_max_attempts?: number
           followup_period_days?: number
@@ -802,7 +800,6 @@ export type Database = {
           copilot_mode?: string
           created_at?: string
           custom_system_prompt?: string | null
-          followup_auto?: boolean
           followup_enabled?: boolean
           followup_max_attempts?: number
           followup_period_days?: number

@@ -518,10 +518,7 @@ function StepStrategy({ form, update }: { form: Partial<CopilotConfig>; update: 
           </div>
           <Switch
             checked={followupEnabled}
-            onCheckedChange={(v) => {
-              update("followup_enabled", v);
-              update("followup_auto", v); // keep legacy field in sync
-            }}
+            onCheckedChange={(v) => update("followup_enabled", v)}
           />
         </div>
 
@@ -640,7 +637,6 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
     commercial_focus: "presencial",
     incentive_visit: true,
     incentive_call: false,
-    followup_auto: false,
     followup_enabled: true,
     followup_max_attempts: 7,
     followup_period_days: 10,
