@@ -312,7 +312,7 @@ serve(async (req) => {
       const broker = brokerMap.get(conv.broker_id);
       const brokerName = broker?.name || "Corretor";
 
-      // Lead context
+      // Lead context (with fallback to conversation display_name when no lead is linked)
       let leadContext: Record<string, any> | null = null;
       let projectAiPrompt: string | null = null;
       if (conv.lead_id) {
@@ -340,6 +340,20 @@ serve(async (req) => {
             if (project?.name) leadContext.project = project.name;
           }
         }
+      }
+
+      if (!leadContext) {
+        const { data: convDetail } = await supabase
+          .from("conversations")
+          .select("display_name")
+          .eq("id", conv.id)
+          .maybeSingle();
+        leadContext = {
+          name: convDetail?.display_name || null,
+          status: null,
+          origin: null,
+          notes: null,
+        };
       }
 
       // Previous followup messages for this conv
