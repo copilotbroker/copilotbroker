@@ -255,7 +255,7 @@ const StuttgartIvotiV2LandingPage = () => {
                   ÚLTIMAS UNIDADES NO{" "}
                   <span className="text-gold-gradient">JARDINS DE STUTTGART</span>
                   <span className="block text-white/90 text-2xl sm:text-3xl md:text-4xl mt-3">
-                    | IVOTI
+                    IVOTI
                   </span>
                 </h1>
 
@@ -265,7 +265,7 @@ const StuttgartIvotiV2LandingPage = () => {
                   Um condomínio clube completo para quem quer viver com conforto, lazer e
                   valorização — todos os dias.
                 </p>
-                <p className="text-base sm:text-lg text-white font-serif italic mb-10 max-w-2xl mx-auto">
+                <p className="text-lg sm:text-xl md:text-2xl text-white font-serif italic mb-10 max-w-2xl mx-auto">
                   Unidades a partir de <span className="text-gold-gradient not-italic font-bold">R$ 690.000</span>
                 </p>
 
