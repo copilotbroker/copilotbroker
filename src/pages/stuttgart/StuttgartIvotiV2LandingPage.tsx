@@ -160,10 +160,11 @@ const StuttgartIvotiV2LandingPage = () => {
   ];
 
   const tipologiasList = [
-    { titulo: "2 dormitórios com suíte", icon: Home, img: salao },
-    { titulo: "3 dormitórios com suíte", icon: Home, img: piscina },
-    { titulo: "Gardens com área externa", icon: TreePine, img: garden },
-    { titulo: "Coberturas duplex", icon: Building2, img: duplex },
+    "2 dormitórios com suíte",
+    "2 dormitórios com suíte e garden",
+    "3 dormitórios com suíte",
+    "3 dormitórios com suíte e garden",
+    "Coberturas duplex com 3 dormitórios",
   ];
 
   const localizacaoTags = [
