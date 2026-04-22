@@ -1,0 +1,1 @@
+ALTER TABLE public.copilot_configs DROP COLUMN IF EXISTS followup_auto;
