@@ -110,9 +110,25 @@ const STFormSection = ({ projectId, brokerId, submitted, allowBrokerSelection = 
       supabase.functions.invoke("auto-cadencia-10d", { body: { leadId } }).catch(console.warn);
 
       const eventId = crypto.randomUUID();
-      if (typeof window !== "undefined" && window.fbq) {
-        (window.fbq as Function)("track", "Lead", {}, { eventID: eventId });
+      if (typeof window !== "undefined" && (window as any).fbq) {
+        ((window as any).fbq as Function)("track", "Lead", {}, { eventID: eventId });
       }
+
+      // Meta Conversions API (Server-side tracking)
+      supabase.functions.invoke("meta-conversions-api", {
+        body: {
+          event_name: "Lead",
+          pixel_id: "2252094488658073",
+          event_id: eventId,
+          event_source_url: window.location.href,
+          user_data: {
+            ph: whatsapp,
+            fn: name.trim(),
+          },
+          fbp: document.cookie.match(/_fbp=([^;]+)/)?.[1] || null,
+          fbc: document.cookie.match(/_fbc=([^;]+)/)?.[1] || null,
+        },
+      }).catch((err) => console.warn("Meta CAPI error:", err));
 
       const basePath = location.pathname.replace(/\/obrigado$/, "").replace(/\/+$/, "");
       navigate(`${basePath}/obrigado`, { replace: true });
