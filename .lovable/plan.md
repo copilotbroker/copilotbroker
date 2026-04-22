@@ -1,71 +1,64 @@
 
 
-## Correção: cadência respeita a janela comercial mesmo quando lead chega de madrugada
+## Diagnóstico: prompt customizado e follow-up automático do Copiloto
 
-### Problema atual
+Investiguei o copiloto do **Gabriel Witt** (config ativa, modo `autonomo`, 7 tentativas em 10 dias, prompt de 4.256 caracteres salvo) e encontrei **dois bugs** que impedem o sistema de funcionar como configurado.
 
-Hoje, quando um lead chega às 02:00 da madrugada e tem uma cadência com etapas em 0min / 1h / 3h / 24h, o sistema calcula `firstMessageTime = 02:00` e marca:
+### Problema 1 — Follow-up automático ignora o prompt customizado
 
-| Etapa | Desejado | Após "ajuste" atual | Real (após cron) |
-|---|---|---|---|
-| 1 | 02:00 | 09:00 | 09:00 |
-| 2 (+1h) | 03:00 | **09:00** | 09:01 |
-| 3 (+3h) | 05:00 | **09:00** | 09:02 |
-| 4 (+24h) | 02:00 dia seguinte | 09:00 dia seguinte | 09:00 dia seguinte |
+A edge function `autopilot-followup/index.ts` (que roda a cada 30 min e dispara as mensagens de reengajamento) **não carrega** o campo `custom_system_prompt` do `copilot_configs`. Ela monta um prompt próprio e mínimo (`personality + emoji_rule + mode_instruction + contexto_reengajamento`), descartando todas as instruções de treinamento que o Gabriel salvou no wizard.
 
-Resultado: o lead recebe 3 mensagens em 2 minutos no horário de abertura, em vez de espaçadas conforme a cadência.
+Já a `copilot-ai/index.ts` (sugestões manuais na Inbox) usa o `custom_system_prompt` corretamente via `buildSystemPrompt()`. Ou seja: o prompt funciona quando o corretor pede sugestão dentro da Inbox, mas é ignorado em todos os follow-ups automáticos.
 
-### Causa raiz
+### Problema 2 — Follow-up automático não está disparando para o Gabriel
 
-Em **5 lugares** do código, ao agendar etapas com horário fora da janela:
-1. O `firstMessageTime` é fixado no instante atual (madrugada), e
-2. Cada etapa é "ajustada" individualmente para o início da próxima janela (09:00),
-3. Sem reaplicar o delay relativo à etapa 1 já reagendada.
+Estado atual no banco:
+- `copilot_configs.is_active = true`, `followup_enabled = true`, `followup_max_attempts = 7`, `followup_period_days = 10`.
+- 4 conversas em `ai_mode = 'ai_active'`, sendo a mais antiga sem resposta há **7 dias**.
+- Tabela `autopilot_followups` para o Gabriel: **0 registros**. Nenhum follow-up foi disparado.
 
-### Correção proposta
+Causas prováveis (a serem confirmadas durante a correção):
+1. **Filtro `followup_enabled` na query** (`autopilot-followup` linha 101) descarta a config se a flag estiver desativada — mas o Gabriel está com ela ativa, então não é esse caso.
+2. **Filtro `instance.status = 'connected'`** (linha 110): se a instância dele não estiver `connected` no momento do cron, todas as conversas são puladas. Vou validar o status da instância no momento da correção.
+3. **`isWithinWorkingHours`** (UTC-3 09:00–21:00 por padrão): o cron pode estar caindo fora da janela.
+4. **Possível ausência do agendamento cron**: não tenho permissão para ler `cron.job`, mas vou checar via dashboard de Supabase ao implementar — se não existir, criamos via migration `cron.schedule`.
 
-**Nova regra unificada:** ao agendar uma cadência, calcular o "ponto de partida efetivo" (`effectiveStart`) **uma única vez** = `adjustToWorkingHours(now)`. Todas as etapas seguintes são calculadas como `effectiveStart + delay_cumulativo` e cada uma passa novamente pelo ajuste de janela (para casos onde o delay grande joga uma etapa para fora do dia).
+### O que será corrigido
 
-| Etapa | Desejado | Corrigido |
-|---|---|---|
-| 1 | 02:00 → ajustado | **09:00** |
-| 2 (+1h da etapa 1) | 09:00 + 1h | **10:00** |
-| 3 (+3h da etapa 1) | 09:00 + 3h | **12:00** |
-| 4 (+24h da etapa 1) | 09:00 +24h = 09:00 dia seguinte | **09:00 dia seguinte** |
+**1. `autopilot-followup/index.ts` — usar prompt customizado**
 
-### Arquivos a editar
+Quando o `copilot_configs.custom_system_prompt` existir, ele será o **núcleo** do system prompt enviado para o Gemini (mesma lógica do `copilot-ai`). Apenas adicionamos um bloco extra **CONTEXTO DE REENGAJAMENTO** com:
+- Tentativa N de M e dias sem resposta.
+- Lista de mensagens já enviadas pelo bot (para não repetir).
+- Sugestões de tom por tentativa (1-2 leve, 3-4 informativa, etc.).
+- Contexto do empreendimento (já existe).
 
-**Backend (edge functions)**
-- `supabase/functions/auto-cadencia-10d/index.ts` — substituir bloco linhas 305-336 pela nova lógica `effectiveStart`.
+Os placeholders `{personalidade}`, `{regra_emojis}`, `{nome_corretor}`, `{contexto_lead}`, `{contexto_empreendimento}` serão substituídos exatamente como em `copilot-ai`, garantindo paridade total entre sugestões manuais e follow-ups automáticos.
 
-**Frontend (3 entry points de criação manual)**
-- `src/hooks/use-whatsapp-campaigns.ts` (campanhas em massa) — bloco ~linhas 246-260: adicionar ajuste de janela com `effectiveStart` (hoje não aplica nenhum ajuste).
-- `src/components/crm/FollowUpSheet.tsx` (follow-up manual de 1 lead) — bloco linhas 93-113: idem.
-- `src/components/crm/CadenciaSheet.tsx` (cadência manual de 1 lead) — bloco linhas 71-115: substituir o ajuste encadeado atual pela mesma regra `effectiveStart + delay_cumulativo`.
+**2. `autopilot-followup/index.ts` — diagnóstico do disparo**
 
-**Helper compartilhado**
-- Em `src/hooks/use-whatsapp-campaigns.ts`, `FollowUpSheet.tsx` e `CadenciaSheet.tsx`, extrair a função `adjustToWorkingHours` para um util único em `src/lib/whatsapp-scheduling.ts` (já existe a versão JS/TS espalhada em 3 lugares). Edge functions mantêm sua própria cópia (Deno não importa de `src/`).
+- Adicionar logs explícitos por conversa explicando o motivo de pular (sem instância, fora de horário, optout, delay não atingido, max attempts atingido).
+- Confirmar/criar agendamento cron de 30 em 30 min via migration `cron.schedule('autopilot-followup', '*/30 * * * *', ...)`.
+- Garantir que a função respeita o `working_hours_start/end` do broker (já respeita) e que o `attemptsDone` é contabilizado corretamente.
 
-### Detalhes técnicos
+**3. Validação prática para o Gabriel**
 
-**Algoritmo em pseudo-código:**
-```text
-effectiveStart = adjustToWorkingHours(now + jitter)
-for each step i:
-  desired = effectiveStart + (step[i].delayMinutes * 60s) + smallJitter
-  scheduled[i] = adjustToWorkingHours(desired)   // ainda necessário: se delay grande estourar a janela do dia
-```
+Após o deploy:
+- Verificar logs da edge function rodando manualmente uma vez.
+- Conferir se `autopilot_followups` recebe novos registros para a conversa de 15/04.
+- Confirmar que o texto enviado reflete o tom do prompt customizado (vendas consultivas ENOVE, primeira pessoa como "Gabriel").
 
-**Para campanhas em massa** (`use-whatsapp-campaigns.ts`): a função `createCampaignMutation` precisa **carregar `working_hours_start/end` da instância do corretor** antes do loop de leads (hoje só usa `getRandomInterval`). Adicionar uma query a `broker_whatsapp_instances` no início do `mutationFn`.
+### Arquivos afetados
 
-**Logging:** registrar em `lead_interactions` (tipo `note_added`) sempre que pelo menos uma etapa for reagendada por cair fora da janela, listando "Etapa N: previsto HH:MM → ajustado para HH:MM". Já é o padrão do `auto-cadencia-10d`; replicar nos outros 3 entry points.
+**Backend**
+- `supabase/functions/autopilot-followup/index.ts` — refatorar `systemPrompt` para usar `custom_system_prompt` + bloco de reengajamento; adicionar logs diagnósticos; carregar broker name + lead context completo.
+- 1 migração SQL para garantir o cron `*/30 * * * *` chamando `autopilot-followup` (apenas se ainda não existir).
 
-**Sem migração de banco** — apenas mudança de lógica de agendamento.
+**Sem mudanças**
+- `copilot-ai/index.ts` — já está correto, será apenas usado como referência.
+- Frontend — nenhuma mudança visual necessária; o wizard de configuração já salva tudo corretamente.
 
-**Mensagens já em fila (legado):** as mensagens já agendadas erroneamente para "todas no mesmo 09:00" continuarão como estão. Como são minoria de casos passados e o anti-spam do `/process` já garante 1 por minuto, optamos por **não fazer backfill** automático — o efeito ruim para leads existentes vai se diluir. Posso adicionar um script SQL one-shot opcional se preferir.
+### Observação importante
 
-**Edge cases cobertos:**
-- Lead chega dentro da janela (ex.: 14:00) → `effectiveStart = 14:00`, comportamento atual mantido.
-- Lead chega após o fechamento (ex.: 22:00) → `effectiveStart = 09:00 do dia seguinte`, demais etapas somadas a partir daí.
-- Etapas com delays muito grandes (24h+) que naturalmente caem em outro dia → `adjustToWorkingHours` em cada etapa garante que mesmo essas continuem dentro da janela.
+A flag `followup_auto` (separada de `followup_enabled`) está como `false` para o Gabriel. Hoje o `autopilot-followup` **não verifica** essa flag — ele só checa `followup_enabled`. Vou manter esse comportamento (a flag `followup_auto` parece ser legada/redundante). Se você preferir que `followup_auto = false` desative os disparos, me avise para inverter a lógica.
 
