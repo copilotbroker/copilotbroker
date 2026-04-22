@@ -21,8 +21,23 @@ import { usePageTracking } from "@/hooks/use-page-tracking";
 
 import fachada from "@/assets/stuttgart/fachada.webp";
 import insercao from "@/assets/stuttgart/insercao.webp";
+import piscinaImg from "@/assets/stuttgart/piscina.webp";
+import academiaImg from "@/assets/stuttgart/academia.webp";
+import coworkingImg from "@/assets/stuttgart/coworking.webp";
+import salaoImg from "@/assets/stuttgart/salao.webp";
+import jacuzziImg from "@/assets/stuttgart/jacuzzi.webp";
+import estarImg from "@/assets/stuttgart/estar.webp";
 
 const STFormSection = lazy(() => import("@/components/stuttgart/STFormSection"));
+
+const infraestrutura = [
+  { src: piscinaImg, alt: "Piscina externa com solarium", caption: "Piscina" },
+  { src: academiaImg, alt: "Academia equipada do condomínio", caption: "Academia completa" },
+  { src: coworkingImg, alt: "Coworking equipado", caption: "Coworking" },
+  { src: salaoImg, alt: "Salão de festas do condomínio", caption: "Salão de festas" },
+  { src: jacuzziImg, alt: "Jacuzzi externa", caption: "Jacuzzi" },
+  { src: estarImg, alt: "Estar externo com fireplace", caption: "Estar externo · Fireplace" },
+];
 
 const SectionFallback = () => <div className="min-h-[200px]" aria-hidden="true" />;
 
