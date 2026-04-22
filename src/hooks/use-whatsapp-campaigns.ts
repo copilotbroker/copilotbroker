@@ -11,6 +11,7 @@ import {
   replaceTemplateVariables,
   getRandomInterval
 } from "@/types/whatsapp";
+import { adjustToWorkingHours } from "@/lib/whatsapp-scheduling";
 import type { CRMLead, LeadStatus } from "@/types/crm";
 
 interface CreateCampaignData {
@@ -231,6 +232,15 @@ export function useWhatsAppCampaigns(adminBrokerFilterId?: string) {
         // Don't fail the whole campaign for this
       }
       
+      // Carrega janela comercial da instância do corretor
+      const { data: instanceData } = await supabase
+        .from("broker_whatsapp_instances")
+        .select("working_hours_start, working_hours_end")
+        .eq("broker_id", broker.id)
+        .single();
+      const whStart = instanceData?.working_hours_start || "09:00";
+      const whEnd = instanceData?.working_hours_end || "21:00";
+
       // Schedule all messages for all steps
       const queueItems: Array<{
         broker_id: string;
@@ -244,19 +254,17 @@ export function useWhatsAppCampaigns(adminBrokerFilterId?: string) {
       }> = [];
       
       for (const lead of uniqueLeads) {
-        // Delays são SEMPRE relativos à PRIMEIRA mensagem (cumulativos desde o início), não encadeados.
-        const firstMessageTime = new Date(Date.now() + getRandomInterval());
+        // REGRA: effectiveStart = adjustToWorkingHours(now). Demais etapas = effectiveStart + delay cumulativo.
+        const initialTime = new Date(Date.now() + getRandomInterval());
+        const { adjusted: effectiveStart } = adjustToWorkingHours(initialTime, whStart, whEnd);
 
         for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
           const step = steps[stepIndex];
 
-          const stepTime = stepIndex === 0
-            ? firstMessageTime
-            : new Date(
-                firstMessageTime.getTime() +
-                step.delayMinutes * 60 * 1000 +
-                Math.floor(Math.random() * 60) * 1000 // small jitter
-              );
+          const cumulativeDelayMs = stepIndex === 0 ? 0 : step.delayMinutes * 60 * 1000;
+          const smallJitterMs = stepIndex === 0 ? 0 : Math.floor(Math.random() * 60) * 1000;
+          const desiredTime = new Date(effectiveStart.getTime() + cumulativeDelayMs + smallJitterMs);
+          const { adjusted: stepTime } = adjustToWorkingHours(desiredTime, whStart, whEnd);
 
           const personalizedMessage = replaceTemplateVariables(step.messageContent, {
             nome: lead.name.split(" ")[0],
