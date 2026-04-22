@@ -302,18 +302,20 @@ Deno.serve(async (req) => {
     await supabase.from("campaign_steps").insert(stepsToInsert);
 
     // 11. Schedule messages with working hours adjustment
-    // Delays são SEMPRE relativos à PRIMEIRA mensagem (cumulativos), não encadeados.
+    // REGRA: ponto de partida efetivo = adjustToWorkingHours(now). Cada etapa = effectiveStart + delay cumulativo,
+    // depois reaplica adjustToWorkingHours (caso o delay grande estoure a janela do dia).
     const phone = formatPhoneE164(lead.whatsapp);
-    const firstMessageTime = new Date(Date.now() + Math.floor(Math.random() * 30 + 15) * 1000);
+    const initialTime = new Date(Date.now() + Math.floor(Math.random() * 30 + 15) * 1000);
+    const { adjusted: effectiveStart } = adjustToWorkingHours(initialTime, whStart, whEnd);
     const adjustmentLogs: string[] = [];
 
     const queueItems = stepsToUse.map((step, i) => {
-      // Calcula tempo desejado: etapa 1 = imediato; demais = primeira + delay cumulativo
-      const desiredTime = i === 0
-        ? new Date(firstMessageTime)
-        : new Date(firstMessageTime.getTime() + step.delayMinutes * 60 * 1000 + Math.floor(Math.random() * 60) * 1000);
+      // Etapa 0: imediato a partir do effectiveStart; demais: + delay cumulativo + pequeno jitter
+      const cumulativeDelayMs = i === 0 ? 0 : step.delayMinutes * 60 * 1000;
+      const smallJitterMs = i === 0 ? 0 : Math.floor(Math.random() * 60) * 1000;
+      const desiredTime = new Date(effectiveStart.getTime() + cumulativeDelayMs + smallJitterMs);
 
-      // Apply working hours adjustment (não encadeia — cada etapa ajusta independente)
+      // Reaplica ajuste de janela (necessário quando delays grandes caem fora do horário comercial do dia)
       const { adjusted, wasAdjusted } = adjustToWorkingHours(desiredTime, whStart, whEnd);
 
       if (wasAdjusted) {
