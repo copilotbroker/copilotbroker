@@ -13,7 +13,6 @@ import {
   UtensilsCrossed,
   Home,
   TreePine,
-  Building2,
   TrendingUp,
   HandCoins,
 } from "lucide-react";
@@ -21,10 +20,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/use-page-tracking";
 
 import fachada from "@/assets/stuttgart/fachada.webp";
-import piscina from "@/assets/stuttgart/piscina.webp";
-import salao from "@/assets/stuttgart/salao.webp";
-import duplex from "@/assets/stuttgart/duplex.webp";
-import garden from "@/assets/stuttgart/garden.webp";
 import insercao from "@/assets/stuttgart/insercao.webp";
 
 const STFormSection = lazy(() => import("@/components/stuttgart/STFormSection"));
@@ -161,10 +156,11 @@ const StuttgartIvotiV2LandingPage = () => {
   ];
 
   const tipologiasList = [
-    { titulo: "2 dormitórios com suíte", icon: Home, img: salao },
-    { titulo: "3 dormitórios com suíte", icon: Home, img: piscina },
-    { titulo: "Gardens com área externa", icon: TreePine, img: garden },
-    { titulo: "Coberturas duplex", icon: Building2, img: duplex },
+    "2 dormitórios com suíte",
+    "2 dormitórios com suíte e garden",
+    "3 dormitórios com suíte",
+    "3 dormitórios com suíte e garden",
+    "Coberturas duplex com 3 dormitórios",
   ];
 
   const localizacaoTags = [
@@ -392,7 +388,7 @@ const StuttgartIvotiV2LandingPage = () => {
             </div>
           </section>
 
-          {/* 5. TIPOLOGIAS — padrão STPlantsSection / galeria com cards */}
+          {/* 5. TIPOLOGIAS — padrão STPlantsSection (lista com ícone Home) */}
           <section
             ref={tipologias.ref as React.RefObject<HTMLElement>}
             id="plantas"
@@ -409,41 +405,36 @@ const StuttgartIvotiV2LandingPage = () => {
                   id="tipologias-heading"
                   className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
                 >
-                  OPÇÕES PARA{" "}
-                  <span className="text-gold-gradient">DIFERENTES MOMENTOS</span>
+                  PLANTAS PARA{" "}
+                  <span className="text-gold-gradient">DIFERENTES MOMENTOS DA VIDA</span>
                 </h2>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  Tipologias pensadas para cada fase da vida.
+                <p className="text-muted-foreground">
+                  Escolha o espaço que faz sentido para você:
                 </p>
               </div>
 
-              <div className="max-w-5xl mx-auto grid sm:grid-cols-2 gap-4 sm:gap-6 mb-12">
-                {tipologiasList.map((tipo, i) => (
+              <div className="max-w-4xl mx-auto grid sm:grid-cols-2 gap-4 mb-12">
+                {tipologiasList.map((plant, index) => (
                   <div
-                    key={tipo.titulo}
-                    className={`relative aspect-[4/3] rounded-lg overflow-hidden shadow-elegant group transition-all duration-700 ${
+                    key={plant}
+                    className={`flex items-center gap-4 p-5 bg-card rounded-lg border border-border/50 hover:border-primary/30 transition-all duration-500 ${
+                      tipologiasList.length % 2 !== 0 && index === tipologiasList.length - 1
+                        ? "sm:col-span-2 sm:max-w-md sm:mx-auto sm:w-full"
+                        : ""
+                    } ${
                       tipologias.isVisible
                         ? "opacity-100 translate-y-0"
-                        : "opacity-0 translate-y-10"
+                        : "opacity-0 translate-y-5"
                     }`}
-                    style={{ transitionDelay: `${i * 120}ms` }}
+                    style={{ transitionDelay: `${index * 100}ms` }}
                   >
-                    <img
-                      src={tipo.img}
-                      alt={tipo.titulo}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30 flex items-center justify-center shrink-0">
-                        <tipo.icon className="w-5 h-5 text-primary" />
-                      </div>
-                      <p className="text-white font-serif text-base sm:text-lg font-semibold">
-                        {tipo.titulo}
-                      </p>
+                    <div className="w-12 h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Home className="w-6 h-6 text-primary" />
                     </div>
+                    <span className="text-foreground">
+                      <span className="text-primary mr-2">✔</span>
+                      {plant}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -453,6 +444,7 @@ const StuttgartIvotiV2LandingPage = () => {
               </div>
             </div>
           </section>
+
 
           {/* 6. LOCALIZAÇÃO — padrão STAboutSection (bg-card + linhas) */}
           <section
