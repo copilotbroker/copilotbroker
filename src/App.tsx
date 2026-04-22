@@ -68,6 +68,7 @@ import NC1BrokerLandingPage from "./pages/vivapark/NC1BrokerLandingPage";
 // Stuttgart — code-split para não pesar no bundle inicial (4.6MB de imagens)
 const StuttgartLandingPage = lazy(() => import("./pages/stuttgart/StuttgartLandingPage"));
 const StuttgartBrokerLandingPage = lazy(() => import("./pages/stuttgart/StuttgartBrokerLandingPage"));
+const StuttgartIvotiV2LandingPage = lazy(() => import("./pages/stuttgart/StuttgartIvotiV2LandingPage"));
 const TermosStuttgart = lazy(() => import("./pages/stuttgart/TermosStuttgart"));
 import AuraLeganoLandingPage from "./pages/auralegano/AuraLeganoLandingPage";
 import AuraLeganoBrokerLandingPage from "./pages/auralegano/AuraLeganoBrokerLandingPage";
