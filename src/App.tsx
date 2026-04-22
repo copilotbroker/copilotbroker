@@ -153,6 +153,8 @@ const App = () => (
             <Route path="/ivoti/stuttgart" element={<Suspense fallback={null}><StuttgartLandingPage /></Suspense>} />
             <Route path="/ivoti/stuttgart/obrigado" element={<Suspense fallback={null}><StuttgartLandingPage /></Suspense>} />
             <Route path="/ivoti/stuttgart/termos" element={<Suspense fallback={null}><TermosStuttgart /></Suspense>} />
+            <Route path="/ivoti/stuttgartivoti" element={<Suspense fallback={null}><StuttgartIvotiV2LandingPage /></Suspense>} />
+            <Route path="/ivoti/stuttgartivoti/obrigado" element={<Suspense fallback={null}><StuttgartIvotiV2LandingPage /></Suspense>} />
             <Route path="/ivoti/stuttgart/:brokerSlug/obrigado" element={<Suspense fallback={null}><StuttgartBrokerLandingPage /></Suspense>} />
             <Route path="/ivoti/stuttgart/:brokerSlug" element={<Suspense fallback={null}><StuttgartBrokerLandingPage /></Suspense>} />
 
