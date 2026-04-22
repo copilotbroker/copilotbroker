@@ -78,6 +78,7 @@ const StuttgartIvotiV2LandingPage = () => {
   const submitted = location.pathname.endsWith("/obrigado");
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
   const [heroVisible, setHeroVisible] = useState(false);
+  const [lightbox, setLightbox] = useState<{ images: LightboxImage[]; index: number } | null>(null);
 
   usePageTracking(projectId);
 
