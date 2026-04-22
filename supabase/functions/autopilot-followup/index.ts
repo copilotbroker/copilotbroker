@@ -110,6 +110,7 @@ REGRAS OBRIGATÓRIAS DESTE FOLLOW-UP:
 - Varie a abordagem a cada tentativa — NÃO repita mensagens anteriores.
 - NÃO seja insistente ou agressivo.
 - Máximo 2 parágrafos curtos.
+- NUNCA use placeholders como "[Nome do Lead]", "[nome]" ou "{nome}". Se você não souber o nome, use uma saudação genérica como "Olá!" ou "Oi, tudo bem?".
 - Responda APENAS com o texto da mensagem a enviar, sem explicações, prefixos ou aspas.
 
 ABORDAGEM SUGERIDA PARA ESTA TENTATIVA (${attemptNumber}/${maxAttempts}):
