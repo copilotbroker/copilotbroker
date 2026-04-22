@@ -395,30 +395,27 @@ serve(async (req) => {
           continue;
         }
 
-        // Send via UAZAPI
+        // Send via UAZAPI — use origin of UAZAPI_INSTANCE_URL and broker's instance_token
         const sendPhone = conv.phone_normalized.replace(/\D/g, "");
-        const baseUrl = UAZAPI_INSTANCE_URL.replace(/\/[^/]+\/?$/, "");
-        let sendUrl = UAZAPI_INSTANCE_URL;
-        let sendToken = UAZAPI_TOKEN;
-        if (instance.instance_token && instance.instance_name) {
-          sendUrl = `${baseUrl}/${instance.instance_name}`;
-          sendToken = instance.instance_token;
-        }
+        let baseUrl = UAZAPI_INSTANCE_URL.replace(/\/$/, "");
+        try { baseUrl = new URL(baseUrl).origin; } catch { /* keep as is */ }
+        const sendToken = instance.instance_token || UAZAPI_TOKEN;
 
-        const uazapiResponse = await fetch(`${sendUrl}/send/text`, {
+        const uazapiResponse = await fetch(`${baseUrl}/send/text`, {
           method: "POST",
           headers: { "Content-Type": "application/json", token: sendToken },
-          body: JSON.stringify({ phone: sendPhone, message: messageText }),
+          body: JSON.stringify({ number: sendPhone, text: messageText }),
         });
 
         if (!uazapiResponse.ok) {
-          const retryResponse = await fetch(`${sendUrl}/send/text`, {
+          const retryResponse = await fetch(`${baseUrl}/chat/send/text`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", admintoken: UAZAPI_ADMIN_TOKEN },
-            body: JSON.stringify({ phone: sendPhone, message: messageText }),
+            headers: { "Content-Type": "application/json", token: sendToken },
+            body: JSON.stringify({ number: sendPhone, text: messageText }),
           });
           if (!retryResponse.ok) {
-            console.error(`[autopilot-followup] UAZAPI send failed for ${maskPhone(sendPhone)}`);
+            const errBody = await retryResponse.text().catch(() => "");
+            console.error(`[autopilot-followup] UAZAPI send failed for ${maskPhone(sendPhone)} — status=${retryResponse.status} body=${errBody.substring(0, 200)}`);
             continue;
           }
         }
