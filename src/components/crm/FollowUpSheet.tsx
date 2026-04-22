@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { replaceTemplateVariables, formatPhoneE164, isValidPhone, getRandomInterval } from "@/types/whatsapp";
 import { DelayIntervalPicker, formatDelayHuman } from "@/components/whatsapp/DelayIntervalPicker";
+import { adjustToWorkingHours, formatBRT } from "@/lib/whatsapp-scheduling";
 
 interface FollowUpSheetProps {
   open: boolean;
