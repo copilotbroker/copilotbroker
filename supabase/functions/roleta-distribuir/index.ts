@@ -21,23 +21,53 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 1. Find active roleta for this project
-    const { data: reData, error: reError } = await supabase
-      .from("roletas_empreendimentos")
-      .select("roleta_id")
-      .eq("empreendimento_id", project_id)
-      .eq("ativo", true)
-      .limit(1)
+    // 1. Check if project is institutional (created_by_broker_id IS NULL)
+    const { data: projectInfo } = await supabase
+      .from("projects")
+      .select("created_by_broker_id")
+      .eq("id", project_id)
       .maybeSingle();
 
-    if (reError || !reData) {
-      console.log("No active roleta for project:", project_id);
-      return new Response(JSON.stringify({ message: "Sem roleta ativa para este empreendimento" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const isInstitutionalProject = projectInfo && projectInfo.created_by_broker_id === null;
+
+    let roletaId: string | null = null;
+
+    // 1a. If institutional, prioritize an active roleta with escopo 'todas_landing_pages'
+    if (isInstitutionalProject) {
+      const { data: catchAllRoleta } = await supabase
+        .from("roletas")
+        .select("id")
+        .eq("ativa", true)
+        .eq("escopo_empreendimentos", "todas_landing_pages")
+        .eq("tipo_origem", "landing_page")
+        .limit(1)
+        .maybeSingle();
+
+      if (catchAllRoleta) {
+        roletaId = catchAllRoleta.id;
+        console.log("Using catch-all roleta (todas_landing_pages):", roletaId);
+      }
     }
 
-    const roletaId = reData.roleta_id;
+    // 1b. Fallback to explicit project linkage
+    if (!roletaId) {
+      const { data: reData, error: reError } = await supabase
+        .from("roletas_empreendimentos")
+        .select("roleta_id")
+        .eq("empreendimento_id", project_id)
+        .eq("ativo", true)
+        .limit(1)
+        .maybeSingle();
+
+      if (reError || !reData) {
+        console.log("No active roleta for project:", project_id);
+        return new Response(JSON.stringify({ message: "Sem roleta ativa para este empreendimento" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      roletaId = reData.roleta_id;
+    }
 
     // 2. Get roleta
     const { data: roleta, error: roletaError } = await supabase
