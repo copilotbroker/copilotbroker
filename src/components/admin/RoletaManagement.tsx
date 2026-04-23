@@ -196,6 +196,7 @@ const RoletaManagement = () => {
             setFormSelectedProjects([]);
             setFormTipoOrigem("landing_page");
             setFormModoDistribuicao("fila");
+            setFormEscopoEmpreendimentos("especifico");
           }
         }}>
           <DialogTrigger asChild>
