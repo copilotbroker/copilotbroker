@@ -803,53 +803,94 @@ const RoletaManagement = () => {
                     </div>
 
                     {/* Empreendimentos */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-medium text-foreground">Empreendimentos</h4>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-primary"
-                          onClick={() => setAddEmpRoletaId(addEmpRoletaId === roleta.id ? null : roleta.id)}
-                        >
-                          <Building2 className="w-3 h-3 mr-1" />
-                          Vincular
-                        </Button>
-                      </div>
-
-                      {addEmpRoletaId === roleta.id && (
-                        <div className="flex gap-2 mb-3">
-                          <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                            <SelectTrigger className="flex-1 bg-[#141417] border-[#2a2a2e] text-sm">
-                              <SelectValue placeholder="Selecione empreendimento..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {projects.map(p => (
-                                <SelectItem key={p.id} value={p.id}>{p.name} ({p.city})</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button size="sm" onClick={() => handleAddEmpreendimento(roleta.id)} className="bg-primary text-primary-foreground">
-                            Vincular
-                          </Button>
+                    {(roleta as any).tipo_origem === "landing_page" && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-foreground">Empreendimentos</h4>
                         </div>
-                      )}
 
-                      <div className="flex flex-wrap gap-2">
-                        {emps.map(emp => (
-                          <div key={emp.id} className="flex items-center gap-1.5 px-2 py-1 bg-[#141417] rounded-lg text-xs">
-                            <Building2 className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-foreground">{emp.empreendimento?.name || "—"}</span>
-                            <button onClick={() => removeEmpreendimento(emp.id)} className="text-red-400 hover:text-red-300 ml-1">
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                        {/* Escopo selector */}
+                        <div className="bg-[#141417] rounded-lg p-3 mb-3">
+                          <Label className="text-xs text-muted-foreground">Escopo</Label>
+                          <RadioGroup
+                            value={(roleta as any).escopo_empreendimentos || "especifico"}
+                            onValueChange={(v) => updateRoleta(roleta.id, { escopo_empreendimentos: v } as any)}
+                            className="mt-2"
+                          >
+                            <label className="flex items-start gap-2 cursor-pointer">
+                              <RadioGroupItem value="todas_landing_pages" className="mt-0.5" />
+                              <div>
+                                <span className="text-xs text-foreground font-medium">Todas as Landing Pages da Imobiliária</span>
+                                <p className="text-[10px] text-muted-foreground">Inclui automaticamente novos empreendimentos institucionais.</p>
+                              </div>
+                            </label>
+                            <label className="flex items-start gap-2 cursor-pointer mt-1.5">
+                              <RadioGroupItem value="especifico" className="mt-0.5" />
+                              <div>
+                                <span className="text-xs text-foreground font-medium">Selecionar empreendimentos específicos</span>
+                                <p className="text-[10px] text-muted-foreground">Vínculo manual por empreendimento.</p>
+                              </div>
+                            </label>
+                          </RadioGroup>
+                        </div>
+
+                        {(roleta as any).escopo_empreendimentos === "todas_landing_pages" ? (
+                          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                            <p className="text-xs text-muted-foreground">
+                              <Building2 className="w-3 h-3 inline mr-1 text-primary" />
+                              Esta roleta recebe leads de todas as landing pages institucionais automaticamente.
+                            </p>
                           </div>
-                        ))}
-                        {emps.length === 0 && (
-                          <p className="text-xs text-muted-foreground">Nenhum empreendimento vinculado</p>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-end mb-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-primary"
+                                onClick={() => setAddEmpRoletaId(addEmpRoletaId === roleta.id ? null : roleta.id)}
+                              >
+                                <Building2 className="w-3 h-3 mr-1" />
+                                Vincular
+                              </Button>
+                            </div>
+
+                            {addEmpRoletaId === roleta.id && (
+                              <div className="flex gap-2 mb-3">
+                                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                                  <SelectTrigger className="flex-1 bg-[#141417] border-[#2a2a2e] text-sm">
+                                    <SelectValue placeholder="Selecione empreendimento..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {projects.map(p => (
+                                      <SelectItem key={p.id} value={p.id}>{p.name} ({p.city})</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button size="sm" onClick={() => handleAddEmpreendimento(roleta.id)} className="bg-primary text-primary-foreground">
+                                  Vincular
+                                </Button>
+                              </div>
+                            )}
+
+                            <div className="flex flex-wrap gap-2">
+                              {emps.map(emp => (
+                                <div key={emp.id} className="flex items-center gap-1.5 px-2 py-1 bg-[#141417] rounded-lg text-xs">
+                                  <Building2 className="w-3 h-3 text-muted-foreground" />
+                                  <span className="text-foreground">{emp.empreendimento?.name || "—"}</span>
+                                  <button onClick={() => removeEmpreendimento(emp.id)} className="text-red-400 hover:text-red-300 ml-1">
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                              {emps.length === 0 && (
+                                <p className="text-xs text-muted-foreground">Nenhum empreendimento vinculado</p>
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
-                    </div>
+                    )}
 
                     {/* Logs */}
                     {showLogsFor === roleta.id && (
