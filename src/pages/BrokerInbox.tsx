@@ -98,7 +98,11 @@ export default function BrokerInbox() {
     enabled: !!effectiveBrokerId,
   });
 
-  const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
+  const isViewingOtherBroker = isLeader && !!brokerId && !!selectedBrokerId && selectedBrokerId !== brokerId;
+  // "Novos" (conversas pessoais não vinculadas a lead) é privado: apenas o próprio corretor pode ver.
+  const novosConversations = isViewingOtherBroker
+    ? []
+    : allPersonalConversations.filter(c => !c.lead_id);
   const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
 
   const activeConversations = activeTab === "novos"
@@ -363,7 +367,14 @@ export default function BrokerInbox() {
               brokerAtendimentoCount={atendimentoConversations.length}
               brokerId={effectiveBrokerId}
               brokerFilter={isLeader ? (selectedBrokerId || "") : undefined}
-              onBrokerFilterChange={isLeader ? (id) => { setSelectedBrokerId(id || brokerId); setSelectedConversation(null); } : undefined}
+              onBrokerFilterChange={isLeader ? (id) => {
+                const newId = id || brokerId;
+                setSelectedBrokerId(newId);
+                setSelectedConversation(null);
+                if (newId !== brokerId && activeTab === "novos") {
+                  setActiveTab("atendimento");
+                }
+              } : undefined}
               brokerOptions={isLeader ? teamMembers : undefined}
               myBrokerId={brokerId}
             />
