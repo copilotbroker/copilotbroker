@@ -158,9 +158,14 @@ export default function AdminInbox() {
   }, [myBrokerId]);
 
   const handleBrokerFilterChange = useCallback((brokerId: string) => {
-    setSelectedBrokerId(brokerId || myBrokerId);
+    const newBrokerId = brokerId || myBrokerId;
+    setSelectedBrokerId(newBrokerId);
     setSelectedConversation(null);
-  }, [myBrokerId]);
+    // "Novos" é privado por corretor — ao olhar outro corretor, mover para "Atendimento".
+    if (newBrokerId !== myBrokerId && activeTab === "novos") {
+      setActiveTab("atendimento");
+    }
+  }, [myBrokerId, activeTab]);
 
   const handleStartAttendance = useCallback(async () => {
     if (!selectedConversation || !myBrokerId) return;
