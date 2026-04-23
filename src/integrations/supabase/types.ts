@@ -1572,6 +1572,7 @@ export type Database = {
         Row: {
           ativa: boolean
           created_at: string
+          escopo_empreendimentos: string
           id: string
           lider_id: string
           modo_distribuicao: string
@@ -1587,6 +1588,7 @@ export type Database = {
         Insert: {
           ativa?: boolean
           created_at?: string
+          escopo_empreendimentos?: string
           id?: string
           lider_id: string
           modo_distribuicao?: string
@@ -1602,6 +1604,7 @@ export type Database = {
         Update: {
           ativa?: boolean
           created_at?: string
+          escopo_empreendimentos?: string
           id?: string
           lider_id?: string
           modo_distribuicao?: string
