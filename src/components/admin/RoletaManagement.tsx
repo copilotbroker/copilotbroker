@@ -78,6 +78,7 @@ const RoletaManagement = () => {
   const [formSelectedProjects, setFormSelectedProjects] = useState<string[]>([]);
   const [formTipoOrigem, setFormTipoOrigem] = useState<RoletaTipoOrigem>("landing_page");
   const [formModoDistribuicao, setFormModoDistribuicao] = useState<"fila" | "disputa">("fila");
+  const [formEscopoEmpreendimentos, setFormEscopoEmpreendimentos] = useState<"especifico" | "todas_landing_pages">("especifico");
 
   // Add member state
   const [addMemberRoletaId, setAddMemberRoletaId] = useState<string | null>(null);
