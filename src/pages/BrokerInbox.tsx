@@ -367,7 +367,14 @@ export default function BrokerInbox() {
               brokerAtendimentoCount={atendimentoConversations.length}
               brokerId={effectiveBrokerId}
               brokerFilter={isLeader ? (selectedBrokerId || "") : undefined}
-              onBrokerFilterChange={isLeader ? (id) => { setSelectedBrokerId(id || brokerId); setSelectedConversation(null); } : undefined}
+              onBrokerFilterChange={isLeader ? (id) => {
+                const newId = id || brokerId;
+                setSelectedBrokerId(newId);
+                setSelectedConversation(null);
+                if (newId !== brokerId && activeTab === "novos") {
+                  setActiveTab("atendimento");
+                }
+              } : undefined}
               brokerOptions={isLeader ? teamMembers : undefined}
               myBrokerId={brokerId}
             />
