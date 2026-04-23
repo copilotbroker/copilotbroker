@@ -366,16 +366,13 @@ export default function BrokerInbox() {
               brokerNovosCount={novosConversations.length}
               brokerAtendimentoCount={atendimentoConversations.length}
               brokerId={effectiveBrokerId}
-              brokerFilter={isLeader ? (selectedBrokerId || "") : undefined}
-              onBrokerFilterChange={isLeader ? (id) => {
+              brokerFilter={isLeader && activeTab === "atendimento" ? (selectedBrokerId || "") : undefined}
+              onBrokerFilterChange={isLeader && activeTab === "atendimento" ? (id) => {
                 const newId = id || brokerId;
                 setSelectedBrokerId(newId);
                 setSelectedConversation(null);
-                if (newId !== brokerId && activeTab === "novos") {
-                  setActiveTab("atendimento");
-                }
               } : undefined}
-              brokerOptions={isLeader ? teamMembers : undefined}
+              brokerOptions={isLeader && activeTab === "atendimento" ? teamMembers : undefined}
               myBrokerId={brokerId}
             />
           </div>

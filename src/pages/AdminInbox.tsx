@@ -320,9 +320,9 @@ export default function AdminInbox() {
                 brokerNovosCount={novosConversations.length}
                 brokerAtendimentoCount={atendimentoConversations.length}
                 brokerId={selectedBrokerId}
-                brokerFilter={selectedBrokerId || ""}
-                onBrokerFilterChange={handleBrokerFilterChange}
-                brokerOptions={allBrokers}
+                brokerFilter={activeTab === "atendimento" ? (selectedBrokerId || "") : undefined}
+                onBrokerFilterChange={activeTab === "atendimento" ? handleBrokerFilterChange : undefined}
+                brokerOptions={activeTab === "atendimento" ? allBrokers : undefined}
                 myBrokerId={myBrokerId}
               />
             </div>
