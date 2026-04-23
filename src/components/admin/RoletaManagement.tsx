@@ -115,10 +115,11 @@ const RoletaManagement = () => {
       timeout_pausa_fim: formPausaFim,
       tipo_origem: formTipoOrigem,
       modo_distribuicao: formModoDistribuicao,
+      escopo_empreendimentos: formTipoOrigem === "landing_page" ? formEscopoEmpreendimentos : "especifico",
     } as any);
     if (roletaId) {
-      // Vincular empreendimentos selecionados (only for landing_page type)
-      if (formTipoOrigem === "landing_page") {
+      // Vincular empreendimentos selecionados (only for landing_page + escopo especifico)
+      if (formTipoOrigem === "landing_page" && formEscopoEmpreendimentos === "especifico") {
         for (const projectId of formSelectedProjects) {
           await addEmpreendimento(roletaId, projectId);
         }
@@ -133,6 +134,7 @@ const RoletaManagement = () => {
       setFormSelectedProjects([]);
       setFormTipoOrigem("landing_page");
       setFormModoDistribuicao("fila");
+      setFormEscopoEmpreendimentos("especifico");
     }
   };
 
