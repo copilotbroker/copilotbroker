@@ -482,6 +482,12 @@ const RoletaManagement = () => {
                           Landing Pages
                         </Badge>
                       )}
+                      {(roleta as any).tipo_origem === "landing_page" && (roleta as any).escopo_empreendimentos === "todas_landing_pages" && (
+                        <Badge variant="outline" className="text-xs border-primary/40 text-primary">
+                          <Building2 className="w-3 h-3 mr-1" />
+                          Todas LPs
+                        </Badge>
+                      )}
                       {(roleta as any).tipo_origem === "whatsapp_global" && (
                         <Badge variant="outline" className={cn(
                           "text-xs",
