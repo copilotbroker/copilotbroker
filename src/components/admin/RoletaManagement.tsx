@@ -322,30 +322,73 @@ const RoletaManagement = () => {
                 </RadioGroup>
               </div>
               {formTipoOrigem === "landing_page" && (
-                <div>
-                  <Label>Empreendimentos</Label>
-                  <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
-                    {projects.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Nenhum empreendimento disponível.</p>
-                    ) : (
-                      projects.map(p => (
-                        <label key={p.id} className="flex items-center gap-2 cursor-pointer">
-                          <Checkbox
-                            checked={formSelectedProjects.includes(p.id)}
-                            onCheckedChange={(checked) => {
-                              setFormSelectedProjects(prev =>
-                                checked
-                                  ? [...prev, p.id]
-                                  : prev.filter(id => id !== p.id)
-                              );
-                            }}
-                          />
-                          <span className="text-sm text-foreground">{p.name}</span>
-                          <span className="text-xs text-muted-foreground">({p.city})</span>
-                        </label>
-                      ))
-                    )}
+                <div className="space-y-3">
+                  <div>
+                    <Label>Escopo de empreendimentos</Label>
+                    <RadioGroup
+                      value={formEscopoEmpreendimentos}
+                      onValueChange={(v) => setFormEscopoEmpreendimentos(v as "especifico" | "todas_landing_pages")}
+                      className="mt-2"
+                    >
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <RadioGroupItem value="todas_landing_pages" className="mt-0.5" />
+                        <div>
+                          <span className="text-sm text-foreground font-medium">
+                            Todas as Landing Pages da Imobiliária
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            Recomendado — inclui automaticamente todos os empreendimentos institucionais, presentes e futuros.
+                          </p>
+                        </div>
+                      </label>
+                      <label className="flex items-start gap-2 cursor-pointer mt-2">
+                        <RadioGroupItem value="especifico" className="mt-0.5" />
+                        <div>
+                          <span className="text-sm text-foreground font-medium">Selecionar empreendimentos específicos</span>
+                          <p className="text-xs text-muted-foreground">
+                            Vincular manualmente cada empreendimento que entra nesta roleta.
+                          </p>
+                        </div>
+                      </label>
+                    </RadioGroup>
                   </div>
+
+                  {formEscopoEmpreendimentos === "especifico" && (
+                    <div>
+                      <Label>Empreendimentos</Label>
+                      <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
+                        {projects.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Nenhum empreendimento disponível.</p>
+                        ) : (
+                          projects.map(p => (
+                            <label key={p.id} className="flex items-center gap-2 cursor-pointer">
+                              <Checkbox
+                                checked={formSelectedProjects.includes(p.id)}
+                                onCheckedChange={(checked) => {
+                                  setFormSelectedProjects(prev =>
+                                    checked
+                                      ? [...prev, p.id]
+                                      : prev.filter(id => id !== p.id)
+                                  );
+                                }}
+                              />
+                              <span className="text-sm text-foreground">{p.name}</span>
+                              <span className="text-xs text-muted-foreground">({p.city})</span>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {formEscopoEmpreendimentos === "todas_landing_pages" && (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                      <p className="text-xs text-muted-foreground">
+                        <Building2 className="w-3 h-3 inline mr-1 text-primary" />
+                        Esta roleta receberá automaticamente leads de qualquer empreendimento institucional. Apenas uma roleta ativa pode usar este escopo.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
               {formTipoOrigem === "whatsapp_global" && (
