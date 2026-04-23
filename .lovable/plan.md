@@ -1,28 +1,41 @@
 
-## Restringir aba "Novos" para outros corretores em "Meu WhatsApp"
 
-Atualmente, na página **Meu WhatsApp** (`/admin/inbox` para admin e `/corretor/inbox` para corretores/líderes), quando um administrador ou líder seleciona outro corretor no filtro, ele consegue ver tanto a aba **Novos** quanto a aba **Atendimento** desse corretor. A aba "Novos" representa conversas WhatsApp pessoais ainda não vinculadas a um lead — informação privada do corretor.
+## Roleta com escopo "Todas Landing Pages da Imobiliária"
 
-A regra correta é:
-- **Aba Atendimento**: admin pode ver de qualquer corretor; líder pode ver dos corretores da sua equipe (mantém comportamento atual).
-- **Aba Novos**: apenas o próprio corretor visualiza suas conversas novas. Admin/líder só veem suas próprias conversas novas (quando eles mesmos atuam como corretor).
+### Problema
+Hoje, ao criar um novo empreendimento da imobiliária (ex: "Sentower", "Aura Legano"), o líder/admin precisa lembrar de adicioná-lo manualmente à roleta Sharks em `roletas_empreendimentos`. Se esquecer, leads desse empreendimento não entram na distribuição.
 
-A página **WhatsApp do Plantão** (`/admin/plantao` e `/corretor/plantao`) permanece **inalterada**.
+### Solução
+Adicionar uma opção **"Todas as Landing Pages da Imobiliária"** ao criar/editar uma roleta de origem `landing_page`. Quando marcada, a roleta passa a receber automaticamente leads de **qualquer empreendimento da imobiliária** (presente e futuro), sem precisar vincular um por um.
+
+Critério de "landing page da imobiliária": projetos com `created_by_broker_id IS NULL` (projetos institucionais). Landing pages criadas por corretores (`created_by_broker_id` preenchido) **não** entram nesse escopo automático — o corretor continua dono dos leads das suas próprias páginas.
 
 ### Mudanças
 
-**1. `src/pages/AdminInbox.tsx`**
-- Quando `selectedBrokerId !== myBrokerId` (admin está olhando outro corretor) e `activeTab === "novos"`:
-  - Forçar a lista de conversas exibidas a ser vazia (`activeConversations = []`).
-  - Esconder a contagem da aba "Novos" para esse corretor (passar `brokerNovosCount={0}`).
-- Em `handleBrokerFilterChange`: se o admin selecionar outro corretor enquanto está na aba "Novos", redirecionar automaticamente para a aba "Atendimento" (já existe a lógica reversa em `handleTabChange`; complementar com a inversa).
+**1. Banco de dados (migration)**
+- Adicionar coluna `escopo_empreendimentos text NOT NULL DEFAULT 'especifico'` na tabela `roletas`, com valores possíveis `'especifico'` (atual, lista manual) ou `'todas_landing_pages'` (catch-all).
+- Garantir, via trigger ou índice parcial, que apenas **uma roleta ativa** possa ter `escopo_empreendimentos = 'todas_landing_pages'` por vez (evita conflito de distribuição).
 
-**2. `src/pages/BrokerInbox.tsx`**
-- Aplicar a mesma regra para líderes: quando `isLeader && selectedBrokerId !== brokerId` e `activeTab === "novos"`:
-  - `activeConversations = []`
-  - `brokerNovosCount={0}`
-- Em `handleBrokerFilterChange` (criar função análoga): se o líder selecionar um membro da equipe enquanto está em "Novos", forçar mudança para "Atendimento".
-- Manter o comportamento atual quando o usuário (admin/líder) está vendo a si mesmo: a aba "Novos" funciona normalmente.
+**2. Edge function `roleta-distribuir`**
+- Antes de buscar `roletas_empreendimentos` pelo `project_id`, verificar se o projeto é da imobiliária (`created_by_broker_id IS NULL`).
+- Se for, dar prioridade a uma roleta ativa com `escopo_empreendimentos = 'todas_landing_pages'`. Se existir, usar essa roleta.
+- Caso contrário, manter o comportamento atual (busca por vínculo explícito em `roletas_empreendimentos`).
 
-### Observação técnica
-Não é necessária mudança em RLS, pois a restrição é apenas de UX/visibilidade na interface. Os dados continuam acessíveis ao admin/líder pelo banco (necessário para a aba Atendimento), apenas a aba "Novos" filtra na camada do front-end quando o corretor selecionado não é o próprio usuário.
+**3. UI em `src/components/admin/RoletaManagement.tsx`**
+- No formulário de **Nova Roleta**, quando "Origem dos leads" = "Landing Pages":
+  - Adicionar um RadioGroup acima da lista de empreendimentos:
+    - ◯ **Todas as Landing Pages da Imobiliária** *(recomendado — inclui automaticamente novos empreendimentos)*
+    - ◯ **Selecionar empreendimentos específicos**
+  - Quando "Todas..." está marcado, **esconder** a lista de checkboxes de empreendimentos.
+- Na **edição** (card expandido) de uma roleta `landing_page`:
+  - Mostrar uma seção "Escopo" com o mesmo RadioGroup, salvando direto via `updateRoleta(id, { escopo_empreendimentos: ... })`.
+  - Quando o escopo é "todas_landing_pages", esconder/desabilitar o bloco "Adicionar empreendimento" e mostrar um aviso: *"Esta roleta recebe leads de todas as landing pages institucionais automaticamente."*
+- Adicionar um Badge no header do card: `Badge` "Todas LPs" quando aplicável.
+
+**4. Hooks/Tipos**
+- Atualizar `src/types/roleta.ts` adicionando `escopo_empreendimentos: 'especifico' | 'todas_landing_pages'`.
+- Sem mudança necessária em `use-roletas.ts` (já passa updates genéricos via `updateRoleta`).
+
+### Observação
+A roleta Sharks existente continuará funcionando exatamente como antes (`escopo_empreendimentos = 'especifico'`, default). O líder/admin deve editá-la e mudar para "Todas as Landing Pages da Imobiliária" para ativar o catch-all. Após isso, novos empreendimentos institucionais entram automaticamente na distribuição.
+
