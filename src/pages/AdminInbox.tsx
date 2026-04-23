@@ -70,7 +70,11 @@ export default function AdminInbox() {
     enabled: !!selectedBrokerId,
   });
 
-  const novosConversations = allPersonalConversations.filter(c => !c.lead_id);
+  const isViewingOtherBroker = !!myBrokerId && !!selectedBrokerId && selectedBrokerId !== myBrokerId;
+  // "Novos" (conversas pessoais não vinculadas a lead) é privado: apenas o próprio corretor pode ver.
+  const novosConversations = isViewingOtherBroker
+    ? []
+    : allPersonalConversations.filter(c => !c.lead_id);
   const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
 
   const activeConversations = activeTab === "novos"
