@@ -211,6 +211,15 @@ const StuttgartIvotiV2LandingPage = () => {
           content="Condomínio clube completo em Ivoti. A partir de R$ 690.000. Garanta sua unidade antes da valorização."
         />
         <meta property="og:locale" content="pt_BR" />
+        
+        {/* Microsoft Clarity */}
+        <script type="text/javascript">
+          {`(function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "wfrjoqhzwc");`}
+        </script>
       </Helmet>
 
       <a
