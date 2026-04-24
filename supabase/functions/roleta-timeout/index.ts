@@ -329,7 +329,7 @@ Deno.serve(async (req) => {
     // ==================== PART 2: Global Conversations Timeout ====================
     const { data: expiredConvs, error: convError } = await supabase
       .from("conversations")
-      .select("id, broker_id, phone, phone_normalized, display_name, source_instance, roleta_modo")
+      .select("id, broker_id, phone, phone_normalized, display_name, source_instance, roleta_modo, lead_id")
       .eq("source_instance", "global")
       .eq("attendance_started", false)
       .lte("reserva_expira_em", now)
@@ -346,14 +346,28 @@ Deno.serve(async (req) => {
     if (expiredConversations.length > 0) {
       console.log(`Processing ${expiredConversations.length} expired global conversations`);
 
-      // Get the whatsapp_global roleta
-      const { data: globalRoleta } = await supabase
+      // Get the active roleta that handles plantão leads:
+      // - First try the unified catch-all (todas_landing_pages_e_plantao)
+      // - Fallback to legacy whatsapp_global roleta
+      let { data: globalRoleta } = await supabase
         .from("roletas")
         .select("*")
         .eq("ativa", true)
-        .eq("tipo_origem", "whatsapp_global")
+        .eq("escopo_empreendimentos", "todas_landing_pages_e_plantao")
+        .eq("tipo_origem", "landing_page")
         .limit(1)
         .maybeSingle();
+
+      if (!globalRoleta) {
+        const { data: legacyRoleta } = await supabase
+          .from("roletas")
+          .select("*")
+          .eq("ativa", true)
+          .eq("tipo_origem", "whatsapp_global")
+          .limit(1)
+          .maybeSingle();
+        globalRoleta = legacyRoleta;
+      }
 
       if (globalRoleta) {
         // Check pause window
@@ -385,6 +399,20 @@ Deno.serve(async (req) => {
                 atribuido_em: new Date().toISOString(),
               })
               .eq("id", conv.id);
+
+            // Also update lead.broker_id so Kanban card follows the reassignment
+            if (conv.lead_id) {
+              await supabase
+                .from("leads")
+                .update({
+                  broker_id: globalRoleta.lider_id,
+                  corretor_atribuido_id: globalRoleta.lider_id,
+                  atribuido_em: new Date().toISOString(),
+                  reserva_expira_em: null,
+                  status_distribuicao: "fallback_lider",
+                })
+                .eq("id", conv.lead_id);
+            }
 
             await supabase.from("roletas_log").insert({
               roleta_id: globalRoleta.id,
@@ -454,6 +482,20 @@ Deno.serve(async (req) => {
               reserva_expira_em: newExpira,
             })
             .eq("id", conv.id);
+
+          // Also update lead.broker_id so Kanban card follows the reassignment
+          if (conv.lead_id) {
+            await supabase
+              .from("leads")
+              .update({
+                broker_id: newBrokerId,
+                corretor_atribuido_id: newBrokerId,
+                atribuido_em: new Date().toISOString(),
+                reserva_expira_em: newExpira,
+                status_distribuicao: isFallback ? "fallback_lider" : "reassinado_timeout",
+              })
+              .eq("id", conv.lead_id);
+          }
 
           // Update roleta pointer
           await supabase

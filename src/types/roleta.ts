@@ -6,7 +6,7 @@ export type DistributionStatus =
 
 export type RoletaTipoOrigem = 'landing_page' | 'whatsapp_global';
 export type RoletaModoDistribuicao = 'fila' | 'disputa';
-export type RoletaEscopoEmpreendimentos = 'especifico' | 'todas_landing_pages';
+export type RoletaEscopoEmpreendimentos = 'especifico' | 'todas_landing_pages' | 'todas_landing_pages_e_plantao';
 
 export interface Roleta {
   id: string;

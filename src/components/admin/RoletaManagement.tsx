@@ -78,7 +78,7 @@ const RoletaManagement = () => {
   const [formSelectedProjects, setFormSelectedProjects] = useState<string[]>([]);
   const [formTipoOrigem, setFormTipoOrigem] = useState<RoletaTipoOrigem>("landing_page");
   const [formModoDistribuicao, setFormModoDistribuicao] = useState<"fila" | "disputa">("fila");
-  const [formEscopoEmpreendimentos, setFormEscopoEmpreendimentos] = useState<"especifico" | "todas_landing_pages">("especifico");
+  const [formEscopoEmpreendimentos, setFormEscopoEmpreendimentos] = useState<"especifico" | "todas_landing_pages" | "todas_landing_pages_e_plantao">("todas_landing_pages_e_plantao");
 
   // Add member state
   const [addMemberRoletaId, setAddMemberRoletaId] = useState<string | null>(null);
@@ -134,7 +134,7 @@ const RoletaManagement = () => {
       setFormSelectedProjects([]);
       setFormTipoOrigem("landing_page");
       setFormModoDistribuicao("fila");
-      setFormEscopoEmpreendimentos("especifico");
+      setFormEscopoEmpreendimentos("todas_landing_pages_e_plantao");
     }
   };
 
@@ -196,7 +196,7 @@ const RoletaManagement = () => {
             setFormSelectedProjects([]);
             setFormTipoOrigem("landing_page");
             setFormModoDistribuicao("fila");
-            setFormEscopoEmpreendimentos("especifico");
+            setFormEscopoEmpreendimentos("todas_landing_pages_e_plantao");
           }
         }}>
           <DialogTrigger asChild>
@@ -327,17 +327,28 @@ const RoletaManagement = () => {
                     <Label>Escopo de empreendimentos</Label>
                     <RadioGroup
                       value={formEscopoEmpreendimentos}
-                      onValueChange={(v) => setFormEscopoEmpreendimentos(v as "especifico" | "todas_landing_pages")}
+                      onValueChange={(v) => setFormEscopoEmpreendimentos(v as "especifico" | "todas_landing_pages" | "todas_landing_pages_e_plantao")}
                       className="mt-2"
                     >
                       <label className="flex items-start gap-2 cursor-pointer">
+                        <RadioGroupItem value="todas_landing_pages_e_plantao" className="mt-0.5" />
+                        <div>
+                          <span className="text-sm text-foreground font-medium">
+                            Todas as Landing Pages + WhatsApp do Plantão
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            Recomendado — captura leads de todos os empreendimentos institucionais e também do WhatsApp do Plantão. Apenas uma roleta ativa pode usar este escopo.
+                          </p>
+                        </div>
+                      </label>
+                      <label className="flex items-start gap-2 cursor-pointer mt-2">
                         <RadioGroupItem value="todas_landing_pages" className="mt-0.5" />
                         <div>
                           <span className="text-sm text-foreground font-medium">
                             Todas as Landing Pages da Imobiliária
                           </span>
                           <p className="text-xs text-muted-foreground">
-                            Recomendado — inclui automaticamente todos os empreendimentos institucionais, presentes e futuros.
+                            Inclui automaticamente todos os empreendimentos institucionais, presentes e futuros (sem WhatsApp do Plantão).
                           </p>
                         </div>
                       </label>
@@ -386,6 +397,15 @@ const RoletaManagement = () => {
                       <p className="text-xs text-muted-foreground">
                         <Building2 className="w-3 h-3 inline mr-1 text-primary" />
                         Esta roleta receberá automaticamente leads de qualquer empreendimento institucional. Apenas uma roleta ativa pode usar este escopo.
+                      </p>
+                    </div>
+                  )}
+
+                  {formEscopoEmpreendimentos === "todas_landing_pages_e_plantao" && (
+                    <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                      <p className="text-xs text-muted-foreground">
+                        <MessageCircle className="w-3 h-3 inline mr-1 text-emerald-500" />
+                        Esta roleta receberá automaticamente leads das landing pages institucionais <strong>e</strong> do WhatsApp do Plantão. Apenas uma roleta ativa pode usar este escopo.
                       </p>
                     </div>
                   )}

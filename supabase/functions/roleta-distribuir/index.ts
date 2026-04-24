@@ -12,61 +12,109 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { lead_id, project_id } = await req.json();
+    const { lead_id, project_id, source } = await req.json();
 
-    if (!lead_id || !project_id) {
-      return new Response(JSON.stringify({ error: "lead_id e project_id são obrigatórios" }), {
+    if (!lead_id) {
+      return new Response(JSON.stringify({ error: "lead_id é obrigatório" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // 1. Check if project is institutional (created_by_broker_id IS NULL)
-    const { data: projectInfo } = await supabase
-      .from("projects")
-      .select("created_by_broker_id")
-      .eq("id", project_id)
-      .maybeSingle();
-
-    const isInstitutionalProject = projectInfo && projectInfo.created_by_broker_id === null;
+    const leadSource: "landing_page" | "whatsapp_global" = source === "whatsapp_global" ? "whatsapp_global" : "landing_page";
 
     let roletaId: string | null = null;
 
-    // 1a. If institutional, prioritize an active roleta with escopo 'todas_landing_pages'
-    if (isInstitutionalProject) {
-      const { data: catchAllRoleta } = await supabase
+    if (leadSource === "whatsapp_global") {
+      // 1a-WG. WhatsApp Plantão lead: prioritize unified catch-all (todas_landing_pages_e_plantao)
+      const { data: unifiedRoleta } = await supabase
         .from("roletas")
         .select("id")
         .eq("ativa", true)
-        .eq("escopo_empreendimentos", "todas_landing_pages")
+        .eq("escopo_empreendimentos", "todas_landing_pages_e_plantao")
         .eq("tipo_origem", "landing_page")
         .limit(1)
         .maybeSingle();
 
-      if (catchAllRoleta) {
-        roletaId = catchAllRoleta.id;
-        console.log("Using catch-all roleta (todas_landing_pages):", roletaId);
+      if (unifiedRoleta) {
+        roletaId = unifiedRoleta.id;
+        console.log("Using unified catch-all roleta (todas_landing_pages_e_plantao) for plantão lead:", roletaId);
+      } else {
+        // Fallback: legacy whatsapp_global roleta
+        const { data: legacyRoleta } = await supabase
+          .from("roletas")
+          .select("id")
+          .eq("ativa", true)
+          .eq("tipo_origem", "whatsapp_global")
+          .limit(1)
+          .maybeSingle();
+
+        if (legacyRoleta) {
+          roletaId = legacyRoleta.id;
+          console.log("Using legacy whatsapp_global roleta for plantão lead:", roletaId);
+        }
       }
-    }
-
-    // 1b. Fallback to explicit project linkage
-    if (!roletaId) {
-      const { data: reData, error: reError } = await supabase
-        .from("roletas_empreendimentos")
-        .select("roleta_id")
-        .eq("empreendimento_id", project_id)
-        .eq("ativo", true)
-        .limit(1)
-        .maybeSingle();
-
-      if (reError || !reData) {
-        console.log("No active roleta for project:", project_id);
-        return new Response(JSON.stringify({ message: "Sem roleta ativa para este empreendimento" }), {
+    } else {
+      // 1. Landing-page lead: requires project_id
+      if (!project_id) {
+        return new Response(JSON.stringify({ error: "project_id é obrigatório para leads de landing page" }), {
+          status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      roletaId = reData.roleta_id;
+      // Check if project is institutional (created_by_broker_id IS NULL)
+      const { data: projectInfo } = await supabase
+        .from("projects")
+        .select("created_by_broker_id")
+        .eq("id", project_id)
+        .maybeSingle();
+
+      const isInstitutionalProject = projectInfo && projectInfo.created_by_broker_id === null;
+
+      // 1a. If institutional, prioritize an active catch-all roleta (either variant includes LPs)
+      if (isInstitutionalProject) {
+        const { data: catchAllRoleta } = await supabase
+          .from("roletas")
+          .select("id")
+          .eq("ativa", true)
+          .in("escopo_empreendimentos", ["todas_landing_pages", "todas_landing_pages_e_plantao"])
+          .eq("tipo_origem", "landing_page")
+          .limit(1)
+          .maybeSingle();
+
+        if (catchAllRoleta) {
+          roletaId = catchAllRoleta.id;
+          console.log("Using catch-all roleta for institutional LP lead:", roletaId);
+        }
+      }
+
+      // 1b. Fallback to explicit project linkage
+      if (!roletaId) {
+        const { data: reData, error: reError } = await supabase
+          .from("roletas_empreendimentos")
+          .select("roleta_id")
+          .eq("empreendimento_id", project_id)
+          .eq("ativo", true)
+          .limit(1)
+          .maybeSingle();
+
+        if (reError || !reData) {
+          console.log("No active roleta for project:", project_id);
+          return new Response(JSON.stringify({ message: "Sem roleta ativa para este empreendimento" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        roletaId = reData.roleta_id;
+      }
+    }
+
+    if (!roletaId) {
+      console.log("No roleta found for source:", leadSource);
+      return new Response(JSON.stringify({ message: "Sem roleta ativa para esta origem" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // 2. Get roleta
@@ -188,18 +236,20 @@ Deno.serve(async (req) => {
       .eq("id", lead_id)
       .single();
 
-    const { data: projectData } = await supabase
-      .from("projects")
-      .select("name")
-      .eq("id", project_id)
-      .single();
+    const { data: projectData } = project_id
+      ? await supabase.from("projects").select("name").eq("id", project_id).single()
+      : { data: null };
+
+    const originLabel = leadSource === "whatsapp_global"
+      ? "WhatsApp do Plantão"
+      : (projectData?.name || "empreendimento");
 
     if (brokerData?.user_id && leadData) {
       await supabase.from("notifications").insert({
         user_id: brokerData.user_id,
         type: "roleta_lead",
         title: "Novo Lead via Roleta",
-        message: `Lead ${leadData.name} do ${projectData?.name || "empreendimento"} atribuído a você.`,
+        message: `Lead ${leadData.name} (${originLabel}) atribuído a você.`,
         lead_id: lead_id,
       });
     }
@@ -253,10 +303,10 @@ Deno.serve(async (req) => {
           let message: string;
           if (timeoutAtivo) {
             // Timeout active: hide lead data to prevent data leakage on reassignment
-            message = `🔔 *Novo lead via Roleta*\n\n📋 *${projectData?.name || "Empreendimento"}*\n\n⚡ Acesse o CRM para ver os dados e iniciar o atendimento.\n⏱️ Tempo para atendimento: ${roleta.tempo_reserva_minutos} min`;
+            message = `🔔 *Novo lead via Roleta*\n\n📋 *${originLabel}*\n\n⚡ Acesse o CRM para ver os dados e iniciar o atendimento.\n⏱️ Tempo para atendimento: ${roleta.tempo_reserva_minutos} min`;
           } else {
             // No timeout: full lead data (no risk of reassignment)
-            message = `🔔 *Novo lead via Roleta*\n\n📋 *${projectData?.name || "Empreendimento"}*\n👤 ${leadData.name}\n📱 ${leadData.whatsapp}\n\n⚡ Acesse o CRM para iniciar o atendimento.`;
+            message = `🔔 *Novo lead via Roleta*\n\n📋 *${originLabel}*\n👤 ${leadData.name}\n📱 ${leadData.whatsapp}\n\n⚡ Acesse o CRM para iniciar o atendimento.`;
           }
 
           const apiUrl = `${baseUrl}/send/text`;
