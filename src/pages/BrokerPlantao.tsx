@@ -214,7 +214,7 @@ export default function BrokerPlantao() {
     setShowLeadPanel(false);
   }, []);
 
-  // "Iniciar Atendimento" — claim a global conversation
+  // "Iniciar Atendimento" — claim a global conversation (lead already exists, created by webhook)
   const handleStartAttendance = useCallback(async () => {
     if (!selectedConversation || !brokerId) return;
     setIsStartingAttendance(true);
@@ -242,43 +242,28 @@ export default function BrokerPlantao() {
       fetchConversations();
       fetchNovos();
 
-      // Step 2: Create lead in CRM (non-blocking for messaging)
-      const { data: newLead, error: leadError } = await supabase
-        .from("leads")
-        .insert({
-          name: displayName,
-          whatsapp: selectedConversation.phone.replace(/^\+/, ''),
+      // Step 2: Update existing lead (created by webhook) — move to "info_sent"
+      const existingLeadId = (selectedConversation as any).lead_id;
+      if (existingLeadId) {
+        await supabase
+          .from("leads")
+          .update({
+            broker_id: brokerId,
+            status: "info_sent" as any,
+            atendimento_iniciado_em: new Date().toISOString(),
+            status_distribuicao: "atendimento_iniciado" as any,
+          } as any)
+          .eq("id", existingLeadId);
+
+        await supabase.from("lead_interactions").insert({
+          lead_id: existingLeadId,
+          interaction_type: "atendimento_iniciado" as any,
+          notes: "Atendimento iniciado via Plantão (WhatsApp Global)",
           broker_id: brokerId,
-          status: "info_sent" as any,
-          source: "whatsapp_global",
-          lead_origin: "whatsapp_plantao",
-          atendimento_iniciado_em: new Date().toISOString(),
-          status_distribuicao: "atendimento_iniciado" as any,
-        } as any)
-        .select("id")
-        .single();
-
-      if (leadError || !newLead) {
-        console.error("Erro ao criar lead no CRM:", leadError);
-        toast.warning("Atendimento iniciado, mas houve erro ao criar o lead no CRM.");
-        return;
+          channel: "whatsapp",
+          new_status: "info_sent",
+        } as any);
       }
-
-      const leadId = (newLead as any).id;
-      const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
-      const finalLeadId = unifiedId || leadId;
-
-      // Step 3: Link lead to conversation and record interactions
-      await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
-
-      await supabase.from("lead_interactions").insert({
-        lead_id: finalLeadId,
-        interaction_type: "atendimento_iniciado" as any,
-        notes: "Atendimento iniciado via Plantão (WhatsApp Global)",
-        broker_id: brokerId,
-        channel: "whatsapp",
-        new_status: "info_sent",
-      } as any);
 
       // Get broker name for system message
       const { data: brokerData } = await supabase.from("brokers").select("name").eq("id", brokerId).maybeSingle();
@@ -294,14 +279,7 @@ export default function BrokerPlantao() {
         metadata: { system_event: "attendance_started", broker_name: brokerName },
       } as any);
 
-      // Update local state with lead info
-      setSelectedConversation(prev => prev ? {
-        ...prev,
-        lead_id: finalLeadId,
-        lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_plantao" },
-      } : prev);
-
-      toast.success("Atendimento iniciado! Lead criado no Kanban.");
+      toast.success("Atendimento iniciado!");
       fetchConversations();
     } catch (error) {
       console.error("Erro ao iniciar atendimento:", error);

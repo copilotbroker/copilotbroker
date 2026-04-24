@@ -508,6 +508,12 @@ const RoletaManagement = () => {
                           Todas LPs
                         </Badge>
                       )}
+                      {(roleta as any).tipo_origem === "landing_page" && (roleta as any).escopo_empreendimentos === "todas_landing_pages_e_plantao" && (
+                        <Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-400">
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          Todas LPs + Plantão
+                        </Badge>
+                      )}
                       {(roleta as any).tipo_origem === "whatsapp_global" && (
                         <Badge variant="outline" className={cn(
                           "text-xs",
@@ -838,10 +844,17 @@ const RoletaManagement = () => {
                             className="mt-2"
                           >
                             <label className="flex items-start gap-2 cursor-pointer">
+                              <RadioGroupItem value="todas_landing_pages_e_plantao" className="mt-0.5" />
+                              <div>
+                                <span className="text-xs text-foreground font-medium">Todas as Landing Pages + WhatsApp do Plantão</span>
+                                <p className="text-[10px] text-muted-foreground">Recomendado — captura LPs institucionais e o WhatsApp do Plantão.</p>
+                              </div>
+                            </label>
+                            <label className="flex items-start gap-2 cursor-pointer mt-1.5">
                               <RadioGroupItem value="todas_landing_pages" className="mt-0.5" />
                               <div>
                                 <span className="text-xs text-foreground font-medium">Todas as Landing Pages da Imobiliária</span>
-                                <p className="text-[10px] text-muted-foreground">Inclui automaticamente novos empreendimentos institucionais.</p>
+                                <p className="text-[10px] text-muted-foreground">Inclui automaticamente novos empreendimentos institucionais (sem WhatsApp do Plantão).</p>
                               </div>
                             </label>
                             <label className="flex items-start gap-2 cursor-pointer mt-1.5">
@@ -854,7 +867,14 @@ const RoletaManagement = () => {
                           </RadioGroup>
                         </div>
 
-                        {(roleta as any).escopo_empreendimentos === "todas_landing_pages" ? (
+                        {(roleta as any).escopo_empreendimentos === "todas_landing_pages_e_plantao" ? (
+                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                            <p className="text-xs text-muted-foreground">
+                              <MessageCircle className="w-3 h-3 inline mr-1 text-emerald-500" />
+                              Esta roleta recebe leads das landing pages institucionais <strong>e</strong> do WhatsApp do Plantão automaticamente.
+                            </p>
+                          </div>
+                        ) : (roleta as any).escopo_empreendimentos === "todas_landing_pages" ? (
                           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
                             <p className="text-xs text-muted-foreground">
                               <Building2 className="w-3 h-3 inline mr-1 text-primary" />
