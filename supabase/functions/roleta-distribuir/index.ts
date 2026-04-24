@@ -236,18 +236,20 @@ Deno.serve(async (req) => {
       .eq("id", lead_id)
       .single();
 
-    const { data: projectData } = await supabase
-      .from("projects")
-      .select("name")
-      .eq("id", project_id)
-      .single();
+    const { data: projectData } = project_id
+      ? await supabase.from("projects").select("name").eq("id", project_id).single()
+      : { data: null };
+
+    const originLabel = leadSource === "whatsapp_global"
+      ? "WhatsApp do Plantão"
+      : (projectData?.name || "empreendimento");
 
     if (brokerData?.user_id && leadData) {
       await supabase.from("notifications").insert({
         user_id: brokerData.user_id,
         type: "roleta_lead",
         title: "Novo Lead via Roleta",
-        message: `Lead ${leadData.name} do ${projectData?.name || "empreendimento"} atribuído a você.`,
+        message: `Lead ${leadData.name} (${originLabel}) atribuído a você.`,
         lead_id: lead_id,
       });
     }
