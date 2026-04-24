@@ -65,35 +65,20 @@ const StuttgartBrokerLandingPage = () => {
     };
     fetchData();
   }, [brokerSlug]);
-  
-  // Meta Pixel deferido
+  // Microsoft Clarity — carregado IMEDIATAMENTE
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const loadPixel = () => {
-      if ((window as any).fbq) return;
-      (function (f: any, b: Document, e: string, v: string) {
-        if (f.fbq) return;
-        const n: any = (f.fbq = function () {
-          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-        });
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = !0;
-        n.version = "2.0";
-        n.queue = [];
-        const t = b.createElement(e) as HTMLScriptElement;
-        t.async = !0;
-        t.src = v;
-        const s = b.getElementsByTagName(e)[0];
-        s.parentNode?.insertBefore(t, s);
-      })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
-      (window as any).fbq("init", "2252094488658073");
-      (window as any).fbq("track", "PageView");
-    };
-    const idle = (window as any).requestIdleCallback as any;
-    if (idle) idle(loadPixel, { timeout: 3000 });
-    else setTimeout(loadPixel, 1500);
+    if (typeof window === "undefined" || (window as any).clarity) return;
+    (function (c: any, l: Document, a: string, r: string, i: string) {
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+      const t = l.createElement(r) as HTMLScriptElement;
+      t.async = 1 as any;
+      t.src = "https://www.clarity.ms/tag/" + i;
+      const y = l.getElementsByTagName(r)[0];
+      y.parentNode?.insertBefore(t, y);
+    })(window, document, "clarity", "script", "wfrjoqhzwc");
   }, []);
+
+  // Meta Pixel — carregado IMEDIATAMENTE no head
 
   useEffect(() => {
     if (submitted && typeof window !== "undefined" && (window as any).fbq) {
