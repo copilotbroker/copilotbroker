@@ -1729,21 +1729,21 @@ async function handleGlobalInstanceMessage(
     return { brokerId: existingLead.broker_id as string, conversationId: result.conversationId };
   }
 
-  // Case B: No broker → distribute via whatsapp_global roleta (NO lead creation yet)
-  console.log(`🎰 Global msg from ${phone} → entering roleta distribution (pending attendance)`);
+  // Case B: No broker → create lead immediately, then distribute via roleta-distribuir
+  console.log(`🎰 Global msg from ${phone} → creating lead + entering roleta distribution`);
 
-  // Check if there's already a global conversation for this phone
   const canonicalPhoneNorm = getCanonicalPhoneNormalized(phone);
+
+  // Check if there's already a global conversation for this phone (pending)
   const { data: existingConv } = await supabase
     .from("conversations")
-    .select("id, broker_id")
+    .select("id, broker_id, lead_id")
     .eq("phone_normalized", canonicalPhoneNorm)
     .eq("source_instance", "global")
     .eq("attendance_started", false)
     .maybeSingle();
 
   if (existingConv) {
-    // Already pending — just archive the new message to the existing conversation
     console.log(`📥 Additional msg for pending global conv ${existingConv.id}`);
     const result = await archiveMessageToConversation(
       supabase, phone, messageText, direction, undefined, senderName, sentBy,
@@ -1770,116 +1770,115 @@ async function handleGlobalInstanceMessage(
     return { brokerId: anyGlobalConv.broker_id as string, conversationId: result.conversationId };
   }
 
-  const { data: roleta } = await supabase
-    .from("roletas")
-    .select(`
-      id, lider_id, tempo_reserva_minutos, timeout_ativo, ultimo_membro_ordem_atribuida, modo_distribuicao,
-      membros:roletas_membros(id, corretor_id, ordem, status_checkin, ativo)
-    `)
-    .eq("ativa", true)
-    .eq("tipo_origem", "whatsapp_global")
+  // Step 1: Create lead immediately (matches landing-page flow)
+  const canonicalPhone = getCanonicalPhone(phone);
+  const phoneVariants = getPhoneVariants(phone);
+
+  const { data: existingPhoneLead } = await supabase
+    .from("leads")
+    .select("id")
+    .in("whatsapp", phoneVariants)
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (!roleta) {
-    console.warn("⚠️ No active whatsapp_global roleta found. Message will not be distributed.");
+  let leadId: string | null = null;
+
+  if (existingPhoneLead) {
+    leadId = existingPhoneLead.id as string;
+    console.log(`📋 Reusing existing lead ${leadId} for plantão phone ${phone}`);
+  } else {
+    const { data: newLead, error: leadErr } = await supabase
+      .from("leads")
+      .insert({
+        name: senderName || canonicalPhone,
+        whatsapp: canonicalPhone,
+        source: "whatsapp_global",
+        lead_origin: "whatsapp_plantao",
+        status: "new",
+      })
+      .select("id")
+      .single();
+
+    if (leadErr || !newLead) {
+      console.error(`❌ Failed to create plantão lead:`, leadErr);
+      return {};
+    }
+
+    leadId = (newLead as any).id as string;
+    console.log(`✅ Created plantão lead ${leadId}`);
+
+    // Insert attribution
+    await supabase.from("lead_attribution").insert({
+      lead_id: leadId,
+      landing_page: "whatsapp_global",
+      utm_source: "whatsapp",
+      utm_medium: "plantao",
+    }).catch((e) => console.error("Attribution insert failed (non-critical):", e));
+
+    // Try unify
+    const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
+    if (unifiedId) leadId = unifiedId as string;
+  }
+
+  // Step 2: Call roleta-distribuir to assign the lead via the unified roleta
+  let assignedBrokerId: string | null = null;
+  try {
+    const distribResp = await fetch(`${SUPABASE_URL}/functions/v1/roleta-distribuir`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ lead_id: leadId, source: "whatsapp_global" }),
+    });
+
+    const distribJson = await distribResp.json().catch(() => ({}));
+    assignedBrokerId = distribJson.assigned_to || null;
+    console.log(`🎯 roleta-distribuir result for plantão lead ${leadId}:`, distribJson);
+  } catch (distribErr) {
+    console.error("roleta-distribuir call failed:", distribErr);
+  }
+
+  if (!assignedBrokerId) {
+    console.warn(`⚠️ No broker assigned to plantão lead ${leadId}; message will be archived without conversation.`);
     return {};
   }
 
-  const modoDistribuicao = (roleta as any).modo_distribuicao || "fila";
-  const membros = ((roleta as any).membros || [])
-    .filter((m: any) => m.ativo && m.status_checkin)
-    .sort((a: any, b: any) => a.ordem - b.ordem);
-
-  let assignedBrokerId: string;
-
-  if (modoDistribuicao === "disputa") {
-    // Disputa mode: assign to leader as placeholder; all checked-in brokers will see it
-    assignedBrokerId = roleta.lider_id as string;
-    console.log(`🏁 Disputa mode: assigning to leader ${assignedBrokerId} as placeholder`);
-  } else {
-    // Fila mode: round-robin to specific broker
-    if (membros.length === 0) {
-      console.log(`⚠️ No checked-in members → fallback to leader ${roleta.lider_id}`);
-      assignedBrokerId = roleta.lider_id as string;
-    } else {
-      const lastOrdem = (roleta.ultimo_membro_ordem_atribuida as number) || 0;
-      const nextMembro = membros.find((m: any) => m.ordem > lastOrdem) || membros[0];
-      assignedBrokerId = nextMembro.corretor_id;
-      await supabase.from("roletas").update({ ultimo_membro_ordem_atribuida: nextMembro.ordem }).eq("id", roleta.id);
-    }
-  }
-
-  // Archive message — creates conversation with source_instance='global', attendance_started=false (default)
+  // Step 3: Archive message to conversation (creates it with source_instance=global, attendance_started=false)
   const result = await archiveMessageToConversation(
     supabase, phone, messageText, direction, undefined, senderName, sentBy,
     uazapiMessageId, messageType, metadata, assignedBrokerId, "global"
   );
 
-  // Set roleta_modo and timeout fields on the conversation
+  // Step 4: Link conversation to the lead and copy timeout/roleta info from leads
   if (result.conversationId) {
-    const now = new Date();
-    const timeoutAtivo = (roleta as any).timeout_ativo ?? true;
-    const tempoReserva = (roleta as any).tempo_reserva_minutos || 10;
-    const shouldSetExpiration = timeoutAtivo && modoDistribuicao === "fila";
-    const reservaExpira = shouldSetExpiration
-      ? new Date(now.getTime() + tempoReserva * 60 * 1000).toISOString()
-      : null;
+    const { data: leadInfo } = await supabase
+      .from("leads")
+      .select("roleta_id, reserva_expira_em, atribuido_em")
+      .eq("id", leadId)
+      .single();
+
+    // Get roleta modo for the conversation badge
+    let roletaModo: string | null = null;
+    if (leadInfo?.roleta_id) {
+      const { data: rData } = await supabase
+        .from("roletas")
+        .select("modo_distribuicao")
+        .eq("id", leadInfo.roleta_id)
+        .single();
+      roletaModo = (rData as any)?.modo_distribuicao || "fila";
+    }
 
     await supabase.from("conversations").update({
-      roleta_modo: modoDistribuicao,
-      atribuido_em: now.toISOString(),
-      reserva_expira_em: reservaExpira,
+      lead_id: leadId,
+      roleta_modo: roletaModo,
+      atribuido_em: leadInfo?.atribuido_em || new Date().toISOString(),
+      reserva_expira_em: leadInfo?.reserva_expira_em || null,
     }).eq("id", result.conversationId);
   }
 
-  // Log distribution (no lead_id yet)
-  await supabase.from("roletas_log").insert({
-    roleta_id: roleta.id,
-    para_corretor_id: assignedBrokerId,
-    acao: "atribuicao_inicial",
-    motivo: `Distribuição via roleta WhatsApp Global - modo ${modoDistribuicao} (pendente atendimento)`,
-  });
-
-  // Notify assigned broker via WhatsApp (fila mode only, no lead data)
-  if (modoDistribuicao === "fila") {
-    try {
-      const { data: globalCfg } = await supabase
-        .from("global_whatsapp_config")
-        .select("instance_token")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const { data: brokerData } = await supabase
-        .from("brokers")
-        .select("whatsapp")
-        .eq("id", assignedBrokerId)
-        .single();
-
-      if (globalCfg?.instance_token && brokerData?.whatsapp) {
-        const envUrl = Deno.env.get("UAZAPI_INSTANCE_URL") || "";
-        let baseUrl: string;
-        try { baseUrl = new URL(envUrl).origin; } catch { baseUrl = envUrl.replace(/\/[^\/]+\/?$/, ""); }
-
-        if (baseUrl) {
-          const cleanPhone = (brokerData.whatsapp as string).replace(/\D/g, "");
-          const alertMsg = `🔔 *Nova conversa no Plantão*\n\nVocê tem um novo contato aguardando atendimento na aba "Novos" do Plantão.\n\n⚡ Acesse o CRM para iniciar o atendimento.`;
-
-          await fetch(`${baseUrl}/send/text`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "token": globalCfg.instance_token as string },
-            body: JSON.stringify({ number: cleanPhone, text: alertMsg }),
-          });
-          console.log(`📲 WhatsApp notification sent to broker ${assignedBrokerId} (fila mode)`);
-        }
-      }
-    } catch (notifyErr) {
-      console.error("WhatsApp fila notification failed (non-critical):", notifyErr);
-    }
-  }
-
-  console.log(`✅ Global msg distributed (${modoDistribuicao}): phone=${phone} → broker=${assignedBrokerId} (pending attendance)`);
+  console.log(`✅ Plantão message handled: phone=${phone} → lead=${leadId} → broker=${assignedBrokerId}`);
   return { brokerId: assignedBrokerId, conversationId: result.conversationId };
 }
 
