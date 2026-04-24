@@ -483,6 +483,20 @@ Deno.serve(async (req) => {
             })
             .eq("id", conv.id);
 
+          // Also update lead.broker_id so Kanban card follows the reassignment
+          if (conv.lead_id) {
+            await supabase
+              .from("leads")
+              .update({
+                broker_id: newBrokerId,
+                corretor_atribuido_id: newBrokerId,
+                atribuido_em: new Date().toISOString(),
+                reserva_expira_em: newExpira,
+                status_distribuicao: isFallback ? "fallback_lider" : "reassinado_timeout",
+              })
+              .eq("id", conv.lead_id);
+          }
+
           // Update roleta pointer
           await supabase
             .from("roletas")
