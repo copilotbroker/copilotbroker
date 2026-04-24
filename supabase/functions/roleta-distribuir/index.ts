@@ -303,10 +303,10 @@ Deno.serve(async (req) => {
           let message: string;
           if (timeoutAtivo) {
             // Timeout active: hide lead data to prevent data leakage on reassignment
-            message = `🔔 *Novo lead via Roleta*\n\n📋 *${projectData?.name || "Empreendimento"}*\n\n⚡ Acesse o CRM para ver os dados e iniciar o atendimento.\n⏱️ Tempo para atendimento: ${roleta.tempo_reserva_minutos} min`;
+            message = `🔔 *Novo lead via Roleta*\n\n📋 *${originLabel}*\n\n⚡ Acesse o CRM para ver os dados e iniciar o atendimento.\n⏱️ Tempo para atendimento: ${roleta.tempo_reserva_minutos} min`;
           } else {
             // No timeout: full lead data (no risk of reassignment)
-            message = `🔔 *Novo lead via Roleta*\n\n📋 *${projectData?.name || "Empreendimento"}*\n👤 ${leadData.name}\n📱 ${leadData.whatsapp}\n\n⚡ Acesse o CRM para iniciar o atendimento.`;
+            message = `🔔 *Novo lead via Roleta*\n\n📋 *${originLabel}*\n👤 ${leadData.name}\n📱 ${leadData.whatsapp}\n\n⚡ Acesse o CRM para iniciar o atendimento.`;
           }
 
           const apiUrl = `${baseUrl}/send/text`;
