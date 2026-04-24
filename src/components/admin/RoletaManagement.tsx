@@ -508,6 +508,12 @@ const RoletaManagement = () => {
                           Todas LPs
                         </Badge>
                       )}
+                      {(roleta as any).tipo_origem === "landing_page" && (roleta as any).escopo_empreendimentos === "todas_landing_pages_e_plantao" && (
+                        <Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-400">
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          Todas LPs + Plantão
+                        </Badge>
+                      )}
                       {(roleta as any).tipo_origem === "whatsapp_global" && (
                         <Badge variant="outline" className={cn(
                           "text-xs",
