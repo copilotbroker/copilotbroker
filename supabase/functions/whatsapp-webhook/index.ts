@@ -1772,7 +1772,6 @@ async function handleGlobalInstanceMessage(
 
   // Step 1: Create lead immediately (matches landing-page flow)
   const canonicalPhone = getCanonicalPhone(phone);
-  const phoneVariants = getPhoneVariants(phone);
 
   const { data: existingPhoneLead } = await supabase
     .from("leads")
