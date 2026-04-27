@@ -1,44 +1,96 @@
-## Diagnóstico do caso (Gilson – Davi)
+## Diagnóstico atual
 
-Investiguei o lead `Gilson Gonçalves Jacoby` (whatsapp final `1281`, corretor Davi Santiago):
+Não parece ser apenas “resto” do erro anterior. O webhook voltou a receber mensagens da instância do Gabriel (`enove_gabriel_witt`) e não encontrei indício atual de queda geral de infraestrutura. O problema que aparece agora é mais específico na lógica de cadências/campanhas.
 
-- **Cadência criada às 17:19** com 7 etapas, status `running`.
-- **3 mensagens enviadas** (etapas 1, 2 e 3) entre 17:20 e 20:21.
-- **Nenhuma mensagem inbound** do lead foi registrada na conversa.
-- Às 20:39:59 a campanha foi cancelada manualmente (alguém — provavelmente o próprio Davi pelo Kanban/Inbox — clicou em cancelar a cadência), e o status do lead voltou de `awaiting_docs` para `info_sent`.
+O que encontrei:
 
-Ou seja: **o cancelamento automático por resposta do lead nunca ocorreu** porque nenhuma resposta foi processada pelo sistema.
+1. **Rodrigo Goerg**
+   - Ele respondeu em 27/04 às 10:49.
+   - O sistema registrou a resposta em `whatsapp_lead_replies`.
+   - A etapa futura que ainda estava pendente foi cancelada.
+   - Porém, a campanha “Follow up reconetctar com o cliente” já havia enviado 9 de 10 etapas antes da resposta porque os delays dessa campanha estão configurados de forma não progressiva/cumulativa, com várias etapas caindo praticamente no mesmo período.
 
-## Causa raiz
+2. **Filipe Schuvarts**
+   - Não encontrei mensagem inbound registrada dele na conversa do Gabriel.
+   - O que aparece depois da cadência são mensagens outbound manuais do Gabriel para o Filipe.
+   - Portanto, para esse caso específico, o sistema não tinha uma “resposta do cliente” registrada para cancelar automaticamente.
 
-A edge function `whatsapp-webhook` está **completamente fora do ar** com erro de boot:
+3. **Marcelo S Saldanha**
+   - Não encontrei mensagem inbound registrada depois dessa campanha.
+   - Ainda existe uma etapa futura agendada para 28/04 porque, do ponto de vista do sistema, não houve resposta do cliente.
 
-```
-worker boot error: Uncaught SyntaxError: 
-  Identifier 'phoneVariants' has already been declared
-  at whatsapp-webhook/index.ts:1399:9
-```
+4. **Infraestrutura**
+   - O webhook do WhatsApp está recebendo eventos da instância do Gabriel agora.
+   - Há eventos recentes com HTTP 200 e logs da instância dele.
+   - Não encontrei erro atual de boot/503 como no problema anterior.
 
-Logs mostram **90 respostas HTTP 503** consecutivas para `POST /functions/v1/whatsapp-webhook` nas últimas horas. Como o webhook é o único ponto que recebe mensagens da UAZAPI, **nenhuma resposta de cliente está sendo processada agora** — não só a do Gilson. Isso afeta:
+## Causa principal
 
-1. Cancelamento automático de cadências quando o lead responde (`reply_count` e gatilho de "lead respondeu").
-2. Registro de mensagens inbound no inbox.
-3. Atualização de `last_message_direction`, `unread_count`, copilot, etc.
+Há dois pontos que precisam ser corrigidos para uma solução definitiva:
 
-A duplicação acontece porque uma versão deployada do arquivo tem duas declarações `const phoneVariants` no mesmo escopo de função (na versão atual do repo as 8 declarações estão em funções separadas, mas o build deployado contém pelo menos duas no mesmo bloco da linha 1399).
+1. **Cancelamento dependente demais de um único registro (`whatsapp_lead_replies`)**
+   - Hoje o sender previne envios futuros se encontrar registro de resposta na tabela de replies ou uma mensagem já cancelada por resposta.
+   - Se a resposta foi processada no Inbox (`conversation_messages`) mas não gerou/achou o registro exato em `whatsapp_lead_replies`, o envio futuro pode escapar.
+   - Também há risco de falha por variação de telefone (`+55...`, `55...`, sem DDI).
+
+2. **Campanhas com delays não progressivos**
+   - A campanha do Gabriel tem etapas com delay cumulativo menor depois de etapas maiores, e várias etapas com o mesmo delay.
+   - Isso faz várias mensagens saírem antes que o cliente tenha tempo real de responder, dando a impressão de que “não cancelou”, quando na prática quase tudo já tinha sido enviado antes da resposta.
 
 ## Plano de correção
 
-1. **Inspecionar `supabase/functions/whatsapp-webhook/index.ts`** ao redor da linha 1399 e confirmar onde o escopo está colidindo (provavelmente uma função que tem `const phoneVariants` no topo e mais um `const phoneVariants` dentro de um bloco interno após uma edição recente).
-2. **Renomear a segunda declaração** para algo como `inboundPhoneVariants` (ou reutilizar a primeira variável) para eliminar o conflito.
-3. **Fazer scan completo do arquivo** procurando outros identificadores duplicados no mesmo escopo (`reply_count`, etc.) para evitar reincidência.
-4. **Re-deploy automático** da função (Lovable faz no save).
-5. **Validar** consultando os logs da edge function: a próxima requisição deve retornar 200 e os logs `worker boot error` devem cessar.
-6. **Tratar o caso do Gilson manualmente (opcional)**: como a cadência já está `cancelled` e o lead voltou para `info_sent`, nenhuma ação adicional no banco é estritamente necessária — apenas avisar o Davi que ele pode reativar a cadência se quiser, agora que o webhook estará funcional.
+### 1. Fortalecer o cancelamento no webhook
 
-## O que NÃO precisa mudar
+Alterar `whatsapp-webhook` para, ao receber qualquer mensagem inbound de um cliente:
 
-- A lógica de `cancelCadenciaForLead` está correta — ela é acionada por `reply_count > 0` no processamento do webhook (que está quebrado) ou manualmente pelo corretor. A correção é só destravar o webhook.
-- A cadência em si foi configurada corretamente; o problema é puramente operacional.
+- Localizar campanhas ativas desse broker/telefone/lead, não apenas campanhas encontradas nos últimos envios `sent`.
+- Usar variações normalizadas do telefone para evitar falha por formato.
+- Cancelar todas as mensagens futuras da mesma campanha/lead/telefone com `send_if_replied = false`.
+- Registrar a resposta com chave normalizada também, para o sender conseguir reconhecer depois.
 
-Após a aprovação, eu corrijo a duplicação e confirmo via logs que o webhook voltou a aceitar mensagens.
+### 2. Fortalecer a prevenção no sender antes de enviar
+
+Alterar `whatsapp-message-sender` para, antes de enviar qualquer etapa `step_number > 1` com `send_if_replied = false`:
+
+- Verificar se existe `conversation_messages.direction = inbound` para o mesmo broker + lead/telefone depois do início/envio da campanha.
+- Se existir, cancelar a mensagem em vez de enviar.
+- Usar variações de telefone no lookup de `whatsapp_lead_replies`.
+- Fazer uma reconciliação curta a cada execução para cancelar pendências que ficaram para trás por falha anterior.
+
+Esse ponto é o “cinto de segurança”: mesmo que o webhook falhe parcialmente, o sender não deve deixar passar uma etapa futura se já houver resposta registrada no Inbox.
+
+### 3. Corrigir campanhas com delays inconsistentes na criação
+
+Na criação de campanhas/cadências:
+
+- Validar que os delays cumulativos sejam progressivos por etapa.
+- Bloquear ou avisar quando uma etapa posterior tiver delay menor/igual de forma que gere disparos fora de ordem ou em lote acidental.
+- Manter a regra atual do projeto: o delay é cumulativo desde a primeira mensagem.
+
+Isso evita campanhas como a do Gabriel, onde etapas 9 e 10 foram agendadas antes de etapas 3-8, e várias etapas ficaram no mesmo bloco de horário.
+
+### 4. Corrigir dados atuais com segurança
+
+Depois da correção, executar uma reconciliação nos dados atuais para:
+
+- Cancelar qualquer mensagem futura `scheduled/queued` de campanhas ativas quando já existir resposta inbound registrada para aquele lead/telefone.
+- Não cancelar mensagens de leads que não têm inbound registrado, para evitar falso positivo.
+- Revisar especificamente a campanha “Follow up reconetctar com o cliente” do Gabriel.
+
+### 5. Validar
+
+Validar com:
+
+- Logs do `whatsapp-webhook` para nova resposta inbound.
+- Logs do `whatsapp-message-sender` confirmando cancelamento preventivo quando houver resposta.
+- Consulta no banco para conferir que mensagens futuras ficam como `cancelled` com motivo `Lead respondeu`.
+- Conferência dos casos Rodrigo, Filipe Schuvarts e Marcelo Saldanha.
+
+## Resultado esperado
+
+Após a correção:
+
+- Se o cliente responder, qualquer etapa futura marcada como “não enviar se respondeu” será cancelada.
+- Mesmo se o registro auxiliar de resposta falhar, o sender usará o histórico real do Inbox como fonte de verdade.
+- Campanhas novas não poderão ser criadas com delays que gerem disparos fora de ordem/acúmulo involuntário.
+- Se houver nova falha de infraestrutura do webhook, o sistema terá uma segunda barreira no sender e ficará mais resiliente.
