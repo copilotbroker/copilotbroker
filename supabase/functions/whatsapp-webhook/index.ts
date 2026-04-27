@@ -932,16 +932,34 @@ async function processReply(
         .eq("campaign_id", campaignId)
         .maybeSingle();
 
-      if (!existing) {
-        // New unique reply - insert it
+  // Register reply per-phone per-campaign (deduplicated).
+  // We register under ALL phone variants so future preflight lookups in the
+  // sender will match regardless of whether the queue row has the canonical
+  // form (+5551999...), the normalized form (5551999...), or the local form (51999...).
+  const phoneVariantsForReply = getPhoneVariants(phone);
+  const newReplyCampaignIds: string[] = [];
+  for (const campaignId of campaignIds) {
+    try {
+      const { data: existingAny } = await supabase
+        .from("whatsapp_lead_replies")
+        .select("phone")
+        .in("phone", phoneVariantsForReply)
+        .eq("campaign_id", campaignId)
+        .limit(1)
+        .maybeSingle();
+
+      const isNew = !existingAny;
+      // Always upsert all variants — cheap and idempotent — so we self-heal
+      // any partial registration from earlier outages.
+      for (const variant of phoneVariantsForReply) {
         await supabase
           .from("whatsapp_lead_replies")
           .upsert(
-            { phone, campaign_id: campaignId, replied_at: new Date().toISOString() },
+            { phone: variant, campaign_id: campaignId, replied_at: new Date().toISOString() },
             { onConflict: "phone,campaign_id" }
           );
-        newReplyCampaignIds.push(campaignId);
       }
+      if (isNew) newReplyCampaignIds.push(campaignId);
     } catch (err) {
       await logError(supabase, "registerReply", err, { phone, campaignId });
     }
