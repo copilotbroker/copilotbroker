@@ -776,15 +776,34 @@ async function cancelFollowUpsOnReply(
   if (campaignIds.length === 0) return;
   const phoneVariants = getPhoneVariants(phone);
 
+  // Resolve every lead linked to any phone variant — we'll use lead_id as a
+  // resilient match (in case rows in whatsapp_message_queue have a slightly
+  // different phone format than the inbound message).
+  const { data: leadsForPhone } = await supabase
+    .from("leads")
+    .select("id")
+    .in("whatsapp", phoneVariants);
+  const leadIds = (leadsForPhone || []).map((l: { id: string }) => l.id);
+
   for (const campaignId of campaignIds) {
     try {
-      const { data: scheduledMsgs } = await supabase
+      let scheduledQuery = supabase
         .from("whatsapp_message_queue")
         .select("id, step_number")
-        .in("phone", phoneVariants)
         .eq("campaign_id", campaignId)
         .in("status", ["scheduled", "queued"])
         .gt("step_number", 1);
+
+      // Match by phone OR lead_id, whichever is set on the queue row.
+      if (leadIds.length > 0) {
+        scheduledQuery = scheduledQuery.or(
+          `phone.in.(${phoneVariants.map((p) => `"${p}"`).join(",")}),lead_id.in.(${leadIds.join(",")})`
+        );
+      } else {
+        scheduledQuery = scheduledQuery.in("phone", phoneVariants);
+      }
+
+      const { data: scheduledMsgs } = await scheduledQuery;
 
       if (!scheduledMsgs || scheduledMsgs.length === 0) continue;
 
