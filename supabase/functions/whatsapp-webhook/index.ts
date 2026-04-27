@@ -2052,24 +2052,48 @@ async function handleIncomingMessage(
     });
   }
 
-  // Find recent campaign messages for this phone
+  // Find recent campaign messages for this phone.
+  // We look at BOTH 'sent' messages and any pending message for this phone, so we
+  // also catch campaigns whose first step has not been sent yet, or where the
+  // last 10 'sent' messages don't include the relevant campaign.
   const phoneVariants = getPhoneVariants(phone);
   const { data: recentMessages } = await supabase
     .from("whatsapp_message_queue")
-    .select("campaign_id, broker_id")
+    .select("campaign_id, broker_id, status")
     .in("phone", phoneVariants)
-    .eq("status", "sent")
-    .order("sent_at", { ascending: false })
-    .limit(10);
+    .in("status", ["sent", "scheduled", "queued", "sending", "paused_by_system"])
+    .order("updated_at", { ascending: false })
+    .limit(50);
+
+  // Also find any active campaign linked to this phone via the lead, in case the
+  // queue rows were already cancelled or the phone format differs.
+  const { data: phoneLeads } = await supabase
+    .from("leads")
+    .select("id, broker_id")
+    .in("whatsapp", phoneVariants);
+  const leadIds = (phoneLeads || []).map((l: { id: string }) => l.id);
+
+  let activeCampaignsByLead: Array<{ campaign_id: string; broker_id: string }> = [];
+  if (leadIds.length > 0) {
+    const { data: leadCampaigns } = await supabase
+      .from("whatsapp_campaigns")
+      .select("id, broker_id")
+      .in("lead_id", leadIds)
+      .eq("status", "running");
+    activeCampaignsByLead = (leadCampaigns || []).map(
+      (c: { id: string; broker_id: string }) => ({ campaign_id: c.id, broker_id: c.broker_id })
+    );
+  }
+
+  const aggregated: Array<{ campaign_id: string | null; broker_id: string }> = [
+    ...((recentMessages || []) as Array<{ campaign_id: string | null; broker_id: string }>),
+    ...activeCampaignsByLead,
+  ];
 
   // Process reply (follow-up cancellation, stats) for both text and media
-  if (recentMessages && recentMessages.length > 0) {
-    await processReply(
-      supabase,
-      phone,
-      recentMessages as Array<{ campaign_id: string | null; broker_id: string }>
-    );
-    console.log(`💬 Reply from ${phone} (${messageText ? "text" : "media"}) - follow-up cancellation processed`);
+  if (aggregated.length > 0) {
+    await processReply(supabase, phone, aggregated);
+    console.log(`💬 Reply from ${phone} (${messageText ? "text" : "media"}) - follow-up cancellation processed (${aggregated.length} candidate row(s))`);
   }
 
   // If no text, we're done (media reply already processed above)
