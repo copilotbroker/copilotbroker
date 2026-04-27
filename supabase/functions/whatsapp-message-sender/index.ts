@@ -508,11 +508,123 @@ app.post("/process", async (c) => {
           .maybeSingle();
 
         if (campaignStep && (campaignStep as { send_if_replied: boolean }).send_if_replied === false) {
-          // Check 1: Look for messages already cancelled by webhook due to reply
+          const phoneVariantsForCheck = getPhoneVariants(queueMsg.phone);
+          const phoneNormalizedForCheck = phoneVariantsForCheck.map((p) => p.replace(/\D/g, ""));
+
+          // Check 1 (SOURCE OF TRUTH): real inbound message in conversation_messages
+          // for this broker + phone, since the campaign was created.
+          // This is the most resilient guard — it works even if whatsapp_lead_replies
+          // is missing or whatsapp-webhook had a transient outage.
+          let inboundReplyDetected = false;
+          try {
+            const { data: campaignInfo } = await supabase
+              .from("whatsapp_campaigns")
+              .select("created_at")
+              .eq("id", queueMsg.campaign_id)
+              .maybeSingle();
+
+            const campaignCreatedAt = (campaignInfo as { created_at: string } | null)?.created_at;
+
+            if (campaignCreatedAt) {
+              const { data: convs } = await supabase
+                .from("conversations")
+                .select("id")
+                .eq("broker_id", instance.broker_id)
+                .in("phone_normalized", phoneNormalizedForCheck);
+
+              const convIds = (convs || []).map((c: { id: string }) => c.id);
+
+              if (convIds.length > 0) {
+                const { data: inboundMsg } = await supabase
+                  .from("conversation_messages")
+                  .select("id, created_at")
+                  .in("conversation_id", convIds)
+                  .eq("direction", "inbound")
+                  .gte("created_at", campaignCreatedAt)
+                  .order("created_at", { ascending: true })
+                  .limit(1)
+                  .maybeSingle();
+
+                if (inboundMsg) {
+                  inboundReplyDetected = true;
+                  // Backfill whatsapp_lead_replies so future steps detect via Check 2 path
+                  for (const variant of phoneVariantsForCheck) {
+                    await supabase
+                      .from("whatsapp_lead_replies")
+                      .upsert(
+                        { phone: variant, campaign_id: queueMsg.campaign_id, replied_at: (inboundMsg as { created_at: string }).created_at },
+                        { onConflict: "phone,campaign_id" }
+                      );
+                  }
+                }
+              }
+            }
+          } catch (preCheckErr) {
+            console.warn(`⚠️ Inbound preflight check failed for ${queueMsg.phone}:`, preCheckErr);
+          }
+
+          if (inboundReplyDetected) {
+            // Cancel this message AND all other pending steps of the same campaign+lead/phone
+            // that have send_if_replied=false, to fully drain the cadence in one pass.
+            await supabase
+              .from("whatsapp_message_queue")
+              .update({
+                status: "cancelled",
+                error_message: "Lead respondeu - follow-up cancelado (preflight via inbox)",
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", queueMsg.id);
+
+            try {
+              const { data: futureSteps } = await supabase
+                .from("whatsapp_message_queue")
+                .select("id, step_number")
+                .eq("campaign_id", queueMsg.campaign_id)
+                .in("phone", phoneVariantsForCheck)
+                .in("status", ["scheduled", "queued"])
+                .gt("step_number", 1);
+
+              if (futureSteps && futureSteps.length > 0) {
+                const stepNums = (futureSteps as Array<{ step_number: number }>).map((s) => s.step_number);
+                const { data: stepsCfg } = await supabase
+                  .from("campaign_steps")
+                  .select("step_order, send_if_replied")
+                  .eq("campaign_id", queueMsg.campaign_id)
+                  .in("step_order", stepNums);
+                const cancelSet = new Set(
+                  (stepsCfg || [])
+                    .filter((s: { send_if_replied: boolean }) => s.send_if_replied === false)
+                    .map((s: { step_order: number }) => s.step_order)
+                );
+                const idsToCancel = (futureSteps as Array<{ id: string; step_number: number }>)
+                  .filter((s) => cancelSet.has(s.step_number))
+                  .map((s) => s.id);
+                if (idsToCancel.length > 0) {
+                  await supabase
+                    .from("whatsapp_message_queue")
+                    .update({
+                      status: "cancelled",
+                      error_message: "Lead respondeu - follow-up cancelado (cascata preflight)",
+                      updated_at: new Date().toISOString()
+                    })
+                    .in("id", idsToCancel);
+                  console.log(`🚫 Cascade cancel: ${idsToCancel.length} pending step(s) for ${queueMsg.phone} on campaign ${queueMsg.campaign_id}`);
+                }
+              }
+            } catch (cascadeErr) {
+              console.warn(`⚠️ Cascade cancel failed for ${queueMsg.phone}:`, cascadeErr);
+            }
+
+            console.log(`🚫 Preventive cancel (inbox preflight): message ${queueMsg.id} for ${queueMsg.phone}`);
+            results.push({ brokerId: instance.broker_id, sent: false, error: "reply_detected" });
+            continue;
+          }
+
+          // Check 2: Look for messages already cancelled by webhook due to reply
           const { data: cancelledByReply } = await supabase
             .from("whatsapp_message_queue")
             .select("id")
-            .eq("phone", queueMsg.phone)
+            .in("phone", phoneVariantsForCheck)
             .eq("campaign_id", queueMsg.campaign_id)
             .eq("status", "cancelled")
             .ilike("error_message", "%Lead respondeu%")
@@ -534,32 +646,29 @@ app.post("/process", async (c) => {
             continue;
           }
 
-          // Check 2: Per-phone per-campaign reply tracking (whatsapp_lead_replies table)
-          if (queueMsg.campaign_id) {
-            const { data: leadReplied } = await supabase
-              .from("whatsapp_lead_replies")
-              .select("phone")
-              .eq("phone", queueMsg.phone)
-              .eq("campaign_id", queueMsg.campaign_id)
-              .maybeSingle();
+          // Check 3: Per-phone per-campaign reply tracking (whatsapp_lead_replies table)
+          // Use phone variants to avoid format mismatch.
+          const { data: leadReplied } = await supabase
+            .from("whatsapp_lead_replies")
+            .select("phone")
+            .in("phone", phoneVariantsForCheck)
+            .eq("campaign_id", queueMsg.campaign_id)
+            .limit(1)
+            .maybeSingle();
 
-            if (leadReplied) {
-              await supabase
-                .from("whatsapp_message_queue")
-                .update({
-                  status: "cancelled",
-                  error_message: "Lead respondeu - follow-up cancelado (per-phone tracking)",
-                  updated_at: new Date().toISOString()
-                })
-                .eq("id", queueMsg.id);
+          if (leadReplied) {
+            await supabase
+              .from("whatsapp_message_queue")
+              .update({
+                status: "cancelled",
+                error_message: "Lead respondeu - follow-up cancelado (per-phone tracking)",
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", queueMsg.id);
 
-              console.log(`🚫 Preventive cancel (lead_replies): message ${queueMsg.id} for ${queueMsg.phone}`);
-              results.push({ brokerId: instance.broker_id, sent: false, error: "reply_detected" });
-              continue;
-            } else {
-              // ⚠️ ALERT: No reply record found — webhook may not be configured for this instance
-              console.warn(`⚠️ ALERTA: Enviando step ${stepNumber} (send_if_replied=false) para ${queueMsg.phone} na campanha ${queueMsg.campaign_id}, mas NÃO há registro de resposta na whatsapp_lead_replies. Se o lead respondeu e mesmo assim recebeu o follow-up, verifique se o Webhook URL está configurado na UAZAPI para a instância "${instance.instance_name}". URL esperada: ${SUPABASE_URL}/functions/v1/whatsapp-webhook`);
-            }
+            console.log(`🚫 Preventive cancel (lead_replies): message ${queueMsg.id} for ${queueMsg.phone}`);
+            results.push({ brokerId: instance.broker_id, sent: false, error: "reply_detected" });
+            continue;
           }
         }
       }
