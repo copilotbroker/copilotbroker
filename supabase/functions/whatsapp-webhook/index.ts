@@ -776,15 +776,34 @@ async function cancelFollowUpsOnReply(
   if (campaignIds.length === 0) return;
   const phoneVariants = getPhoneVariants(phone);
 
+  // Resolve every lead linked to any phone variant — we'll use lead_id as a
+  // resilient match (in case rows in whatsapp_message_queue have a slightly
+  // different phone format than the inbound message).
+  const { data: leadsForPhone } = await supabase
+    .from("leads")
+    .select("id")
+    .in("whatsapp", phoneVariants);
+  const leadIds = (leadsForPhone || []).map((l: { id: string }) => l.id);
+
   for (const campaignId of campaignIds) {
     try {
-      const { data: scheduledMsgs } = await supabase
+      let scheduledQuery = supabase
         .from("whatsapp_message_queue")
         .select("id, step_number")
-        .in("phone", phoneVariants)
         .eq("campaign_id", campaignId)
         .in("status", ["scheduled", "queued"])
         .gt("step_number", 1);
+
+      // Match by phone OR lead_id, whichever is set on the queue row.
+      if (leadIds.length > 0) {
+        scheduledQuery = scheduledQuery.or(
+          `phone.in.(${phoneVariants.map((p) => `"${p}"`).join(",")}),lead_id.in.(${leadIds.join(",")})`
+        );
+      } else {
+        scheduledQuery = scheduledQuery.in("phone", phoneVariants);
+      }
+
+      const { data: scheduledMsgs } = await scheduledQuery;
 
       if (!scheduledMsgs || scheduledMsgs.length === 0) continue;
 
@@ -900,29 +919,34 @@ async function processReply(
     }
   }
 
-  // Register reply per-phone per-campaign (deduplicated)
-  // Track which campaigns got a NEW reply (not a duplicate)
+  // Register reply per-phone per-campaign (deduplicated).
+  // We register under ALL phone variants so future preflight lookups in the
+  // sender will match regardless of whether the queue row has the canonical
+  // form (+5551999...), the normalized form (5551999...), or the local form (51999...).
+  const phoneVariantsForReply = getPhoneVariants(phone);
   const newReplyCampaignIds: string[] = [];
   for (const campaignId of campaignIds) {
     try {
-      // Check if this phone already replied to this campaign
-      const { data: existing } = await supabase
+      const { data: existingAny } = await supabase
         .from("whatsapp_lead_replies")
         .select("phone")
-        .eq("phone", phone)
+        .in("phone", phoneVariantsForReply)
         .eq("campaign_id", campaignId)
+        .limit(1)
         .maybeSingle();
 
-      if (!existing) {
-        // New unique reply - insert it
+      const isNew = !existingAny;
+      // Always upsert all variants — cheap and idempotent — so we self-heal
+      // any partial registration from earlier outages.
+      for (const variant of phoneVariantsForReply) {
         await supabase
           .from("whatsapp_lead_replies")
           .upsert(
-            { phone, campaign_id: campaignId, replied_at: new Date().toISOString() },
+            { phone: variant, campaign_id: campaignId, replied_at: new Date().toISOString() },
             { onConflict: "phone,campaign_id" }
           );
-        newReplyCampaignIds.push(campaignId);
       }
+      if (isNew) newReplyCampaignIds.push(campaignId);
     } catch (err) {
       await logError(supabase, "registerReply", err, { phone, campaignId });
     }
@@ -2052,24 +2076,48 @@ async function handleIncomingMessage(
     });
   }
 
-  // Find recent campaign messages for this phone
+  // Find recent campaign messages for this phone.
+  // We look at BOTH 'sent' messages and any pending message for this phone, so we
+  // also catch campaigns whose first step has not been sent yet, or where the
+  // last 10 'sent' messages don't include the relevant campaign.
   const phoneVariants = getPhoneVariants(phone);
   const { data: recentMessages } = await supabase
     .from("whatsapp_message_queue")
-    .select("campaign_id, broker_id")
+    .select("campaign_id, broker_id, status")
     .in("phone", phoneVariants)
-    .eq("status", "sent")
-    .order("sent_at", { ascending: false })
-    .limit(10);
+    .in("status", ["sent", "scheduled", "queued", "sending", "paused_by_system"])
+    .order("updated_at", { ascending: false })
+    .limit(50);
+
+  // Also find any active campaign linked to this phone via the lead, in case the
+  // queue rows were already cancelled or the phone format differs.
+  const { data: phoneLeads } = await supabase
+    .from("leads")
+    .select("id, broker_id")
+    .in("whatsapp", phoneVariants);
+  const leadIds = (phoneLeads || []).map((l: { id: string }) => l.id);
+
+  let activeCampaignsByLead: Array<{ campaign_id: string; broker_id: string }> = [];
+  if (leadIds.length > 0) {
+    const { data: leadCampaigns } = await supabase
+      .from("whatsapp_campaigns")
+      .select("id, broker_id")
+      .in("lead_id", leadIds)
+      .eq("status", "running");
+    activeCampaignsByLead = (leadCampaigns || []).map(
+      (c: { id: string; broker_id: string }) => ({ campaign_id: c.id, broker_id: c.broker_id })
+    );
+  }
+
+  const aggregated: Array<{ campaign_id: string | null; broker_id: string }> = [
+    ...((recentMessages || []) as Array<{ campaign_id: string | null; broker_id: string }>),
+    ...activeCampaignsByLead,
+  ];
 
   // Process reply (follow-up cancellation, stats) for both text and media
-  if (recentMessages && recentMessages.length > 0) {
-    await processReply(
-      supabase,
-      phone,
-      recentMessages as Array<{ campaign_id: string | null; broker_id: string }>
-    );
-    console.log(`💬 Reply from ${phone} (${messageText ? "text" : "media"}) - follow-up cancellation processed`);
+  if (aggregated.length > 0) {
+    await processReply(supabase, phone, aggregated);
+    console.log(`💬 Reply from ${phone} (${messageText ? "text" : "media"}) - follow-up cancellation processed (${aggregated.length} candidate row(s))`);
   }
 
   // If no text, we're done (media reply already processed above)
