@@ -919,19 +919,6 @@ async function processReply(
     }
   }
 
-  // Register reply per-phone per-campaign (deduplicated)
-  // Track which campaigns got a NEW reply (not a duplicate)
-  const newReplyCampaignIds: string[] = [];
-  for (const campaignId of campaignIds) {
-    try {
-      // Check if this phone already replied to this campaign
-      const { data: existing } = await supabase
-        .from("whatsapp_lead_replies")
-        .select("phone")
-        .eq("phone", phone)
-        .eq("campaign_id", campaignId)
-        .maybeSingle();
-
   // Register reply per-phone per-campaign (deduplicated).
   // We register under ALL phone variants so future preflight lookups in the
   // sender will match regardless of whether the queue row has the canonical
