@@ -7,16 +7,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { InviteMemberDialog } from "@/components/admin-org/InviteMemberDialog";
 
 const ROLES = ["owner", "admin", "manager", "leader", "broker"] as const;
 
 const AdminOrganizationTeam = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [inviteOpen, setInviteOpen] = useState(false);
   const { isLoading: orgLoading, activeOrg, activeOrgRole, isOwnerOrAdmin, isSuperAdmin } = useOrganization();
   const { hasReached, remaining, features } = useOrganizationLimits();
 
@@ -56,9 +58,14 @@ const AdminOrganizationTeam = () => {
 
   return (
     <div className="space-y-6 p-6 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
-        <p className="text-sm text-muted-foreground">Membros, papéis e limites do plano.</p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
+          <p className="text-sm text-muted-foreground">Membros, papéis e limites do plano.</p>
+        </div>
+        <Button onClick={() => setInviteOpen(true)} disabled={limitReached}>
+          <UserPlus className="h-4 w-4 mr-2" />Convidar membro
+        </Button>
       </div>
 
       {features.max_brokers && (
@@ -125,6 +132,14 @@ const AdminOrganizationTeam = () => {
           )}
         </CardContent>
       </Card>
+      {activeOrg && (
+        <InviteMemberDialog
+          open={inviteOpen}
+          onOpenChange={setInviteOpen}
+          organizationId={activeOrg.id}
+          onInvited={() => queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg.id] })}
+        />
+      )}
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { HelmetProvider } from "react-helmet-async";
 import AppHead from "@/components/AppHead";
+import { SaasNavLauncher } from "@/components/SaasNavLauncher";
 import Home from "./pages/Home";
 // Backup: landing pages completas de Estância Velha (reativar trocando as rotas abaixo)
 import EstanciaVelha from "./pages/EstanciaVelha";
@@ -86,6 +87,7 @@ const MasterAudit = lazy(() => import("./pages/master/MasterAudit"));
 const AdminOrganization = lazy(() => import("./pages/admin-org/AdminOrganization"));
 const AdminOrganizationTeam = lazy(() => import("./pages/admin-org/AdminOrganizationTeam"));
 const AdminOrganizationPermissions = lazy(() => import("./pages/admin-org/AdminOrganizationPermissions"));
+const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
 
 const queryClient = new QueryClient();
 
@@ -98,6 +100,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AppHead />
+            <SaasNavLauncher />
             <Routes>
             <Route path="/" element={<Home />} />
             
@@ -229,6 +232,9 @@ const App = () => (
             <Route path="/admin/organizacao" element={<Suspense fallback={null}><AdminOrganization /></Suspense>} />
             <Route path="/admin/organizacao/equipe" element={<Suspense fallback={null}><AdminOrganizationTeam /></Suspense>} />
             <Route path="/admin/organizacao/permissoes" element={<Suspense fallback={null}><AdminOrganizationPermissions /></Suspense>} />
+
+            {/* Aceite de convite (público após login) */}
+            <Route path="/convite/aceitar" element={<Suspense fallback={null}><AcceptInvite /></Suspense>} />
 
             {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
             <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />
