@@ -31,12 +31,22 @@ const AdminOrganizationTeam = () => {
     queryKey: ["org-members", activeOrg?.id],
     enabled: !!activeOrg,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: rows } = await supabase
         .from("organization_members" as any)
         .select("*, profile:profiles(display_name,avatar_url)")
         .eq("organization_id", activeOrg!.id)
         .order("joined_at", { ascending: false }) as any;
-      return data ?? [];
+      const list = rows ?? [];
+      // Resolve emails via RPC (super admin only) or fallback to user_id
+      const userIds = list.map((m: any) => m.user_id).filter(Boolean);
+      let emailMap: Record<string, string> = {};
+      if (userIds.length > 0) {
+        const { data: emails } = await supabase.rpc("get_users_emails" as any, { _user_ids: userIds }) as any;
+        if (Array.isArray(emails)) {
+          emailMap = Object.fromEntries(emails.map((e: any) => [e.user_id, e.email]));
+        }
+      }
+      return list.map((m: any) => ({ ...m, _email: emailMap[m.user_id] }));
     },
   });
 
@@ -52,6 +62,34 @@ const AdminOrganizationTeam = () => {
     if (error) { toast.error(error.message); return; }
     toast.success(current ? "Membro desativado." : "Membro reativado.");
     queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+  };
+
+  const approveMember = async (memberId: string) => {
+    const { error } = await supabase.from("organization_members" as any).update({
+      approval_status: "approved",
+      is_active: true,
+      approved_at: new Date().toISOString(),
+    }).eq("id", memberId) as any;
+    if (error) { toast.error(error.message); return; }
+    toast.success("Corretor aprovado!");
+    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+  };
+
+  const rejectMember = async (memberId: string) => {
+    const { error } = await supabase.from("organization_members" as any).update({
+      approval_status: "rejected",
+      is_active: false,
+    }).eq("id", memberId) as any;
+    if (error) { toast.error(error.message); return; }
+    toast.success("Solicitação rejeitada.");
+    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+  };
+
+  const inviteUrl = activeOrg ? `${window.location.origin}/imobiliaria/${activeOrg.slug}/cadastro` : "";
+  const copyInvite = () => {
+    if (!inviteUrl) return;
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success("Link copiado!");
   };
 
   const limitReached = hasReached("max_brokers");
