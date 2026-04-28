@@ -214,7 +214,22 @@ const App = () => (
             <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/designsystem" element={<DesignSystem />} />
             <Route path="/google-calendar/callback" element={<GoogleCalendarCallback />} />
-            
+
+            {/* Master Panel — super_admin only */}
+            <Route path="/master" element={<Navigate to="/master/overview" replace />} />
+            <Route path="/master/*" element={<Suspense fallback={null}><MasterLayout /></Suspense>}>
+              <Route path="overview" element={<Suspense fallback={null}><MasterOverview /></Suspense>} />
+              <Route path="imobiliarias" element={<Suspense fallback={null}><MasterOrganizations /></Suspense>} />
+              <Route path="imobiliarias/:id" element={<Suspense fallback={null}><MasterOrganizationDetail /></Suspense>} />
+              <Route path="planos" element={<Suspense fallback={null}><MasterPlans /></Suspense>} />
+              <Route path="auditoria" element={<Suspense fallback={null}><MasterAudit /></Suspense>} />
+            </Route>
+
+            {/* Admin da Imobiliária (tenant) */}
+            <Route path="/admin/organizacao" element={<Suspense fallback={null}><AdminOrganization /></Suspense>} />
+            <Route path="/admin/organizacao/equipe" element={<Suspense fallback={null}><AdminOrganizationTeam /></Suspense>} />
+            <Route path="/admin/organizacao/permissoes" element={<Suspense fallback={null}><AdminOrganizationPermissions /></Suspense>} />
+
             {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
             <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />
             <Route path="/:citySlug/:projectSlug/:brokerSlug" element={<ProjectBrokerLandingPage />} />
