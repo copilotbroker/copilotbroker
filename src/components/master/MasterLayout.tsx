@@ -51,7 +51,7 @@ const MasterLayout = ({ children }: { children?: ReactNode }) => {
 
   useEffect(() => {
     if (!isLoading && !isSuperAdmin) {
-      navigate("/auth", { replace: true });
+      navigate("/master/login", { replace: true });
     }
   }, [isLoading, isSuperAdmin, navigate]);
 
