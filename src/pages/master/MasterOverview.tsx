@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, Activity, AlertCircle, Loader2 } from "lucide-react";
+import { Building2, Users, Activity, AlertCircle, PauseCircle, CreditCard, Loader2 } from "lucide-react";
 
 const fetchOverview = async () => {
   const [orgsRes, brokersRes, subsRes] = await Promise.all([
@@ -11,15 +11,18 @@ const fetchOverview = async () => {
   ]);
 
   const orgs = (orgsRes.data ?? []) as Array<{ status: string; created_at: string }>;
+  const subs = (subsRes.data ?? []) as Array<{ status: string; plan: { price_cents: number; billing_period: string } | null }>;
+
   const counters = {
     total: orgs.length,
     active: orgs.filter((o) => o.status === "active").length,
     trial: orgs.filter((o) => o.status === "trial").length,
     suspended: orgs.filter((o) => o.status === "suspended").length,
     canceled: orgs.filter((o) => o.status === "canceled").length,
+    inactive: orgs.filter((o) => o.status === "suspended" || o.status === "canceled").length,
+    delinquent: subs.filter((s) => s.status === "past_due").length,
   };
 
-  const subs = (subsRes.data ?? []) as Array<{ status: string; plan: { price_cents: number; billing_period: string } | null }>;
   const mrrCents = subs.reduce((sum, s) => {
     if (s.status !== "active" || !s.plan) return sum;
     const monthly = s.plan.billing_period === "yearly" ? s.plan.price_cents / 12 : s.plan.price_cents;
@@ -49,6 +52,9 @@ const MasterOverview = () => {
     return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
 
+  const c = data?.counters;
+  const health = c?.total ? Math.round(((c.active + c.trial) / c.total) * 100) : 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -56,11 +62,13 @@ const MasterOverview = () => {
         <p className="text-sm text-muted-foreground">KPIs globais da operação Copilot Broker.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Building2} label="Imobiliárias" value={data?.counters.total ?? 0} hint={`${data?.counters.active ?? 0} ativas`} />
-        <KpiCard icon={Activity} label="Em Trial" value={data?.counters.trial ?? 0} />
-        <KpiCard icon={AlertCircle} label="Suspensas" value={data?.counters.suspended ?? 0} hint={`${data?.counters.canceled ?? 0} canceladas`} />
-        <KpiCard icon={Users} label="Corretores" value={data?.brokers ?? 0} hint="ativos no total" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <KpiCard icon={Building2} label="Imobiliárias" value={c?.total ?? 0} hint={`${c?.active ?? 0} ativas`} />
+        <KpiCard icon={Activity} label="Em Trial" value={c?.trial ?? 0} />
+        <KpiCard icon={Users} label="Corretores ativos" value={data?.brokers ?? 0} />
+        <KpiCard icon={PauseCircle} label="Inativas" value={c?.inactive ?? 0} hint={`${c?.suspended ?? 0} suspensas · ${c?.canceled ?? 0} canceladas`} />
+        <KpiCard icon={CreditCard} label="Inadimplentes" value={c?.delinquent ?? 0} hint="assinaturas em past_due" />
+        <KpiCard icon={AlertCircle} label="Saúde da base" value={`${health}%`} hint="ativas + trial / total" />
       </div>
 
       <Card>
