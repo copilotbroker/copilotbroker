@@ -236,6 +236,7 @@ const App = () => (
             <Route path="/admin/organizacao" element={<Suspense fallback={null}><AdminOrganization /></Suspense>} />
             <Route path="/admin/organizacao/equipe" element={<Suspense fallback={null}><AdminOrganizationTeam /></Suspense>} />
             <Route path="/admin/organizacao/permissoes" element={<Suspense fallback={null}><AdminOrganizationPermissions /></Suspense>} />
+            <Route path="/admin/organizacao/branding" element={<Suspense fallback={null}><AdminOrganizationBranding /></Suspense>} />
 
             {/* Aceite de convite (público após login) */}
             <Route path="/convite/aceitar" element={<Suspense fallback={null}><AcceptInvite /></Suspense>} />
