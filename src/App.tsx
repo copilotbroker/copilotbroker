@@ -141,9 +141,8 @@ const App = () => (
             <Route path="/imobiliaria/cadastro" element={<Suspense fallback={null}><OrgPublicSignup /></Suspense>} />
             <Route path="/imobiliaria/:slug/cadastro" element={<Suspense fallback={null}><OrgBrokerPublicSignup /></Suspense>} />
 
-            {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
-            <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />
-            <Route path="/:citySlug/:projectSlug/:brokerSlug" element={<ProjectBrokerLandingPage />} />
+            {/* Dynamic city/project routes are inside LandingRoutes() above */}
+
             
             {/* Catch-all for 404 */}
             <Route path="*" element={<NotFound />} />
