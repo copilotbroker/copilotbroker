@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Check, X, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const matrix = [
   { perm: "Ver dashboard", roles: { owner: true, admin: true, manager: true, leader: true, broker: true } },
@@ -16,8 +18,18 @@ const matrix = [
 const roles = ["owner", "admin", "manager", "leader", "broker"] as const;
 
 const AdminOrganizationPermissions = () => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-4 p-6 max-w-5xl mx-auto">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/admin/organizacao")}
+        className="-ml-2 text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />Voltar para Organização
+      </Button>
+
       <div>
         <h1 className="text-2xl font-bold">Papéis e Permissões</h1>
         <p className="text-sm text-muted-foreground">Matriz informativa do que cada papel pode fazer.</p>

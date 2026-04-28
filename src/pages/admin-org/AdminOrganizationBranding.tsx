@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload, X, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminOrganizationBranding = () => {
@@ -96,6 +96,15 @@ const AdminOrganizationBranding = () => {
 
   return (
     <div className="space-y-6 p-6 max-w-3xl mx-auto">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/admin/organizacao")}
+        className="-ml-2 text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />Voltar para Organização
+      </Button>
+
       <div>
         <h1 className="text-2xl font-bold">Identidade Visual</h1>
         <p className="text-sm text-muted-foreground">Personalize o painel da sua imobiliária com sua marca.</p>

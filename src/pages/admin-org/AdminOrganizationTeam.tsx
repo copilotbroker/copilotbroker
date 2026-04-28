@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, AlertTriangle, UserPlus, Copy, Check, X, Link2 } from "lucide-react";
+import { Loader2, AlertTriangle, UserPlus, Copy, Check, X, Link2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -21,7 +21,7 @@ const AdminOrganizationTeam = () => {
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
   const { isLoading: orgLoading, activeOrg, activeOrgRole, isOwnerOrAdmin, isSuperAdmin } = useOrganization();
-  const { hasReached, remaining, features } = useOrganizationLimits();
+  const { hasReached, remaining, features, usage, asInt } = useOrganizationLimits();
 
   useEffect(() => {
     if (!orgLoading && !isOwnerOrAdmin && !isSuperAdmin) navigate("/corretor/dashboard", { replace: true });
@@ -46,18 +46,23 @@ const AdminOrganizationTeam = () => {
     },
   });
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    queryClient.invalidateQueries({ queryKey: ["organization-limits", activeOrg?.id] });
+  };
+
   const updateRole = async (memberId: string, role: string) => {
     const { error } = await supabase.from("organization_members" as any).update({ role }).eq("id", memberId) as any;
     if (error) { toast.error(error.message); return; }
     toast.success("Papel atualizado.");
-    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    invalidateAll();
   };
 
   const toggleActive = async (memberId: string, current: boolean) => {
     const { error } = await supabase.from("organization_members" as any).update({ is_active: !current }).eq("id", memberId) as any;
     if (error) { toast.error(error.message); return; }
     toast.success(current ? "Membro desativado." : "Membro reativado.");
-    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    invalidateAll();
   };
 
   const approveMember = async (memberId: string) => {
@@ -68,7 +73,7 @@ const AdminOrganizationTeam = () => {
     }).eq("id", memberId) as any;
     if (error) { toast.error(error.message); return; }
     toast.success("Corretor aprovado!");
-    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    invalidateAll();
   };
 
   const rejectMember = async (memberId: string) => {
@@ -78,7 +83,7 @@ const AdminOrganizationTeam = () => {
     }).eq("id", memberId) as any;
     if (error) { toast.error(error.message); return; }
     toast.success("Solicitação rejeitada.");
-    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    invalidateAll();
   };
 
   // Sempre usa o domínio público (não a URL de preview do editor) para o link compartilhável.
@@ -101,8 +106,20 @@ const AdminOrganizationTeam = () => {
   const limitReached = hasReached("max_brokers");
   const rem = remaining("max_brokers");
 
+  const maxBrokers = asInt("max_brokers");
+  const usedBrokers = usage.brokers;
+
   return (
     <div className="space-y-6 p-6 max-w-6xl mx-auto">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/admin/organizacao")}
+        className="-ml-2 text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />Voltar para Organização
+      </Button>
+
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
@@ -118,11 +135,16 @@ const AdminOrganizationTeam = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Limite de Corretores</span>
-              {limitReached ? (
-                <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Limite atingido</Badge>
-              ) : (
-                <Badge variant="outline">{rem} vaga(s) disponível(is)</Badge>
-              )}
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="font-mono">
+                  {usedBrokers} / {maxBrokers ?? "∞"}
+                </Badge>
+                {limitReached ? (
+                  <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Limite atingido</Badge>
+                ) : (
+                  <Badge variant="outline">{rem} vaga(s) disponível(is)</Badge>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
         </Card>

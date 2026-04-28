@@ -57,8 +57,16 @@ const fetchLimits = async (orgId: string) => {
     .eq("organization_id", orgId) as any;
   const overrides: any[] = overridesRes.data ?? [];
 
-  const [brokersRes, instancesRes, projectsRes] = await Promise.all([
-    supabase.from("brokers" as any).select("id", { count: "exact", head: true }).eq("organization_id", orgId).eq("is_active", true) as any,
+  // Conta membros aprovados+ativos da organização (fonte real da equipe).
+  // Usa organization_members em vez de brokers porque novos cadastros via convite/link
+  // público criam linha em organization_members antes de existir registro em brokers.
+  const [membersRes, instancesRes, projectsRes] = await Promise.all([
+    supabase
+      .from("organization_members" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("is_active", true)
+      .eq("approval_status", "approved") as any,
     supabase.from("broker_whatsapp_instances" as any).select("id", { count: "exact", head: true }).eq("organization_id", orgId) as any,
     supabase.from("projects" as any).select("id", { count: "exact", head: true }).eq("organization_id", orgId) as any,
   ]);
@@ -89,7 +97,7 @@ const fetchLimits = async (orgId: string) => {
     planName,
     features: featuresMap,
     usage: {
-      brokers: brokersRes.count ?? 0,
+      brokers: membersRes.count ?? 0,
       whatsapp_instances: instancesRes.count ?? 0,
       landing_pages: projectsRes.count ?? 0,
     } as UsageSnapshot,
