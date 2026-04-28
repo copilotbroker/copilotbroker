@@ -144,6 +144,9 @@ Migrações aplicadas. Tabelas SaaS criadas (`organizations`, `plans`, `plan_fea
 - `AdminOrganizationPermissions`: matriz informativa de papéis × permissões.
 - Hooks: `useOrganization` (resolve org ativa + super_admin) e `useOrganizationLimits` (features do plano + uso real + helpers `hasReached`/`remaining`).
 
+### ✅ Fase 3.5 — Isolamento real nas edge functions
+Em vez de reescrever 5500+ linhas de edge functions existentes, aplicamos **triggers `BEFORE INSERT`** no banco que copiam `organization_id` da entidade pai (broker → conversations/calendar_events/copilot_configs/whatsapp_*; lead → lead_interactions/lead_documents/lead_attribution/propostas; broker→lead → leads; broker→lead → whatsapp_message_queue). Funções `fill_org_from_broker`, `fill_org_from_lead`, `fill_org_for_lead`, `fill_org_from_campaign` (todas SECURITY DEFINER). Helper `supabase/functions/_shared/tenant.ts` disponibiliza `orgFromBroker/Lead/Conversation/InstanceToken` + `assertOrgAccess` para casos onde a função precisa filtrar/validar tenant explicitamente.
+
 ---
 
 ## O que NÃO está incluso nesta entrega
