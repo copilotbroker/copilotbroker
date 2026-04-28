@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { HelmetProvider } from "react-helmet-async";
 import AppHead from "@/components/AppHead";
+import { SaasNavLauncher } from "@/components/SaasNavLauncher";
 import Home from "./pages/Home";
 // Backup: landing pages completas de Estância Velha (reativar trocando as rotas abaixo)
 import EstanciaVelha from "./pages/EstanciaVelha";
@@ -98,6 +99,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AppHead />
+            <SaasNavLauncher />
             <Routes>
             <Route path="/" element={<Home />} />
             
