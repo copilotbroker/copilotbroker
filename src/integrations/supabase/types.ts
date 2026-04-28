@@ -2741,6 +2741,10 @@ export type Database = {
         Args: { _conversation_id: string }
         Returns: undefined
       }
+      is_org_admin: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
