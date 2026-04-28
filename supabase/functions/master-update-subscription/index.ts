@@ -25,11 +25,27 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "missing_fields" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
-    // Cancel current active subs
-    await admin.from("organization_subscriptions")
+    // Cancel any current non-canceled subs (covers active/trial/past_due and any other status)
+    const { error: cancelErr } = await admin.from("organization_subscriptions")
       .update({ status: "canceled", canceled_at: new Date().toISOString() })
       .eq("organization_id", organization_id)
-      .in("status", ["active", "trial", "past_due"]);
+      .neq("status", "canceled");
+    if (cancelErr) {
+      return new Response(JSON.stringify({ error: `cancel_failed: ${cancelErr.message}` }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+
+    // Verify no active sub remains before inserting (defends against partial unique index)
+    const { data: stillActive } = await admin.from("organization_subscriptions")
+      .select("id")
+      .eq("organization_id", organization_id)
+      .in("status", ["active", "trial", "past_due"])
+      .limit(1);
+    if (stillActive && stillActive.length > 0) {
+      // Force-cancel by id as a fallback
+      await admin.from("organization_subscriptions")
+        .update({ status: "canceled", canceled_at: new Date().toISOString() })
+        .eq("id", stillActive[0].id);
+    }
 
     // Insert new
     const { error: insErr } = await admin.from("organization_subscriptions").insert({
