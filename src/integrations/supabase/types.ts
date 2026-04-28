@@ -2721,6 +2721,13 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string[]
       }
+      get_users_emails: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       has_org_role: {
         Args: {
           _org_id: string
