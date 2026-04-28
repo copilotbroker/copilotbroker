@@ -17,7 +17,7 @@ const fetchOrgDetail = async (id: string) => {
   const [orgRes, subRes, membersRes, auditRes, plansRes, overridesRes] = await Promise.all([
     supabase.from("organizations" as any).select("*").eq("id", id).single() as any,
     supabase.from("organization_subscriptions" as any).select("*, plan:plans(*)").eq("organization_id", id).order("started_at", { ascending: false }).limit(1).maybeSingle() as any,
-    supabase.from("organization_members" as any).select("*, profile:profiles(display_name,avatar_url)").eq("organization_id", id) as any,
+    supabase.from("organization_members" as any).select("*").eq("organization_id", id) as any,
     supabase.from("admin_audit_logs" as any).select("*").eq("organization_id", id).order("created_at", { ascending: false }).limit(50) as any,
     supabase.from("plans" as any).select("id,name").eq("is_active", true).order("sort_order") as any,
     supabase.from("organization_feature_overrides" as any).select("*").eq("organization_id", id).order("created_at", { ascending: false }) as any,
