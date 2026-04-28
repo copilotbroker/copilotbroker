@@ -2747,6 +2747,20 @@ export type Database = {
       }
       get_my_broker_id: { Args: never; Returns: string }
       get_my_roleta_ids: { Args: never; Returns: string[] }
+      get_organization_members_with_users: {
+        Args: { _org_id: string }
+        Returns: {
+          approval_status: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          joined_at: string
+          organization_id: string
+          role: string
+          user_id: string
+        }[]
+      }
       get_user_organization_ids: {
         Args: { _user_id: string }
         Returns: string[]
