@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { HelmetProvider } from "react-helmet-async";
 import AppHead from "@/components/AppHead";
 import { SaasNavLauncher } from "@/components/SaasNavLauncher";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import Home from "./pages/Home";
 // Backup: landing pages completas de Estância Velha (reativar trocando as rotas abaixo)
 import EstanciaVelha from "./pages/EstanciaVelha";
@@ -99,9 +100,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppHead />
-            <SaasNavLauncher />
-            <Routes>
+            <OrganizationProvider>
+              <AppHead />
+              <SaasNavLauncher />
+              <Routes>
             <Route path="/" element={<Home />} />
             
             {/* GoldenView - custom landing page with unique visual identity */}
@@ -242,7 +244,8 @@ const App = () => (
             
             {/* Catch-all for 404 */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
+              </Routes>
+            </OrganizationProvider>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
