@@ -1,96 +1,147 @@
-## Diagnóstico atual
 
-Não parece ser apenas “resto” do erro anterior. O webhook voltou a receber mensagens da instância do Gabriel (`enove_gabriel_witt`) e não encontrei indício atual de queda geral de infraestrutura. O problema que aparece agora é mais específico na lógica de cadências/campanhas.
+# Copilot Broker — Fundação SaaS Multi-Tenant
 
-O que encontrei:
+Transformação do sistema atual (uso próprio da Enove) em uma plataforma SaaS B2B onde múltiplas imobiliárias coexistem isoladas, gerenciadas por um time interno via painel Master.
 
-1. **Rodrigo Goerg**
-   - Ele respondeu em 27/04 às 10:49.
-   - O sistema registrou a resposta em `whatsapp_lead_replies`.
-   - A etapa futura que ainda estava pendente foi cancelada.
-   - Porém, a campanha “Follow up reconetctar com o cliente” já havia enviado 9 de 10 etapas antes da resposta porque os delays dessa campanha estão configurados de forma não progressiva/cumulativa, com várias etapas caindo praticamente no mesmo período.
+Hoje o banco não possui nenhuma tabela de organização/plano/assinatura. Toda a operação (brokers, leads, projects, conversations, roletas, whatsapp_*) é "flat", como se houvesse uma única imobiliária implícita. Vamos introduzir a camada de tenant **sem quebrar a operação atual**, migrando todos os dados existentes para um tenant inicial chamado **Enove Select**.
 
-2. **Filipe Schuvarts**
-   - Não encontrei mensagem inbound registrada dele na conversa do Gabriel.
-   - O que aparece depois da cadência são mensagens outbound manuais do Gabriel para o Filipe.
-   - Portanto, para esse caso específico, o sistema não tinha uma “resposta do cliente” registrada para cancelar automaticamente.
+Por se tratar de uma transformação estrutural grande, dividimos em entregas sequenciais. Esta proposta cobre **Fases 1 + 2 + 3 (parcial)** — a base que destrava todo o resto. Fases 4–6 (planos avançados, billing real, provisionamento automatizado) ficam para iterações seguintes, mas a modelagem já nascerá preparada para elas.
 
-3. **Marcelo S Saldanha**
-   - Não encontrei mensagem inbound registrada depois dessa campanha.
-   - Ainda existe uma etapa futura agendada para 28/04 porque, do ponto de vista do sistema, não houve resposta do cliente.
+---
 
-4. **Infraestrutura**
-   - O webhook do WhatsApp está recebendo eventos da instância do Gabriel agora.
-   - Há eventos recentes com HTTP 200 e logs da instância dele.
-   - Não encontrei erro atual de boot/503 como no problema anterior.
+## Entrega 1 — Modelagem multi-tenant (banco)
 
-## Causa principal
+### Novas tabelas
+- **organizations** — a "imobiliária" (tenant). Campos: `id`, `name`, `slug`, `legal_name`, `cnpj`, `logo_url`, `primary_color`, `status` (`active`/`trial`/`suspended`/`canceled`), `trial_ends_at`, `created_at`.
+- **plans** — catálogo de planos (Starter, Pro, Enterprise…). Campos: `id`, `code`, `name`, `description`, `price_cents`, `billing_period` (`monthly`/`yearly`/`custom`), `is_public`, `sort_order`.
+- **plan_features** — limites e recursos por plano (estrutura key/value, escalável). Ex.: `max_brokers=10`, `max_whatsapp_instances=3`, `max_landing_pages=5`, `feature.dashboards_advanced=true`, `feature.automations=true`.
+- **organization_subscriptions** — assinatura ativa de uma organização. Campos: `id`, `organization_id`, `plan_id`, `status` (`trial`/`active`/`past_due`/`canceled`/`suspended`), `started_at`, `current_period_end`, `trial_ends_at`, `canceled_at`.
+- **organization_feature_overrides** — liberações manuais que o super-admin concede além do plano (ex.: liberar 2 corretores extras por 30 dias). Campos: `organization_id`, `feature_key`, `value`, `expires_at`, `granted_by`.
+- **organization_members** — vínculo usuário ↔ organização ↔ papel. Campos: `id`, `organization_id`, `user_id`, `role` (`owner`/`admin`/`manager`/`leader`/`broker`), `is_active`, `invited_at`, `joined_at`.
+- **organization_invites** — convites pendentes. Campos: `organization_id`, `email`, `role`, `token`, `expires_at`, `accepted_at`.
+- **admin_audit_logs** — registro de ações administrativas críticas (mudança de plano, bloqueio de conta, override manual, alteração de papel). Campos: `actor_user_id`, `organization_id`, `action`, `entity`, `entity_id`, `metadata jsonb`, `created_at`.
 
-Há dois pontos que precisam ser corrigidos para uma solução definitiva:
+### Mudanças no enum `app_role`
+- Adicionar `super_admin` (time interno do Copilot Broker, vê tudo).
+- Adicionar `owner` e `manager` (papéis dentro da organização).
+- Manter `admin`, `leader`, `broker` por compatibilidade — mas seu significado passa a ser **dentro de uma organização** (não global). O `admin` global de hoje será migrado para `super_admin`.
 
-1. **Cancelamento dependente demais de um único registro (`whatsapp_lead_replies`)**
-   - Hoje o sender previne envios futuros se encontrar registro de resposta na tabela de replies ou uma mensagem já cancelada por resposta.
-   - Se a resposta foi processada no Inbox (`conversation_messages`) mas não gerou/achou o registro exato em `whatsapp_lead_replies`, o envio futuro pode escapar.
-   - Também há risco de falha por variação de telefone (`+55...`, `55...`, sem DDI).
+### Retrofit nas tabelas existentes
+Adicionar coluna `organization_id uuid` (com FK e índice) nas tabelas operacionais:
+`brokers`, `projects`, `leads`, `conversations`, `roletas`, `whatsapp_campaigns`, `whatsapp_message_queue`, `whatsapp_message_templates`, `whatsapp_labels`, `broker_whatsapp_instances`, `global_whatsapp_config`, `copilot_configs`, `calendar_events`, `lead_attribution`, `lead_documents`, `lead_interactions`, `propostas`.
 
-2. **Campanhas com delays não progressivos**
-   - A campanha do Gabriel tem etapas com delay cumulativo menor depois de etapas maiores, e várias etapas com o mesmo delay.
-   - Isso faz várias mensagens saírem antes que o cliente tenha tempo real de responder, dando a impressão de que “não cancelou”, quando na prática quase tudo já tinha sido enviado antes da resposta.
+### Migração de dados (seed do tenant inicial)
+1. Criar a organização **Enove Select** (slug `enove-select`, status `active`).
+2. Criar plano `enterprise_legacy` com limites altos e atribuir à Enove Select.
+3. Preencher `organization_id = <enove_select_id>` em todos os registros existentes.
+4. Tornar `organization_id` NOT NULL após o backfill.
+5. Para cada usuário em `user_roles`, criar entrada em `organization_members` na Enove Select com o papel correspondente. O primeiro usuário com role `admin` vira `owner`.
+6. Promover os usuários atuais com `admin` para também ter `super_admin` (eles são o time interno do Copilot Broker).
 
-## Plano de correção
+### Funções e RLS
+- Criar `get_user_organization_ids(uuid)` (SECURITY DEFINER) — retorna as organizações do usuário.
+- Criar `is_super_admin(uuid)` (SECURITY DEFINER) — verifica se é time interno.
+- Criar `has_org_role(uuid, uuid, app_role)` (SECURITY DEFINER) — papel dentro de uma organização.
+- **Reescrever todas as RLS** das tabelas retrofit para filtrar por `organization_id IN get_user_organization_ids(auth.uid())` OU `is_super_admin(auth.uid())`.
+- RLS das tabelas SaaS novas: super_admin tem acesso total; owner/admin da org veem/editam apenas a sua; corretores apenas leem dados básicos da própria org.
 
-### 1. Fortalecer o cancelamento no webhook
+---
 
-Alterar `whatsapp-webhook` para, ao receber qualquer mensagem inbound de um cliente:
+## Entrega 2 — Painel Master (Super Admin Copilot Broker)
 
-- Localizar campanhas ativas desse broker/telefone/lead, não apenas campanhas encontradas nos últimos envios `sent`.
-- Usar variações normalizadas do telefone para evitar falha por formato.
-- Cancelar todas as mensagens futuras da mesma campanha/lead/telefone com `send_if_replied = false`.
-- Registrar a resposta com chave normalizada também, para o sender conseguir reconhecer depois.
+Rota: `/master/*` — acessível apenas a `super_admin`. Layout próprio (sidebar dedicada, separada do `/admin` da imobiliária).
 
-### 2. Fortalecer a prevenção no sender antes de enviar
+### Telas
+- **`/master/overview`** — KPIs no topo: total de imobiliárias, ativas, em trial, suspensas, inadimplentes, total de corretores, MRR estimado. Gráfico simples de novas contas/mês.
+- **`/master/imobiliarias`** — Tabela com busca, filtros (plano, status, data), colunas: nome, plano, status, # corretores, # instâncias WhatsApp, criada em, ações. Botão "Nova imobiliária".
+- **`/master/imobiliarias/:id`** — Detalhe da conta em abas:
+  - **Visão geral**: dados da empresa, plano, status assinatura, datas (criação, trial, renovação), uso atual vs. limites (barra de progresso por feature).
+  - **Usuários**: tabela de membros, adicionar/remover, alterar papel, bloquear acesso.
+  - **Plano e recursos**: trocar plano, ver/aplicar overrides manuais (liberar +2 corretores até X data), histórico de mudanças.
+  - **Auditoria**: timeline de ações administrativas naquela conta.
+  - **Ações perigosas**: suspender, reativar, cancelar.
+- **`/master/planos`** — CRUD de planos e seus `plan_features`.
+- **`/master/auditoria`** — Log global de ações administrativas com filtros.
 
-Alterar `whatsapp-message-sender` para, antes de enviar qualquer etapa `step_number > 1` com `send_if_replied = false`:
+### Edge Functions de suporte
+- `master-create-organization` — cria org + owner + assinatura inicial em uma transação.
+- `master-update-subscription` — troca de plano com registro em audit log.
+- `master-toggle-organization-status` — suspender/reativar.
+- `master-invite-user` — envia convite por e-mail.
 
-- Verificar se existe `conversation_messages.direction = inbound` para o mesmo broker + lead/telefone depois do início/envio da campanha.
-- Se existir, cancelar a mensagem em vez de enviar.
-- Usar variações de telefone no lookup de `whatsapp_lead_replies`.
-- Fazer uma reconciliação curta a cada execução para cancelar pendências que ficaram para trás por falha anterior.
+Todas validam `super_admin` no servidor (independente de RLS).
 
-Esse ponto é o “cinto de segurança”: mesmo que o webhook falhe parcialmente, o sender não deve deixar passar uma etapa futura se já houver resposta registrada no Inbox.
+---
 
-### 3. Corrigir campanhas com delays inconsistentes na criação
+## Entrega 3 — Painel Admin da Imobiliária
 
-Na criação de campanhas/cadências:
+Rota: `/admin/organizacao/*` — acessível ao `owner`/`admin` da própria org.
 
-- Validar que os delays cumulativos sejam progressivos por etapa.
-- Bloquear ou avisar quando uma etapa posterior tiver delay menor/igual de forma que gere disparos fora de ordem ou em lote acidental.
-- Manter a regra atual do projeto: o delay é cumulativo desde a primeira mensagem.
+### Telas
+- **`/admin/organizacao`** — visão da conta: plano atual, limites, uso (X de Y corretores, X de Y instâncias), status da assinatura, data de renovação.
+- **`/admin/organizacao/equipe`** — gestão de corretores:
+  - Listar membros (nome, papel, status, último acesso).
+  - Convidar novo membro (e-mail + papel) — bloqueia se atingiu o limite do plano.
+  - Editar papel (`admin`/`manager`/`leader`/`broker`).
+  - Ativar/desativar corretor.
+  - Indicador "X de Y vagas usadas".
+- **`/admin/organizacao/permissoes`** — tabela de papéis × permissões (somente leitura no início, com matriz clara do que cada papel pode fazer).
 
-Isso evita campanhas como a do Gabriel, onde etapas 9 e 10 foram agendadas antes de etapas 3-8, e várias etapas ficaram no mesmo bloco de horário.
+### Enforcement de limites
+Criar hook `useOrganizationLimits()` e função RPC `check_organization_limit(org_id, feature_key)` para validar antes de criar broker, instância WhatsApp, landing page, etc. Ações bloqueadas mostram CTA "Fazer upgrade do plano".
 
-### 4. Corrigir dados atuais com segurança
+---
 
-Depois da correção, executar uma reconciliação nos dados atuais para:
+## Detalhes técnicos
 
-- Cancelar qualquer mensagem futura `scheduled/queued` de campanhas ativas quando já existir resposta inbound registrada para aquele lead/telefone.
-- Não cancelar mensagens de leads que não têm inbound registrado, para evitar falso positivo.
-- Revisar especificamente a campanha “Follow up reconetctar com o cliente” do Gabriel.
+### Estratégia de isolamento
+- **Tenant ID em toda tabela operacional** (não usar schema-per-tenant — overhead alto e atrita com Supabase).
+- **RLS como mecanismo principal de isolamento**, com SECURITY DEFINER functions para evitar recursão.
+- **Edge Functions usando service role** para operações cross-tenant do super_admin.
 
-### 5. Validar
+### Compatibilidade com código existente
+- Hooks como `use-broker-projects`, `use-kanban-leads`, `use-conversations` precisarão receber o `organization_id` ativo. Criar `OrganizationContext` no React (resolve a org do usuário logado, com seletor caso ele pertença a múltiplas — futuro).
+- Helper `useCurrentOrganization()` retorna a org ativa; queries Supabase filtram automaticamente porque a RLS já restringe (defesa em profundidade).
+- Edge functions existentes (`whatsapp-webhook`, `roleta-distribuir`, etc.) precisam resolver o `organization_id` a partir do recurso (broker → org, conversation → broker → org). Faremos isso pontualmente conforme cada função for tocada — sem reescrever todas agora.
 
-Validar com:
+### Roles — mapeamento durante migração
+| Hoje | Depois |
+|---|---|
+| `user_roles.admin` (time interno Enove) | `super_admin` global + `owner` na Enove Select |
+| `user_roles.admin` (admin operacional) | `admin` em `organization_members` |
+| `user_roles.leader` | `leader` em `organization_members` |
+| `user_roles.broker` | `broker` em `organization_members` |
 
-- Logs do `whatsapp-webhook` para nova resposta inbound.
-- Logs do `whatsapp-message-sender` confirmando cancelamento preventivo quando houver resposta.
-- Consulta no banco para conferir que mensagens futuras ficam como `cancelled` com motivo `Lead respondeu`.
-- Conferência dos casos Rodrigo, Filipe Schuvarts e Marcelo Saldanha.
+### Auditoria
+- Trigger ou chamada explícita das edge functions master-* grava em `admin_audit_logs`.
+- Painel mostra timeline com ator, ação, entidade, antes/depois (jsonb).
 
-## Resultado esperado
+### Billing (Fase 5 — só modelagem agora)
+- Tabela `organization_subscriptions` já tem campos para `current_period_end`, `status`, `canceled_at`. Sem integração com gateway nesta entrega — ficaremos prontos para plugar Stripe/Asaas depois adicionando `external_subscription_id`.
 
-Após a correção:
+### Provisionamento (Fase 6 — preparado, não automatizado)
+- A edge `master-create-organization` já encapsula todo o fluxo (org + owner + plano + recursos). No futuro, basta expor por API pública/checkout para auto-onboarding.
 
-- Se o cliente responder, qualquer etapa futura marcada como “não enviar se respondeu” será cancelada.
-- Mesmo se o registro auxiliar de resposta falhar, o sender usará o histórico real do Inbox como fonte de verdade.
-- Campanhas novas não poderão ser criadas com delays que gerem disparos fora de ordem/acúmulo involuntário.
-- Se houver nova falha de infraestrutura do webhook, o sistema terá uma segunda barreira no sender e ficará mais resiliente.
+---
+
+## O que NÃO está incluso nesta entrega
+- Integração real com gateway de cobrança (Stripe/Asaas).
+- Página pública de pricing/checkout self-service.
+- Migração das edge functions existentes para serem multi-tenant aware (faremos sob demanda quando cada feature for tocada).
+- Internacionalização do painel master.
+- Domínio próprio por imobiliária (white-label).
+
+---
+
+## Riscos e cuidados
+- **Backfill de `organization_id`** é a operação mais sensível: roda em transação, com NOT NULL aplicado só depois. Em caso de falha, rollback completo.
+- **RLS reescrita em ~17 tabelas**: vai impactar toda a aplicação. Vamos validar cada hook crítico (kanban, inbox, roletas, whatsapp) antes de considerar a migração estável.
+- **`super_admin` ≠ `admin`**: o admin atual da Enove Select continua funcionando para a operação dela; o super_admin é uma camada acima, exclusiva do time Copilot Broker.
+
+---
+
+## Próximos passos depois desta entrega
+1. **Fase 4** — UI completa de planos com matriz de recursos, upgrade/downgrade, add-ons.
+2. **Fase 5** — Integração de billing real (gateway), webhooks de pagamento, suspensão automática por inadimplência.
+3. **Fase 6** — Onboarding self-service, checkout público, automação de provisionamento.
+4. **White-label** — domínio próprio, logo, cores e templates de e-mail por organização.
