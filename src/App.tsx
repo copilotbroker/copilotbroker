@@ -92,6 +92,8 @@ const AdminOrganizationTeam = lazy(() => import("./pages/admin-org/AdminOrganiza
 const AdminOrganizationPermissions = lazy(() => import("./pages/admin-org/AdminOrganizationPermissions"));
 const AdminOrganizationBranding = lazy(() => import("./pages/admin-org/AdminOrganizationBranding"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
+const OrgPublicSignup = lazy(() => import("./pages/OrgPublicSignup"));
+const OrgBrokerPublicSignup = lazy(() => import("./pages/OrgBrokerPublicSignup"));
 
 const queryClient = new QueryClient();
 
@@ -243,6 +245,10 @@ const App = () => (
 
             {/* Aceite de convite (público após login) */}
             <Route path="/convite/aceitar" element={<Suspense fallback={null}><AcceptInvite /></Suspense>} />
+
+            {/* Cadastro público de imobiliária e corretor */}
+            <Route path="/imobiliaria/cadastro" element={<Suspense fallback={null}><OrgPublicSignup /></Suspense>} />
+            <Route path="/imobiliaria/:slug/cadastro" element={<Suspense fallback={null}><OrgBrokerPublicSignup /></Suspense>} />
 
             {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
             <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />

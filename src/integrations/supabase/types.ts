@@ -1539,6 +1539,9 @@ export type Database = {
       }
       organization_members: {
         Row: {
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           id: string
           invited_at: string | null
@@ -1546,11 +1549,15 @@ export type Database = {
           is_active: boolean
           joined_at: string
           organization_id: string
+          rejection_reason: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
           user_id: string
         }
         Insert: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           id?: string
           invited_at?: string | null
@@ -1558,11 +1565,15 @@ export type Database = {
           is_active?: boolean
           joined_at?: string
           organization_id: string
+          rejection_reason?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           user_id: string
         }
         Update: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           id?: string
           invited_at?: string | null
@@ -1570,6 +1581,7 @@ export type Database = {
           is_active?: boolean
           joined_at?: string
           organization_id?: string
+          rejection_reason?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           user_id?: string
@@ -1646,7 +1658,11 @@ export type Database = {
       }
       organizations: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           cnpj: string | null
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
           display_name: string | null
           favicon_url: string | null
@@ -1656,6 +1672,8 @@ export type Database = {
           metadata: Json
           name: string
           primary_color: string | null
+          rejection_reason: string | null
+          requested_by_user_id: string | null
           secondary_color: string | null
           slug: string
           status: string
@@ -1663,7 +1681,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           cnpj?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           display_name?: string | null
           favicon_url?: string | null
@@ -1673,6 +1695,8 @@ export type Database = {
           metadata?: Json
           name: string
           primary_color?: string | null
+          rejection_reason?: string | null
+          requested_by_user_id?: string | null
           secondary_color?: string | null
           slug: string
           status?: string
@@ -1680,7 +1704,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           cnpj?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           display_name?: string | null
           favicon_url?: string | null
@@ -1690,6 +1718,8 @@ export type Database = {
           metadata?: Json
           name?: string
           primary_color?: string | null
+          rejection_reason?: string | null
+          requested_by_user_id?: string | null
           secondary_color?: string | null
           slug?: string
           status?: string

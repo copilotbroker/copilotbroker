@@ -1,1 +1,7 @@
 project_id = "vmkwzuxbgqlqsmeennmg"
+
+[functions.org-public-signup]
+verify_jwt = false
+
+[functions.org-broker-public-signup]
+verify_jwt = false
