@@ -39,6 +39,45 @@ const Auth = () => {
 
   const checkUserRoleAndRedirect = async (userId: string) => {
     try {
+      // 0. Block if user only has pending/rejected organization memberships
+      const { data: memberships } = await (supabase
+        .from("organization_members" as any)
+        .select("approval_status, is_active, organization:organizations(status, rejection_reason)")
+        .eq("user_id", userId) as any);
+
+      const list = (memberships ?? []) as any[];
+      if (list.length > 0) {
+        const hasUsable = list.some(
+          (m) =>
+            m.approval_status === "approved" &&
+            m.is_active &&
+            m.organization?.status === "active"
+        );
+        if (!hasUsable) {
+          const orgPending = list.find((m) => m.organization?.status === "pending_approval");
+          const orgRejected = list.find((m) => m.organization?.status === "rejected");
+          const memberPending = list.find((m) => m.approval_status === "pending");
+          const memberRejected = list.find((m) => m.approval_status === "rejected");
+
+          await supabase.auth.signOut();
+          queryClient.clear();
+
+          if (orgRejected) {
+            toast.error("Imobiliária recusada" + (orgRejected.organization?.rejection_reason ? `: ${orgRejected.organization.rejection_reason}` : ""));
+          } else if (orgPending) {
+            toast.info("Sua imobiliária ainda está em análise. Aguarde aprovação.");
+          } else if (memberRejected) {
+            toast.error("Seu cadastro foi recusado pelo admin da imobiliária.");
+          } else if (memberPending) {
+            toast.info("Cadastro aguardando aprovação do admin da imobiliária.");
+          } else {
+            toast.error("Acesso indisponível. Contate o administrador.");
+          }
+          setIsCheckingAuth(false);
+          return;
+        }
+      }
+
       const { data: rolesData, error } = await (supabase
         .from("user_roles" as any)
         .select("role")
