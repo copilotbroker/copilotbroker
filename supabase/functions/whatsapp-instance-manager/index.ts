@@ -607,7 +607,17 @@ app.get("/status", async (c) => {
       return c.json({ error: "Unauthorized" }, 401, corsHeaders);
     }
 
-    const brokerId = await getBrokerId(supabase, user.id);
+    let brokerId: string;
+    try {
+      brokerId = await getBrokerId(supabase, user.id);
+    } catch (_e) {
+      // Admin/super_admin users don't have a broker record — return empty status gracefully
+      return c.json({
+        success: true,
+        instance: null,
+        message: "No broker profile for this user",
+      }, 200, corsHeaders);
+    }
 
     // Get broker instance
     const { data: instanceData } = await supabase
