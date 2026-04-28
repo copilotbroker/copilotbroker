@@ -348,11 +348,17 @@ const Auth = () => {
             </form>
             
             {/* Broker Link */}
-            <div className="mt-6 pt-6 border-t border-[#2a2a2e] opacity-0 animate-fade-in delay-[700ms] lg:delay-[1100ms]">
+            <div className="mt-6 pt-6 border-t border-[#2a2a2e] opacity-0 animate-fade-in delay-[700ms] lg:delay-[1100ms] space-y-2">
               <p className="text-center text-sm text-slate-400">
                 É corretor?{" "}
                 <Link to="/corretor/cadastro" className="text-[#FFFF00] hover:underline font-medium">
                   Cadastre-se aqui
+                </Link>
+              </p>
+              <p className="text-center text-sm text-slate-400">
+                Tem uma imobiliária?{" "}
+                <Link to="/imobiliaria/cadastro" className="text-[#FFFF00] hover:underline font-medium">
+                  Cadastrar imobiliária
                 </Link>
               </p>
             </div>
