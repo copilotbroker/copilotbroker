@@ -105,7 +105,7 @@ const AdminOrganizationTeam = () => {
                       <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
                     </TableCell>
                     <TableCell>
-                      <Select value={m.role} onValueChange={(v) => updateRole(m.id, v)} disabled={activeOrgRole !== "owner" && !isSuperAdmin}>
+                      <Select value={m.role} onValueChange={(v) => updateRole(m.id, v)} disabled={activeOrgRole !== "owner" && activeOrgRole !== "manager" && !isSuperAdmin}>
                         <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
