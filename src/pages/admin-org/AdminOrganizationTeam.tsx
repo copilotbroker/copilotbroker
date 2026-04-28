@@ -81,7 +81,17 @@ const AdminOrganizationTeam = () => {
     queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
   };
 
-  const inviteUrl = activeOrg ? `${window.location.origin}/imobiliaria/${activeOrg.slug}/cadastro` : "";
+  // Sempre usa o domínio público (não a URL de preview do editor) para o link compartilhável.
+  const publicOrigin = (() => {
+    if (typeof window === "undefined") return "https://copilotbroker.lovable.app";
+    const host = window.location.hostname;
+    // Em ambientes de preview/sandbox do editor, força o domínio publicado.
+    if (host.includes("id-preview--") || host.endsWith(".lovableproject.com") || host.endsWith(".lovable.dev")) {
+      return "https://copilotbroker.lovable.app";
+    }
+    return window.location.origin;
+  })();
+  const inviteUrl = activeOrg ? `${publicOrigin}/imobiliaria/${activeOrg.slug}/cadastro` : "";
   const copyInvite = () => {
     if (!inviteUrl) return;
     navigator.clipboard.writeText(inviteUrl);
