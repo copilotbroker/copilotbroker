@@ -216,7 +216,10 @@ const AdminOrganizationTeam = () => {
                 {(members ?? []).filter((m: any) => m.approval_status !== "pending").map((m: any) => (
                   <TableRow key={m.id}>
                     <TableCell>
-                      <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
+                      <div className="font-medium">{m.profile?.display_name ?? m.profile?.email ?? m.user_id.slice(0, 8)}</div>
+                      {m.profile?.email && m.profile?.display_name && (
+                        <div className="text-xs text-muted-foreground">{m.profile.email}</div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Select value={m.role} onValueChange={(v) => updateRole(m.id, v)} disabled={activeOrgRole !== "owner" && activeOrgRole !== "manager" && !isSuperAdmin}>
