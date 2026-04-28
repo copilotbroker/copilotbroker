@@ -31,28 +31,18 @@ const AdminOrganizationTeam = () => {
     queryKey: ["org-members", activeOrg?.id],
     enabled: !!activeOrg,
     queryFn: async () => {
-      const { data: rows, error } = await supabase
-        .from("organization_members" as any)
-        .select("*")
-        .eq("organization_id", activeOrg!.id)
-        .order("joined_at", { ascending: false }) as any;
+      const { data, error } = await supabase.rpc(
+        "get_organization_members_with_users" as any,
+        { _org_id: activeOrg!.id }
+      ) as any;
       if (error) {
         console.error("[AdminOrganizationTeam] members error:", error);
         return [] as any[];
       }
-      const list = (rows ?? []) as any[];
-      const userIds = Array.from(new Set(list.map((m) => m.user_id).filter(Boolean)));
-      let infoMap: Record<string, { display_name: string | null; email: string | null }> = {};
-      if (userIds.length > 0) {
-        const { data: brokers } = await supabase
-          .from("brokers")
-          .select("user_id, name, email")
-          .in("user_id", userIds);
-        infoMap = Object.fromEntries(
-          ((brokers ?? []) as any[]).map((b) => [b.user_id, { display_name: b.name, email: b.email }])
-        );
-      }
-      return list.map((m) => ({ ...m, profile: infoMap[m.user_id] ?? null }));
+      return ((data ?? []) as any[]).map((m) => ({
+        ...m,
+        profile: { display_name: m.full_name, email: m.email },
+      }));
     },
   });
 
