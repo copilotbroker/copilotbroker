@@ -84,6 +84,7 @@ const MasterOrganizations = lazy(() => import("./pages/master/MasterOrganization
 const MasterOrganizationDetail = lazy(() => import("./pages/master/MasterOrganizationDetail"));
 const MasterPlans = lazy(() => import("./pages/master/MasterPlans"));
 const MasterAudit = lazy(() => import("./pages/master/MasterAudit"));
+const MasterLogin = lazy(() => import("./pages/master/MasterLogin"));
 
 // Admin Org (tenant owner/admin) - lazy loaded
 const AdminOrganization = lazy(() => import("./pages/admin-org/AdminOrganization"));
@@ -223,7 +224,8 @@ const App = () => (
             <Route path="/designsystem" element={<DesignSystem />} />
             <Route path="/google-calendar/callback" element={<GoogleCalendarCallback />} />
 
-            {/* Master Panel — super_admin only */}
+            {/* Master Panel — super_admin only. Login dedicado e separado de /auth */}
+            <Route path="/master/login" element={<Suspense fallback={null}><MasterLogin /></Suspense>} />
             <Route path="/master" element={<Navigate to="/master/overview" replace />} />
             <Route path="/master/*" element={<Suspense fallback={null}><MasterLayout /></Suspense>}>
               <Route path="overview" element={<Suspense fallback={null}><MasterOverview /></Suspense>} />
