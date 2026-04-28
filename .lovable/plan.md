@@ -124,24 +124,42 @@ Criar hook `useOrganizationLimits()` e função RPC `check_organization_limit(or
 
 ---
 
+## Status atual da implementação
+
+### ✅ Fase 1 — Banco de dados multi-tenant
+Migrações aplicadas. Tabelas SaaS criadas (`organizations`, `plans`, `plan_features`, `organization_subscriptions`, `organization_members`, `organization_invites`, `admin_audit_logs`). 17 tabelas operacionais retrofit com `organization_id`. Tenant inicial **Enove Select** + plano **enterprise_legacy** criados, dados existentes backfilled. RLS e funções `is_super_admin`, `get_user_organization_ids`, `is_org_member`, `has_org_role` em produção.
+
+### ✅ Fase 2 — Painel Master (`/master/*`)
+- `MasterLayout` com sidebar dedicada e guard `is_super_admin` (redireciona para `/auth` se não autorizado).
+- `MasterOverview`: KPIs (total, ativas, trial, suspensas, corretores, MRR estimado).
+- `MasterOrganizations`: tabela com busca/filtro + dialog "Nova imobiliária".
+- `MasterOrganizationDetail`: abas (Visão Geral, Usuários, Plano, Auditoria, Ações Perigosas) com troca de plano e suspender/reativar/cancelar.
+- `MasterPlans`: catálogo de planos com features.
+- `MasterAudit`: timeline global das ações administrativas.
+- Edge functions: `master-create-organization`, `master-update-subscription`, `master-toggle-organization-status` (todas validam `super_admin` no servidor + gravam audit log).
+
+### ✅ Fase 3 — Painel Admin Imobiliária (`/admin/organizacao/*`)
+- `AdminOrganization`: visão geral da conta (plano, uso vs limites com Progress).
+- `AdminOrganizationTeam`: gestão de membros, mudança de papel, ativar/desativar, indicador de vagas restantes.
+- `AdminOrganizationPermissions`: matriz informativa de papéis × permissões.
+- Hooks: `useOrganization` (resolve org ativa + super_admin) e `useOrganizationLimits` (features do plano + uso real + helpers `hasReached`/`remaining`).
+
+---
+
 ## O que NÃO está incluso nesta entrega
 - Integração real com gateway de cobrança (Stripe/Asaas).
 - Página pública de pricing/checkout self-service.
-- Migração das edge functions existentes para serem multi-tenant aware (faremos sob demanda quando cada feature for tocada).
+- Migração das edge functions existentes (`whatsapp-webhook`, `roleta-distribuir` etc.) para serem multi-tenant aware — feita sob demanda.
+- Convite de owner por e-mail (`master-invite-user`) — apenas reaproveitamos usuários já cadastrados na criação.
 - Internacionalização do painel master.
 - Domínio próprio por imobiliária (white-label).
 
 ---
 
-## Riscos e cuidados
-- **Backfill de `organization_id`** é a operação mais sensível: roda em transação, com NOT NULL aplicado só depois. Em caso de falha, rollback completo.
-- **RLS reescrita em ~17 tabelas**: vai impactar toda a aplicação. Vamos validar cada hook crítico (kanban, inbox, roletas, whatsapp) antes de considerar a migração estável.
-- **`super_admin` ≠ `admin`**: o admin atual da Enove Select continua funcionando para a operação dela; o super_admin é uma camada acima, exclusiva do time Copilot Broker.
+## Próximos passos
+1. **Convites por e-mail** — implementar `master-invite-user` + página de aceite.
+2. **Fase 4** — Editor de planos no painel master + add-ons.
+3. **Fase 5** — Integração de billing real (gateway), webhooks de pagamento, suspensão automática por inadimplência.
+4. **Fase 6** — Onboarding self-service, checkout público, automação de provisionamento.
+5. **White-label** — domínio próprio, logo, cores e templates de e-mail por organização.
 
----
-
-## Próximos passos depois desta entrega
-1. **Fase 4** — UI completa de planos com matriz de recursos, upgrade/downgrade, add-ons.
-2. **Fase 5** — Integração de billing real (gateway), webhooks de pagamento, suspensão automática por inadimplência.
-3. **Fase 6** — Onboarding self-service, checkout público, automação de provisionamento.
-4. **White-label** — domínio próprio, logo, cores e templates de e-mail por organização.
