@@ -36,17 +36,7 @@ const AdminOrganizationTeam = () => {
         .select("*, profile:profiles(display_name,avatar_url)")
         .eq("organization_id", activeOrg!.id)
         .order("joined_at", { ascending: false }) as any;
-      const list = rows ?? [];
-      // Resolve emails via RPC (super admin only) or fallback to user_id
-      const userIds = list.map((m: any) => m.user_id).filter(Boolean);
-      let emailMap: Record<string, string> = {};
-      if (userIds.length > 0) {
-        const { data: emails } = await supabase.rpc("get_users_emails" as any, { _user_ids: userIds }) as any;
-        if (Array.isArray(emails)) {
-          emailMap = Object.fromEntries(emails.map((e: any) => [e.user_id, e.email]));
-        }
-      }
-      return list.map((m: any) => ({ ...m, _email: emailMap[m.user_id] }));
+      return (rows ?? []) as any[];
     },
   });
 
