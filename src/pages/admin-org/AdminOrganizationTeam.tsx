@@ -112,8 +112,74 @@ const AdminOrganizationTeam = () => {
         </Card>
       )}
 
+      {/* Link público de cadastro de corretor */}
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Link2 className="h-4 w-4" />Link público de cadastro
+          </CardTitle>
+          <CardDescription>
+            Compartilhe este link com seus corretores. As solicitações aparecerão abaixo para aprovação.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input readOnly value={inviteUrl} className="font-mono text-xs" />
+            <Button variant="outline" onClick={copyInvite}><Copy className="h-4 w-4 mr-2" />Copiar</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pendentes */}
+      {(() => {
+        const pendentes = (members ?? []).filter((m: any) => m.approval_status === "pending");
+        if (pendentes.length === 0) return null;
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Solicitações pendentes ({pendentes.length})</CardTitle>
+              <CardDescription>Corretores que se cadastraram via link público.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Corretor</TableHead>
+                    <TableHead>Solicitado em</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendentes.map((m: any) => (
+                    <TableRow key={m.id}>
+                      <TableCell>
+                        <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {m.joined_at ? new Date(m.joined_at).toLocaleDateString("pt-BR") : "—"}
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button size="sm" onClick={() => approveMember(m.id)}>
+                          <Check className="h-3.5 w-3.5 mr-1" />Aprovar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => rejectMember(m.id)}>
+                          <X className="h-3.5 w-3.5 mr-1" />Rejeitar
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Membros ativos</CardTitle>
+        </CardHeader>
+        <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" /></div>
           ) : (
@@ -128,7 +194,7 @@ const AdminOrganizationTeam = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(members ?? []).map((m: any) => (
+                {(members ?? []).filter((m: any) => m.approval_status !== "pending").map((m: any) => (
                   <TableRow key={m.id}>
                     <TableCell>
                       <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
@@ -142,7 +208,9 @@ const AdminOrganizationTeam = () => {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      {m.is_active
+                      {m.approval_status === "rejected"
+                        ? <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">Rejeitado</Badge>
+                        : m.is_active
                         ? <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Ativo</Badge>
                         : <Badge variant="outline">Inativo</Badge>}
                     </TableCell>
