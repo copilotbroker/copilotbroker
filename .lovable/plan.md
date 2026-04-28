@@ -147,22 +147,26 @@ Migrações aplicadas. Tabelas SaaS criadas (`organizations`, `plans`, `plan_fea
 ### ✅ Fase 3.5 — Isolamento real nas edge functions
 Em vez de reescrever 5500+ linhas de edge functions existentes, aplicamos **triggers `BEFORE INSERT`** no banco que copiam `organization_id` da entidade pai (broker → conversations/calendar_events/copilot_configs/whatsapp_*; lead → lead_interactions/lead_documents/lead_attribution/propostas; broker→lead → leads; broker→lead → whatsapp_message_queue). Funções `fill_org_from_broker`, `fill_org_from_lead`, `fill_org_for_lead`, `fill_org_from_campaign` (todas SECURITY DEFINER). Helper `supabase/functions/_shared/tenant.ts` disponibiliza `orgFromBroker/Lead/Conversation/InstanceToken` + `assertOrgAccess` para casos onde a função precisa filtrar/validar tenant explicitamente.
 
+### ✅ Fase 4 — Editor de planos + add-ons
+- `MasterPlans` com CRUD completo: criar/editar/excluir planos (preço, período, visibilidade, ordem, ativo) e gerenciar `plan_features` por preset (max_brokers, feature.copilot_ai, etc.) ou chave customizada.
+- `MasterOrganizationDetail` ganhou aba **Overrides**: aplica/remove `organization_feature_overrides` por feature, com prazo de validade opcional e motivo. Cada ação é registrada em `admin_audit_logs`.
+- Função `check_organization_limit` corrigida (usa colunas reais `feature_value`/`feature_type`) e agora **respeita overrides ativos**.
+- Hook `useOrganizationLimits` reescrito: mescla plano + overrides, expõe `isEnabled(key)`, `asInt(key)`, `remaining`, `hasReached`. Cada feature carrega `source: "plan" | "override"` para a UI sinalizar add-ons.
+- `master-invite-user` migrado para `rpc("check_organization_limit")` em vez de consultar `plan_features` direto — agora respeita overrides automaticamente.
+
 ---
 
 ## O que NÃO está incluso nesta entrega
 - Integração real com gateway de cobrança (Stripe/Asaas).
 - Página pública de pricing/checkout self-service.
 - Migração das edge functions existentes (`whatsapp-webhook`, `roleta-distribuir` etc.) para serem multi-tenant aware — feita sob demanda.
-- Convite de owner por e-mail (`master-invite-user`) — apenas reaproveitamos usuários já cadastrados na criação.
 - Internacionalização do painel master.
 - Domínio próprio por imobiliária (white-label).
 
 ---
 
 ## Próximos passos
-1. **Convites por e-mail** — implementar `master-invite-user` + página de aceite.
-2. **Fase 4** — Editor de planos no painel master + add-ons.
-3. **Fase 5** — Integração de billing real (gateway), webhooks de pagamento, suspensão automática por inadimplência.
-4. **Fase 6** — Onboarding self-service, checkout público, automação de provisionamento.
-5. **White-label** — domínio próprio, logo, cores e templates de e-mail por organização.
+1. **Fase 5** — Integração de billing real (gateway), webhooks de pagamento, suspensão automática por inadimplência.
+2. **Fase 6** — Onboarding self-service, checkout público, automação de provisionamento.
+3. **White-label** — domínio próprio, logo, cores e templates de e-mail por organização.
 
