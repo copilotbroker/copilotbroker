@@ -113,10 +113,22 @@ const BrokerSignup = () => {
       }
     } catch (error: any) {
       console.error("Erro no cadastro:", error);
-      if (error.message?.includes("already registered")) {
+      const code = error?.code || "";
+      const msg = (error?.message || "").toLowerCase();
+
+      if (code === "weak_password" || msg.includes("weak") || msg.includes("pwned")) {
+        toast.error(
+          "Esta senha é muito comum e foi encontrada em vazamentos públicos. Escolha uma senha mais forte (use letras, números e símbolos).",
+          { duration: 7000 }
+        );
+      } else if (msg.includes("already registered") || msg.includes("user already")) {
         toast.error("Este email já está cadastrado. Faça login.");
+      } else if (msg.includes("password") && msg.includes("characters")) {
+        toast.error("A senha precisa ter pelo menos 6 caracteres.");
+      } else if (msg.includes("invalid") && msg.includes("email")) {
+        toast.error("Email inválido. Verifique o endereço digitado.");
       } else {
-        toast.error("Erro ao criar conta. Tente novamente.");
+        toast.error(error?.message || "Erro ao criar conta. Tente novamente.");
       }
     } finally {
       setIsLoading(false);
