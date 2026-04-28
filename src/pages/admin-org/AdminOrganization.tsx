@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Users, Settings, Palette } from "lucide-react";
+import { Loader2, Users, Settings, Palette, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
@@ -59,6 +59,15 @@ const AdminOrganization = () => {
 
   return (
     <div className="space-y-6 p-6 max-w-5xl mx-auto">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/")}
+        className="-ml-2 text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />Voltar para o início
+      </Button>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{activeOrg.name}</h1>
