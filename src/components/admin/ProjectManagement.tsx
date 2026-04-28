@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useProjects, useProjectStats } from "@/hooks/use-projects";
+import { useOrgContext } from "@/contexts/OrganizationContext";
 import { Project, PROJECT_STATUS_CONFIG, ProjectStatus } from "@/types/project";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -347,6 +348,7 @@ export default function ProjectManagement() {
               onEdit={handleOpenDialog}
               onEditLanding={setEditLandingProject}
               onToggleStatus={toggleProjectStatus}
+              orgSlug={orgSlug}
             />
           ))}
         </div>
@@ -400,6 +402,7 @@ export default function ProjectManagement() {
                     onEdit={handleOpenDialog}
                     onEditLanding={setEditLandingProject}
                     onToggleStatus={toggleProjectStatus}
+                    orgSlug={orgSlug}
                   />
                 ))}
               </div>
