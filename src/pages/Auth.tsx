@@ -46,14 +46,14 @@ const Auth = () => {
         .eq("user_id", userId) as any);
 
       const list = (memberships ?? []) as any[];
+      const hasUsableOrgMembership = list.some(
+        (m) =>
+          m.approval_status === "approved" &&
+          m.is_active &&
+          m.organization?.status === "active"
+      );
       if (list.length > 0) {
-        const hasUsable = list.some(
-          (m) =>
-            m.approval_status === "approved" &&
-            m.is_active &&
-            m.organization?.status === "active"
-        );
-        if (!hasUsable) {
+        if (!hasUsableOrgMembership) {
           const orgPending = list.find((m) => m.organization?.status === "pending_approval");
           const orgRejected = list.find((m) => m.organization?.status === "rejected");
           const memberPending = list.find((m) => m.approval_status === "pending");
