@@ -43,23 +43,17 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
-    // Plan limit check (soft) — only for broker role
+    // Plan limit check (soft) — only for broker role. Uses RPC that respects overrides.
     if (body.role === "broker") {
-      const [{ data: sub }, { count }] = await Promise.all([
-        admin.from("organization_subscriptions").select("plan_id")
-          .eq("organization_id", body.organization_id).in("status", ["active", "trial", "past_due"])
-          .order("started_at", { ascending: false }).limit(1).maybeSingle(),
-        admin.from("brokers").select("id", { count: "exact", head: true })
-          .eq("organization_id", body.organization_id).eq("is_active", true),
-      ]);
-      if (sub?.plan_id) {
-        const { data: feat } = await admin.from("plan_features").select("value_int")
-          .eq("plan_id", sub.plan_id).eq("feature_key", "max_brokers").maybeSingle();
-        if (feat?.value_int != null && (count ?? 0) >= feat.value_int) {
-          return new Response(JSON.stringify({ error: "plan_limit_reached", limit: feat.value_int }), {
-            status: 409, headers: { ...cors, "Content-Type": "application/json" },
-          });
-        }
+      const { data: limitRes } = await admin.rpc("check_organization_limit", {
+        _org_id: body.organization_id,
+        _feature_key: "max_brokers",
+      });
+      const allowed = (limitRes as any)?.allowed !== false;
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: "plan_limit_reached", limit: (limitRes as any)?.limit, current: (limitRes as any)?.current }), {
+          status: 409, headers: { ...cors, "Content-Type": "application/json" },
+        });
       }
     }
 
