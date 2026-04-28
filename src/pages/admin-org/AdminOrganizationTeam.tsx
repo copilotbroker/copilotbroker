@@ -42,15 +42,17 @@ const AdminOrganizationTeam = () => {
       }
       const list = (rows ?? []) as any[];
       const userIds = Array.from(new Set(list.map((m) => m.user_id).filter(Boolean)));
-      let profilesMap: Record<string, any> = {};
+      let infoMap: Record<string, { display_name: string | null; email: string | null }> = {};
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles" as any)
-          .select("user_id, display_name, avatar_url, email")
-          .in("user_id", userIds) as any;
-        profilesMap = Object.fromEntries(((profiles ?? []) as any[]).map((p) => [p.user_id, p]));
+        const { data: brokers } = await supabase
+          .from("brokers")
+          .select("user_id, name, email")
+          .in("user_id", userIds);
+        infoMap = Object.fromEntries(
+          ((brokers ?? []) as any[]).map((b) => [b.user_id, { display_name: b.name, email: b.email }])
+        );
       }
-      return list.map((m) => ({ ...m, profile: profilesMap[m.user_id] ?? null }));
+      return list.map((m) => ({ ...m, profile: infoMap[m.user_id] ?? null }));
     },
   });
 
