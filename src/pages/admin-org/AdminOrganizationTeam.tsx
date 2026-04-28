@@ -58,9 +58,14 @@ const AdminOrganizationTeam = () => {
 
   return (
     <div className="space-y-6 p-6 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
-        <p className="text-sm text-muted-foreground">Membros, papéis e limites do plano.</p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
+          <p className="text-sm text-muted-foreground">Membros, papéis e limites do plano.</p>
+        </div>
+        <Button onClick={() => setInviteOpen(true)} disabled={limitReached}>
+          <UserPlus className="h-4 w-4 mr-2" />Convidar membro
+        </Button>
       </div>
 
       {features.max_brokers && (
@@ -127,6 +132,14 @@ const AdminOrganizationTeam = () => {
           )}
         </CardContent>
       </Card>
+      {activeOrg && (
+        <InviteMemberDialog
+          open={inviteOpen}
+          onOpenChange={setInviteOpen}
+          organizationId={activeOrg.id}
+          onInvited={() => queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg.id] })}
+        />
+      )}
     </div>
   );
 };
