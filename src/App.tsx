@@ -233,6 +233,9 @@ const App = () => (
             <Route path="/admin/organizacao/equipe" element={<Suspense fallback={null}><AdminOrganizationTeam /></Suspense>} />
             <Route path="/admin/organizacao/permissoes" element={<Suspense fallback={null}><AdminOrganizationPermissions /></Suspense>} />
 
+            {/* Aceite de convite (público após login) */}
+            <Route path="/convite/aceitar" element={<Suspense fallback={null}><AcceptInvite /></Suspense>} />
+
             {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
             <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />
             <Route path="/:citySlug/:projectSlug/:brokerSlug" element={<ProjectBrokerLandingPage />} />
