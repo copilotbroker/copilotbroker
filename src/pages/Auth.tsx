@@ -136,11 +136,15 @@ const Auth = () => {
 
     // 2. Listen for subsequent auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
 
         if (session) {
-          await checkUserRoleAndRedirect(session.user.id);
+          // Avoid running Supabase queries directly inside the auth callback,
+          // which can block signInWithPassword from resolving in supabase-js.
+          setTimeout(() => {
+            if (!cancelled) checkUserRoleAndRedirect(session.user.id);
+          }, 0);
         } else {
           setIsCheckingAuth(false);
         }
