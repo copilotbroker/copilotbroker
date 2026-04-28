@@ -1,0 +1,132 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/hooks/use-organization";
+import { useOrganizationLimits } from "@/hooks/use-organization-limits";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+
+const ROLES = ["owner", "admin", "manager", "leader", "broker"] as const;
+
+const AdminOrganizationTeam = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isLoading: orgLoading, activeOrg, activeOrgRole, isOwnerOrAdmin, isSuperAdmin } = useOrganization();
+  const { hasReached, remaining, features } = useOrganizationLimits();
+
+  useEffect(() => {
+    if (!orgLoading && !isOwnerOrAdmin && !isSuperAdmin) navigate("/corretor/dashboard", { replace: true });
+  }, [orgLoading, isOwnerOrAdmin, isSuperAdmin, navigate]);
+
+  const { data: members, isLoading } = useQuery({
+    queryKey: ["org-members", activeOrg?.id],
+    enabled: !!activeOrg,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("organization_members" as any)
+        .select("*, profile:profiles(display_name,avatar_url)")
+        .eq("organization_id", activeOrg!.id)
+        .order("joined_at", { ascending: false }) as any;
+      return data ?? [];
+    },
+  });
+
+  const updateRole = async (memberId: string, role: string) => {
+    const { error } = await supabase.from("organization_members" as any).update({ role }).eq("id", memberId) as any;
+    if (error) { toast.error(error.message); return; }
+    toast.success("Papel atualizado.");
+    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+  };
+
+  const toggleActive = async (memberId: string, current: boolean) => {
+    const { error } = await supabase.from("organization_members" as any).update({ is_active: !current }).eq("id", memberId) as any;
+    if (error) { toast.error(error.message); return; }
+    toast.success(current ? "Membro desativado." : "Membro reativado.");
+    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+  };
+
+  const limitReached = hasReached("max_brokers");
+  const rem = remaining("max_brokers");
+
+  return (
+    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+      <div>
+        <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
+        <p className="text-sm text-muted-foreground">Membros, papéis e limites do plano.</p>
+      </div>
+
+      {features.max_brokers && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Limite de Corretores</span>
+              {limitReached ? (
+                <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Limite atingido</Badge>
+              ) : (
+                <Badge variant="outline">{rem} vaga(s) disponível(is)</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      )}
+
+      <Card>
+        <CardContent className="pt-6">
+          {isLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" /></div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Membro</TableHead>
+                  <TableHead>Papel</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Entrou em</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(members ?? []).map((m: any) => (
+                  <TableRow key={m.id}>
+                    <TableCell>
+                      <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Select value={m.role} onValueChange={(v) => updateRole(m.id, v)} disabled={activeOrgRole !== "owner" && !isSuperAdmin}>
+                        <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      {m.is_active
+                        ? <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Ativo</Badge>
+                        : <Badge variant="outline">Inativo</Badge>}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {m.joined_at ? new Date(m.joined_at).toLocaleDateString("pt-BR") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="ghost" onClick={() => toggleActive(m.id, m.is_active)}>
+                        {m.is_active ? "Desativar" : "Reativar"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default AdminOrganizationTeam;
