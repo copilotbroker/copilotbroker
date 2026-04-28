@@ -1,0 +1,191 @@
+import { useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
+
+const fetchOrgDetail = async (id: string) => {
+  const [orgRes, subRes, membersRes, auditRes, plansRes] = await Promise.all([
+    supabase.from("organizations" as any).select("*").eq("id", id).single() as any,
+    supabase.from("organization_subscriptions" as any).select("*, plan:plans(*)").eq("organization_id", id).order("started_at", { ascending: false }).limit(1).maybeSingle() as any,
+    supabase.from("organization_members" as any).select("*, profile:profiles(display_name,avatar_url)").eq("organization_id", id) as any,
+    supabase.from("admin_audit_logs" as any).select("*").eq("organization_id", id).order("created_at", { ascending: false }).limit(50) as any,
+    supabase.from("plans" as any).select("id,name").order("sort_order") as any,
+  ]);
+
+  const planId = subRes.data?.plan_id ?? null;
+  let features: any[] = [];
+  if (planId) {
+    const fr = await supabase.from("plan_features" as any).select("*").eq("plan_id", planId) as any;
+    features = fr.data ?? [];
+  }
+
+  const [brokersC, instancesC, projectsC] = await Promise.all([
+    supabase.from("brokers" as any).select("id", { count: "exact", head: true }).eq("organization_id", id).eq("is_active", true) as any,
+    supabase.from("broker_whatsapp_instances" as any).select("id", { count: "exact", head: true }).eq("organization_id", id) as any,
+    supabase.from("projects" as any).select("id", { count: "exact", head: true }).eq("organization_id", id) as any,
+  ]);
+
+  return {
+    org: orgRes.data,
+    subscription: subRes.data,
+    members: membersRes.data ?? [],
+    audit: auditRes.data ?? [],
+    plans: plansRes.data ?? [],
+    features,
+    usage: { brokers: brokersC.count ?? 0, whatsapp: instancesC.count ?? 0, projects: projectsC.count ?? 0 },
+  };
+};
+
+const featureLabel = (k: string) => ({
+  max_brokers: "Corretores",
+  max_whatsapp_instances: "Instâncias WhatsApp",
+  max_landing_pages: "Landing Pages",
+}[k] ?? k);
+
+const usageFor = (k: string, u: any) => ({
+  max_brokers: u.brokers,
+  max_whatsapp_instances: u.whatsapp,
+  max_landing_pages: u.projects,
+}[k] ?? 0);
+
+const MasterOrganizationDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ["master-org", id], queryFn: () => fetchOrgDetail(id!), enabled: !!id });
+  const [newPlan, setNewPlan] = useState("");
+
+  if (isLoading || !data) {
+    return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  }
+
+  const callServer = async (fn: string, body: any, successMsg: string) => {
+    const { data: res, error } = await supabase.functions.invoke(fn, { body });
+    if (error || (res as any)?.error) {
+      toast.error((res as any)?.error || error?.message || "Erro");
+      return;
+    }
+    toast.success(successMsg);
+    queryClient.invalidateQueries({ queryKey: ["master-org", id] });
+    queryClient.invalidateQueries({ queryKey: ["master-orgs"] });
+  };
+
+  const toggleStatus = (newStatus: "active" | "suspended" | "canceled") =>
+    callServer("master-toggle-organization-status", { organization_id: id, status: newStatus }, `Status alterado para ${newStatus}.`);
+
+  const changePlan = () => {
+    if (!newPlan) return;
+    callServer("master-update-subscription", { organization_id: id, plan_id: newPlan }, "Plano atualizado.");
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{data.org.name}</h1>
+          <p className="text-sm text-muted-foreground">{data.org.slug}</p>
+        </div>
+        <Badge variant="outline">{data.org.status}</Badge>
+      </div>
+
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="members">Usuários ({data.members.length})</TabsTrigger>
+          <TabsTrigger value="plan">Plano</TabsTrigger>
+          <TabsTrigger value="audit">Auditoria</TabsTrigger>
+          <TabsTrigger value="danger">Ações Perigosas</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle>Plano e Uso</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm">Plano atual: <span className="font-semibold">{data.subscription?.plan?.name ?? "—"}</span></div>
+              {data.features.filter((f: any) => f.value_int != null).map((f: any) => {
+                const used = usageFor(f.feature_key, data.usage);
+                const pct = Math.min(100, (used / f.value_int) * 100);
+                return (
+                  <div key={f.feature_key}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>{featureLabel(f.feature_key)}</span>
+                      <span className="text-muted-foreground">{used} / {f.value_int}</span>
+                    </div>
+                    <Progress value={pct} />
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="members">
+          <Card>
+            <CardContent className="pt-6 space-y-2">
+              {data.members.map((m: any) => (
+                <div key={m.id} className="flex justify-between items-center border-b pb-2">
+                  <div>
+                    <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
+                    <div className="text-xs text-muted-foreground">{m.role} · {m.is_active ? "ativo" : "inativo"}</div>
+                  </div>
+                </div>
+              ))}
+              {data.members.length === 0 && <p className="text-sm text-muted-foreground">Sem membros ainda.</p>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="plan">
+          <Card>
+            <CardHeader><CardTitle>Trocar Plano</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <Select value={newPlan} onValueChange={setNewPlan}>
+                <SelectTrigger className="w-72"><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
+                <SelectContent>
+                  {data.plans.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={changePlan} disabled={!newPlan}>Aplicar mudança</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="audit">
+          <Card>
+            <CardContent className="pt-6 space-y-2">
+              {data.audit.map((a: any) => (
+                <div key={a.id} className="border-b pb-2 text-sm">
+                  <div className="font-medium">{a.action} {a.entity ? `· ${a.entity}` : ""}</div>
+                  <div className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("pt-BR")}</div>
+                </div>
+              ))}
+              {data.audit.length === 0 && <p className="text-sm text-muted-foreground">Sem registros.</p>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="danger" className="space-y-3">
+          <Card>
+            <CardHeader><CardTitle className="text-destructive">Ações Perigosas</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <Button variant="outline" onClick={() => toggleStatus("suspended")}>Suspender acesso</Button>
+              <Button variant="outline" onClick={() => toggleStatus("active")}>Reativar</Button>
+              <Button variant="destructive" onClick={() => toggleStatus("canceled")}>Cancelar conta</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default MasterOrganizationDetail;
