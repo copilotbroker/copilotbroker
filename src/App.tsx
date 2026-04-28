@@ -102,6 +102,7 @@ const App = () => (
           <BrowserRouter>
             <OrganizationProvider>
               <AppHead />
+              <WhiteLabelProvider />
               <SaasNavLauncher />
               <Routes>
             <Route path="/" element={<Home />} />
