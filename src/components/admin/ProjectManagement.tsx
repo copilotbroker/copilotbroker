@@ -195,6 +195,8 @@ function ProjectListCard({ project, onEdit, onEditLanding, onToggleStatus, orgSl
 
 export default function ProjectManagement() {
   const { projects, isLoading, fetchProjects, createProject, updateProject, toggleProjectStatus } = useProjects();
+  const { activeOrg } = useOrgContext();
+  const orgSlug = activeOrg?.slug ?? null;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState<ProjectFormData>(initialFormData);
