@@ -97,8 +97,8 @@ const Auth = () => {
       const hasOperationalRole =
         roles.includes("admin") || roles.includes("broker") || roles.includes("leader");
 
-      if (roles.includes("super_admin") && !hasOperationalRole) {
-        // Faz logout e manda para o portal Master para evitar mistura de sessão
+      if (roles.includes("super_admin") && !hasOperationalRole && !hasUsableOrgMembership) {
+        // Super-admin puro (sem papel operacional nem membership de org) usa portal Master
         await supabase.auth.signOut();
         queryClient.clear();
         toast.error("Super-admins devem acessar pelo portal Master.");
@@ -106,7 +106,7 @@ const Auth = () => {
         return;
       }
 
-      if (roles.includes("admin")) {
+      if (roles.includes("admin") || (hasUsableOrgMembership && !roles.includes("broker") && !roles.includes("leader"))) {
         navigate("/admin");
       } else if (roles.includes("broker") || roles.includes("leader")) {
         navigate("/corretor/admin");
