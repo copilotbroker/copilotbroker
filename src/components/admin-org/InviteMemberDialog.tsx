@@ -38,7 +38,20 @@ export const InviteMemberDialog = ({ open, onOpenChange, organizationId, onInvit
       toast.error(msg);
       return;
     }
-    setAcceptUrl((data as any).accept_url);
+    const rawUrl: string = (data as any).accept_url || "";
+    const normalized = (() => {
+      try {
+        const u = new URL(rawUrl);
+        const host = u.hostname;
+        if (host.includes("id-preview--") || host.endsWith(".lovableproject.com") || host.endsWith(".lovable.dev") || host.endsWith(".lovable.app") && host !== "copilotbroker.lovable.app") {
+          return `https://copilotbroker.lovable.app${u.pathname}${u.search}`;
+        }
+        return rawUrl;
+      } catch {
+        return rawUrl;
+      }
+    })();
+    setAcceptUrl(normalized);
     toast.success("Convite criado. Compartilhe o link abaixo.");
     onInvited?.();
   };
