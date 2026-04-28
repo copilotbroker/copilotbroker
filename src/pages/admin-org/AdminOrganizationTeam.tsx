@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, AlertTriangle, UserPlus, Copy, Check, X, Link2 } from "lucide-react";
+import { Loader2, AlertTriangle, UserPlus, Copy, Check, X, Link2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -21,7 +21,7 @@ const AdminOrganizationTeam = () => {
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
   const { isLoading: orgLoading, activeOrg, activeOrgRole, isOwnerOrAdmin, isSuperAdmin } = useOrganization();
-  const { hasReached, remaining, features } = useOrganizationLimits();
+  const { hasReached, remaining, features, usage, asInt } = useOrganizationLimits();
 
   useEffect(() => {
     if (!orgLoading && !isOwnerOrAdmin && !isSuperAdmin) navigate("/corretor/dashboard", { replace: true });
