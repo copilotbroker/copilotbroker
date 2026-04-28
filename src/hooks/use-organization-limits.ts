@@ -1,13 +1,15 @@
 // Resolve plan limits & current usage for the active organization.
+// Overrides from organization_feature_overrides take precedence over plan_features.
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "./use-organization";
 
 export interface FeatureLimit {
   feature_key: string;
-  value_int: number | null;
-  value_bool: boolean | null;
-  value_text: string | null;
+  feature_value: string;
+  feature_type: string; // 'limit' | 'boolean' | 'text'
+  source: "plan" | "override";
+  expires_at?: string | null;
 }
 
 export interface UsageSnapshot {
@@ -23,10 +25,11 @@ interface LimitsResult {
   usage: UsageSnapshot;
   hasReached: (featureKey: string, currentExtra?: number) => boolean;
   remaining: (featureKey: string) => number | null;
+  isEnabled: (featureKey: string) => boolean;
+  asInt: (featureKey: string) => number | null;
 }
 
 const fetchLimits = async (orgId: string) => {
-  // Subscription -> plan -> features
   const subRes = await supabase
     .from("organization_subscriptions" as any)
     .select("plan_id, plan:plans(id,code,name)")
@@ -39,16 +42,21 @@ const fetchLimits = async (orgId: string) => {
   const planId = subRes.data?.plan_id ?? null;
   const planName = subRes.data?.plan?.name ?? null;
 
-  let features: FeatureLimit[] = [];
+  let planFeatures: any[] = [];
   if (planId) {
     const featRes = await supabase
       .from("plan_features" as any)
-      .select("feature_key, value_int, value_bool, value_text")
+      .select("feature_key, feature_value, feature_type")
       .eq("plan_id", planId) as any;
-    features = (featRes.data ?? []) as FeatureLimit[];
+    planFeatures = featRes.data ?? [];
   }
 
-  // Usage counters (count via head:true)
+  const overridesRes = await supabase
+    .from("organization_feature_overrides" as any)
+    .select("feature_key, feature_value, expires_at")
+    .eq("organization_id", orgId) as any;
+  const overrides: any[] = overridesRes.data ?? [];
+
   const [brokersRes, instancesRes, projectsRes] = await Promise.all([
     supabase.from("brokers" as any).select("id", { count: "exact", head: true }).eq("organization_id", orgId).eq("is_active", true) as any,
     supabase.from("broker_whatsapp_instances" as any).select("id", { count: "exact", head: true }).eq("organization_id", orgId) as any,
@@ -56,7 +64,26 @@ const fetchLimits = async (orgId: string) => {
   ]);
 
   const featuresMap: Record<string, FeatureLimit> = {};
-  for (const f of features) featuresMap[f.feature_key] = f;
+  for (const f of planFeatures) {
+    featuresMap[f.feature_key] = {
+      feature_key: f.feature_key,
+      feature_value: f.feature_value,
+      feature_type: f.feature_type,
+      source: "plan",
+    };
+  }
+  const now = Date.now();
+  for (const o of overrides) {
+    if (o.expires_at && new Date(o.expires_at).getTime() < now) continue;
+    const base = featuresMap[o.feature_key];
+    featuresMap[o.feature_key] = {
+      feature_key: o.feature_key,
+      feature_value: o.feature_value,
+      feature_type: base?.feature_type ?? (isFinite(Number(o.feature_value)) ? "limit" : "boolean"),
+      source: "override",
+      expires_at: o.expires_at ?? null,
+    };
+  }
 
   return {
     planName,
@@ -89,20 +116,33 @@ export const useOrganizationLimits = (): LimitsResult => {
     return null;
   };
 
-  const remaining = (featureKey: string): number | null => {
+  const asInt = (featureKey: string): number | null => {
     const f = features[featureKey];
-    if (!f || f.value_int == null) return null;
+    if (!f) return null;
+    const n = parseInt(f.feature_value, 10);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const isEnabled = (featureKey: string): boolean => {
+    const f = features[featureKey];
+    if (!f) return false;
+    return f.feature_value === "true";
+  };
+
+  const remaining = (featureKey: string): number | null => {
+    const limit = asInt(featureKey);
+    if (limit == null) return null;
     const usageKey = usageKeyFor(featureKey);
     if (!usageKey) return null;
-    return Math.max(0, f.value_int - usage[usageKey]);
+    return Math.max(0, limit - usage[usageKey]);
   };
 
   const hasReached = (featureKey: string, currentExtra = 0) => {
-    const f = features[featureKey];
-    if (!f || f.value_int == null) return false; // unlimited / unknown
+    const limit = asInt(featureKey);
+    if (limit == null) return false;
     const usageKey = usageKeyFor(featureKey);
     if (!usageKey) return false;
-    return usage[usageKey] + currentExtra >= f.value_int;
+    return usage[usageKey] + currentExtra >= limit;
   };
 
   return {
@@ -112,5 +152,7 @@ export const useOrganizationLimits = (): LimitsResult => {
     usage,
     hasReached,
     remaining,
+    isEnabled,
+    asInt,
   };
 };
