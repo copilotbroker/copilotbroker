@@ -31,12 +31,26 @@ const AdminOrganizationTeam = () => {
     queryKey: ["org-members", activeOrg?.id],
     enabled: !!activeOrg,
     queryFn: async () => {
-      const { data: rows } = await supabase
+      const { data: rows, error } = await supabase
         .from("organization_members" as any)
-        .select("*, profile:profiles(display_name,avatar_url)")
+        .select("*")
         .eq("organization_id", activeOrg!.id)
         .order("joined_at", { ascending: false }) as any;
-      return (rows ?? []) as any[];
+      if (error) {
+        console.error("[AdminOrganizationTeam] members error:", error);
+        return [] as any[];
+      }
+      const list = (rows ?? []) as any[];
+      const userIds = Array.from(new Set(list.map((m) => m.user_id).filter(Boolean)));
+      let profilesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles" as any)
+          .select("user_id, display_name, avatar_url, email")
+          .in("user_id", userIds) as any;
+        profilesMap = Object.fromEntries(((profiles ?? []) as any[]).map((p) => [p.user_id, p]));
+      }
+      return list.map((m) => ({ ...m, profile: profilesMap[m.user_id] ?? null }));
     },
   });
 
