@@ -47,7 +47,7 @@ const fetchOrgDetail = async (id: string) => {
   return {
     org: orgRes.data,
     subscription: subRes.data,
-    members: membersRes.data ?? [],
+    members: enrichedMembers,
     audit: auditRes.data ?? [],
     plans: plansRes.data ?? [],
     features,
