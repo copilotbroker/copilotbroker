@@ -74,6 +74,19 @@ import AuraLeganoLandingPage from "./pages/auralegano/AuraLeganoLandingPage";
 import AuraLeganoBrokerLandingPage from "./pages/auralegano/AuraLeganoBrokerLandingPage";
 import TermosAuraLegano from "./pages/auralegano/TermosAuraLegano";
 
+// Master Panel (super_admin) - lazy loaded
+const MasterLayout = lazy(() => import("./components/master/MasterLayout"));
+const MasterOverview = lazy(() => import("./pages/master/MasterOverview"));
+const MasterOrganizations = lazy(() => import("./pages/master/MasterOrganizations"));
+const MasterOrganizationDetail = lazy(() => import("./pages/master/MasterOrganizationDetail"));
+const MasterPlans = lazy(() => import("./pages/master/MasterPlans"));
+const MasterAudit = lazy(() => import("./pages/master/MasterAudit"));
+
+// Admin Org (tenant owner/admin) - lazy loaded
+const AdminOrganization = lazy(() => import("./pages/admin-org/AdminOrganization"));
+const AdminOrganizationTeam = lazy(() => import("./pages/admin-org/AdminOrganizationTeam"));
+const AdminOrganizationPermissions = lazy(() => import("./pages/admin-org/AdminOrganizationPermissions"));
+
 const queryClient = new QueryClient();
 
 const App = () => (
