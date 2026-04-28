@@ -1615,9 +1615,9 @@ app.post("/sync-all", async (c) => {
       .select("role")
       .eq("user_id", user.id)
       .in("role", ["admin", "super_admin"])
-      .maybeSingle();
+      .limit(1);
 
-    if (!roleData) {
+    if (!roleData || roleData.length === 0) {
       return c.json({ error: "Admin access required" }, 403, getHonoCors(c));
     }
 
