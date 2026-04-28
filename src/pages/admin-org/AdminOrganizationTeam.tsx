@@ -169,7 +169,10 @@ const AdminOrganizationTeam = () => {
                   {pendentes.map((m: any) => (
                     <TableRow key={m.id}>
                       <TableCell>
-                        <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
+                        <div className="font-medium">{m.profile?.display_name ?? m.profile?.email ?? m.user_id.slice(0, 8)}</div>
+                        {m.profile?.email && m.profile?.display_name && (
+                          <div className="text-xs text-muted-foreground">{m.profile.email}</div>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {m.joined_at ? new Date(m.joined_at).toLocaleDateString("pt-BR") : "—"}
