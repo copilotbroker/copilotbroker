@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useProjects, useProjectStats } from "@/hooks/use-projects";
+import { useOrgContext } from "@/contexts/OrganizationContext";
 import { Project, PROJECT_STATUS_CONFIG, ProjectStatus } from "@/types/project";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -50,16 +51,23 @@ const initialFormData: ProjectFormData = {
   hero_title: "", hero_subtitle: "", webhook_url: "", ai_prompt: "",
 };
 
-function ProjectListCard({ project, onEdit, onEditLanding, onToggleStatus }: {
+function ProjectListCard({ project, onEdit, onEditLanding, onToggleStatus, orgSlug }: {
   project: Project;
   onEdit: (p: Project) => void;
   onEditLanding: (p: Project) => void;
   onToggleStatus: (id: string, active: boolean) => void;
+  orgSlug?: string | null;
 }) {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const statusConfig = PROJECT_STATUS_CONFIG[project.status] || { label: project.status, color: 'text-muted-foreground', bgColor: 'bg-muted/30 border-border' };
   const isBrokerCreated = !!project.created_by_broker_id;
-  const url = `/${project.city_slug}/${project.slug}`;
+  // On copilotbroker domain (institutional/SaaS), prefix the URL with the org slug.
+  // On launches domains (e.g. onovocondominio.com.br) keep clean URLs without prefix.
+  const host = typeof window !== "undefined" ? window.location.hostname : "";
+  const useOrgPrefix = orgSlug && (host.includes("copilotbroker") || host.includes("lovable") || host.includes("localhost"));
+  const url = useOrgPrefix
+    ? `/${orgSlug}/${project.city_slug}/${project.slug}`
+    : `/${project.city_slug}/${project.slug}`;
   const isActive = project.is_active;
   const isDraft = !project.is_active && !project.landing_content && project.status === "pre_launch";
 
@@ -188,6 +196,8 @@ function ProjectListCard({ project, onEdit, onEditLanding, onToggleStatus }: {
 
 export default function ProjectManagement() {
   const { projects, isLoading, fetchProjects, createProject, updateProject, toggleProjectStatus } = useProjects();
+  const { activeOrg } = useOrgContext();
+  const orgSlug = activeOrg?.slug ?? null;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState<ProjectFormData>(initialFormData);
@@ -338,6 +348,7 @@ export default function ProjectManagement() {
               onEdit={handleOpenDialog}
               onEditLanding={setEditLandingProject}
               onToggleStatus={toggleProjectStatus}
+              orgSlug={orgSlug}
             />
           ))}
         </div>
@@ -391,6 +402,7 @@ export default function ProjectManagement() {
                     onEdit={handleOpenDialog}
                     onEditLanding={setEditLandingProject}
                     onToggleStatus={toggleProjectStatus}
+                    orgSlug={orgSlug}
                   />
                 ))}
               </div>

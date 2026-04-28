@@ -11,21 +11,7 @@ import { SaasNavLauncher } from "@/components/SaasNavLauncher";
 import { WhiteLabelProvider } from "@/components/WhiteLabelProvider";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import Home from "./pages/Home";
-// Backup: landing pages completas de Estância Velha (reativar trocando as rotas abaixo)
-import EstanciaVelha from "./pages/EstanciaVelha";
-// import BrokerLandingPage from "./pages/BrokerLandingPage";
-import EstanciaVelhaTeaser from "./pages/EstanciaVelhaTeaser";
-import BairrodasRosas from "./pages/BairrodasRosas";
-import Canela from "./pages/Canela";
-import EstanciaVelhaBrokerTeaser from "./pages/EstanciaVelhaBrokerTeaser";
-import ProjectLandingPage from "./pages/ProjectLandingPage";
-import ProjectBrokerLandingPage from "./pages/ProjectBrokerLandingPage";
-import GoldenViewLandingPage from "./pages/goldenview/GoldenViewLandingPage";
-import GoldenViewBrokerLandingPage from "./pages/goldenview/GoldenViewBrokerLandingPage";
-import MauricioCardosoLandingPage from "./pages/mauriciocardoso/MauricioCardosoLandingPage";
-import MauricioCardosoBrokerLandingPage from "./pages/mauriciocardoso/MauricioCardosoBrokerLandingPage";
-import TermosGoldenView from "./pages/goldenview/TermosGoldenView";
-import TermosMauricioCardoso from "./pages/mauriciocardoso/TermosMauricioCardoso";
+import { LandingRoutes } from "@/components/LandingRoutes";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import DesignSystem from "./pages/DesignSystem";
@@ -46,36 +32,12 @@ import AdminCopilotConfig from "./pages/AdminCopilotConfig";
 import AdminAgenda from "./pages/AdminAgenda";
 import BrokerAgenda from "./pages/BrokerAgenda";
 import BrokerProfile from "./pages/BrokerProfile";
-import Prontos from "./pages/Prontos";
-import ProntosBrokerPage from "./pages/ProntosBrokerPage";
 import Termos from "./pages/Termos";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
-import HantowerLandingPage from "./pages/hantower/HantowerLandingPage";
-import SentowerLandingPage from "./pages/sentower/SentowerLandingPage";
-import CA2727LandingPage from "./pages/CA2727LandingPage";
 import NotFound from "./pages/NotFound";
-import NAULandingPage from "./pages/nau/NAULandingPage";
-import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
-import TermosNAU from "./pages/nau/TermosNAU";
-import MonacoLandingPage from "./pages/monaco/MonacoLandingPage";
-import MonacoBrokerLandingPage from "./pages/monaco/MonacoBrokerLandingPage";
-import TermosMonaco from "./pages/monaco/TermosMonaco";
-import VivaParkLandingPage from "./pages/vivapark/VivaParkLandingPage";
-import VivaParkBrokerLandingPage from "./pages/vivapark/VivaParkBrokerLandingPage";
-import TermosVivaPark from "./pages/vivapark/TermosVivaPark";
-import NC1LandingPage from "./pages/vivapark/NC1LandingPage";
-import NC1BrokerLandingPage from "./pages/vivapark/NC1BrokerLandingPage";
-// Stuttgart — code-split para não pesar no bundle inicial (4.6MB de imagens)
-const StuttgartLandingPage = lazy(() => import("./pages/stuttgart/StuttgartLandingPage"));
-const StuttgartBrokerLandingPage = lazy(() => import("./pages/stuttgart/StuttgartBrokerLandingPage"));
-const StuttgartIvotiV2LandingPage = lazy(() => import("./pages/stuttgart/StuttgartIvotiV2LandingPage"));
-const TermosStuttgart = lazy(() => import("./pages/stuttgart/TermosStuttgart"));
-import AuraLeganoLandingPage from "./pages/auralegano/AuraLeganoLandingPage";
-import AuraLeganoBrokerLandingPage from "./pages/auralegano/AuraLeganoBrokerLandingPage";
-import TermosAuraLegano from "./pages/auralegano/TermosAuraLegano";
 
 // Master Panel (super_admin) - lazy loaded
 const MasterLayout = lazy(() => import("./components/master/MasterLayout"));
@@ -112,82 +74,12 @@ const App = () => (
               <Routes>
             <Route path="/" element={<Home />} />
             
-            {/* GoldenView - custom landing page with unique visual identity */}
-            <Route path="/portao/goldenview" element={<GoldenViewLandingPage />} />
-            <Route path="/portao/goldenview/obrigado" element={<GoldenViewLandingPage />} />
-            <Route path="/portao/goldenview/termos" element={<TermosGoldenView />} />
-            <Route path="/portao/goldenview/:brokerSlug" element={<GoldenViewBrokerLandingPage />} />
-            
-            {/* Mauricio Cardoso - Wellness landing page for Novo Hamburgo */}
-            <Route path="/novohamburgo/mauriciocardoso" element={<MauricioCardosoLandingPage />} />
-            <Route path="/novohamburgo/mauriciocardoso/obrigado" element={<MauricioCardosoLandingPage />} />
-            <Route path="/novohamburgo/mauriciocardoso/termos" element={<TermosMauricioCardoso />} />
-            <Route path="/novohamburgo/mauriciocardoso/:brokerSlug/obrigado" element={<MauricioCardosoBrokerLandingPage />} />
-            <Route path="/novohamburgo/mauriciocardoso/:brokerSlug" element={<MauricioCardosoBrokerLandingPage />} />
-            
-            {/* Legacy redirects for backward compatibility */}
-            <Route path="/goldenview" element={<Navigate to="/portao/goldenview" replace />} />
-            <Route path="/goldenview/:brokerSlug" element={<Navigate to="/portao/goldenview" replace />} />
-            {/* Backup: rota desativada - reativar quando necessário */}
-            {/* <Route path="/estanciavelha/privado" element={<EstanciaVelha />} /> */}
-            <Route path="/estanciavelha" element={<EstanciaVelhaTeaser />} />
-            <Route path="/estanciavelha/ca2727" element={<CA2727LandingPage />} />
-            <Route path="/estanciavelha/ca2727/obrigado" element={<CA2727LandingPage />} />
-            <Route path="/estanciavelha/hantower" element={<HantowerLandingPage />} />
-            <Route path="/estanciavelha/sentower" element={<SentowerLandingPage />} />
-            <Route path="/estanciavelha/sentower/obrigado" element={<SentowerLandingPage />} />
-            <Route path="/estanciavelha/bairrodasrosas" element={<BairrodasRosas />} />
-            <Route path="/canela" element={<Canela />} />
-            <Route path="/estanciavelha/:brokerSlug" element={<EstanciaVelhaBrokerTeaser />} />
-            
-            {/* Imóveis Prontos - lead capture for ready-to-move-in properties */}
-            <Route path="/prontos" element={<Prontos />} />
-            <Route path="/prontos/:brokerSlug" element={<ProntosBrokerPage />} />
-            
-            {/* NAU - Condomínio Náutico em Osório */}
-            <Route path="/osorio/nau" element={<NAULandingPage />} />
-            <Route path="/osorio/nau/obrigado" element={<NAULandingPage />} />
-            <Route path="/osorio/nau/termos" element={<TermosNAU />} />
-            <Route path="/osorio/nau/:brokerSlug" element={<NAUBrokerLandingPage />} />
-            
-            {/* Mônaco Grand Marina - Condomínio Náutico em Xangri-lá */}
-            <Route path="/xangrila/monaco" element={<MonacoLandingPage />} />
-            <Route path="/xangrila/monaco/obrigado" element={<MonacoLandingPage />} />
-            <Route path="/xangrila/monaco/termos" element={<TermosMonaco />} />
-            <Route path="/xangrila/monaco/:brokerSlug/obrigado" element={<MonacoBrokerLandingPage />} />
-            <Route path="/xangrila/monaco/:brokerSlug" element={<MonacoBrokerLandingPage />} />
-            
-            {/* Vivapark Porto Belo — multilingual investment landing */}
-            <Route path="/portobelo/vivapark" element={<VivaParkLandingPage />} />
-            <Route path="/portobelo/vivapark/obrigado" element={<VivaParkLandingPage />} />
-            <Route path="/portobelo/vivapark/termos" element={<TermosVivaPark />} />
-            <Route path="/portobelo/vivapark/:brokerSlug/obrigado" element={<VivaParkBrokerLandingPage />} />
-            <Route path="/portobelo/vivapark/:brokerSlug" element={<VivaParkBrokerLandingPage />} />
-            
-            {/* NC-1 — Lofts Duplex no Vivapark Porto Belo */}
-            <Route path="/portobelo/nc1" element={<NC1LandingPage />} />
-            <Route path="/portobelo/nc1/obrigado" element={<NC1LandingPage />} />
-            <Route path="/portobelo/nc1/:brokerSlug/obrigado" element={<NC1BrokerLandingPage />} />
-            <Route path="/portobelo/nc1/:brokerSlug" element={<NC1BrokerLandingPage />} />
-            {/* Legacy redirect */}
-            <Route path="/portobelo/asramos" element={<Navigate to="/portobelo/nc1" replace />} />
-            <Route path="/portobelo/asramos/:brokerSlug" element={<Navigate to="/portobelo/nc1" replace />} />
+            {/* Landing pages — root prefix (legacy URLs, e.g. onovocondominio.com.br/estanciavelha) */}
+            <LandingRoutes prefix="" />
 
-            {/* Jardins de Stuttgart - Condomínio clube em Ivoti (lazy-loaded) */}
-            <Route path="/ivoti/stuttgart" element={<Suspense fallback={null}><StuttgartLandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgart/obrigado" element={<Suspense fallback={null}><StuttgartLandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgart/termos" element={<Suspense fallback={null}><TermosStuttgart /></Suspense>} />
-            <Route path="/ivoti/stuttgartivoti" element={<Suspense fallback={null}><StuttgartIvotiV2LandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgartivoti/obrigado" element={<Suspense fallback={null}><StuttgartIvotiV2LandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgart/:brokerSlug/obrigado" element={<Suspense fallback={null}><StuttgartBrokerLandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgart/:brokerSlug" element={<Suspense fallback={null}><StuttgartBrokerLandingPage /></Suspense>} />
+            {/* Landing pages — org-scoped URLs (e.g. copilotbroker.lovable.app/enoveimobiliaria/estanciavelha) */}
+            <LandingRoutes prefix=":orgSlug" />
 
-            {/* Aura Legano - Loteamento de alto padrão em Nova Santa Rita */}
-            <Route path="/novasantarita/auralegano" element={<AuraLeganoLandingPage />} />
-            <Route path="/novasantarita/auralegano/obrigado" element={<AuraLeganoLandingPage />} />
-            <Route path="/novasantarita/auralegano/termos" element={<TermosAuraLegano />} />
-            <Route path="/novasantarita/auralegano/:brokerSlug/obrigado" element={<AuraLeganoBrokerLandingPage />} />
-            <Route path="/novasantarita/auralegano/:brokerSlug" element={<AuraLeganoBrokerLandingPage />} />
 
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
@@ -250,9 +142,8 @@ const App = () => (
             <Route path="/imobiliaria/cadastro" element={<Suspense fallback={null}><OrgPublicSignup /></Suspense>} />
             <Route path="/imobiliaria/:slug/cadastro" element={<Suspense fallback={null}><OrgBrokerPublicSignup /></Suspense>} />
 
-            {/* Dynamic city/project routes - MUST BE AFTER specific routes */}
-            <Route path="/:citySlug/:projectSlug" element={<ProjectLandingPage />} />
-            <Route path="/:citySlug/:projectSlug/:brokerSlug" element={<ProjectBrokerLandingPage />} />
+            {/* Dynamic city/project routes are inside LandingRoutes() above */}
+
             
             {/* Catch-all for 404 */}
             <Route path="*" element={<NotFound />} />
