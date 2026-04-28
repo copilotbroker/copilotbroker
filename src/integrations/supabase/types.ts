@@ -2702,6 +2702,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_organization_limit: {
+        Args: { _feature_key: string; _org_id: string }
+        Returns: Json
+      }
       get_my_broker_id: { Args: never; Returns: string }
       get_my_roleta_ids: { Args: never; Returns: string[] }
       get_user_organization_ids: {
