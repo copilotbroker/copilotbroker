@@ -31,12 +31,28 @@ const AdminOrganizationTeam = () => {
     queryKey: ["org-members", activeOrg?.id],
     enabled: !!activeOrg,
     queryFn: async () => {
-      const { data: rows } = await supabase
+      const { data: rows, error } = await supabase
         .from("organization_members" as any)
-        .select("*, profile:profiles(display_name,avatar_url)")
+        .select("*")
         .eq("organization_id", activeOrg!.id)
         .order("joined_at", { ascending: false }) as any;
-      return (rows ?? []) as any[];
+      if (error) {
+        console.error("[AdminOrganizationTeam] members error:", error);
+        return [] as any[];
+      }
+      const list = (rows ?? []) as any[];
+      const userIds = Array.from(new Set(list.map((m) => m.user_id).filter(Boolean)));
+      let infoMap: Record<string, { display_name: string | null; email: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: brokers } = await supabase
+          .from("brokers")
+          .select("user_id, name, email")
+          .in("user_id", userIds);
+        infoMap = Object.fromEntries(
+          ((brokers ?? []) as any[]).map((b) => [b.user_id, { display_name: b.name, email: b.email }])
+        );
+      }
+      return list.map((m) => ({ ...m, profile: infoMap[m.user_id] ?? null }));
     },
   });
 
@@ -153,7 +169,10 @@ const AdminOrganizationTeam = () => {
                   {pendentes.map((m: any) => (
                     <TableRow key={m.id}>
                       <TableCell>
-                        <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
+                        <div className="font-medium">{m.profile?.display_name ?? m.profile?.email ?? m.user_id.slice(0, 8)}</div>
+                        {m.profile?.email && m.profile?.display_name && (
+                          <div className="text-xs text-muted-foreground">{m.profile.email}</div>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {m.joined_at ? new Date(m.joined_at).toLocaleDateString("pt-BR") : "—"}
@@ -197,7 +216,10 @@ const AdminOrganizationTeam = () => {
                 {(members ?? []).filter((m: any) => m.approval_status !== "pending").map((m: any) => (
                   <TableRow key={m.id}>
                     <TableCell>
-                      <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
+                      <div className="font-medium">{m.profile?.display_name ?? m.profile?.email ?? m.user_id.slice(0, 8)}</div>
+                      {m.profile?.email && m.profile?.display_name && (
+                        <div className="text-xs text-muted-foreground">{m.profile.email}</div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Select value={m.role} onValueChange={(v) => updateRole(m.id, v)} disabled={activeOrgRole !== "owner" && activeOrgRole !== "manager" && !isSuperAdmin}>
