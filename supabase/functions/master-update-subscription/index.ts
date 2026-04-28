@@ -25,33 +25,32 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "missing_fields" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
-    // Cancel any current non-canceled subs (covers active/trial/past_due and any other status)
-    const { error: cancelErr } = await admin.from("organization_subscriptions")
-      .update({ status: "canceled", canceled_at: new Date().toISOString() })
-      .eq("organization_id", organization_id)
-      .neq("status", "canceled");
-    if (cancelErr) {
-      return new Response(JSON.stringify({ error: `cancel_failed: ${cancelErr.message}` }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
-    }
-
-    // Verify no active sub remains before inserting (defends against partial unique index)
-    const { data: stillActive } = await admin.from("organization_subscriptions")
+    // Strategy: if there's an existing active/trial/past_due subscription, update it in place
+    // (avoids racing the partial unique index). Otherwise insert a fresh one.
+    const { data: current, error: curErr } = await admin
+      .from("organization_subscriptions")
       .select("id")
       .eq("organization_id", organization_id)
       .in("status", ["active", "trial", "past_due"])
-      .limit(1);
-    if (stillActive && stillActive.length > 0) {
-      // Force-cancel by id as a fallback
-      await admin.from("organization_subscriptions")
-        .update({ status: "canceled", canceled_at: new Date().toISOString() })
-        .eq("id", stillActive[0].id);
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (curErr) {
+      return new Response(JSON.stringify({ error: `lookup_failed: ${curErr.message}` }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
-    // Insert new
-    const { error: insErr } = await admin.from("organization_subscriptions").insert({
-      organization_id, plan_id, status: "active", started_at: new Date().toISOString(),
-    });
-    if (insErr) return new Response(JSON.stringify({ error: insErr.message }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    if (current?.id) {
+      const { error: updErr } = await admin
+        .from("organization_subscriptions")
+        .update({ plan_id, status: "active", canceled_at: null })
+        .eq("id", current.id);
+      if (updErr) return new Response(JSON.stringify({ error: updErr.message }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    } else {
+      const { error: insErr } = await admin
+        .from("organization_subscriptions")
+        .insert({ organization_id, plan_id, status: "active", started_at: new Date().toISOString() });
+      if (insErr) return new Response(JSON.stringify({ error: insErr.message }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    }
 
     await admin.from("admin_audit_logs").insert({
       actor_user_id: user.id, organization_id, action: "subscription.change_plan", entity: "subscription", metadata: { plan_id },
