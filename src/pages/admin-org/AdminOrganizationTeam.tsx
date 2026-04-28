@@ -18,6 +18,7 @@ const ROLES = ["owner", "admin", "manager", "leader", "broker"] as const;
 const AdminOrganizationTeam = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [inviteOpen, setInviteOpen] = useState(false);
   const { isLoading: orgLoading, activeOrg, activeOrgRole, isOwnerOrAdmin, isSuperAdmin } = useOrganization();
   const { hasReached, remaining, features } = useOrganizationLimits();
 
