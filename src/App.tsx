@@ -89,6 +89,7 @@ const MasterAudit = lazy(() => import("./pages/master/MasterAudit"));
 const AdminOrganization = lazy(() => import("./pages/admin-org/AdminOrganization"));
 const AdminOrganizationTeam = lazy(() => import("./pages/admin-org/AdminOrganizationTeam"));
 const AdminOrganizationPermissions = lazy(() => import("./pages/admin-org/AdminOrganizationPermissions"));
+const AdminOrganizationBranding = lazy(() => import("./pages/admin-org/AdminOrganizationBranding"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
 
 const queryClient = new QueryClient();
