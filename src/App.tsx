@@ -74,82 +74,11 @@ const App = () => (
               <Routes>
             <Route path="/" element={<Home />} />
             
-            {/* GoldenView - custom landing page with unique visual identity */}
-            <Route path="/portao/goldenview" element={<GoldenViewLandingPage />} />
-            <Route path="/portao/goldenview/obrigado" element={<GoldenViewLandingPage />} />
-            <Route path="/portao/goldenview/termos" element={<TermosGoldenView />} />
-            <Route path="/portao/goldenview/:brokerSlug" element={<GoldenViewBrokerLandingPage />} />
-            
-            {/* Mauricio Cardoso - Wellness landing page for Novo Hamburgo */}
-            <Route path="/novohamburgo/mauriciocardoso" element={<MauricioCardosoLandingPage />} />
-            <Route path="/novohamburgo/mauriciocardoso/obrigado" element={<MauricioCardosoLandingPage />} />
-            <Route path="/novohamburgo/mauriciocardoso/termos" element={<TermosMauricioCardoso />} />
-            <Route path="/novohamburgo/mauriciocardoso/:brokerSlug/obrigado" element={<MauricioCardosoBrokerLandingPage />} />
-            <Route path="/novohamburgo/mauriciocardoso/:brokerSlug" element={<MauricioCardosoBrokerLandingPage />} />
-            
-            {/* Legacy redirects for backward compatibility */}
-            <Route path="/goldenview" element={<Navigate to="/portao/goldenview" replace />} />
-            <Route path="/goldenview/:brokerSlug" element={<Navigate to="/portao/goldenview" replace />} />
-            {/* Backup: rota desativada - reativar quando necessário */}
-            {/* <Route path="/estanciavelha/privado" element={<EstanciaVelha />} /> */}
-            <Route path="/estanciavelha" element={<EstanciaVelhaTeaser />} />
-            <Route path="/estanciavelha/ca2727" element={<CA2727LandingPage />} />
-            <Route path="/estanciavelha/ca2727/obrigado" element={<CA2727LandingPage />} />
-            <Route path="/estanciavelha/hantower" element={<HantowerLandingPage />} />
-            <Route path="/estanciavelha/sentower" element={<SentowerLandingPage />} />
-            <Route path="/estanciavelha/sentower/obrigado" element={<SentowerLandingPage />} />
-            <Route path="/estanciavelha/bairrodasrosas" element={<BairrodasRosas />} />
-            <Route path="/canela" element={<Canela />} />
-            <Route path="/estanciavelha/:brokerSlug" element={<EstanciaVelhaBrokerTeaser />} />
-            
-            {/* Imóveis Prontos - lead capture for ready-to-move-in properties */}
-            <Route path="/prontos" element={<Prontos />} />
-            <Route path="/prontos/:brokerSlug" element={<ProntosBrokerPage />} />
-            
-            {/* NAU - Condomínio Náutico em Osório */}
-            <Route path="/osorio/nau" element={<NAULandingPage />} />
-            <Route path="/osorio/nau/obrigado" element={<NAULandingPage />} />
-            <Route path="/osorio/nau/termos" element={<TermosNAU />} />
-            <Route path="/osorio/nau/:brokerSlug" element={<NAUBrokerLandingPage />} />
-            
-            {/* Mônaco Grand Marina - Condomínio Náutico em Xangri-lá */}
-            <Route path="/xangrila/monaco" element={<MonacoLandingPage />} />
-            <Route path="/xangrila/monaco/obrigado" element={<MonacoLandingPage />} />
-            <Route path="/xangrila/monaco/termos" element={<TermosMonaco />} />
-            <Route path="/xangrila/monaco/:brokerSlug/obrigado" element={<MonacoBrokerLandingPage />} />
-            <Route path="/xangrila/monaco/:brokerSlug" element={<MonacoBrokerLandingPage />} />
-            
-            {/* Vivapark Porto Belo — multilingual investment landing */}
-            <Route path="/portobelo/vivapark" element={<VivaParkLandingPage />} />
-            <Route path="/portobelo/vivapark/obrigado" element={<VivaParkLandingPage />} />
-            <Route path="/portobelo/vivapark/termos" element={<TermosVivaPark />} />
-            <Route path="/portobelo/vivapark/:brokerSlug/obrigado" element={<VivaParkBrokerLandingPage />} />
-            <Route path="/portobelo/vivapark/:brokerSlug" element={<VivaParkBrokerLandingPage />} />
-            
-            {/* NC-1 — Lofts Duplex no Vivapark Porto Belo */}
-            <Route path="/portobelo/nc1" element={<NC1LandingPage />} />
-            <Route path="/portobelo/nc1/obrigado" element={<NC1LandingPage />} />
-            <Route path="/portobelo/nc1/:brokerSlug/obrigado" element={<NC1BrokerLandingPage />} />
-            <Route path="/portobelo/nc1/:brokerSlug" element={<NC1BrokerLandingPage />} />
-            {/* Legacy redirect */}
-            <Route path="/portobelo/asramos" element={<Navigate to="/portobelo/nc1" replace />} />
-            <Route path="/portobelo/asramos/:brokerSlug" element={<Navigate to="/portobelo/nc1" replace />} />
+            {/* Landing pages — root prefix (legacy URLs, e.g. onovocondominio.com.br/estanciavelha) */}
+            {LandingRoutes({ prefix: "" })}
 
-            {/* Jardins de Stuttgart - Condomínio clube em Ivoti (lazy-loaded) */}
-            <Route path="/ivoti/stuttgart" element={<Suspense fallback={null}><StuttgartLandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgart/obrigado" element={<Suspense fallback={null}><StuttgartLandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgart/termos" element={<Suspense fallback={null}><TermosStuttgart /></Suspense>} />
-            <Route path="/ivoti/stuttgartivoti" element={<Suspense fallback={null}><StuttgartIvotiV2LandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgartivoti/obrigado" element={<Suspense fallback={null}><StuttgartIvotiV2LandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgart/:brokerSlug/obrigado" element={<Suspense fallback={null}><StuttgartBrokerLandingPage /></Suspense>} />
-            <Route path="/ivoti/stuttgart/:brokerSlug" element={<Suspense fallback={null}><StuttgartBrokerLandingPage /></Suspense>} />
-
-            {/* Aura Legano - Loteamento de alto padrão em Nova Santa Rita */}
-            <Route path="/novasantarita/auralegano" element={<AuraLeganoLandingPage />} />
-            <Route path="/novasantarita/auralegano/obrigado" element={<AuraLeganoLandingPage />} />
-            <Route path="/novasantarita/auralegano/termos" element={<TermosAuraLegano />} />
-            <Route path="/novasantarita/auralegano/:brokerSlug/obrigado" element={<AuraLeganoBrokerLandingPage />} />
-            <Route path="/novasantarita/auralegano/:brokerSlug" element={<AuraLeganoBrokerLandingPage />} />
+            {/* Landing pages — org-scoped URLs (e.g. copilotbroker.lovable.app/enoveimobiliaria/estanciavelha) */}
+            {LandingRoutes({ prefix: ":orgSlug" })}
 
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
