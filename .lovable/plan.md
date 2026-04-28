@@ -154,6 +154,14 @@ Em vez de reescrever 5500+ linhas de edge functions existentes, aplicamos **trig
 - Hook `useOrganizationLimits` reescrito: mescla plano + overrides, expõe `isEnabled(key)`, `asInt(key)`, `remaining`, `hasReached`. Cada feature carrega `source: "plan" | "override"` para a UI sinalizar add-ons.
 - `master-invite-user` migrado para `rpc("check_organization_limit")` em vez de consultar `plan_features` direto — agora respeita overrides automaticamente.
 
+### ✅ Fase 5 — White-label por organização
+- Novos campos em `organizations`: `display_name`, `secondary_color`, `favicon_url`.
+- Bucket público `org-branding` com RLS por `has_org_role(... 'owner'|'admin')` no folder `<org_id>/...`.
+- `WhiteLabelProvider` (`src/components/WhiteLabelProvider.tsx`) injeta `--primary`/`--ring`/`--accent` (hex→HSL), troca `document.title` e favicon de acordo com a organização ativa. Atua só em `/admin/*` e `/corretor/*` (master e landings ficam intocados). Restaura tudo ao trocar org/desmontar.
+- Página `/admin/organizacao/branding`: upload de logo e favicon, edição de cores e display name. Atalho na visão geral da imobiliária.
+- `AdminHeader` mostra logo e nome da org no breadcrumb.
+
+
 ---
 
 ## O que NÃO está incluso nesta entrega
