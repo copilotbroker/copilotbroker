@@ -14,7 +14,10 @@ export interface OrganizationMembership {
     slug: string;
     status: string;
     logo_url: string | null;
+    favicon_url: string | null;
     primary_color: string | null;
+    secondary_color: string | null;
+    display_name: string | null;
   };
 }
 
@@ -39,7 +42,7 @@ const fetchOrgContext = async (): Promise<Omit<OrganizationState, "isOwnerOrAdmi
     supabase.from("user_roles" as any).select("role").eq("user_id", user.id) as any,
     supabase
       .from("organization_members" as any)
-      .select("organization_id, role, is_active, organization:organizations(id,name,slug,status,logo_url,primary_color)")
+      .select("organization_id, role, is_active, organization:organizations(id,name,slug,status,logo_url,favicon_url,primary_color,secondary_color,display_name)")
       .eq("user_id", user.id)
       .eq("is_active", true) as any,
   ]);

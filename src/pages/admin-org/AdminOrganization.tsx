@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Users, Settings } from "lucide-react";
+import { Loader2, Users, Settings, Palette } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
@@ -88,6 +88,9 @@ const AdminOrganization = () => {
           <CardContent className="space-y-2">
             <Button asChild variant="outline" className="w-full justify-start">
               <Link to="/admin/organizacao/equipe"><Users className="h-4 w-4 mr-2" />Gestão da Equipe</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start">
+              <Link to="/admin/organizacao/branding"><Palette className="h-4 w-4 mr-2" />Identidade Visual</Link>
             </Button>
             <Button asChild variant="outline" className="w-full justify-start">
               <Link to="/admin/organizacao/permissoes"><Settings className="h-4 w-4 mr-2" />Papéis e Permissões</Link>

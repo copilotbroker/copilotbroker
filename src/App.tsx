@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { HelmetProvider } from "react-helmet-async";
 import AppHead from "@/components/AppHead";
 import { SaasNavLauncher } from "@/components/SaasNavLauncher";
+import { WhiteLabelProvider } from "@/components/WhiteLabelProvider";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import Home from "./pages/Home";
 // Backup: landing pages completas de Estância Velha (reativar trocando as rotas abaixo)
@@ -88,6 +89,7 @@ const MasterAudit = lazy(() => import("./pages/master/MasterAudit"));
 const AdminOrganization = lazy(() => import("./pages/admin-org/AdminOrganization"));
 const AdminOrganizationTeam = lazy(() => import("./pages/admin-org/AdminOrganizationTeam"));
 const AdminOrganizationPermissions = lazy(() => import("./pages/admin-org/AdminOrganizationPermissions"));
+const AdminOrganizationBranding = lazy(() => import("./pages/admin-org/AdminOrganizationBranding"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
 
 const queryClient = new QueryClient();
@@ -102,6 +104,7 @@ const App = () => (
           <BrowserRouter>
             <OrganizationProvider>
               <AppHead />
+              <WhiteLabelProvider />
               <SaasNavLauncher />
               <Routes>
             <Route path="/" element={<Home />} />
@@ -234,6 +237,7 @@ const App = () => (
             <Route path="/admin/organizacao" element={<Suspense fallback={null}><AdminOrganization /></Suspense>} />
             <Route path="/admin/organizacao/equipe" element={<Suspense fallback={null}><AdminOrganizationTeam /></Suspense>} />
             <Route path="/admin/organizacao/permissoes" element={<Suspense fallback={null}><AdminOrganizationPermissions /></Suspense>} />
+            <Route path="/admin/organizacao/branding" element={<Suspense fallback={null}><AdminOrganizationBranding /></Suspense>} />
 
             {/* Aceite de convite (público após login) */}
             <Route path="/convite/aceitar" element={<Suspense fallback={null}><AcceptInvite /></Suspense>} />

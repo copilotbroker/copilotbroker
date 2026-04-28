@@ -1648,12 +1648,15 @@ export type Database = {
         Row: {
           cnpj: string | null
           created_at: string
+          display_name: string | null
+          favicon_url: string | null
           id: string
           legal_name: string | null
           logo_url: string | null
           metadata: Json
           name: string
           primary_color: string | null
+          secondary_color: string | null
           slug: string
           status: string
           trial_ends_at: string | null
@@ -1662,12 +1665,15 @@ export type Database = {
         Insert: {
           cnpj?: string | null
           created_at?: string
+          display_name?: string | null
+          favicon_url?: string | null
           id?: string
           legal_name?: string | null
           logo_url?: string | null
           metadata?: Json
           name: string
           primary_color?: string | null
+          secondary_color?: string | null
           slug: string
           status?: string
           trial_ends_at?: string | null
@@ -1676,12 +1682,15 @@ export type Database = {
         Update: {
           cnpj?: string | null
           created_at?: string
+          display_name?: string | null
+          favicon_url?: string | null
           id?: string
           legal_name?: string | null
           logo_url?: string | null
           metadata?: Json
           name?: string
           primary_color?: string | null
+          secondary_color?: string | null
           slug?: string
           status?: string
           trial_ends_at?: string | null
