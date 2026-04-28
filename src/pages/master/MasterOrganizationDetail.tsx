@@ -17,7 +17,7 @@ const fetchOrgDetail = async (id: string) => {
   const [orgRes, subRes, membersRes, auditRes, plansRes, overridesRes] = await Promise.all([
     supabase.from("organizations" as any).select("*").eq("id", id).single() as any,
     supabase.from("organization_subscriptions" as any).select("*, plan:plans(*)").eq("organization_id", id).order("started_at", { ascending: false }).limit(1).maybeSingle() as any,
-    supabase.from("organization_members" as any).select("*, profile:profiles(display_name,avatar_url)").eq("organization_id", id) as any,
+    supabase.from("organization_members" as any).select("*").eq("organization_id", id) as any,
     supabase.from("admin_audit_logs" as any).select("*").eq("organization_id", id).order("created_at", { ascending: false }).limit(50) as any,
     supabase.from("plans" as any).select("id,name").eq("is_active", true).order("sort_order") as any,
     supabase.from("organization_feature_overrides" as any).select("*").eq("organization_id", id).order("created_at", { ascending: false }) as any,
@@ -30,6 +30,14 @@ const fetchOrgDetail = async (id: string) => {
     features = fr.data ?? [];
   }
 
+  const memberUserIds = (membersRes.data ?? []).map((m: any) => m.user_id);
+  const brokersByUserRes = memberUserIds.length
+    ? await (supabase.from("brokers" as any).select("user_id,name,email").in("user_id", memberUserIds) as any)
+    : { data: [] };
+  const brokerMap = new Map<string, { name: string; email: string }>();
+  (brokersByUserRes.data ?? []).forEach((b: any) => brokerMap.set(b.user_id, { name: b.name, email: b.email }));
+  const enrichedMembers = (membersRes.data ?? []).map((m: any) => ({ ...m, broker: brokerMap.get(m.user_id) ?? null }));
+
   const [brokersC, instancesC, projectsC] = await Promise.all([
     supabase.from("brokers" as any).select("id", { count: "exact", head: true }).eq("organization_id", id).eq("is_active", true) as any,
     supabase.from("broker_whatsapp_instances" as any).select("id", { count: "exact", head: true }).eq("organization_id", id) as any,
@@ -39,7 +47,7 @@ const fetchOrgDetail = async (id: string) => {
   return {
     org: orgRes.data,
     subscription: subRes.data,
-    members: membersRes.data ?? [],
+    members: enrichedMembers,
     audit: auditRes.data ?? [],
     plans: plansRes.data ?? [],
     features,
@@ -208,8 +216,10 @@ const MasterOrganizationDetail = () => {
               {data.members.map((m: any) => (
                 <div key={m.id} className="flex justify-between items-center border-b pb-2">
                   <div>
-                    <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
-                    <div className="text-xs text-muted-foreground">{m.role} · {m.is_active ? "ativo" : "inativo"}</div>
+                    <div className="font-medium">{m.broker?.name ?? m.broker?.email ?? m.user_id.slice(0, 8)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {m.broker?.email ? `${m.broker.email} · ` : ""}{m.role} · {m.is_active ? "ativo" : "inativo"}
+                    </div>
                   </div>
                 </div>
               ))}
