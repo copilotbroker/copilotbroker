@@ -99,18 +99,22 @@ const AdminOrganization = () => {
       <Card>
         <CardHeader><CardTitle>Uso vs Limites do Plano</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          {Object.values(features).filter((f: any) => f.value_int != null).length === 0 && (
+          {Object.values(features).filter((f: any) => f.feature_type === "limit").length === 0 && (
             <p className="text-sm text-muted-foreground">Plano sem limites numéricos definidos.</p>
           )}
-          {Object.values(features).filter((f: any) => f.value_int != null).map((f: any) => {
+          {Object.values(features).filter((f: any) => f.feature_type === "limit").map((f: any) => {
+            const limit = parseInt(f.feature_value, 10) || 0;
             const used = usageFor(f.feature_key, usage);
-            const pct = Math.min(100, (used / f.value_int) * 100);
-            const overLimit = used >= f.value_int;
+            const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+            const overLimit = limit > 0 && used >= limit;
             return (
               <div key={f.feature_key}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span>{featureLabel(f.feature_key)}</span>
-                  <span className={overLimit ? "text-destructive font-semibold" : "text-muted-foreground"}>{used} / {f.value_int}</span>
+                  <span>
+                    {featureLabel(f.feature_key)}
+                    {f.source === "override" && <span className="ml-2 text-xs text-primary">(add-on)</span>}
+                  </span>
+                  <span className={overLimit ? "text-destructive font-semibold" : "text-muted-foreground"}>{used} / {limit}</span>
                 </div>
                 <Progress value={pct} />
               </div>
