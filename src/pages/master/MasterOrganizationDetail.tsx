@@ -216,8 +216,10 @@ const MasterOrganizationDetail = () => {
               {data.members.map((m: any) => (
                 <div key={m.id} className="flex justify-between items-center border-b pb-2">
                   <div>
-                    <div className="font-medium">{m.profile?.display_name ?? m.user_id.slice(0, 8)}</div>
-                    <div className="text-xs text-muted-foreground">{m.role} · {m.is_active ? "ativo" : "inativo"}</div>
+                    <div className="font-medium">{m.broker?.name ?? m.broker?.email ?? m.user_id.slice(0, 8)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {m.broker?.email ? `${m.broker.email} · ` : ""}{m.role} · {m.is_active ? "ativo" : "inativo"}
+                    </div>
                   </div>
                 </div>
               ))}
