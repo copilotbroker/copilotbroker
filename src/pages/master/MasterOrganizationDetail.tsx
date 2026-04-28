@@ -30,6 +30,14 @@ const fetchOrgDetail = async (id: string) => {
     features = fr.data ?? [];
   }
 
+  const memberUserIds = (membersRes.data ?? []).map((m: any) => m.user_id);
+  const brokersByUserRes = memberUserIds.length
+    ? await (supabase.from("brokers" as any).select("user_id,name,email").in("user_id", memberUserIds) as any)
+    : { data: [] };
+  const brokerMap = new Map<string, { name: string; email: string }>();
+  (brokersByUserRes.data ?? []).forEach((b: any) => brokerMap.set(b.user_id, { name: b.name, email: b.email }));
+  const enrichedMembers = (membersRes.data ?? []).map((m: any) => ({ ...m, broker: brokerMap.get(m.user_id) ?? null }));
+
   const [brokersC, instancesC, projectsC] = await Promise.all([
     supabase.from("brokers" as any).select("id", { count: "exact", head: true }).eq("organization_id", id).eq("is_active", true) as any,
     supabase.from("broker_whatsapp_instances" as any).select("id", { count: "exact", head: true }).eq("organization_id", id) as any,
