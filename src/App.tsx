@@ -75,10 +75,10 @@ const App = () => (
             <Route path="/" element={<Home />} />
             
             {/* Landing pages — root prefix (legacy URLs, e.g. onovocondominio.com.br/estanciavelha) */}
-            <LandingRoutes prefix="" />
+            {LandingRoutes({ prefix: "" })}
 
             {/* Landing pages — org-scoped URLs (e.g. copilotbroker.lovable.app/enoveimobiliaria/estanciavelha) */}
-            <LandingRoutes prefix=":orgSlug" />
+            {LandingRoutes({ prefix: ":orgSlug" })}
 
 
             {/* Auth and admin routes */}
