@@ -106,8 +106,20 @@ const AdminOrganizationTeam = () => {
   const limitReached = hasReached("max_brokers");
   const rem = remaining("max_brokers");
 
+  const maxBrokers = asInt("max_brokers");
+  const usedBrokers = usage.brokers;
+
   return (
     <div className="space-y-6 p-6 max-w-6xl mx-auto">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/admin/organizacao")}
+        className="-ml-2 text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />Voltar para Organização
+      </Button>
+
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
@@ -123,11 +135,16 @@ const AdminOrganizationTeam = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Limite de Corretores</span>
-              {limitReached ? (
-                <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Limite atingido</Badge>
-              ) : (
-                <Badge variant="outline">{rem} vaga(s) disponível(is)</Badge>
-              )}
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="font-mono">
+                  {usedBrokers} / {maxBrokers ?? "∞"}
+                </Badge>
+                {limitReached ? (
+                  <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Limite atingido</Badge>
+                ) : (
+                  <Badge variant="outline">{rem} vaga(s) disponível(is)</Badge>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
         </Card>
