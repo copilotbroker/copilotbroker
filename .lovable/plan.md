@@ -1,71 +1,33 @@
-## Objetivo
-
-Restaurar o backup `backup-leads-enove-13corretores.sql` (523 leads + 2300 interações + 100 documentos + 517 atribuições) garantindo que **100% dos leads** sejam vinculados ao corretor e projeto corretos.
-
 ## Diagnóstico
 
-**Corretores** — todos os 13 existem no destino, mas 3 com emails divergentes:
+Os 523 leads importados estão **corretamente vinculados** à organização Enove Imobiliária (`organization_id = 7714ef82...`) e distribuídos entre os 13 corretores. Verificado:
 
-| Backup espera | Banco real |
-|---|---|
-| `pedrorocha.enove@gmail.com` | `pedro.enove@gmail.com` (Pedro Rocha) |
-| `vinibrito.enove@gmail.com` | `vinicius.enove@gmail.com` (Vinicius de Brito Machado) |
-| `jaqueline.enove@gmail.com` | `jaqueline.enove@hotmail.com` (Jaqueline Panigo) |
+- 523 leads com `organization_id` correto
+- 523 leads com `broker_id` válido (13 corretores Enove)
+- Cada corretor vê apenas seus próprios leads via RLS (`broker_id = get_my_broker_id()`)
 
-**Projetos** — apenas 2 dos 6 existem (`estanciavelha`, `mauriciocardoso`). Faltam 4:
-- `goldenview`
-- `prontos`
-- `casa-a-venda-em-estancia-velha-floresta-com-3-suites-com-135-m`
-- `oportunidade-casa-a-venda-em-campo-bom-firenze-com-3-suites-com-243-7-m`
+**A causa real:** o owner **Maicon** (`maicon.enove@gmail.com`) tem apenas a role global `super_admin` em `user_roles`. As RLS policies da tabela `leads` (e `lead_interactions`, `lead_documents`, `lead_attribution`, `conversations`, etc.) verificam `has_role(auth.uid(), 'admin')` — e `super_admin` **não satisfaz** essa checagem. Resultado: ao entrar no `/admin/crm`, o Maicon não recebe acesso amplo e o Kanban aparece vazio (ele também não tem `broker_id` próprio para cair no filtro de corretor).
 
-## Etapas de execução
+O mesmo vale para o Pablo Yague.
 
-### 1. Criar os 4 projetos faltantes (migration)
+## Solução
 
-Inserir registros mínimos em `public.projects` com os 4 slugs exatos esperados pelo backup, vinculados à organização Enove Select (`088e6667-b1d8-4544-8100-beca431e2c75`). Campos preenchidos: `name`, `slug`, `city`, `city_slug`, `organization_id`, `is_active=true`. Demais campos ficam com defaults / nulos para edição posterior no painel.
+Adicionar a role `admin` (mantendo `super_admin`) para os owners da Enove Imobiliária, via migration de `INSERT` em `user_roles`:
 
-### 2. Patch no SQL antes de rodar
+```sql
+INSERT INTO public.user_roles (user_id, role)
+SELECT u.id, 'admin'::app_role
+FROM auth.users u
+WHERE u.email IN ('maicon.enove@gmail.com', 'pablo.enove@gmail.com')
+ON CONFLICT (user_id, role) DO NOTHING;
+```
 
-Editar `/tmp/backup-leads.sql` em memória trocando os 3 emails divergentes pelos emails reais do banco (busca-e-substitui literal). Isso faz o `_broker_map` resolver os 3 corretores corretamente sem mexer no resto do script.
+## Validação esperada após o fix
 
-### 3. Suprimir triggers durante a importação
+- Maicon e Pablo logam em `/admin/crm` e veem os 523 leads no Kanban
+- Cada corretor (ex.: Pedro Rocha com 94 leads) continua vendo apenas seus próprios leads — sem mudança
+- Nenhuma alteração em RLS, schema ou código de aplicação
 
-Descomentar `SET session_replication_role = replica;` e `SET session_replication_role = origin;` no script. Isso evita:
-- Disparo em massa de `notify_new_lead` (criaria 523 notificações para cada admin)
-- Trigger `trigger_roleta_distribuir` chamando edge function 523 vezes
-- `auto_create_conversation_for_lead` criando 523 conversations
-- `update_lead_last_interaction` em cada uma das 2300 interações
+## Observação
 
-Os dados originais já trazem `created_at`, `broker_id`, `status`, `last_interaction_at`, etc. — não precisamos dos triggers para reconstituir o estado.
-
-### 4. Executar via psql
-
-Rodar o script patcheado dentro de uma transação. Capturar as mensagens NOTICE finais que reportam quantos leads/interações/docs/attribution foram inseridos.
-
-### 5. Validação pós-importação
-
-Executar 4 queries de conferência:
-- Total de leads inseridos = 523
-- Leads com `broker_id IS NULL` = 0 (todos vinculados)
-- Leads com `project_id IS NULL` agrupado por projeto esperado = 0
-- Contagem de leads por corretor (13 linhas, todas com totais > 0 esperados conforme distribuição original)
-
-Se algum lead ficar sem broker ou projeto, rollback e investigação.
-
-### 6. Reabilitar manualmente o que importa
-
-Após a importação, opcionalmente disparar `auto_create_conversation_for_lead` para os leads importados que tenham broker + WhatsApp, em batch único — ou deixar para criação sob demanda quando o lead receber mensagem. Recomendado: **não** recriar conversations agora (evita poluir Inbox com 523 threads vazias).
-
-## Detalhes técnicos
-
-- **Migration tool** (etapa 1): cria os 4 projetos.
-- **Insert tool** (etapas 2-4): script INSERT em massa via `supabase--insert` com o SQL patcheado.
-- **read_query** (etapa 5): validações.
-
-## Risco e reversibilidade
-
-O backup usa `ON CONFLICT (id) DO NOTHING` em todas as tabelas, então re-executar é seguro (idempotente). Se algo der errado a transação inteira é revertida com `ROLLBACK`.
-
-## Aprovação necessária
-
-Confirme para eu prosseguir. Posso também, se preferir, primeiro só criar os projetos e te mostrar o resultado antes de rodar a importação dos 523 leads.
+Não é necessário mexer em `organization_members` (Maicon já é `owner`) nem alterar policies. É um ajuste pontual de role global.
