@@ -2191,7 +2191,13 @@ export type Database = {
       unify_lead: { Args: { _new_lead_id: string }; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "broker" | "leader"
+      app_role:
+        | "admin"
+        | "broker"
+        | "leader"
+        | "super_admin"
+        | "owner"
+        | "manager"
       distribution_status:
         | "atribuicao_inicial"
         | "reassinado_timeout"
@@ -2357,7 +2363,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "broker", "leader"],
+      app_role: [
+        "admin",
+        "broker",
+        "leader",
+        "super_admin",
+        "owner",
+        "manager",
+      ],
       distribution_status: [
         "atribuicao_inicial",
         "reassinado_timeout",
