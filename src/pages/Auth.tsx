@@ -51,7 +51,22 @@ const Auth = () => {
       }
 
       const roles = (rolesData || []).map((r: { role: string }) => r.role);
-      
+
+      // Super-admin "puro" (sem outro papel operacional) tem portal próprio.
+      // Redireciona pra /master/overview se também for super_admin com perfis operacionais,
+      // ou força o uso do portal Master quando for SOMENTE super_admin.
+      const hasOperationalRole =
+        roles.includes("admin") || roles.includes("broker") || roles.includes("leader");
+
+      if (roles.includes("super_admin") && !hasOperationalRole) {
+        // Faz logout e manda para o portal Master para evitar mistura de sessão
+        await supabase.auth.signOut();
+        queryClient.clear();
+        toast.error("Super-admins devem acessar pelo portal Master.");
+        navigate("/master/login", { replace: true });
+        return;
+      }
+
       if (roles.includes("admin")) {
         navigate("/admin");
       } else if (roles.includes("broker") || roles.includes("leader")) {
