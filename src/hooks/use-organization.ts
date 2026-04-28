@@ -103,7 +103,8 @@ export const useOrganization = () => {
   };
 
   const role = query.data?.activeOrgRole ?? null;
-  const isOwnerOrAdmin = role === "owner" || role === "admin";
+  // 'manager' tem o mesmo poder administrativo de owner/admin dentro da organização
+  const isOwnerOrAdmin = role === "owner" || role === "admin" || role === "manager";
 
   return {
     isLoading: query.isLoading,
