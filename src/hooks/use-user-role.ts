@@ -16,7 +16,7 @@ const fetchUserRole = async (): Promise<Omit<UserRoleState, "isLoading">> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { role: null, brokerId: null, isLeader: false };
 
-  const [rolesResult, brokerResult] = await Promise.all([
+  const [rolesResult, brokerResult, membershipResult] = await Promise.all([
     supabase
       .from("user_roles" as any)
       .select("role")
@@ -26,6 +26,12 @@ const fetchUserRole = async (): Promise<Omit<UserRoleState, "isLoading">> => {
       .select("id")
       .eq("user_id", user.id)
       .maybeSingle() as any,
+    supabase
+      .from("organization_members" as any)
+      .select("role, approval_status, is_active")
+      .eq("user_id", user.id)
+      .eq("approval_status", "approved")
+      .eq("is_active", true) as any,
   ]);
 
   if (rolesResult.error) {
@@ -36,10 +42,15 @@ const fetchUserRole = async (): Promise<Omit<UserRoleState, "isLoading">> => {
   const roles = (rolesResult.data || []).map((r: { role: string }) => r.role);
   const isLeader = roles.includes("leader");
 
+  const memberships = (membershipResult.data || []) as Array<{ role: string }>;
+  const hasAdminMembership = memberships.some(
+    (m) => m.role === "owner" || m.role === "admin" || m.role === "manager"
+  );
+
   let role: AppRole = null;
-  if (roles.includes("admin")) {
+  if (roles.includes("admin") || (roles.includes("super_admin") && hasAdminMembership) || hasAdminMembership) {
     role = "admin";
-  } else if (roles.includes("broker") || roles.includes("leader")) {
+  } else if (roles.includes("broker") || roles.includes("leader") || memberships.some((m) => m.role === "broker")) {
     role = "broker";
   }
 
