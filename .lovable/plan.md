@@ -1,58 +1,71 @@
-## Contexto
+## Objetivo
 
-Hoje em `src/pages/Auth.tsx` (linhas 100‑107), qualquer usuário com role `super_admin` que **não tenha** outro papel operacional (`admin`/`broker`/`leader`) é deslogado e redirecionado para `/master/login`.
+Restaurar o backup `backup-leads-enove-13corretores.sql` (523 leads + 2300 interações + 100 documentos + 517 atribuições) garantindo que **100% dos leads** sejam vinculados ao corretor e projeto corretos.
 
-O caso `maicon.enove@gmail.com` é especial: ele é **super_admin E owner/admin da Enove Imobiliária** (via `organization_members`). Pela memória `super-admin-bootstrap`, esses dois usuários são promovidos a super_admin + owner Enove Select por trigger.
+## Diagnóstico
 
-Mas o check atual usa apenas `user_roles` — não considera membership ativo em organização. Como ele provavelmente **não tem** linha em `user_roles` com role `admin` (apenas `super_admin`), cai no bloqueio e é jogado para `/master/login`.
+**Corretores** — todos os 13 existem no destino, mas 3 com emails divergentes:
 
-## O que mudar
-
-**Arquivo único:** `src/pages/Auth.tsx`, função `checkUserRoleAndRedirect`.
-
-### 1. Considerar membership de organização como "papel operacional"
-
-Antes do bloqueio super_admin (linha 100), verificar se existe membership ativo:
-
-```text
-hasOrgMembership = lista de memberships já carregada acima tem
-                   alguma com approval_status='approved'
-                   AND is_active=true
-                   AND organization.status='active'
-```
-
-(Esse cálculo já existe na linha 50 como `hasUsable` — basta reutilizar.)
-
-### 2. Ajustar a condição de bloqueio
-
-Trocar:
-```text
-if (super_admin AND !hasOperationalRole) → força /master/login
-```
-por:
-```text
-if (super_admin AND !hasOperationalRole AND !hasOrgMembership) → força /master/login
-```
-
-### 3. Decidir destino quando super_admin tem org
-
-Se super_admin + membership de org (sem role admin/broker/leader explícita em `user_roles`):
-- Tratar como **admin da imobiliária** → redirecionar para `/admin/dashboard`
-- Continua podendo acessar `/master/*` manualmente quando quiser (login Master é separado)
-
-### Resultado
-
-| Usuário | Login em /auth |
+| Backup espera | Banco real |
 |---|---|
-| Só super_admin (ex: pablo) | Bloqueado, vai para /master/login |
-| super_admin + owner de org (maicon) | **Entra como admin da imobiliária** em /admin/dashboard |
-| Admin/broker/leader normal | Inalterado |
+| `pedrorocha.enove@gmail.com` | `pedro.enove@gmail.com` (Pedro Rocha) |
+| `vinibrito.enove@gmail.com` | `vinicius.enove@gmail.com` (Vinicius de Brito Machado) |
+| `jaqueline.enove@gmail.com` | `jaqueline.enove@hotmail.com` (Jaqueline Panigo) |
 
-O acesso ao painel Master continua exclusivo via `/master/login` (não muda nada lá).
+**Projetos** — apenas 2 dos 6 existem (`estanciavelha`, `mauriciocardoso`). Faltam 4:
+- `goldenview`
+- `prontos`
+- `casa-a-venda-em-estancia-velha-floresta-com-3-suites-com-135-m`
+- `oportunidade-casa-a-venda-em-campo-bom-firenze-com-3-suites-com-243-7-m`
+
+## Etapas de execução
+
+### 1. Criar os 4 projetos faltantes (migration)
+
+Inserir registros mínimos em `public.projects` com os 4 slugs exatos esperados pelo backup, vinculados à organização Enove Select (`088e6667-b1d8-4544-8100-beca431e2c75`). Campos preenchidos: `name`, `slug`, `city`, `city_slug`, `organization_id`, `is_active=true`. Demais campos ficam com defaults / nulos para edição posterior no painel.
+
+### 2. Patch no SQL antes de rodar
+
+Editar `/tmp/backup-leads.sql` em memória trocando os 3 emails divergentes pelos emails reais do banco (busca-e-substitui literal). Isso faz o `_broker_map` resolver os 3 corretores corretamente sem mexer no resto do script.
+
+### 3. Suprimir triggers durante a importação
+
+Descomentar `SET session_replication_role = replica;` e `SET session_replication_role = origin;` no script. Isso evita:
+- Disparo em massa de `notify_new_lead` (criaria 523 notificações para cada admin)
+- Trigger `trigger_roleta_distribuir` chamando edge function 523 vezes
+- `auto_create_conversation_for_lead` criando 523 conversations
+- `update_lead_last_interaction` em cada uma das 2300 interações
+
+Os dados originais já trazem `created_at`, `broker_id`, `status`, `last_interaction_at`, etc. — não precisamos dos triggers para reconstituir o estado.
+
+### 4. Executar via psql
+
+Rodar o script patcheado dentro de uma transação. Capturar as mensagens NOTICE finais que reportam quantos leads/interações/docs/attribution foram inseridos.
+
+### 5. Validação pós-importação
+
+Executar 4 queries de conferência:
+- Total de leads inseridos = 523
+- Leads com `broker_id IS NULL` = 0 (todos vinculados)
+- Leads com `project_id IS NULL` agrupado por projeto esperado = 0
+- Contagem de leads por corretor (13 linhas, todas com totais > 0 esperados conforme distribuição original)
+
+Se algum lead ficar sem broker ou projeto, rollback e investigação.
+
+### 6. Reabilitar manualmente o que importa
+
+Após a importação, opcionalmente disparar `auto_create_conversation_for_lead` para os leads importados que tenham broker + WhatsApp, em batch único — ou deixar para criação sob demanda quando o lead receber mensagem. Recomendado: **não** recriar conversations agora (evita poluir Inbox com 523 threads vazias).
 
 ## Detalhes técnicos
 
-- Arquivo: `src/pages/Auth.tsx` apenas
-- Sem migração de banco
-- Sem alteração em edge functions
-- Memória `super-admin-portal-isolation` será atualizada para refletir a nova exceção (super_admin com membership pode usar /auth)
+- **Migration tool** (etapa 1): cria os 4 projetos.
+- **Insert tool** (etapas 2-4): script INSERT em massa via `supabase--insert` com o SQL patcheado.
+- **read_query** (etapa 5): validações.
+
+## Risco e reversibilidade
+
+O backup usa `ON CONFLICT (id) DO NOTHING` em todas as tabelas, então re-executar é seguro (idempotente). Se algo der errado a transação inteira é revertida com `ROLLBACK`.
+
+## Aprovação necessária
+
+Confirme para eu prosseguir. Posso também, se preferir, primeiro só criar os projetos e te mostrar o resultado antes de rodar a importação dos 523 leads.
