@@ -46,18 +46,23 @@ const AdminOrganizationTeam = () => {
     },
   });
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    queryClient.invalidateQueries({ queryKey: ["organization-limits", activeOrg?.id] });
+  };
+
   const updateRole = async (memberId: string, role: string) => {
     const { error } = await supabase.from("organization_members" as any).update({ role }).eq("id", memberId) as any;
     if (error) { toast.error(error.message); return; }
     toast.success("Papel atualizado.");
-    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    invalidateAll();
   };
 
   const toggleActive = async (memberId: string, current: boolean) => {
     const { error } = await supabase.from("organization_members" as any).update({ is_active: !current }).eq("id", memberId) as any;
     if (error) { toast.error(error.message); return; }
     toast.success(current ? "Membro desativado." : "Membro reativado.");
-    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    invalidateAll();
   };
 
   const approveMember = async (memberId: string) => {
@@ -68,7 +73,7 @@ const AdminOrganizationTeam = () => {
     }).eq("id", memberId) as any;
     if (error) { toast.error(error.message); return; }
     toast.success("Corretor aprovado!");
-    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    invalidateAll();
   };
 
   const rejectMember = async (memberId: string) => {
@@ -78,7 +83,7 @@ const AdminOrganizationTeam = () => {
     }).eq("id", memberId) as any;
     if (error) { toast.error(error.message); return; }
     toast.success("Solicitação rejeitada.");
-    queryClient.invalidateQueries({ queryKey: ["org-members", activeOrg?.id] });
+    invalidateAll();
   };
 
   // Sempre usa o domínio público (não a URL de preview do editor) para o link compartilhável.
