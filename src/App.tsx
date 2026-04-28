@@ -32,36 +32,12 @@ import AdminCopilotConfig from "./pages/AdminCopilotConfig";
 import AdminAgenda from "./pages/AdminAgenda";
 import BrokerAgenda from "./pages/BrokerAgenda";
 import BrokerProfile from "./pages/BrokerProfile";
-import Prontos from "./pages/Prontos";
-import ProntosBrokerPage from "./pages/ProntosBrokerPage";
 import Termos from "./pages/Termos";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LeadPage from "./pages/LeadPage";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
-import HantowerLandingPage from "./pages/hantower/HantowerLandingPage";
-import SentowerLandingPage from "./pages/sentower/SentowerLandingPage";
-import CA2727LandingPage from "./pages/CA2727LandingPage";
 import NotFound from "./pages/NotFound";
-import NAULandingPage from "./pages/nau/NAULandingPage";
-import NAUBrokerLandingPage from "./pages/nau/NAUBrokerLandingPage";
-import TermosNAU from "./pages/nau/TermosNAU";
-import MonacoLandingPage from "./pages/monaco/MonacoLandingPage";
-import MonacoBrokerLandingPage from "./pages/monaco/MonacoBrokerLandingPage";
-import TermosMonaco from "./pages/monaco/TermosMonaco";
-import VivaParkLandingPage from "./pages/vivapark/VivaParkLandingPage";
-import VivaParkBrokerLandingPage from "./pages/vivapark/VivaParkBrokerLandingPage";
-import TermosVivaPark from "./pages/vivapark/TermosVivaPark";
-import NC1LandingPage from "./pages/vivapark/NC1LandingPage";
-import NC1BrokerLandingPage from "./pages/vivapark/NC1BrokerLandingPage";
-// Stuttgart — code-split para não pesar no bundle inicial (4.6MB de imagens)
-const StuttgartLandingPage = lazy(() => import("./pages/stuttgart/StuttgartLandingPage"));
-const StuttgartBrokerLandingPage = lazy(() => import("./pages/stuttgart/StuttgartBrokerLandingPage"));
-const StuttgartIvotiV2LandingPage = lazy(() => import("./pages/stuttgart/StuttgartIvotiV2LandingPage"));
-const TermosStuttgart = lazy(() => import("./pages/stuttgart/TermosStuttgart"));
-import AuraLeganoLandingPage from "./pages/auralegano/AuraLeganoLandingPage";
-import AuraLeganoBrokerLandingPage from "./pages/auralegano/AuraLeganoBrokerLandingPage";
-import TermosAuraLegano from "./pages/auralegano/TermosAuraLegano";
 
 // Master Panel (super_admin) - lazy loaded
 const MasterLayout = lazy(() => import("./components/master/MasterLayout"));
