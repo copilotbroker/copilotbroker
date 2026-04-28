@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { HelmetProvider } from "react-helmet-async";
 import AppHead from "@/components/AppHead";
 import { SaasNavLauncher } from "@/components/SaasNavLauncher";
+import { WhiteLabelProvider } from "@/components/WhiteLabelProvider";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import Home from "./pages/Home";
 // Backup: landing pages completas de Estância Velha (reativar trocando as rotas abaixo)
