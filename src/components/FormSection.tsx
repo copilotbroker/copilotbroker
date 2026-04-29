@@ -268,12 +268,18 @@ const FormSection = ({
                 Nome Completo
               </label>
               <input
+                ref={nameInputRef}
                 type="text"
                 id="name-landing"
                 name="name"
                 autoComplete="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onBlur={(e) => {
+                  if (e.target.value && e.target.value !== formData.name) {
+                    setFormData((prev) => ({ ...prev, name: e.target.value }));
+                  }
+                }}
                 className="w-full px-4 py-3 sm:py-3.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-base"
                 placeholder="Digite seu nome completo"
                 aria-required="true"
