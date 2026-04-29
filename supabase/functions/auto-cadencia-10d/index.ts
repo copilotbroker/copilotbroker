@@ -207,22 +207,56 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 6. Check broker WhatsApp instance (also get working hours)
-    const { data: instance } = await supabase
-      .from("broker_whatsapp_instances")
-      .select("id, instance_token, status, working_hours_start, working_hours_end")
-      .eq("broker_id", lead.broker_id)
-      .single();
+    // 6. Decide which instance to use based on the lead's most recent conversation:
+    //    - source_instance = 'global'   → enviar via global_whatsapp_config (Plantão)
+    //    - source_instance = 'personal' → enviar via broker_whatsapp_instances do broker
+    const { data: convForLead } = await supabase
+      .from("conversations")
+      .select("source_instance")
+      .eq("lead_id", effectiveLeadId)
+      .order("last_message_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (!instance || instance.status !== "connected") {
-      console.log("Broker WhatsApp not connected:", lead.broker_id);
-      return new Response(JSON.stringify({ status: "skipped", reason: "whatsapp_not_connected" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const sourceInstance: "global" | "personal" =
+      (convForLead?.source_instance as "global" | "personal" | undefined) ?? "personal";
+
+    let whStart = "09:00";
+    let whEnd = "21:00";
+
+    if (sourceInstance === "global") {
+      // Validate global instance is connected
+      const { data: globalCfg } = await supabase
+        .from("global_whatsapp_config")
+        .select("status")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!globalCfg || globalCfg.status !== "connected") {
+        console.log("Global WhatsApp not connected — skipping cadencia");
+        return new Response(JSON.stringify({ status: "skipped", reason: "global_whatsapp_not_connected" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Working hours fixos para a instância global (09:00–21:00 BRT por enquanto)
+    } else {
+      const { data: instance } = await supabase
+        .from("broker_whatsapp_instances")
+        .select("id, instance_token, status, working_hours_start, working_hours_end")
+        .eq("broker_id", lead.broker_id)
+        .single();
+
+      if (!instance || instance.status !== "connected") {
+        console.log("Broker WhatsApp not connected:", lead.broker_id);
+        return new Response(JSON.stringify({ status: "skipped", reason: "whatsapp_not_connected" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      whStart = instance.working_hours_start || "09:00";
+      whEnd = instance.working_hours_end || "21:00";
     }
-
-    const whStart = instance.working_hours_start || "09:00";
-    const whEnd = instance.working_hours_end || "21:00";
 
     // 7. Fetch custom steps from auto_cadencia_steps (or fallback to DEFAULT_STEPS)
     const { data: customSteps } = await supabase
