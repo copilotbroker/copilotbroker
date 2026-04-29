@@ -131,9 +131,16 @@ const BrokerProjectLanding = () => {
   }
 
   // Legacy URL format /:citySlug/:projectSlug/:brokerSlug — render the legacy
-  // page component directly (params are aliased: brokerSlug→citySlug, etc.).
+  // page component with remapped params (the broker-first route reuses the
+  // same path so we have to re-alias them explicitly here).
   if (renderLegacy) {
-    return <ProjectBrokerLandingPage />;
+    return (
+      <ProjectBrokerLandingPage
+        citySlugOverride={brokerSlug}
+        projectSlugOverride={citySlug}
+        brokerSlugOverride={projectSlug}
+      />
+    );
   }
 
   if (!project) return null;
