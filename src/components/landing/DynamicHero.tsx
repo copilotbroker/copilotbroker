@@ -14,9 +14,11 @@ export default function DynamicHero({ content, theme }: Props) {
   const hasBg = !!content.backgroundImageUrl;
   const isSplit = content.layout === "split";
   const accentIsLight = isLightColor(theme.accentColor);
-  const heroTextColor = getReadableTextColor(theme.accentColor);
-  const heroMutedColor = getMutedTextColor(theme.accentColor);
-  const badgeSurface = getSoftSurface(theme.accentColor);
+  // When a background image is present we render text over a dark photo overlay,
+  // so text MUST be light regardless of the accent color of the theme.
+  const heroTextColor = hasBg ? "#F8FAFC" : getReadableTextColor(theme.accentColor);
+  const heroMutedColor = hasBg ? "rgba(248,250,252,0.88)" : getMutedTextColor(theme.accentColor);
+  const badgeSurface = hasBg ? "rgba(15,23,42,0.45)" : getSoftSurface(theme.accentColor);
   const buttonTextColor = getReadableTextColor(theme.primaryColor, "#F8FAFC", "#0F172A");
 
   useEffect(() => {
