@@ -93,7 +93,23 @@ const ProjectLandingPage = () => {
     return <DynamicLandingPage project={project} />;
   }
 
-  // Fallback: generic layout
+  // Projects created by a broker but without AI-generated content yet:
+  // show a friendly placeholder instead of the generic legacy layout
+  // (which used to render Bairro das Rosas hero/about and confused users).
+  if (project.created_by_broker_id) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <div className="max-w-md text-center space-y-4">
+          <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
+          <p className="text-muted-foreground">
+            Esta landing page ainda está sendo preparada. Volte em instantes.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Legacy fallback for old non-broker projects (Bairro das Rosas, etc.)
   return (
     <>
       <a
