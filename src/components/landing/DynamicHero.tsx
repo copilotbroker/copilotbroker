@@ -100,7 +100,7 @@ export default function DynamicHero({ content, theme }: Props) {
             className={`text-lg sm:text-xl md:text-2xl mb-3 md:mb-4 font-light transition-all duration-700 delay-300 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             } ${isSerif ? "font-serif" : ""}`}
-            style={{ color: accentIsLight ? "rgba(248,250,252,0.92)" : theme.primaryColor }}
+            style={{ color: hasBg ? "rgba(248,250,252,0.95)" : (accentIsLight ? "rgba(248,250,252,0.92)" : theme.primaryColor) }}
           >
             {content.subtitle}
           </p>
