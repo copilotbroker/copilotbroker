@@ -199,8 +199,8 @@ const FormSection = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          nome_completo: formData.name.trim(),
-          whatsapp: formData.whatsapp.trim(),
+          nome_completo: effectiveName,
+          whatsapp: effectiveWhatsappRaw,
           broker_id: brokerId || selectedBrokerId || null,
           project_id: projectId || null,
           source: brokerSlug || projectSlug || "enove",
