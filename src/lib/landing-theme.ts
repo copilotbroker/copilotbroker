@@ -65,11 +65,11 @@ function getAlpha(hex: string) {
 
 /**
  * Compute the *effective* background color when a translucent hex sits on top
- * of a parent surface. The landing pages render on a near-black app shell
- * (forced dark theme), so a tint like `#3B82F60d` (5% opacity) is effectively
- * dark — and text on it must be light, not dark.
+ * of a parent surface. Landing pages render on a neutral white shell so a
+ * very-faint accent tint (e.g. `#3B82F60d` = 5% opacity) is effectively almost
+ * white — text on it must be DARK, not light.
  */
-function getEffectiveBackground(hex: string, parentHex = "#0a0a0f") {
+function getEffectiveBackground(hex: string, parentHex = "#ffffff") {
   const alpha = getAlpha(hex);
   if (alpha >= 0.98) return hex;
   const fg = hexToRgb(hex);
