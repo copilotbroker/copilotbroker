@@ -87,7 +87,7 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
   if (!content) return null;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white text-slate-900">
       <main>
         <DynamicHero content={content.hero} theme={content.theme} />
         <DynamicAbout content={content.about} theme={content.theme} />
