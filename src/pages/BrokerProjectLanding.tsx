@@ -59,7 +59,9 @@ const BrokerProjectLanding = () => {
               .eq("is_active", true)
               .maybeSingle();
             if (legacy) {
-              navigate(`/${legacyCity}/${legacyProject}/${legacyBroker}`, { replace: true });
+              // Render legacy city/project/broker landing inline (avoid route loop).
+              setRenderLegacy(true);
+              setIsLoading(false);
               return;
             }
           }
