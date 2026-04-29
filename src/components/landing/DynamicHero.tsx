@@ -14,9 +14,11 @@ export default function DynamicHero({ content, theme }: Props) {
   const hasBg = !!content.backgroundImageUrl;
   const isSplit = content.layout === "split";
   const accentIsLight = isLightColor(theme.accentColor);
-  const heroTextColor = getReadableTextColor(theme.accentColor);
-  const heroMutedColor = getMutedTextColor(theme.accentColor);
-  const badgeSurface = getSoftSurface(theme.accentColor);
+  // When a background image is present we render text over a dark photo overlay,
+  // so text MUST be light regardless of the accent color of the theme.
+  const heroTextColor = hasBg ? "#F8FAFC" : getReadableTextColor(theme.accentColor);
+  const heroMutedColor = hasBg ? "rgba(248,250,252,0.88)" : getMutedTextColor(theme.accentColor);
+  const badgeSurface = hasBg ? "rgba(15,23,42,0.45)" : getSoftSurface(theme.accentColor);
   const buttonTextColor = getReadableTextColor(theme.primaryColor, "#F8FAFC", "#0F172A");
 
   useEffect(() => {
@@ -47,11 +49,11 @@ export default function DynamicHero({ content, theme }: Props) {
           <div
             className="absolute inset-0"
             style={{
-              background: accentIsLight
-                ? "linear-gradient(135deg, rgba(15,23,42,0.72) 0%, rgba(15,23,42,0.52) 45%, rgba(15,23,42,0.38) 100%)"
-                : `linear-gradient(135deg, ${theme.accentColor}d9 0%, ${theme.accentColor}c9 50%, rgba(15,23,42,0.42) 100%)`,
+              background:
+                "linear-gradient(135deg, rgba(8,12,24,0.82) 0%, rgba(8,12,24,0.65) 50%, rgba(8,12,24,0.55) 100%)",
             }}
           />
+          <div className="absolute inset-0 bg-black/20" />
         </>
       )}
 
@@ -98,7 +100,7 @@ export default function DynamicHero({ content, theme }: Props) {
             className={`text-lg sm:text-xl md:text-2xl mb-3 md:mb-4 font-light transition-all duration-700 delay-300 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             } ${isSerif ? "font-serif" : ""}`}
-            style={{ color: accentIsLight ? "rgba(248,250,252,0.92)" : theme.primaryColor }}
+            style={{ color: hasBg ? "rgba(248,250,252,0.95)" : (accentIsLight ? "rgba(248,250,252,0.92)" : theme.primaryColor) }}
           >
             {content.subtitle}
           </p>
