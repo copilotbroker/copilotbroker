@@ -333,7 +333,8 @@ Deno.serve(async (req) => {
       .eq("source_instance", "global")
       .eq("attendance_started", false)
       .lte("reserva_expira_em", now)
-      .not("reserva_expira_em", "is", null);
+      .not("reserva_expira_em", "is", null)
+      .not("lead_id", "is", null);
 
     if (convError) {
       console.error("Error fetching expired conversations:", convError);
