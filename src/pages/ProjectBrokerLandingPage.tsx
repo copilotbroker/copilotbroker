@@ -53,29 +53,6 @@ const ProjectBrokerLandingPage = () => {
         if (projectError) throw projectError;
 
         if (!projectData) {
-          // Fallback: this URL pattern (/:a/:b/:c) may actually be a broker-owned
-          // landing where the FIRST segment is the broker slug, not the city.
-          // Re-interpret as /:brokerSlug/:citySlug/:projectSlug.
-          const maybeBrokerSlug = citySlug;
-          const maybeCitySlug = projectSlug;
-          const maybeProjectSlug = brokerSlug;
-
-          if (maybeBrokerSlug && maybeCitySlug && maybeProjectSlug) {
-            const { data: brokerOwnedProject } = await supabase
-              .from("projects")
-              .select("id")
-              .eq("city_slug", maybeCitySlug)
-              .eq("slug", maybeProjectSlug)
-              .eq("is_active", true)
-              .not("created_by_broker_id", "is", null)
-              .maybeSingle();
-
-            if (brokerOwnedProject) {
-              navigate(`/${maybeBrokerSlug}/${maybeCitySlug}/${maybeProjectSlug}`, { replace: true });
-              return;
-            }
-          }
-
           navigate("/");
           return;
         }
