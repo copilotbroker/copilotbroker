@@ -7,6 +7,7 @@ import Canela from "@/pages/Canela";
 import EstanciaVelhaBrokerTeaser from "@/pages/EstanciaVelhaBrokerTeaser";
 import ProjectLandingPage from "@/pages/ProjectLandingPage";
 import ProjectBrokerLandingPage from "@/pages/ProjectBrokerLandingPage";
+import BrokerProjectLanding from "@/pages/BrokerProjectLanding";
 import GoldenViewLandingPage from "@/pages/goldenview/GoldenViewLandingPage";
 import GoldenViewBrokerLandingPage from "@/pages/goldenview/GoldenViewBrokerLandingPage";
 import MauricioCardosoLandingPage from "@/pages/mauriciocardoso/MauricioCardosoLandingPage";
