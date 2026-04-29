@@ -130,6 +130,12 @@ const BrokerProjectLanding = () => {
     );
   }
 
+  // Legacy URL format /:citySlug/:projectSlug/:brokerSlug — render the legacy
+  // page component directly (params are aliased: brokerSlug→citySlug, etc.).
+  if (renderLegacy) {
+    return <ProjectBrokerLandingPage />;
+  }
+
   if (!project) return null;
 
   if (project.landing_content) {
