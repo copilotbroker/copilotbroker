@@ -213,8 +213,8 @@ const FormSection = ({
       supabase.functions.invoke("notify-new-lead", {
         body: {
           leadId: leadId,
-          leadName: formData.name.trim(),
-          leadWhatsapp: formData.whatsapp.trim(),
+          leadName: effectiveName,
+          leadWhatsapp: effectiveWhatsappRaw,
           brokerId: brokerId || selectedBrokerId || null,
           projectId: projectId || null,
           source: brokerSlug || projectSlug || "Site Enove",
