@@ -37,6 +37,8 @@ const FormSection = ({
   const [formData, setFormData] = useState({ name: "", whatsapp: "" });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const whatsappInputRef = useRef<HTMLInputElement>(null);
   
   // Broker selection states
   const [showBrokerSelect, setShowBrokerSelect] = useState(false);
