@@ -130,6 +130,10 @@ export function LandingRoutes({ prefix = "" }: { prefix?: string }) {
       <Route path={`${p}/novasantarita/auralegano/:brokerSlug/obrigado`} element={<AuraLeganoBrokerLandingPage />} />
       <Route path={`${p}/novasantarita/auralegano/:brokerSlug`} element={<AuraLeganoBrokerLandingPage />} />
 
+      {/* Broker-owned dynamic landing (broker created the project): /:brokerSlug/:citySlug/:projectSlug
+          Must come BEFORE the city/project/:brokerSlug pattern to win the match. */}
+      <Route path={`${p}/:brokerSlug/:citySlug/:projectSlug`} element={<BrokerProjectLanding />} />
+
       {/* Dynamic city/project routes — MUST be last in this group */}
       <Route path={`${p}/:citySlug/:projectSlug`} element={<ProjectLandingPage />} />
       <Route path={`${p}/:citySlug/:projectSlug/:brokerSlug`} element={<ProjectBrokerLandingPage />} />
