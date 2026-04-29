@@ -92,14 +92,26 @@ const FormSection = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.whatsapp.trim()) {
+
+    // Fallback para autofill do navegador (Chrome/Safari mobile podem preencher
+    // o input visualmente sem disparar onChange do React). Lemos o valor real do DOM.
+    const domName = nameInputRef.current?.value ?? "";
+    const domWhatsapp = whatsappInputRef.current?.value ?? "";
+    const effectiveName = (formData.name || domName).trim();
+    const effectiveWhatsappRaw = formData.whatsapp || domWhatsapp.replace(/\D/g, "");
+
+    // Sincroniza estado se o autofill foi capturado apenas via DOM
+    if (effectiveName !== formData.name.trim() || effectiveWhatsappRaw !== formData.whatsapp) {
+      setFormData({ name: effectiveName, whatsapp: effectiveWhatsappRaw });
+    }
+
+    if (!effectiveName || !effectiveWhatsappRaw) {
       toast.error("Por favor, preencha todos os campos.");
       return;
     }
 
     // Validação do WhatsApp
-    if (!isValidWhatsApp(formData.whatsapp)) {
+    if (!isValidWhatsApp(effectiveWhatsappRaw)) {
       toast.error("Por favor, insira um número de WhatsApp válido.");
       return;
     }
