@@ -408,6 +408,173 @@ interface QueueMessage {
   max_attempts: number;
 }
 
+// Global channel limits (Plantão WhatsApp shared instance)
+const GLOBAL_HOURLY_LIMIT = 60;
+const GLOBAL_DAILY_LIMIT = 500;
+const GLOBAL_WORKING_HOURS_START = "09:00";
+const GLOBAL_WORKING_HOURS_END = "21:00";
+
+// Process queue items routed through the global Plantão instance
+async function processGlobalQueue(supabase: ReturnType<typeof getSupabaseClient>) {
+  const summary = { processed: 0, sent: 0, failed: 0, skipped: 0, reason: "" };
+
+  // Working hours guard
+  if (!isWithinWorkingHours(GLOBAL_WORKING_HOURS_START, GLOBAL_WORKING_HOURS_END)) {
+    summary.reason = "outside_working_hours";
+    return summary;
+  }
+
+  // Load global config
+  const { data: globalCfg } = await supabase
+    .from("global_whatsapp_config")
+    .select("id, instance_name, instance_token, status")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!globalCfg || (globalCfg as any).status !== "connected") {
+    summary.reason = "global_not_connected";
+    return summary;
+  }
+
+  const cfg = globalCfg as { id: string; instance_name: string; instance_token: string | null };
+
+  // Rate-limit check: count messages already sent today / this hour via global
+  const todayStart = new Date(); todayStart.setUTCHours(0, 0, 0, 0);
+  const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+  const { count: dailyCount } = await supabase
+    .from("whatsapp_message_queue")
+    .select("id", { count: "exact", head: true })
+    .eq("source_instance", "global")
+    .eq("status", "sent")
+    .gte("sent_at", todayStart.toISOString());
+
+  if ((dailyCount ?? 0) >= GLOBAL_DAILY_LIMIT) {
+    summary.reason = "global_daily_limit";
+    return summary;
+  }
+
+  const { count: hourlyCount } = await supabase
+    .from("whatsapp_message_queue")
+    .select("id", { count: "exact", head: true })
+    .eq("source_instance", "global")
+    .eq("status", "sent")
+    .gte("sent_at", hourAgo.toISOString());
+
+  if ((hourlyCount ?? 0) >= GLOBAL_HOURLY_LIMIT) {
+    summary.reason = "global_hourly_limit";
+    return summary;
+  }
+
+  // Fetch up to 5 ready global messages this tick (keeps cron pace gentle)
+  const { data: msgs } = await supabase
+    .from("whatsapp_message_queue")
+    .select("*")
+    .eq("source_instance", "global")
+    .in("status", ["scheduled", "queued"])
+    .lte("scheduled_at", new Date().toISOString())
+    .order("scheduled_at", { ascending: true })
+    .limit(5);
+
+  if (!msgs || msgs.length === 0) {
+    summary.reason = "no_global_messages";
+    return summary;
+  }
+
+  for (const raw of msgs) {
+    const queueMsg = raw as QueueMessage;
+    summary.processed++;
+
+    // Opt-out check
+    const { data: optout } = await supabase
+      .from("whatsapp_optouts").select("id").eq("phone", queueMsg.phone).maybeSingle();
+    if (optout) {
+      await supabase.from("whatsapp_message_queue").update({
+        status: "cancelled", error_message: "Phone opted out", updated_at: new Date().toISOString(),
+      }).eq("id", queueMsg.id);
+      summary.skipped++;
+      continue;
+    }
+
+    // Mark sending
+    await supabase.from("whatsapp_message_queue")
+      .update({ status: "sending", updated_at: new Date().toISOString() })
+      .eq("id", queueMsg.id);
+
+    const sendResult = await sendMessageViaUAZAPI(
+      cfg.instance_name, cfg.instance_token, queueMsg.phone, queueMsg.message,
+    );
+
+    if (sendResult.success) {
+      await supabase.from("whatsapp_message_queue").update({
+        status: "sent",
+        sent_at: new Date().toISOString(),
+        uazapi_message_id: sendResult.messageId,
+        updated_at: new Date().toISOString(),
+      }).eq("id", queueMsg.id);
+
+      // Sync to GLOBAL conversation (do not create personal conversation)
+      try {
+        const phoneNorm = getCanonicalPhoneNormalized(queueMsg.phone);
+        const { data: conv } = await supabase
+          .from("conversations")
+          .select("id")
+          .eq("source_instance", "global")
+          .eq("phone_normalized", phoneNorm)
+          .order("last_message_at", { ascending: false, nullsFirst: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (conv) {
+          await supabase.from("conversation_messages").insert({
+            conversation_id: (conv as any).id,
+            direction: "outbound",
+            content: queueMsg.message,
+            sent_by: "ai",
+            message_type: "text",
+            status: "sent",
+            uazapi_message_id: sendResult.messageId || null,
+          });
+        }
+      } catch (syncErr) {
+        console.warn("Falha ao sincronizar global conv:", syncErr);
+      }
+
+      if (queueMsg.lead_id) {
+        const isCadenciaStep = !!queueMsg.campaign_id && !!(queueMsg as any).step_number;
+        const notePrefix = isCadenciaStep
+          ? `📤 Cadência 10D (Plantão Global) — Etapa ${(queueMsg as any).step_number} enviada`
+          : "✅ Mensagem enviada via WhatsApp Plantão Global";
+        await supabase.from("lead_interactions").insert({
+          lead_id: queueMsg.lead_id,
+          broker_id: queueMsg.broker_id,
+          interaction_type: "contact_attempt",
+          channel: "whatsapp",
+          notes: `${notePrefix}\n\n${queueMsg.message}`,
+        });
+      }
+
+      summary.sent++;
+    } else {
+      const newAttempts = queueMsg.attempts + 1;
+      const isFinalAttempt = newAttempts >= queueMsg.max_attempts;
+      await supabase.from("whatsapp_message_queue").update({
+        status: isFinalAttempt ? "failed" : "scheduled",
+        attempts: newAttempts,
+        error_message: sendResult.error,
+        updated_at: new Date().toISOString(),
+        scheduled_at: isFinalAttempt
+          ? queueMsg.scheduled_at
+          : new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      }).eq("id", queueMsg.id);
+      summary.failed++;
+    }
+  }
+
+  return summary;
+}
+
 // CORS preflight
 app.options("/*", (c) => {
   return c.json({}, 200, corsHeaders);
