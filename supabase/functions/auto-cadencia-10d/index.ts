@@ -368,6 +368,7 @@ Deno.serve(async (req) => {
         status: "scheduled",
         scheduled_at: adjusted.toISOString(),
         step_number: i + 1,
+        source_instance: sourceInstance,
       };
     });
 
