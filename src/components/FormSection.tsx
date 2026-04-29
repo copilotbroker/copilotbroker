@@ -140,8 +140,8 @@ const FormSection = ({
         lead_origin_detail?: string | null;
       } = {
         id: leadId,
-        name: formData.name.trim(),
-        whatsapp: formData.whatsapp.trim(),
+        name: effectiveName,
+        whatsapp: effectiveWhatsappRaw,
         source: brokerSlug || projectSlug || "enove",
         lead_origin: getLeadOriginFromUTM(),
         lead_origin_detail: getLeadOriginDetailFromUTM(),
