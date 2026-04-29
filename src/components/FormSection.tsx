@@ -291,6 +291,7 @@ const FormSection = ({
                 WhatsApp
               </label>
               <WhatsAppInput
+                ref={whatsappInputRef}
                 id="whatsapp-landing"
                 name="whatsapp"
                 autoComplete="tel"
