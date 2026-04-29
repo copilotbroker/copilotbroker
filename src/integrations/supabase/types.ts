@@ -2583,6 +2583,7 @@ export type Database = {
           phone: string
           scheduled_at: string
           sent_at: string | null
+          source_instance: string
           status: string | null
           step_number: number | null
           uazapi_message_id: string | null
@@ -2604,6 +2605,7 @@ export type Database = {
           phone: string
           scheduled_at: string
           sent_at?: string | null
+          source_instance?: string
           status?: string | null
           step_number?: number | null
           uazapi_message_id?: string | null
@@ -2625,6 +2627,7 @@ export type Database = {
           phone?: string
           scheduled_at?: string
           sent_at?: string | null
+          source_instance?: string
           status?: string | null
           step_number?: number | null
           uazapi_message_id?: string | null

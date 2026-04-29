@@ -263,6 +263,15 @@ export default function BrokerPlantao() {
           channel: "whatsapp",
           new_status: "info_sent",
         } as any);
+
+        // Trilha explícita do claim manual (auditoria de quem assumiu)
+        await supabase.from("lead_interactions").insert({
+          lead_id: existingLeadId,
+          interaction_type: "roleta_transferencia" as any,
+          notes: "Lead assumido manualmente via Inbox (Plantão)",
+          broker_id: brokerId,
+          channel: "whatsapp",
+        } as any);
       }
 
       // Get broker name for system message
