@@ -23,8 +23,17 @@ interface Broker {
   is_active: boolean;
 }
 
-const ProjectBrokerLandingPage = () => {
-  const { citySlug, projectSlug, brokerSlug } = useParams<{ citySlug: string; projectSlug: string; brokerSlug: string }>();
+interface ProjectBrokerLandingPageProps {
+  citySlugOverride?: string;
+  projectSlugOverride?: string;
+  brokerSlugOverride?: string;
+}
+
+const ProjectBrokerLandingPage = ({ citySlugOverride, projectSlugOverride, brokerSlugOverride }: ProjectBrokerLandingPageProps = {}) => {
+  const params = useParams<{ citySlug: string; projectSlug: string; brokerSlug: string }>();
+  const citySlug = citySlugOverride ?? params.citySlug;
+  const projectSlug = projectSlugOverride ?? params.projectSlug;
+  const brokerSlug = brokerSlugOverride ?? params.brokerSlug;
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [broker, setBroker] = useState<Broker | null>(null);

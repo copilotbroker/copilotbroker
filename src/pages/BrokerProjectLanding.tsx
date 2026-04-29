@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Project } from "@/types/project";
 import DynamicLandingPage from "@/components/landing/DynamicLandingPage";
+import ProjectBrokerLandingPage from "@/pages/ProjectBrokerLandingPage";
 import FormSection from "@/components/FormSection";
 import FloatingCTA from "@/components/FloatingCTA";
 import { RefreshCw } from "lucide-react";
@@ -20,6 +21,7 @@ const BrokerProjectLanding = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [brokerOwner, setBrokerOwner] = useState<BrokerOwner | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [renderLegacy, setRenderLegacy] = useState(false);
 
   usePageTracking(project?.id);
 
@@ -43,6 +45,26 @@ const BrokerProjectLanding = () => {
         if (error) throw error;
 
         if (!data) {
+          // Not a broker-owned project. This URL pattern (/:a/:b/:c) might be a
+          // legacy city/project/brokerSlug URL — re-interpret accordingly.
+          if (brokerSlug && citySlug && projectSlug) {
+            const legacyCity = brokerSlug;
+            const legacyProject = citySlug;
+            const legacyBroker = projectSlug;
+            const { data: legacy } = await supabase
+              .from("projects")
+              .select("id")
+              .eq("city_slug", legacyCity)
+              .eq("slug", legacyProject)
+              .eq("is_active", true)
+              .maybeSingle();
+            if (legacy) {
+              // Render legacy city/project/broker landing inline (avoid route loop).
+              setRenderLegacy(true);
+              setIsLoading(false);
+              return;
+            }
+          }
           navigate("/");
           return;
         }
@@ -105,6 +127,19 @@ const BrokerProjectLanding = () => {
           <p className="text-muted-foreground">Carregando...</p>
         </div>
       </div>
+    );
+  }
+
+  // Legacy URL format /:citySlug/:projectSlug/:brokerSlug — render the legacy
+  // page component with remapped params (the broker-first route reuses the
+  // same path so we have to re-alias them explicitly here).
+  if (renderLegacy) {
+    return (
+      <ProjectBrokerLandingPage
+        citySlugOverride={brokerSlug}
+        projectSlugOverride={citySlug}
+        brokerSlugOverride={projectSlug}
+      />
     );
   }
 

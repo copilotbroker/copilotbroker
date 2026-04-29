@@ -7,6 +7,7 @@ import Canela from "@/pages/Canela";
 import EstanciaVelhaBrokerTeaser from "@/pages/EstanciaVelhaBrokerTeaser";
 import ProjectLandingPage from "@/pages/ProjectLandingPage";
 import ProjectBrokerLandingPage from "@/pages/ProjectBrokerLandingPage";
+import BrokerProjectLanding from "@/pages/BrokerProjectLanding";
 import GoldenViewLandingPage from "@/pages/goldenview/GoldenViewLandingPage";
 import GoldenViewBrokerLandingPage from "@/pages/goldenview/GoldenViewBrokerLandingPage";
 import MauricioCardosoLandingPage from "@/pages/mauriciocardoso/MauricioCardosoLandingPage";
@@ -128,6 +129,10 @@ export function LandingRoutes({ prefix = "" }: { prefix?: string }) {
       <Route path={`${p}/novasantarita/auralegano/termos`} element={<TermosAuraLegano />} />
       <Route path={`${p}/novasantarita/auralegano/:brokerSlug/obrigado`} element={<AuraLeganoBrokerLandingPage />} />
       <Route path={`${p}/novasantarita/auralegano/:brokerSlug`} element={<AuraLeganoBrokerLandingPage />} />
+
+      {/* Broker-owned dynamic landing (broker created the project): /:brokerSlug/:citySlug/:projectSlug
+          Must come BEFORE the city/project/:brokerSlug pattern to win the match. */}
+      <Route path={`${p}/:brokerSlug/:citySlug/:projectSlug`} element={<BrokerProjectLanding />} />
 
       {/* Dynamic city/project routes — MUST be last in this group */}
       <Route path={`${p}/:citySlug/:projectSlug`} element={<ProjectLandingPage />} />

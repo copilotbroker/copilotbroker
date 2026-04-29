@@ -111,7 +111,7 @@ const App = () => (
             <Route path="/corretor/perfil" element={<BrokerProfile />} />
             <Route path="/corretor/lead/:leadId" element={<LeadPage />} />
             <Route path="/corretor/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />
-            <Route path="/:brokerSlug/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />
+            {/* /:brokerSlug/:citySlug/:projectSlug is registered inside LandingRoutes (broker-first dynamic) */}
             <Route path="/caminhadaonovocondominioev" element={<CaminhadaEV />} />
             <Route path="/termos" element={<Termos />} />
             <Route path="/privacidade" element={<PrivacyPolicy />} />
