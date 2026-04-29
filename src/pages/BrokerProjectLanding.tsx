@@ -43,6 +43,24 @@ const BrokerProjectLanding = () => {
         if (error) throw error;
 
         if (!data) {
+          // Not a broker-owned project. This URL pattern (/:a/:b/:c) might be a
+          // legacy city/project/brokerSlug URL — re-interpret accordingly.
+          if (brokerSlug && citySlug && projectSlug) {
+            const legacyCity = brokerSlug;
+            const legacyProject = citySlug;
+            const legacyBroker = projectSlug;
+            const { data: legacy } = await supabase
+              .from("projects")
+              .select("id")
+              .eq("city_slug", legacyCity)
+              .eq("slug", legacyProject)
+              .eq("is_active", true)
+              .maybeSingle();
+            if (legacy) {
+              navigate(`/${legacyCity}/${legacyProject}/${legacyBroker}`, { replace: true });
+              return;
+            }
+          }
           navigate("/");
           return;
         }
