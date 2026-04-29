@@ -49,11 +49,11 @@ export default function DynamicHero({ content, theme }: Props) {
           <div
             className="absolute inset-0"
             style={{
-              background: accentIsLight
-                ? "linear-gradient(135deg, rgba(15,23,42,0.72) 0%, rgba(15,23,42,0.52) 45%, rgba(15,23,42,0.38) 100%)"
-                : `linear-gradient(135deg, ${theme.accentColor}d9 0%, ${theme.accentColor}c9 50%, rgba(15,23,42,0.42) 100%)`,
+              background:
+                "linear-gradient(135deg, rgba(8,12,24,0.82) 0%, rgba(8,12,24,0.65) 50%, rgba(8,12,24,0.55) 100%)",
             }}
           />
+          <div className="absolute inset-0 bg-black/20" />
         </>
       )}
 
