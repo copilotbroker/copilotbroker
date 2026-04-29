@@ -37,6 +37,8 @@ const FormSection = ({
   const [formData, setFormData] = useState({ name: "", whatsapp: "" });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const whatsappInputRef = useRef<HTMLInputElement>(null);
   
   // Broker selection states
   const [showBrokerSelect, setShowBrokerSelect] = useState(false);
@@ -90,14 +92,26 @@ const FormSection = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.whatsapp.trim()) {
+
+    // Fallback para autofill do navegador (Chrome/Safari mobile podem preencher
+    // o input visualmente sem disparar onChange do React). Lemos o valor real do DOM.
+    const domName = nameInputRef.current?.value ?? "";
+    const domWhatsapp = whatsappInputRef.current?.value ?? "";
+    const effectiveName = (formData.name || domName).trim();
+    const effectiveWhatsappRaw = formData.whatsapp || domWhatsapp.replace(/\D/g, "");
+
+    // Sincroniza estado se o autofill foi capturado apenas via DOM
+    if (effectiveName !== formData.name.trim() || effectiveWhatsappRaw !== formData.whatsapp) {
+      setFormData({ name: effectiveName, whatsapp: effectiveWhatsappRaw });
+    }
+
+    if (!effectiveName || !effectiveWhatsappRaw) {
       toast.error("Por favor, preencha todos os campos.");
       return;
     }
 
     // Validação do WhatsApp
-    if (!isValidWhatsApp(formData.whatsapp)) {
+    if (!isValidWhatsApp(effectiveWhatsappRaw)) {
       toast.error("Por favor, insira um número de WhatsApp válido.");
       return;
     }
@@ -126,8 +140,8 @@ const FormSection = ({
         lead_origin_detail?: string | null;
       } = {
         id: leadId,
-        name: formData.name.trim(),
-        whatsapp: formData.whatsapp.trim(),
+        name: effectiveName,
+        whatsapp: effectiveWhatsappRaw,
         source: brokerSlug || projectSlug || "enove",
         lead_origin: getLeadOriginFromUTM(),
         lead_origin_detail: getLeadOriginDetailFromUTM(),
@@ -185,8 +199,8 @@ const FormSection = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          nome_completo: formData.name.trim(),
-          whatsapp: formData.whatsapp.trim(),
+          nome_completo: effectiveName,
+          whatsapp: effectiveWhatsappRaw,
           broker_id: brokerId || selectedBrokerId || null,
           project_id: projectId || null,
           source: brokerSlug || projectSlug || "enove",
@@ -199,8 +213,8 @@ const FormSection = ({
       supabase.functions.invoke("notify-new-lead", {
         body: {
           leadId: leadId,
-          leadName: formData.name.trim(),
-          leadWhatsapp: formData.whatsapp.trim(),
+          leadName: effectiveName,
+          leadWhatsapp: effectiveWhatsappRaw,
           brokerId: brokerId || selectedBrokerId || null,
           projectId: projectId || null,
           source: brokerSlug || projectSlug || "Site Enove",
@@ -254,12 +268,18 @@ const FormSection = ({
                 Nome Completo
               </label>
               <input
+                ref={nameInputRef}
                 type="text"
                 id="name-landing"
                 name="name"
                 autoComplete="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onBlur={(e) => {
+                  if (e.target.value && e.target.value !== formData.name) {
+                    setFormData((prev) => ({ ...prev, name: e.target.value }));
+                  }
+                }}
                 className="w-full px-4 py-3 sm:py-3.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-base"
                 placeholder="Digite seu nome completo"
                 aria-required="true"
@@ -271,6 +291,7 @@ const FormSection = ({
                 WhatsApp
               </label>
               <WhatsAppInput
+                ref={whatsappInputRef}
                 id="whatsapp-landing"
                 name="whatsapp"
                 autoComplete="tel"
