@@ -250,6 +250,15 @@ const WhatsAppInput = forwardRef<HTMLInputElement, WhatsAppInputProps>(
             inputMode="numeric"
             value={displayValue}
             onChange={handleLocalChange}
+            onBlur={(e) => {
+              // Fallback: alguns teclados Android (Gboard com sugestões) inserem texto
+              // sem disparar input/change. Forçamos sincronia ao sair do campo.
+              const domDigits = e.target.value.replace(/\D/g, "");
+              if (domDigits && domDigits !== localNumber) {
+                handleLocalChange({ target: { value: e.target.value } } as React.ChangeEvent<HTMLInputElement>);
+              }
+              props.onBlur?.(e);
+            }}
             placeholder={selectedCountry.code === "55" ? "(00) 00000-0000" : "Número"}
             className={cn("rounded-l-none", className)}
             {...props}
