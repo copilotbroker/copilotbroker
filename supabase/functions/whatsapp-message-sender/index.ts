@@ -459,11 +459,12 @@ app.post("/process", async (c) => {
         continue;
       }
 
-      // Get next scheduled message for this broker
+      // Get next scheduled message for this broker (PERSONAL channel only)
       const { data: messages, error: msgError } = await supabase
         .from("whatsapp_message_queue")
         .select("*")
         .eq("broker_id", instance.broker_id)
+        .eq("source_instance", "personal")
         .in("status", ["scheduled", "queued"])
         .lte("scheduled_at", new Date().toISOString())
         .order("scheduled_at", { ascending: true })
