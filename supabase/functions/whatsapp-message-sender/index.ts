@@ -1029,10 +1029,16 @@ app.post("/process", async (c) => {
       }
     }
 
+    // ==================== GLOBAL CHANNEL TRACK ====================
+    // Process queue items where source_instance = 'global' (Plantão WhatsApp)
+    // Sends through global_whatsapp_config instead of broker personal instances.
+    const globalResults = await processGlobalQueue(supabase);
+
     return c.json({
       success: true,
-      processed: results.length,
-      results
+      processed: results.length + globalResults.processed,
+      results,
+      global: globalResults,
     }, 200, corsHeaders);
 
   } catch (err) {
