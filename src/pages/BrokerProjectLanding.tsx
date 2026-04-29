@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Project } from "@/types/project";
 import DynamicLandingPage from "@/components/landing/DynamicLandingPage";
+import ProjectBrokerLandingPage from "@/pages/ProjectBrokerLandingPage";
 import FormSection from "@/components/FormSection";
 import FloatingCTA from "@/components/FloatingCTA";
 import { RefreshCw } from "lucide-react";
@@ -20,6 +21,7 @@ const BrokerProjectLanding = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [brokerOwner, setBrokerOwner] = useState<BrokerOwner | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [renderLegacy, setRenderLegacy] = useState(false);
 
   usePageTracking(project?.id);
 
