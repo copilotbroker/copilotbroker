@@ -649,7 +649,7 @@ const RoletaManagement = () => {
                               Checkout automático
                             </Label>
                             <p className="text-[11px] text-muted-foreground mt-0.5">
-                              No horário definido, todos os corretores online recebem checkout automaticamente (UTC-3).
+                              No horário definido, todos os corretores online recebem checkout automaticamente (UTC-3). Não executa aos sábados e domingos.
                             </p>
                           </div>
                           <Switch
