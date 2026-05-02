@@ -724,6 +724,7 @@ export type Database = {
           phone_normalized: string
           reserva_expira_em: string | null
           roleta_modo: string | null
+          roleta_vazia_flag: boolean
           source_instance: string | null
           status: string
           temperature: number | null
@@ -752,6 +753,7 @@ export type Database = {
           phone_normalized: string
           reserva_expira_em?: string | null
           roleta_modo?: string | null
+          roleta_vazia_flag?: boolean
           source_instance?: string | null
           status?: string
           temperature?: number | null
@@ -780,6 +782,7 @@ export type Database = {
           phone_normalized?: string
           reserva_expira_em?: string | null
           roleta_modo?: string | null
+          roleta_vazia_flag?: boolean
           source_instance?: string | null
           status?: string
           temperature?: number | null

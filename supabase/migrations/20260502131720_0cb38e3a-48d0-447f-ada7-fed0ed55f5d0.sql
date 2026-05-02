@@ -1,0 +1,2 @@
+ALTER TABLE public.conversations ADD COLUMN IF NOT EXISTS roleta_vazia_flag boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_conversations_roleta_vazia ON public.conversations (roleta_vazia_flag) WHERE roleta_vazia_flag = true;
