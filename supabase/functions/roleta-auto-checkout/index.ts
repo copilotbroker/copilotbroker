@@ -19,17 +19,32 @@ function nowHHMM_UTC3(): string {
   return `${hh}:${mm}`;
 }
 
+function isWeekendUTC3(): boolean {
+  // 0 = Sunday, 6 = Saturday in UTC-3
+  const d = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const dow = d.getUTCDay();
+  return dow === 0 || dow === 6;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const target = nowHHMM_UTC3(); // e.g. "21:00"
+
+  // Skip on weekends — auto-checkout only runs Mon–Fri (UTC-3).
+  if (isWeekendUTC3()) {
+    return new Response(
+      JSON.stringify({ ok: true, skipped: "weekend", target_utc3: target }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+    );
   }
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
-
-  const target = nowHHMM_UTC3(); // e.g. "21:00"
 
   try {
     // Find roletas due now. Compare by HH:MM (time stored as time zone-less).
