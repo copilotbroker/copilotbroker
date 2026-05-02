@@ -514,6 +514,71 @@ const RoletaManagement = () => {
         </Dialog>
       </div>
 
+      {/* Roletas vazias — alerta últimas 24h */}
+      {leadsRoletaVazia.length > 0 && (
+        <div className="bg-amber-950/30 border border-amber-700/40 rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-amber-100">
+                  {leadsRoletaVazia.length} lead{leadsRoletaVazia.length > 1 ? "s" : ""} caíram no fallback de líder por roleta vazia (últimas 24h)
+                </p>
+                <p className="text-xs text-amber-200/70 mt-0.5">
+                  Nenhum corretor estava online quando o lead chegou. O lead foi atribuído ao líder da roleta.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 border-amber-700/50 text-amber-100 hover:bg-amber-900/30"
+                onClick={() => setShowVaziaList((v) => !v)}
+              >
+                {showVaziaList ? "Ocultar" : "Ver detalhes"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-amber-200/70 hover:text-amber-100"
+                onClick={fetchLeadsRoletaVazia}
+                title="Atualizar"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+          {showVaziaList && (
+            <div className="mt-3 border-t border-amber-700/30 pt-3 space-y-1.5 max-h-72 overflow-y-auto">
+              {leadsRoletaVazia.map((l) => (
+                <div
+                  key={l.id}
+                  className="flex items-center justify-between gap-2 bg-amber-950/40 rounded-md px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs text-amber-50 font-medium truncate">{l.name}</p>
+                    <p className="text-[11px] text-amber-200/70 truncate">
+                      {l.roleta_nome ? `Roleta: ${l.roleta_nome}` : "Roleta desconhecida"}
+                      {l.lider_nome ? ` • Líder: ${l.lider_nome}` : ""}
+                      {l.atribuido_em ? ` • ${new Date(l.atribuido_em).toLocaleString("pt-BR")}` : ""}
+                    </p>
+                  </div>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px] border-amber-700/50 text-amber-100 hover:bg-amber-900/30 shrink-0"
+                  >
+                    <a href={`/admin/leads/${l.id}`}>Abrir lead</a>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Roletas List */}
       {roletas.length === 0 ? (
         <div className="bg-card border border-border rounded-xl p-12 text-center">
