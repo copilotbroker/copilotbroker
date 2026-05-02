@@ -21,11 +21,17 @@ export function usePausedMessages(brokerId: string | undefined) {
       const { data, error } = await supabase.functions.invoke("whatsapp-paused-messages/list", {
         method: "GET",
       });
-      if (error) throw error;
+      // Silently degrade when the logged-in user isn't a broker (admins/leaders
+      // viewing broker routes). Avoid throwing so React Query doesn't crash the layout.
+      if (error) {
+        console.warn("[usePausedMessages] skipped:", (error as Error).message || error);
+        return { messages: [], count: 0 };
+      }
       return data as { messages: PausedMessage[]; count: number };
     },
     enabled: !!brokerId,
     refetchInterval: 30_000,
+    retry: false,
   });
 }
 
