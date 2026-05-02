@@ -34,6 +34,7 @@ export interface Conversation {
   broker?: { id: string; name: string } | null;
   project?: { id: string; name: string } | null;
   attendance_started?: boolean;
+  roleta_vazia_flag?: boolean;
 }
 
 export interface ConversationMessage {
