@@ -2092,6 +2092,8 @@ export type Database = {
       roletas: {
         Row: {
           ativa: boolean
+          auto_checkout_enabled: boolean
+          auto_checkout_horario: string
           created_at: string
           escopo_empreendimentos: string
           id: string
@@ -2109,6 +2111,8 @@ export type Database = {
         }
         Insert: {
           ativa?: boolean
+          auto_checkout_enabled?: boolean
+          auto_checkout_horario?: string
           created_at?: string
           escopo_empreendimentos?: string
           id?: string
@@ -2126,6 +2130,8 @@ export type Database = {
         }
         Update: {
           ativa?: boolean
+          auto_checkout_enabled?: boolean
+          auto_checkout_horario?: string
           created_at?: string
           escopo_empreendimentos?: string
           id?: string
