@@ -254,6 +254,77 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 7c. Roleta vazia — alert leaders/admins/managers and flag conversation
+    if (statusDistribuicao === "fallback_lider") {
+      try {
+        // Flag any existing conversation for this lead so the Inbox can highlight it.
+        await supabase
+          .from("conversations")
+          .update({ roleta_vazia_flag: true })
+          .eq("lead_id", lead_id);
+
+        // Resolve organization_id (prefer roleta -> lider broker -> lead)
+        let orgId: string | null = null;
+        const { data: liderBroker } = await supabase
+          .from("brokers")
+          .select("organization_id, user_id")
+          .eq("id", roleta.lider_id)
+          .maybeSingle();
+        orgId = liderBroker?.organization_id ?? null;
+        if (!orgId) {
+          const { data: leadOrg } = await supabase
+            .from("leads")
+            .select("organization_id")
+            .eq("id", lead_id)
+            .maybeSingle();
+          orgId = leadOrg?.organization_id ?? null;
+        }
+
+        const { data: roletaInfo } = await supabase
+          .from("roletas")
+          .select("nome")
+          .eq("id", roletaId)
+          .maybeSingle();
+
+        // Collect recipient user_ids: leader + org admins/managers/owners + global admins
+        const recipients = new Set<string>();
+        if (liderBroker?.user_id) recipients.add(liderBroker.user_id);
+
+        if (orgId) {
+          const { data: orgMembers } = await supabase
+            .from("organization_members")
+            .select("user_id")
+            .eq("organization_id", orgId)
+            .eq("approval_status", "approved")
+            .eq("is_active", true)
+            .in("role", ["owner", "admin", "manager"]);
+          (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
+        }
+
+        const { data: globalAdmins } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .in("role", ["admin", "super_admin"]);
+        (globalAdmins || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
+
+        if (recipients.size > 0) {
+          const title = "Roleta vazia: lead atribuído ao líder";
+          const message = `Lead ${leadData?.name || ""} chegou na roleta "${roletaInfo?.nome || ""}" sem corretores online. Atribuído ao líder por fallback.`;
+          const rows = Array.from(recipients).map((uid) => ({
+            user_id: uid,
+            type: "roleta_vazia",
+            title,
+            message,
+            lead_id,
+          }));
+          await supabase.from("notifications").insert(rows);
+          console.log(`[roleta-vazia] Notified ${rows.length} recipient(s) for lead ${lead_id}`);
+        }
+      } catch (vazErr) {
+        console.error("[roleta-vazia] alert failed (non-critical):", vazErr);
+      }
+    }
+
     // 7b. Check broker WhatsApp instance status
     let brokerInstanceDisconnected = false;
     try {
