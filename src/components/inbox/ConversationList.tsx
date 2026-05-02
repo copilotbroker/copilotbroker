@@ -540,6 +540,11 @@ export function ConversationList({
                               </Badge>
                             ) : null
                           )}
+                          {(conv as any).roleta_vazia_flag === true && !(conv as any).attendance_started && (
+                            <Badge className="h-4 px-1.5 text-[10px] bg-rose-600/20 text-rose-300 border-rose-500/40 border" title="Lead chegou sem corretores online — atribuído ao líder por fallback">
+                              <AlertTriangle className="mr-1 h-3 w-3" /> Roleta vazia
+                            </Badge>
+                          )}
                           {/* Show broker name when viewing another broker's conversations */}
                           {myBrokerId && brokerFilter && brokerFilter !== myBrokerId && (conv as any).broker?.name && (
                             <Badge className="h-4 px-1.5 text-[10px] bg-emerald-600/20 text-emerald-400 border-emerald-500/30 border">
