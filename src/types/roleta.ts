@@ -21,6 +21,8 @@ export interface Roleta {
   ultimo_membro_ordem_atribuida: number;
   timeout_pausa_inicio: string;
   timeout_pausa_fim: string;
+  auto_checkout_enabled: boolean;
+  auto_checkout_horario: string;
   created_at: string;
   updated_at: string;
   // Relations
