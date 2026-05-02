@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Shuffle, Users, Building2, Clock, Power, PowerOff, RefreshCw, ChevronDown, ChevronUp, Trash2, UserPlus, History, Target, Timer, TimerOff, LogOut, MessageCircle } from "lucide-react";
+import { Plus, Shuffle, Users, Building2, Clock, Power, PowerOff, RefreshCw, ChevronDown, ChevronUp, Trash2, UserPlus, History, Target, Timer, TimerOff, LogOut, MessageCircle, AlertTriangle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRoletas, useRoletaLogs } from "@/hooks/use-roletas";
 import { Roleta, RoletaTipoOrigem } from "@/types/roleta";
