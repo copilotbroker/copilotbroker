@@ -198,9 +198,6 @@ const BrokerAdmin = () => {
       >
         {viewMode === "kanban" ? (
           <div className="flex-1 min-h-0 flex flex-col gap-2">
-            <div className="hidden lg:block">
-              {brokerId && <BrokerRoletas brokerId={brokerId} />}
-            </div>
             <KanbanBoard
               brokerId={brokerId}
               isAdmin={isLeader}
