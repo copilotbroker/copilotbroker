@@ -101,11 +101,18 @@ export function BrokerLayout({
           brokerName={brokerName}
           searchTerm={searchTerm}
           onSearchChange={onSearchChange}
-          collapsibleContent={collapsibleContent}
+          collapsibleContent={
+            collapsibleContent || (brokerId ? <BrokerRoletas brokerId={brokerId} /> : undefined)
+          }
           onAddLead={onAddLead}
           brokerId={brokerId}
         />
         <WhatsAppDisconnectedBanner />
+        {brokerId && (
+          <div className="hidden lg:block px-3 lg:px-6 pt-3">
+            <BrokerRoletas brokerId={brokerId} />
+          </div>
+        )}
         <main className={viewMode === "kanban"
           ? "flex-1 flex flex-col min-h-0 overflow-y-auto p-3 lg:p-6"
           : "flex-1 min-h-0 overflow-y-auto p-3 pb-20 lg:p-6 lg:pb-6"
