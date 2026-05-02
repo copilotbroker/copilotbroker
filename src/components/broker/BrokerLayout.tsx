@@ -3,6 +3,7 @@ import { BrokerSidebar } from "./BrokerSidebar";
 import { BrokerHeader } from "./BrokerHeader";
 import { BrokerBottomNav } from "./BrokerBottomNav";
 import { WhatsAppDisconnectedBanner } from "./WhatsAppDisconnectedBanner";
+import { BrokerRoletas } from "./BrokerRoletas";
 import {
   Sheet,
   SheetContent,
