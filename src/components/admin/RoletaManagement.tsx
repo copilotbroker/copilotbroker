@@ -88,9 +88,60 @@ const RoletaManagement = () => {
   const [addEmpRoletaId, setAddEmpRoletaId] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState("");
 
+  // Roleta vazia (fallback) — last 24h
+  type LeadVazio = {
+    id: string;
+    name: string;
+    created_at: string;
+    atribuido_em: string | null;
+    roleta_id: string | null;
+    roleta_nome?: string;
+    lider_nome?: string;
+  };
+  const [leadsRoletaVazia, setLeadsRoletaVazia] = useState<LeadVazio[]>([]);
+  const [showVaziaList, setShowVaziaList] = useState(false);
+
   useEffect(() => {
     fetchBrokersAndProjects();
+    fetchLeadsRoletaVazia();
   }, []);
+
+  const fetchLeadsRoletaVazia = async () => {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await (supabase
+      .from("leads")
+      .select("id, name, created_at, atribuido_em, roleta_id, motivo_atribuicao, status_distribuicao")
+      .eq("status_distribuicao", "fallback_lider")
+      .ilike("motivo_atribuicao", "%nenhum corretor online%")
+      .gte("atribuido_em", since)
+      .order("atribuido_em", { ascending: false })
+      .limit(50) as any);
+    const rows = (data || []) as any[];
+    if (rows.length === 0) {
+      setLeadsRoletaVazia([]);
+      return;
+    }
+    const roletaIds = Array.from(new Set(rows.map((r) => r.roleta_id).filter(Boolean)));
+    const { data: roletasInfo } = await (supabase
+      .from("roletas" as any)
+      .select("id, nome, lider:brokers!roletas_lider_id_fkey(name)")
+      .in("id", roletaIds) as any);
+    const roletaMap = new Map<string, { nome: string; lider_nome?: string }>();
+    (roletasInfo || []).forEach((r: any) => {
+      roletaMap.set(r.id, { nome: r.nome, lider_nome: r.lider?.name });
+    });
+    setLeadsRoletaVazia(
+      rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        created_at: r.created_at,
+        atribuido_em: r.atribuido_em,
+        roleta_id: r.roleta_id,
+        roleta_nome: r.roleta_id ? roletaMap.get(r.roleta_id)?.nome : undefined,
+        lider_nome: r.roleta_id ? roletaMap.get(r.roleta_id)?.lider_nome : undefined,
+      })),
+    );
+  };
 
   const fetchBrokersAndProjects = async () => {
     const [brokersRes, projectsRes] = await Promise.all([
