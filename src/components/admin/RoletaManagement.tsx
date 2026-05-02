@@ -639,6 +639,50 @@ const RoletaManagement = () => {
                           </div>
                         </>
                       )}
+
+                      {/* Auto checkout */}
+                      <div className="md:col-span-2 border-t border-[#1e1e22] pt-3">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0">
+                            <Label className="text-xs flex items-center gap-1.5">
+                              <LogOut className="w-3.5 h-3.5 text-primary" />
+                              Checkout automático
+                            </Label>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              No horário definido, todos os corretores online recebem checkout automaticamente (UTC-3).
+                            </p>
+                          </div>
+                          <Switch
+                            checked={(roleta as any).auto_checkout_enabled === true}
+                            onCheckedChange={(v) =>
+                              updateRoleta(roleta.id, { auto_checkout_enabled: v } as any)
+                            }
+                          />
+                        </div>
+                        {(roleta as any).auto_checkout_enabled === true && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <Label className="text-xs">Horário do checkout</Label>
+                            <Select
+                              value={(roleta as any).auto_checkout_horario?.slice(0, 5) || "21:00"}
+                              onValueChange={(v) =>
+                                updateRoleta(roleta.id, { auto_checkout_horario: v } as any)
+                              }
+                            >
+                              <SelectTrigger className="w-28 bg-[#0e0e11] border-[#2a2a2e] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 24 * 2 }, (_, i) => {
+                                  const h = String(Math.floor(i / 2)).padStart(2, "0");
+                                  const m = i % 2 === 0 ? "00" : "30";
+                                  const v = `${h}:${m}`;
+                                  return <SelectItem key={v} value={v}>{v}</SelectItem>;
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {/* Distribution Mode (only for whatsapp_global) */}
                     {(roleta as any).tipo_origem === "whatsapp_global" && (
