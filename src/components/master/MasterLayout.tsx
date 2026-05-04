@@ -1,11 +1,23 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Building2, LayoutDashboard, CreditCard, ScrollText, ShieldCheck, Loader2 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Building2, LayoutDashboard, CreditCard, ScrollText, ShieldCheck, Loader2,
+  LogOut, ExternalLink,
+} from "lucide-react";
 import { useOrganization } from "@/hooks/use-organization";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const items = [
   { title: "Visão Geral", url: "/master/overview", icon: LayoutDashboard },
@@ -45,6 +57,73 @@ const MasterSidebar = () => {
   );
 };
 
+const MasterUserMenu = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [email, setEmail] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!cancelled) setEmail(user?.email ?? "");
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const initial = (email?.charAt(0) ?? "M").toUpperCase();
+
+  const handleLogout = async () => {
+    try {
+      queryClient.clear();
+      await supabase.auth.signOut();
+      toast.success("Sessão encerrada.");
+    } catch (err: any) {
+      console.error("[MasterLayout] logout error:", err);
+    } finally {
+      navigate("/master/login", { replace: true });
+    }
+  };
+
+  const goToAdmin = () => {
+    // Sai do Master e vai para a área operacional da imobiliária ativa.
+    navigate("/admin/copiloto");
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
+          <Avatar className="h-6 w-6">
+            <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
+              {initial}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs text-muted-foreground max-w-[180px] truncate hidden sm:inline">
+            {email || "super_admin"}
+          </span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="text-xs">
+          <div className="font-medium">Super Admin</div>
+          <div className="text-muted-foreground truncate">{email}</div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={goToAdmin}>
+          <ExternalLink className="h-4 w-4 mr-2" />
+          Ir para Imobiliária
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+          <LogOut className="h-4 w-4 mr-2" />
+          Sair
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 const MasterLayout = ({ children }: { children?: ReactNode }) => {
   const { isLoading, isSuperAdmin } = useOrganization();
   const navigate = useNavigate();
@@ -69,9 +148,12 @@ const MasterLayout = ({ children }: { children?: ReactNode }) => {
       <div className="min-h-screen flex w-full bg-background">
         <MasterSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-12 flex items-center border-b px-3">
-            <SidebarTrigger />
-            <span className="ml-3 text-sm text-muted-foreground">Copilot Broker · Master</span>
+          <header className="h-12 flex items-center justify-between border-b px-3">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger />
+              <span className="text-sm text-muted-foreground">Copilot Broker · Master</span>
+            </div>
+            <MasterUserMenu />
           </header>
           <main className="flex-1 p-6 overflow-auto">
             {children ?? <Outlet />}
