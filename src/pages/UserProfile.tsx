@@ -217,33 +217,33 @@ export default function UserProfile() {
 
   return (
     <Layout {...layoutProps}>
-      <div className="space-y-6 p-6 max-w-5xl mx-auto">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 max-w-5xl mx-auto w-full min-w-0 overflow-x-hidden">
         {/* HERO */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.07] via-card to-card p-6 sm:p-8">
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.07] via-card to-card p-4 sm:p-8">
           <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-            <div className="flex items-center gap-4 min-w-0">
-              <Avatar className={cn("h-16 w-16 ring-2 ring-offset-2 ring-offset-background shrink-0", meta.ring)}>
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-5">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <Avatar className={cn("h-14 w-14 sm:h-16 sm:w-16 ring-2 ring-offset-2 ring-offset-background shrink-0", meta.ring)}>
                 <AvatarFallback
                   className={cn(
-                    "text-lg font-bold text-white bg-gradient-to-br",
+                    "text-base sm:text-lg font-bold text-white bg-gradient-to-br",
                     gradientOf(profile.user_email || profile.user_id),
                   )}
                 >
                   {initialsOf(displayName)}
                 </AvatarFallback>
               </Avatar>
-              <div className="space-y-1.5 min-w-0">
-                <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
                   <Sparkles className="h-3.5 w-3.5" />
                   Meu perfil
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight truncate">
                   {displayName}
                 </h1>
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
                   <RoleBadge role={effectiveRole} size="md" />
-                  <span className="text-xs text-muted-foreground truncate">{profile.user_email}</span>
+                  <span className="text-xs text-muted-foreground truncate min-w-0 max-w-full">{profile.user_email}</span>
                 </div>
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function UserProfile() {
               size="lg"
               onClick={handleSave}
               disabled={isSaving}
-              className="shadow-lg shadow-primary/20 self-start lg:self-auto gap-2"
+              className="shadow-lg shadow-primary/20 self-stretch lg:self-auto gap-2 w-full lg:w-auto"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salvar alterações
@@ -334,9 +334,9 @@ export default function UserProfile() {
                 <CardTitle className="text-base">Status das integrações</CardTitle>
                 <CardDescription className="text-xs">Suas conexões para atender clientes.</CardDescription>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 px-4 sm:px-6">
                 {/* WhatsApp atendimento */}
-                <div className="rounded-xl border border-border/60 bg-background/40 p-4 flex items-center justify-between gap-3">
+                <div className="rounded-xl border border-border/60 bg-background/40 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
@@ -346,12 +346,12 @@ export default function UserProfile() {
                         ? <Wifi className="h-5 w-5 text-emerald-400" />
                         : <WifiOff className="h-5 w-5 text-destructive" />}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">WhatsApp Pessoal</p>
                       <p className="text-[11px] text-muted-foreground">Para atender seus leads</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     {whatsappConnected ? (
                       <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Conectado
@@ -371,7 +371,7 @@ export default function UserProfile() {
                 </div>
 
                 {/* Google Agenda */}
-                <div className="rounded-xl border border-border/60 bg-background/40 p-4 flex items-center justify-between gap-3">
+                <div className="rounded-xl border border-border/60 bg-background/40 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
@@ -379,14 +379,14 @@ export default function UserProfile() {
                     )}>
                       <CalendarDays className={cn("h-5 w-5", calendarConnected ? "text-emerald-400" : "text-muted-foreground")} />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">Google Agenda</p>
                       <p className="text-[11px] text-muted-foreground truncate">
                         {calendarConnection?.google_email || "Sincronize seus compromissos"}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     {calendarConnected ? (
                       <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Conectado
@@ -419,14 +419,14 @@ export default function UserProfile() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/40 p-4">
-                  <div className="space-y-0.5">
+                <div className="flex items-start sm:items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/40 p-3 sm:p-4">
+                  <div className="space-y-0.5 min-w-0 flex-1">
                     <Label className="text-sm font-medium">Exibir meu nome antes das mensagens</Label>
                     <p className="text-xs text-muted-foreground">
                       Quando ativado, seu nome aparecerá antes de cada mensagem enviada pela conexão global.
                     </p>
                   </div>
-                  <Switch checked={showNameOnGlobal} onCheckedChange={setShowNameOnGlobal} />
+                  <Switch checked={showNameOnGlobal} onCheckedChange={setShowNameOnGlobal} className="shrink-0" />
                 </div>
 
                 {showNameOnGlobal && (
@@ -464,8 +464,8 @@ export default function UserProfile() {
 
         <Separator className="bg-border/60" />
 
-        <div className="flex justify-end pb-6">
-          <Button onClick={handleSave} disabled={isSaving} size="lg" className="gap-2">
+        <div className="flex justify-stretch sm:justify-end pb-6">
+          <Button onClick={handleSave} disabled={isSaving} size="lg" className="gap-2 w-full sm:w-auto">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Salvar alterações
           </Button>

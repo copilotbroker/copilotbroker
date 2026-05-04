@@ -272,21 +272,21 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden border-border/60 bg-card">
+      <DialogContent className="max-w-2xl w-[calc(100vw-1.5rem)] sm:w-full p-0 gap-0 overflow-hidden border-border/60 bg-card">
         {/* Hero header */}
-        <div className="relative px-7 pt-7 pb-5 border-b border-border/50 bg-gradient-to-br from-primary/5 via-card to-card overflow-hidden">
+        <div className="relative px-4 sm:px-7 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-border/50 bg-gradient-to-br from-primary/5 via-card to-card overflow-hidden">
           <div className="absolute -top-16 -right-16 h-44 w-44 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <DialogHeader className="relative">
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/80">
               <Sparkles className="h-3.5 w-3.5" />
               {isEdit ? "Edição de membro" : "Convidar para a equipe"}
             </div>
-            <DialogTitle className="text-xl font-semibold mt-1.5">{headerTitle}</DialogTitle>
-            <DialogDescription className="text-sm">{headerDesc}</DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl font-semibold mt-1.5">{headerTitle}</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">{headerDesc}</DialogDescription>
           </DialogHeader>
         </div>
 
-        <div className="px-7 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
+        <div className="px-4 sm:px-7 py-5 sm:py-6 space-y-5 sm:space-y-6 max-h-[70vh] overflow-y-auto">
           {/* Seleção de perfil — destaque visual */}
           <div className="space-y-2.5">
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -482,7 +482,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
           )}
         </div>
 
-        <DialogFooter className="px-7 py-4 border-t border-border/50 bg-muted/20">
+        <DialogFooter className="px-4 sm:px-7 py-3 sm:py-4 border-t border-border/50 bg-muted/20 gap-2 flex-col sm:flex-row">
           {isEdit ? (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
