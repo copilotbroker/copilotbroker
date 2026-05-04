@@ -144,10 +144,11 @@ Deno.serve(async (req) => {
       .order("ordem", { ascending: true });
 
     const activeMembros = membros || [];
-    let assignedBrokerId: string;
+    let assignedBrokerId: string | null = null;
     let statusDistribuicao: string;
     let motivo: string;
     let novaOrdem: number;
+    const isDisputa = (roleta as any).modo_distribuicao === "disputa";
 
     if (activeMembros.length === 0) {
       assignedBrokerId = roleta.lider_id;
@@ -155,6 +156,13 @@ Deno.serve(async (req) => {
       motivo = "Nenhum corretor online - atribuído ao líder";
       novaOrdem = roleta.ultimo_membro_ordem_atribuida;
       console.log("Fallback to leader:", assignedBrokerId);
+    } else if (isDisputa) {
+      // Disputa mode: lead fica disponível para todos os online — primeiro a clicar fica
+      assignedBrokerId = null;
+      statusDistribuicao = "em_disputa";
+      motivo = `Disputa - liberado para ${activeMembros.length} corretor(es) online`;
+      novaOrdem = roleta.ultimo_membro_ordem_atribuida;
+      console.log("Disputa mode: lead released to", activeMembros.length, "brokers");
     } else {
       const lastOrder = roleta.ultimo_membro_ordem_atribuida;
       let nextMembro = activeMembros.find(m => m.ordem > lastOrder);
