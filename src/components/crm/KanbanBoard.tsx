@@ -398,7 +398,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     invalidateAll();
     // Abre direto a conversa no WhatsApp do Plantão
     if (result.conversation_id) {
-      navigate(`/corretor/plantao?conversation=${result.conversation_id}`);
+      navigate(`/corretor/plantao?conversationId=${result.conversation_id}`);
     } else if (lead) {
       navigate(`/corretor/plantao`);
     }
