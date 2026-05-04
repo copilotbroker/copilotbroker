@@ -71,6 +71,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
 
   const [loading, setLoading] = useState(false);
   const [acceptUrl, setAcceptUrl] = useState<string | null>(null);
+  const [existsConfirm, setExistsConfirm] = useState(false);
 
   // Reset ao abrir/fechar
   useEffect(() => {
