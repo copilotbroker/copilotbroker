@@ -216,6 +216,7 @@ Deno.serve(async (req) => {
           reserva_expira_em: isFallback ? null : newExpira.toISOString(),
           status_distribuicao: statusDistribuicao,
           motivo_atribuicao: motivo,
+          liberado_lideres: isFallback,
         })
         .eq("id", lead.id);
 
