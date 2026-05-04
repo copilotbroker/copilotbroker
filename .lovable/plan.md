@@ -1,79 +1,99 @@
-## Objetivo
+## Diagnóstico
 
-1. Permitir que o **admin preencha o WhatsApp pessoal** de qualquer membro (corretor, líder, gerente) direto no `MemberFormDialog` da página de Equipe — resolvendo o caso da Kely.
-2. Criar uma **rota de perfil unificada** acessível por admin, líder e corretor, com o mesmo design premium da página "Gestão de membros e perfis".
-3. **Redesenhar** `BrokerProfile` para esse mesmo padrão visual (hero com gradiente, cards com `border-border/60`, KPIs/status pills, role-aware accents).
+Investiguei diretamente o banco e os 3 casos do print:
 
----
+| Conversa | Mensagens gravadas |
+|---|---|
+| Norton | 4 mensagens (incluindo "Cara, eu tô procurando um apartamento…") |
+| Romalda Schneck | 3 mensagens (rua, cidade, CEP) |
+| @Vini_daniel_45 | 1 mensagem com texto literal `[Undecryptable] Não foi possível descriptografar…` |
 
-## Mudanças
+**As mensagens não estão sendo perdidas.** O webhook está capturando e gravando todas em `conversation_messages`. Os dois sintomas têm causas distintas:
 
-### 1. Banco — propagar WhatsApp ao broker
+### Causa 1 — "Nenhuma mensagem ainda" ao abrir conversas do Plantão (BUG REAL)
 
-A coluna `brokers.whatsapp` é o que `notify-transfer` e demais notificações usam. Hoje a trigger `sync_broker_from_member` já materializa o broker a partir do membro, mas não conhece o WhatsApp.
+A conversa do Plantão é criada com `broker_id` = líder da roleta (placeholder). Os corretores membros da roleta veem a conversa na lista graças à policy:
 
-- Adicionar coluna `organization_members.whatsapp text` (nullable).
-- Atualizar a trigger `sync_broker_from_member` para propagar `whatsapp` e `full_name` para `brokers.whatsapp` / `brokers.name` quando mudar.
-- Quando o próprio usuário salvar via `/perfil`, gravar nas duas pontas (`organization_members` + `brokers`) numa só transação para evitar inconsistência.
+```
+"Corretores veem conversas globais pendentes"
+  source_instance='global' AND attendance_started=false
+  AND EXISTS (membro ativo da roleta global)
+```
 
-### 2. `MemberFormDialog` — campo WhatsApp + edição completa
+Mas a tabela `conversation_messages` **só tem** estas policies de SELECT:
+- `broker_id = get_my_broker_id()` (a conversa é do placeholder, não do corretor)
+- admin / líder / time
 
-No modo **editar** (e também no **criar direto**, opcionalmente):
+Resultado: o corretor da roleta consegue ver o **preview** (que vive em `conversations.last_message_preview`) mas não consegue ler `conversation_messages` → tela mostra "Nenhuma mensagem ainda" mesmo com mensagens gravadas.
 
-- Adicionar campo "WhatsApp pessoal (notificações)" com input de telefone (mesmo placeholder/máscara já usados no `BrokerProfile`).
-- Adicionar campo "Nome completo" editável também no modo edição (hoje só dá pra mudar role/ativo).
-- Persistir nos dois caminhos: `organization_members.whatsapp/full_name` e (via trigger) `brokers.whatsapp/name`.
-- Edge function `org-create-member-direct` recebe `whatsapp` opcional no payload.
+### Causa 2 — `[Undecryptable] Não foi possível descriptografar…`
 
-### 3. Nova rota universal `/perfil` — redesign no padrão Equipe
+Esse texto **não é nosso fallback**. É o próprio aparelho do remetente que falhou ao descriptografar a sessão E2EE com o servidor do WhatsApp e enviou esse texto literal. Não temos a mensagem original — nem o WhatsApp tem. Mas podemos:
+- Mostrar um aviso amigável na UI ("Mensagem criptografada não pôde ser lida pelo WhatsApp do remetente — peça para ele reenviar")
+- Tentar um re-fetch via UAZAPI `/message/find` quando recebemos esse marcador, caso o remetente já tenha reenviado com a sessão renovada
 
-Criar `src/pages/UserProfile.tsx` (substitui o atual `BrokerProfile.tsx`) e expor:
+## Plano de correção
 
-- `/perfil` → rota única
-- `/corretor/perfil` continua existindo, mas redireciona para `/perfil`
+### 1. Migration de RLS (resolve "Nenhuma mensagem ainda")
 
-Layout no padrão da página de Equipe:
+Adicionar duas policies de SELECT em `conversation_messages` espelhando as de `conversations`:
 
-- **Hero** com gradiente (`from-primary/[0.07] via-card to-card`), badge de papel (`RoleBadge`), avatar grande com gradient by-name e botão "Salvar" no canto direito.
-- **Grid 2 colunas (responsivo)** com cards `border-border/60`:
-  - Card "Identidade" — nome, e-mail (readonly), slug (readonly se broker).
-  - Card "WhatsApp pessoal (notificações)" — input destacado, com hint "Usado pelo sistema para te notificar sobre transferências e novos leads".
-  - Card "Status das integrações" — pills de WhatsApp Pessoal e Google Agenda (mantém visual atual mas dentro do novo grid).
-  - Card "Identificação no Plantão" — só aparece se `role` for broker/leader (admin/manager não aparece, pois não atende).
-- Footer fixo com botão "Salvar alterações" (mesmo padrão do `MemberFormDialog`).
+```sql
+-- Corretores membros da roleta global veem mensagens de conversas pendentes
+CREATE POLICY "Corretores veem mensagens de plantão pendentes"
+ON public.conversation_messages FOR SELECT
+USING (
+  conversation_id IN (
+    SELECT c.id FROM conversations c
+    WHERE c.source_instance = 'global'
+      AND c.attendance_started = false
+      AND EXISTS (
+        SELECT 1 FROM roletas_membros rm
+        JOIN roletas r ON r.id = rm.roleta_id
+        WHERE rm.corretor_id = get_my_broker_id()
+          AND rm.ativo = true
+          AND r.ativa = true
+          AND (r.tipo_origem = 'whatsapp_global'
+               OR r.escopo_empreendimentos = 'todas_landing_pages_e_plantao')
+      )
+  )
+);
 
-Lógica:
+-- Líderes veem mensagens de conversas dos corretores do time (via app_role)
+CREATE POLICY "Lideres role veem mensagens da equipe"
+ON public.conversation_messages FOR SELECT
+USING (
+  has_role(auth.uid(), 'leader'::app_role)
+  AND conversation_id IN (
+    SELECT c.id FROM conversations c
+    JOIN brokers b ON b.id = c.broker_id
+    WHERE b.lider_id = get_my_broker_id()
+  )
+);
+```
 
-- `useUserRole` resolve role.
-- Se for `admin/manager` sem `brokerId`, salva apenas em `organization_members` (`whatsapp`, `full_name`).
-- Se tiver `brokerId`, salva em ambos.
-- Esconder seções que não se aplicam ao perfil (ex.: "Identificação no Plantão" só pra quem atende).
+### 2. UI — tratamento de mensagens não-descriptografadas
 
-### 4. Pontos de entrada
+`src/components/inbox/ConversationThread.tsx`:
+- Detectar conteúdo iniciando com `[Undecryptable]` e renderizar com ícone de cadeado, cor âmbar e texto: "O WhatsApp do remetente não conseguiu descriptografar esta mensagem. Peça para ele reenviar."
+- Mesmo tratamento na lista (`ConversationList.tsx`): mostrar `🔒 Mensagem não descriptografada` em vez do texto bruto.
 
-- **AdminSidebar**: trocar comportamento do avatar — em vez de `onLogout` direto, abre menu (Perfil / Sair). Adicionar item "Perfil" navegando para `/perfil`.
-- **BrokerSidebar**: o item "Perfil" já existe (`/corretor/perfil`) — passa a apontar para `/perfil`.
-- **Líder**: usa `BrokerLayout`, então herda o item de Perfil automaticamente.
+### 3. Webhook — robustecer captura
 
-### 5. Limpeza
+`supabase/functions/whatsapp-webhook/index.ts`:
+- Ampliar `msg.text` fallback para também ler `payload.message.content.text`, `content.conversation`, `content.extendedTextMessage.text`, `content.buttonsResponseMessage.selectedDisplayText`, `content.listResponseMessage.title`, `content.templateButtonReplyMessage.selectedDisplayText`, `content.reactionMessage.text` e `data.text` — alguns formatos UAZAPI v2 colocam o texto fora de `msg.text`.
+- Quando `msg.text` começar com `[Undecryptable]`, gravar `metadata.undecryptable = true` para a UI estilizar.
+- Não bloquear gravação por falta de `instanceName` quando temos `overrideBrokerId` (já tratado, mas confirmar).
+- Acrescentar log mais verboso quando `messageText` ficar vazio mas `mediaMetadata` também — hoje vira `"document"` silenciosamente.
 
-- `BrokerProfile.tsx` vira um shim que re-exporta `UserProfile` (ou é deletado e a rota aponta para o novo).
-- `SettingsPanel` continua existindo para "alterar senha" e "preferências de notificação" — mover esse conteúdo para uma seção do novo `/perfil` em iteração futura (fora do escopo agora).
+### 4. Verificação pós-deploy
 
----
+- Abrir como corretor membro da roleta a conversa do Norton → devem aparecer as 4 mensagens.
+- Abrir a do @Vini_daniel_45 → deve aparecer o aviso amigável de mensagem criptografada.
 
 ## Arquivos afetados
 
-- `supabase/migrations/<new>.sql` — coluna `whatsapp` em `organization_members` + atualização da trigger `sync_broker_from_member`.
-- `supabase/functions/org-create-member-direct/index.ts` — aceitar `whatsapp` no payload.
-- `src/components/admin-org/MemberFormDialog.tsx` — campos `whatsapp` e `full_name` em editar/criar.
-- `src/pages/UserProfile.tsx` — **novo** (redesign no padrão Equipe).
-- `src/pages/BrokerProfile.tsx` — vira re-export de `UserProfile` (ou removido).
-- `src/App.tsx` — rota `/perfil`.
-- `src/components/admin/AdminSidebar.tsx` — menu no avatar com item Perfil.
-- `src/components/broker/BrokerSidebar.tsx` — apontar para `/perfil` (opcional, mantém compat).
-
-## Confirmações antes de implementar
-
-1. Posso **adicionar a coluna `whatsapp` em `organization_members`** e ajustar a trigger? (resposta esperada: sim)
-2. O perfil unificado deve mostrar o card "Identificação no Plantão" também para **líderes** que atendem, ou só para `broker` puro? (proposta: broker + leader, esconder para admin/manager/owner)
+- `supabase/migrations/<novo>.sql` (policies)
+- `supabase/functions/whatsapp-webhook/index.ts` (extração de texto + flag undecryptable)
+- `src/components/inbox/ConversationThread.tsx` (renderização especial)
+- `src/components/inbox/ConversationList.tsx` (preview especial)
