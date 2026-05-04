@@ -9,6 +9,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -71,10 +81,12 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
 
   const [loading, setLoading] = useState(false);
   const [acceptUrl, setAcceptUrl] = useState<string | null>(null);
+  const [existsConfirm, setExistsConfirm] = useState(false);
 
   // Reset ao abrir/fechar
   useEffect(() => {
     if (!open) return;
+    setExistsConfirm(false);
     if (member) {
       setFullName(member.full_name ?? "");
       setEmail(member.email);
@@ -171,6 +183,20 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     }
   };
 
+  const callDirect = async (linkExisting: boolean) => {
+    const { data, error } = await supabase.functions.invoke("org-create-member-direct", {
+      body: {
+        organization_id: organizationId,
+        email: email.trim(),
+        full_name: fullName.trim(),
+        password,
+        role,
+        link_existing: linkExisting,
+      },
+    });
+    return { data: data as any, error };
+  };
+
   const submitDirect = async () => {
     if (!email.trim() || !fullName.trim() || !password.trim()) {
       toast.error("Preencha nome, e-mail e senha.");
@@ -182,20 +208,16 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("org-create-member-direct", {
-        body: {
-          organization_id: organizationId,
-          email: email.trim(),
-          full_name: fullName.trim(),
-          password,
-          role,
-        },
-      });
-      if (error || (data as any)?.error) {
-        const code = (data as any)?.error;
+      const { data, error } = await callDirect(false);
+      if (error || data?.error) {
+        const code = data?.error;
+        if (code === "user_already_exists") {
+          setExistsConfirm(true);
+          return;
+        }
         const msg =
           code === "plan_limit_reached"
-            ? `Limite do plano atingido (${(data as any).limit} corretores). Faça upgrade.`
+            ? `Limite do plano atingido (${data.limit} corretores). Faça upgrade.`
             : code === "password_too_short"
             ? "Senha precisa ter no mínimo 6 caracteres."
             : code === "invalid_email"
@@ -209,6 +231,25 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao criar membro.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmLinkExisting = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await callDirect(true);
+      if (error || data?.error) {
+        toast.error(data?.error || error?.message || "Erro ao vincular conta.");
+        return;
+      }
+      toast.success("Conta existente vinculada à imobiliária. A senha atual do usuário foi preservada.");
+      setExistsConfirm(false);
+      onSaved?.();
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao vincular conta.");
     } finally {
       setLoading(false);
     }
@@ -428,6 +469,26 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
           )}
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={existsConfirm} onOpenChange={setExistsConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Esse e-mail já tem conta no Copilot Broker</AlertDialogTitle>
+            <AlertDialogDescription>
+              Já existe um usuário com <strong className="text-foreground">{email}</strong>. Por segurança, não vamos sobrescrever a senha dele.
+              <br /><br />
+              Você pode <strong className="text-foreground">vincular essa conta existente</strong> a esta imobiliária — ele entrará no CRM com a mesma senha que já usa. Se ele esqueceu, pode redefinir em <code>/auth</code> usando "Esqueci minha senha".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLinkExisting} disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Vincular conta existente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
