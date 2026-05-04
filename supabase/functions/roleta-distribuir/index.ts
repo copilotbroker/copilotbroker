@@ -151,11 +151,12 @@ Deno.serve(async (req) => {
     const isDisputa = (roleta as any).modo_distribuicao === "disputa";
 
     if (activeMembros.length === 0) {
-      assignedBrokerId = roleta.lider_id;
-      statusDistribuicao = "fallback_lider";
-      motivo = "Nenhum corretor online - atribuído ao líder";
+      // Sem corretores online → libera para líderes/gerentes/admins (mesmo tratamento de disputa)
+      assignedBrokerId = null;
+      statusDistribuicao = "em_disputa";
+      motivo = "Sem corretores online — liberado para líderes/gerentes/admins";
       novaOrdem = roleta.ultimo_membro_ordem_atribuida;
-      console.log("Fallback to leader:", assignedBrokerId);
+      console.log("No brokers online — released to leaders/admins/managers");
     } else if (isDisputa) {
       // Disputa mode: lead fica disponível para todos os online — primeiro a clicar fica
       assignedBrokerId = null;
