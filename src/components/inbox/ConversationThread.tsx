@@ -469,6 +469,16 @@ export function ConversationThread({
               <Button variant="ghost" size="icon" onClick={onUnarchive} className="h-8 w-8 text-muted-foreground" title="Desarquivar">
                 <ArchiveRestore className="h-4 w-4" />
               </Button>
+            ) : conversation.lead_id && onInactivateLead ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setPerdaModalOpen(true)}
+                className="h-8 w-8 text-muted-foreground hover:text-red-400"
+                title="Inativar Lead"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             ) : (
               <Button variant="ghost" size="icon" onClick={onArchive} className="h-8 w-8 text-muted-foreground" title="Arquivar">
                 <Archive className="h-4 w-4" />
