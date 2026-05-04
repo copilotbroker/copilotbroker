@@ -143,6 +143,7 @@ export default function BrokerInbox() {
     }, autoCreateLead);
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
+  const inactivateLeadFromConv = useInactivateLeadFromConversation();
 
   useEffect(() => {
     const convId = searchParams.get("conversationId");
@@ -416,6 +417,12 @@ export default function BrokerInbox() {
                 isNewLead={isNewConversation}
                 onStartAttendance={handleStartAttendance}
                 isStartingAttendance={isStartingAttendance}
+                onInactivateLead={async (reason) => {
+                  if (!selectedConversation?.lead_id) return;
+                  await inactivateLeadFromConv(selectedConversation.lead_id, reason);
+                  fetchConversations();
+                  handleBack();
+                }}
               />
             )}
           </div>
