@@ -338,16 +338,43 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
             </div>
           </div>
 
-          {/* Edição: status ativo */}
+          {/* Edição: dados pessoais + status */}
           {isEdit && (
-            <div className="rounded-xl border border-border/60 bg-background/40 p-4 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">Acesso ativo</div>
-                <div className="text-xs text-muted-foreground">
-                  Quando desativado, o membro não consegue mais entrar na imobiliária.
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Nome completo</Label>
+                  <Input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Maria Silva"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs flex items-center gap-1.5">
+                    WhatsApp pessoal
+                    <span className="text-[10px] font-normal text-muted-foreground">(notificações)</span>
+                  </Label>
+                  <Input
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    placeholder="(51) 99999-9999"
+                  />
                 </div>
               </div>
-              <Switch checked={isActive} onCheckedChange={setIsActive} />
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                O WhatsApp é usado pelo sistema para enviar avisos de transferência de lead e novos atendimentos a este membro.
+              </p>
+
+              <div className="rounded-xl border border-border/60 bg-background/40 p-4 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">Acesso ativo</div>
+                  <div className="text-xs text-muted-foreground">
+                    Quando desativado, o membro não consegue mais entrar na imobiliária.
+                  </div>
+                </div>
+                <Switch checked={isActive} onCheckedChange={setIsActive} />
+              </div>
             </div>
           )}
 
