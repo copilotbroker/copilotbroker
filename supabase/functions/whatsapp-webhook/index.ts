@@ -1855,25 +1855,44 @@ async function handleGlobalInstanceMessage(
     console.error(`[plantao-orphan] step=unify lead=${leadId}`, e);
   }
 
-  // Step 4: Create the conversation with broker_id = NULL (no placeholder).
-  // The conversation stays unassigned until someone clicks "Iniciar atendimento".
-  let conversationId: string | undefined;
-  let resultBrokerId: string | null = null;
-
+  // Step 4: Resolve a placeholder broker (líder of the active plantão roleta) APENAS para
+  // permitir a criação inicial da conversa. Após roleta-distribuir, se for disputa/sem corretor,
+  // o broker_id é zerado para que qualquer líder/gerente/admin possa assumir.
+  let placeholderBrokerId: string | null = null;
   try {
-    const result = await archiveMessageToConversation(
-      supabase, phone, messageText, direction, undefined, senderName, sentBy,
-      uazapiMessageId, messageType, metadata, null as any, "global"
-    );
-    conversationId = result.conversationId;
-    if (conversationId) {
-      await supabase.from("conversations").update({
-        lead_id: leadId,
-        roleta_modo: "disputa",
-      }).eq("id", conversationId);
-    }
+    const { data: roletaRow } = await supabase
+      .from("roletas")
+      .select("lider_id")
+      .eq("ativa", true)
+      .or("escopo_empreendimentos.eq.todas_landing_pages_e_plantao,tipo_origem.eq.whatsapp_global")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    placeholderBrokerId = (roletaRow as any)?.lider_id || null;
   } catch (e) {
-    console.error(`[plantao-orphan] step=create_conversation lead=${leadId}`, e);
+    console.error(`[plantao-orphan] step=resolve_lider lead=${leadId}`, e);
+  }
+
+  // Step 5: Create the conversation (placeholder broker if available)
+  let conversationId: string | undefined;
+  let resultBrokerId: string | null = placeholderBrokerId;
+
+  if (placeholderBrokerId) {
+    try {
+      const result = await archiveMessageToConversation(
+        supabase, phone, messageText, direction, undefined, senderName, sentBy,
+        uazapiMessageId, messageType, metadata, placeholderBrokerId, "global"
+      );
+      conversationId = result.conversationId;
+      if (conversationId) {
+        await supabase.from("conversations").update({
+          lead_id: leadId,
+          roleta_modo: "disputa",
+        }).eq("id", conversationId);
+      }
+    } catch (e) {
+      console.error(`[plantao-orphan] step=create_conversation lead=${leadId}`, e);
+    }
   }
 
   // Step 6: Distribute via roleta-distribuir (best-effort)
