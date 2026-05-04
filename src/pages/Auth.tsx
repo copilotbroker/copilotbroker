@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,6 +14,9 @@ const Auth = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -219,6 +222,27 @@ const Auth = () => {
     }
   };
 
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      toast.error("Informe seu e-mail.");
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Enviamos um link de redefinição para seu e-mail.");
+      setIsForgotOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao enviar e-mail de redefinição.");
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center">
@@ -350,21 +374,16 @@ const Auth = () => {
                 </button>
               </div>
             </form>
-            
-            {/* Broker Link */}
-            <div className="mt-6 pt-6 border-t border-[#2a2a2e] opacity-0 animate-fade-in delay-[700ms] lg:delay-[1100ms] space-y-2">
-              <p className="text-center text-sm text-slate-400">
-                É corretor?{" "}
-                <Link to="/corretor/cadastro" className="text-[#FFFF00] hover:underline font-medium">
-                  Cadastre-se aqui
-                </Link>
-              </p>
-              <p className="text-center text-sm text-slate-400">
-                Tem uma imobiliária?{" "}
-                <Link to="/imobiliaria/cadastro" className="text-[#FFFF00] hover:underline font-medium">
-                  Cadastrar imobiliária
-                </Link>
-              </p>
+
+            {/* Forgot password */}
+            <div className="mt-4 text-center opacity-0 animate-fade-in delay-[700ms] lg:delay-[1100ms]">
+              <button
+                type="button"
+                onClick={() => { setForgotEmail(email); setIsForgotOpen(true); }}
+                className="text-sm text-slate-400 hover:text-[#FFFF00] transition-colors"
+              >
+                Esqueci minha senha
+              </button>
             </div>
 
             {/* PWA Install Button */}
@@ -396,6 +415,44 @@ const Auth = () => {
         </div>
       </div>
       </div>
+
+      {isForgotOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setIsForgotOpen(false)}>
+          <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-semibold text-white mb-2">Esqueci minha senha</h3>
+            <p className="text-sm text-slate-400 mb-5">Enviaremos um link para redefinir sua senha.</p>
+            <form onSubmit={handleForgotSubmit} className="space-y-4">
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3.5 bg-[#0f0f12] border border-[#2a2a2e] rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-[#FFFF00]/50 focus:ring-2 focus:ring-[#FFFF00]/20"
+                  placeholder="seu@email.com"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotOpen(false)}
+                  className="flex-1 py-3 rounded-xl border border-[#2a2a2e] text-slate-300 hover:bg-[#0f0f12] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingReset}
+                  className="flex-1 py-3 bg-[#FFFF00] text-black font-bold rounded-xl hover:shadow-[0_0_20px_rgba(255,255,0,0.4)] disabled:opacity-50"
+                >
+                  {isSendingReset ? "Enviando..." : "Enviar link"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -13,6 +13,7 @@ import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import Home from "./pages/Home";
 import { LandingRoutes } from "@/components/LandingRoutes";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Admin from "./pages/Admin";
 import DesignSystem from "./pages/DesignSystem";
 
@@ -83,6 +84,7 @@ const App = () => (
 
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
             <Route path="/corretor/admin" element={<Navigate to="/corretor/crm" replace />} />
             <Route path="/corretor/dashboard" element={<BrokerDashboard />} />
