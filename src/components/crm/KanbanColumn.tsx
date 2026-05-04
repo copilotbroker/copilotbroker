@@ -226,6 +226,7 @@ export function KanbanColumn({
                       onScheduleWhatsApp={onScheduleWhatsApp}
                       onCallClick={onCallClick}
                       onTransfer={onTransfer}
+                      onClaimDisputa={onClaimDisputa}
                     />
                   </div>
                 </div>
