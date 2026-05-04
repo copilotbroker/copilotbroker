@@ -14,6 +14,9 @@ const Auth = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
