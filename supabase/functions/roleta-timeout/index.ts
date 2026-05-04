@@ -253,72 +253,79 @@ Deno.serve(async (req) => {
           : `Timeout de ${roleta.tempo_reserva_minutos}min. Transferido de ${deBroker?.name || "corretor anterior"} para ${paraBroker?.name || "novo corretor"}.`,
       });
 
-      // Notify new broker (in-app)
-      const { data: brokerData } = await supabase
-        .from("brokers")
-        .select("user_id, whatsapp")
-        .eq("id", newBrokerId)
-        .single();
+      // Notify new broker (in-app + WhatsApp) — only when there's a real new broker
+      if (newBrokerId) {
+        const { data: brokerData } = await supabase
+          .from("brokers")
+          .select("user_id, whatsapp")
+          .eq("id", newBrokerId)
+          .single();
 
-      if (brokerData?.user_id) {
-        await supabase.from("notifications").insert({
-          user_id: brokerData.user_id,
-          type: "roleta_timeout",
-          title: "Lead Reassinado (Timeout)",
-          message: `Lead ${lead.name} foi reassinado a você por timeout.`,
-          lead_id: lead.id,
-        });
-      }
-
-      // Notify new broker via WhatsApp (timeout = always hide lead data)
-      if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
-        try {
-          const cleanPhone = brokerData.whatsapp.replace(/\D/g, "");
-
-          // Get project name
-          let projectName = "Empreendimento";
-          if (lead.project_id) {
-            const { data: proj } = await supabase
-              .from("projects")
-              .select("name")
-              .eq("id", lead.project_id)
-              .single();
-            if (proj) projectName = proj.name;
-          }
-
-          const message = `🔄 *Lead reassinado por timeout*\n\n📋 *${projectName}*\n\n⚡ Acesse o CRM para ver os dados e iniciar o atendimento.\n⏱️ Tempo para atendimento: ${roleta.tempo_reserva_minutos} min`;
-
-          const resp = await fetch(`${baseUrl}/send/text`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "token": globalConfig.instance_token,
-            },
-            body: JSON.stringify({
-              number: cleanPhone,
-              text: message,
-            }),
+        if (brokerData?.user_id) {
+          await supabase.from("notifications").insert({
+            user_id: brokerData.user_id,
+            type: "roleta_timeout",
+            title: "Lead Reassinado (Timeout)",
+            message: `Lead ${lead.name} foi reassinado a você por timeout.`,
+            lead_id: lead.id,
           });
-
-          console.log(`WhatsApp timeout notification to ${maskPhone(cleanPhone)}: ${resp.status}`);
-        } catch (whatsappErr) {
-          console.error("WhatsApp timeout notification failed (non-critical):", whatsappErr);
         }
-      }
 
-      // Trigger auto-cadencia for the new broker (prevents infinite timeout loops)
-      try {
-        await fetch(`${supabaseUrl}/functions/v1/auto-cadencia-10d`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({ leadId: lead.id }),
-        });
-        console.log("Auto cadencia triggered after timeout reassignment, lead:", lead.id);
-      } catch (cadenciaErr) {
-        console.error("Auto cadencia trigger failed after timeout (non-critical):", cadenciaErr);
+        if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
+          try {
+            const cleanPhone = brokerData.whatsapp.replace(/\D/g, "");
+            let projectName = "Empreendimento";
+            if (lead.project_id) {
+              const { data: proj } = await supabase.from("projects").select("name").eq("id", lead.project_id).single();
+              if (proj) projectName = proj.name;
+            }
+            const message = `🔄 *Lead reassinado por timeout*\n\n📋 *${projectName}*\n\n⚡ Acesse o CRM para ver os dados e iniciar o atendimento.\n⏱️ Tempo para atendimento: ${roleta.tempo_reserva_minutos} min`;
+            const resp = await fetch(`${baseUrl}/send/text`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
+              body: JSON.stringify({ number: cleanPhone, text: message }),
+            });
+            console.log(`WhatsApp timeout notification to ${maskPhone(cleanPhone)}: ${resp.status}`);
+          } catch (whatsappErr) {
+            console.error("WhatsApp timeout notification failed (non-critical):", whatsappErr);
+          }
+        }
+
+        // Trigger auto-cadencia for the new broker
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/auto-cadencia-10d`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseServiceKey}` },
+            body: JSON.stringify({ leadId: lead.id }),
+          });
+        } catch (cadenciaErr) {
+          console.error("Auto cadencia trigger failed after timeout (non-critical):", cadenciaErr);
+        }
+      } else {
+        // Released to leaders/admins/managers — notify them
+        try {
+          const orgId = (await supabase.from("leads").select("organization_id").eq("id", lead.id).maybeSingle()).data?.organization_id ?? null;
+          const recipients = new Set<string>();
+          if (orgId) {
+            const { data: orgMembers } = await supabase
+              .from("organization_members").select("user_id")
+              .eq("organization_id", orgId).eq("approval_status", "approved").eq("is_active", true)
+              .in("role", ["owner", "admin", "manager"]);
+            (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
+          }
+          const { data: leaderRoles } = await supabase
+            .from("user_roles").select("user_id").in("role", ["leader", "admin", "super_admin"]);
+          (leaderRoles || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
+          if (recipients.size) {
+            await supabase.from("notifications").insert(Array.from(recipients).map((uid) => ({
+              user_id: uid,
+              type: "roleta_vazia",
+              title: "Lead aguardando atendimento",
+              message: `Lead ${lead.name} ficou sem corretores online após timeout. Disponível para qualquer líder/gerente assumir.`,
+              lead_id: lead.id,
+            })));
+          }
+        } catch (e) { console.error("notify leaders on timeout-fallback failed:", e); }
       }
 
       processed++;
