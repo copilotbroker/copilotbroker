@@ -60,7 +60,7 @@ export function KanbanColumn({
   onCardClick, onUpdateOrigin, onDelete, onIniciarAtendimento,
   onOpenAgendamento, onOpenComparecimento, onOpenVenda, onOpenPerda,
   onDispatchWhatsApp, onAddLead, onOpenProposta, onOpenReagendamento,
-  onLeadsLoaded, onSendWhatsAppNow, onScheduleWhatsApp, onCallClick, onTransfer,
+  onLeadsLoaded, onSendWhatsAppNow, onScheduleWhatsApp, onCallClick, onTransfer, onClaimDisputa,
 }: KanbanColumnProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const config = STATUS_CONFIG[status];
