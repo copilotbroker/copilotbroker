@@ -408,6 +408,7 @@ Deno.serve(async (req) => {
               })
               .eq("id", conv.id);
 
+            if (conv.lead_id) {
               await supabase
                 .from("leads")
                 .update({
@@ -420,6 +421,7 @@ Deno.serve(async (req) => {
                   liberado_lideres: true,
                 })
                 .eq("id", conv.lead_id);
+            }
 
             await supabase.from("roletas_log").insert({
               roleta_id: globalRoleta.id,
