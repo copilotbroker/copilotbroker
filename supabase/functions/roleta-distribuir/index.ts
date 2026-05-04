@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
 
     const now = new Date();
     // Only set expiration if timeout is active and not fallback
-    const shouldSetExpiration = timeoutAtivo && statusDistribuicao !== "fallback_lider";
+    const shouldSetExpiration = timeoutAtivo && statusDistribuicao !== "fallback_lider" && statusDistribuicao !== "em_disputa";
     const reservaExpira = shouldSetExpiration
       ? new Date(now.getTime() + roleta.tempo_reserva_minutos * 60 * 1000)
       : null;
@@ -213,22 +213,24 @@ Deno.serve(async (req) => {
     await supabase.from("roletas_log").insert({
       roleta_id: roletaId,
       lead_id: lead_id,
-      acao: statusDistribuicao === "fallback_lider" ? "fallback_lider" : "atribuicao_inicial",
+      acao: statusDistribuicao === "fallback_lider" ? "fallback_lider"
+            : statusDistribuicao === "em_disputa" ? "atribuicao_inicial"
+            : "atribuicao_inicial",
       para_corretor_id: assignedBrokerId,
       motivo: motivo,
     });
 
-    // 6b. Register in lead timeline
-    const { data: assignedBroker } = await supabase
-      .from("brokers")
-      .select("name")
-      .eq("id", assignedBrokerId)
-      .single();
+    // 6b. Timeline
+    const { data: assignedBroker } = assignedBrokerId
+      ? await supabase.from("brokers").select("name").eq("id", assignedBrokerId).single()
+      : { data: null as any };
 
     await supabase.from("lead_interactions").insert({
       lead_id: lead_id,
       interaction_type: statusDistribuicao === "fallback_lider" ? "roleta_fallback" : "roleta_atribuicao",
-      notes: `Atribuído via roleta para ${assignedBroker?.name || "corretor"}. ${motivo}`,
+      notes: statusDistribuicao === "em_disputa"
+        ? `Liberado em disputa. ${motivo}`
+        : `Atribuído via roleta para ${assignedBroker?.name || "corretor"}. ${motivo}`,
     });
 
     // 7. Create notification for the assigned broker
