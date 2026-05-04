@@ -286,7 +286,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
           </DialogHeader>
         </div>
 
-        <div className="px-7 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
+        <div className="px-4 sm:px-7 py-5 sm:py-6 space-y-5 sm:space-y-6 max-h-[70vh] overflow-y-auto">
           {/* Seleção de perfil — destaque visual */}
           <div className="space-y-2.5">
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
