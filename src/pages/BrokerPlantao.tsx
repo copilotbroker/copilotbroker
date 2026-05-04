@@ -7,6 +7,7 @@ import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
 import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
+import { useInactivateLeadFromConversation } from "@/hooks/use-inactivate-lead-from-conversation";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useUserRole } from "@/hooks/use-user-role";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ export default function BrokerPlantao() {
   const [teamBrokers, setTeamBrokers] = useState<{ id: string; name: string }[]>([]);
 
   const { role, isLeader } = useUserRole();
+  const inactivateLeadFromConv = useInactivateLeadFromConversation();
 
   useEffect(() => {
     const getBrokerId = async () => {
@@ -474,6 +476,12 @@ export default function BrokerPlantao() {
                 onTransfer={handleTransferFromInbox}
                 onPullToPersonal={handlePullToPersonal}
                 isPullingToPersonal={isPullingToPersonal}
+                onInactivateLead={async (reason) => {
+                  if (!selectedConversation?.lead_id) return;
+                  await inactivateLeadFromConv(selectedConversation.lead_id, reason);
+                  fetchConversations();
+                  handleBack();
+                }}
               />
             )}
           </div>

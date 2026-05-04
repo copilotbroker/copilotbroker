@@ -31,6 +31,8 @@ import {
 import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
 import { AdReferralCard } from "./AdReferralCard";
 import { MessageMedia } from "./MessageMedia";
+import { PerdaModal } from "@/components/crm/PerdaModal";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -78,6 +80,8 @@ interface ConversationThreadProps {
   /** Return conversation from personal back to global instance */
   onReturnToGlobal?: () => void;
   isReturningToGlobal?: boolean;
+  /** Inactivate the linked lead with reason */
+  onInactivateLead?: (reason: string) => Promise<void>;
 }
 
 const getMessageStatusIcon = (status?: string) => {
@@ -128,8 +132,10 @@ export function ConversationThread({
   isPullingToPersonal,
   onReturnToGlobal,
   isReturningToGlobal,
+  onInactivateLead,
 }: ConversationThreadProps) {
   const [inputValue, setInputValue] = useState("");
+  const [perdaModalOpen, setPerdaModalOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -396,7 +402,7 @@ export function ConversationThread({
                 <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
                   {conversation.lead_id ? "Lead vinculado" : hasResolvedName ? "Nome identificado" : "WhatsApp direto"}
                 </Badge>
-                {(conversation as any).source_instance === "global" && (conversation as any).broker?.name && (
+                {(conversation as any).source_instance === "global" && (conversation as any).attendance_started && (conversation as any).broker?.name && (
                   <Badge className="h-4 px-1.5 text-[10px] bg-purple-600/20 text-purple-400 border-purple-500/30 border">
                     Atribuído a: {(conversation as any).broker.name}
                   </Badge>
@@ -462,6 +468,16 @@ export function ConversationThread({
             {conversation.is_archived && onUnarchive ? (
               <Button variant="ghost" size="icon" onClick={onUnarchive} className="h-8 w-8 text-muted-foreground" title="Desarquivar">
                 <ArchiveRestore className="h-4 w-4" />
+              </Button>
+            ) : conversation.lead_id && onInactivateLead ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setPerdaModalOpen(true)}
+                className="h-8 w-8 text-muted-foreground hover:text-red-400"
+                title="Inativar Lead"
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             ) : (
               <Button variant="ghost" size="icon" onClick={onArchive} className="h-8 w-8 text-muted-foreground" title="Arquivar">
@@ -805,6 +821,16 @@ export function ConversationThread({
             )}
           </div>
         </div>
+      )}
+
+      {onInactivateLead && (
+        <PerdaModal
+          open={perdaModalOpen}
+          onOpenChange={setPerdaModalOpen}
+          onConfirm={async (reason) => {
+            await onInactivateLead(reason);
+          }}
+        />
       )}
     </div>
   );
