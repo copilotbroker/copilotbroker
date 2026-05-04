@@ -334,7 +334,7 @@ export default function UserProfile() {
                 <CardTitle className="text-base">Status das integrações</CardTitle>
                 <CardDescription className="text-xs">Suas conexões para atender clientes.</CardDescription>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 px-4 sm:px-6">
                 {/* WhatsApp atendimento */}
                 <div className="rounded-xl border border-border/60 bg-background/40 p-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
