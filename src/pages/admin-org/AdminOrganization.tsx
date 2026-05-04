@@ -62,7 +62,7 @@ const AdminOrganization = () => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/admin/crm")}
         className="-ml-2 text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />Voltar para o início

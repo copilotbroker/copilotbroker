@@ -84,13 +84,13 @@ const App = () => (
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
-            <Route path="/corretor/admin" element={<Navigate to="/corretor/dashboard" replace />} />
+            <Route path="/corretor/admin" element={<Navigate to="/corretor/crm" replace />} />
             <Route path="/corretor/dashboard" element={<BrokerDashboard />} />
             <Route path="/corretor/crm" element={<BrokerAdmin />} />
             <Route path="/corretor/leads" element={<BrokerAdmin />} />
             <Route path="/corretor/empreendimentos" element={<BrokerProjects />} />
             <Route path="/corretor/whatsapp" element={<Navigate to="/corretor/copiloto" replace />} />
-            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/admin" element={<Navigate to="/admin/crm" replace />} />
             <Route path="/admin/dashboard" element={<Admin />} />
             <Route path="/admin/crm" element={<Admin />} />
             <Route path="/admin/leads" element={<Admin />} />
