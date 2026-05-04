@@ -31,9 +31,14 @@ export interface ActiveFlowData {
   activeFlowSignature: string;
 }
 
-function applyFilters(query: any, filters: KanbanColumnFilters) {
+function applyFilters(query: any, filters: KanbanColumnFilters, status?: LeadStatus) {
+  const includeDisputa = status === "new";
   if (!filters.isAdmin && filters.brokerId) {
-    query = query.eq("broker_id", filters.brokerId);
+    if (includeDisputa) {
+      query = query.or(`broker_id.eq.${filters.brokerId},and(broker_id.is.null,status_distribuicao.eq.em_disputa)`);
+    } else {
+      query = query.eq("broker_id", filters.brokerId);
+    }
   }
   if (filters.projectId) {
     query = query.eq("project_id", filters.projectId);
@@ -41,6 +46,8 @@ function applyFilters(query: any, filters: KanbanColumnFilters) {
   if (filters.selectedBroker && filters.selectedBroker !== "all") {
     if (filters.selectedBroker === "enove") {
       query = query.is("broker_id", null);
+    } else if (includeDisputa) {
+      query = query.or(`broker_id.eq.${filters.selectedBroker},and(broker_id.is.null,status_distribuicao.eq.em_disputa)`);
     } else {
       query = query.eq("broker_id", filters.selectedBroker);
     }
