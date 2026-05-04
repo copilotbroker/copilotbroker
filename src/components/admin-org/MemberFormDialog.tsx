@@ -193,6 +193,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
         password,
         role,
         link_existing: linkExisting,
+        whatsapp: whatsapp.trim() || undefined,
       },
     });
     return { data: data as any, error };
