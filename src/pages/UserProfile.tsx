@@ -336,7 +336,7 @@ export default function UserProfile() {
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 px-4 sm:px-6">
                 {/* WhatsApp atendimento */}
-                <div className="rounded-xl border border-border/60 bg-background/40 p-4 flex items-center justify-between gap-3">
+                <div className="rounded-xl border border-border/60 bg-background/40 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
@@ -346,12 +346,12 @@ export default function UserProfile() {
                         ? <Wifi className="h-5 w-5 text-emerald-400" />
                         : <WifiOff className="h-5 w-5 text-destructive" />}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">WhatsApp Pessoal</p>
                       <p className="text-[11px] text-muted-foreground">Para atender seus leads</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     {whatsappConnected ? (
                       <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Conectado
