@@ -408,7 +408,6 @@ Deno.serve(async (req) => {
               })
               .eq("id", conv.id);
 
-            if (conv.lead_id) {
               await supabase
                 .from("leads")
                 .update({
@@ -418,9 +417,9 @@ Deno.serve(async (req) => {
                   reserva_expira_em: null,
                   status_distribuicao: "em_disputa",
                   motivo_atribuicao: `Loop detectado (${convReassignCount} reassinações) - liberado para líderes/gerentes/admins`,
+                  liberado_lideres: true,
                 })
                 .eq("id", conv.lead_id);
-            }
 
             await supabase.from("roletas_log").insert({
               roleta_id: globalRoleta.id,
