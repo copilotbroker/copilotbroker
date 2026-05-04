@@ -473,14 +473,13 @@ Deno.serve(async (req) => {
             .order("ordem", { ascending: true });
 
           const activeMembros = membros || [];
-          let newBrokerId: string;
+          let newBrokerId: string | null;
           let novaOrdem: number;
-          let isFallback = false;
+          const isFallback = activeMembros.length === 0;
 
-          if (activeMembros.length === 0) {
-            newBrokerId = globalRoleta.lider_id;
+          if (isFallback) {
+            newBrokerId = null;
             novaOrdem = globalRoleta.ultimo_membro_ordem_atribuida;
-            isFallback = true;
           } else {
             const lastOrder = globalRoleta.ultimo_membro_ordem_atribuida;
             const nextMembro = activeMembros.find((m: any) => m.ordem > lastOrder) || activeMembros[0];
@@ -499,10 +498,10 @@ Deno.serve(async (req) => {
               broker_id: newBrokerId,
               atribuido_em: new Date().toISOString(),
               reserva_expira_em: newExpira,
+              ...(isFallback ? { roleta_vazia_flag: true } : {}),
             })
             .eq("id", conv.id);
 
-          // Also update lead.broker_id so Kanban card follows the reassignment
           if (conv.lead_id) {
             await supabase
               .from("leads")
@@ -511,56 +510,49 @@ Deno.serve(async (req) => {
                 corretor_atribuido_id: newBrokerId,
                 atribuido_em: new Date().toISOString(),
                 reserva_expira_em: newExpira,
-                status_distribuicao: isFallback ? "fallback_lider" : "reassinado_timeout",
+                status_distribuicao: isFallback ? "em_disputa" : "reassinado_timeout",
               })
               .eq("id", conv.lead_id);
           }
 
-          // Update roleta pointer
           await supabase
             .from("roletas")
             .update({ ultimo_membro_ordem_atribuida: novaOrdem })
             .eq("id", globalRoleta.id);
 
-          // Log
           await supabase.from("roletas_log").insert({
             roleta_id: globalRoleta.id,
-            acao: isFallback ? "timeout_fallback_lider_conv" : "timeout_reassinado_conv",
+            acao: isFallback ? "timeout_liberado_lideres_conv" : "timeout_reassinado_conv",
             de_corretor_id: conv.broker_id,
             para_corretor_id: newBrokerId,
             motivo: `conversation:${conv.id}`,
           });
 
-          // Notify new broker
-          const { data: brokerData } = await supabase
-            .from("brokers")
-            .select("user_id, whatsapp")
-            .eq("id", newBrokerId)
-            .single();
+          if (newBrokerId) {
+            const { data: brokerData } = await supabase
+              .from("brokers").select("user_id, whatsapp").eq("id", newBrokerId).single();
 
-          if (brokerData?.user_id) {
-            await supabase.from("notifications").insert({
-              user_id: brokerData.user_id,
-              type: "roleta_timeout",
-              title: isFallback ? "Conversa do Plantão (fallback)" : "Conversa reassinada (timeout)",
-              message: `Conversa do Plantão (${conv.display_name || conv.phone}) foi ${isFallback ? "atribuída a você como líder" : "reassinada por timeout"}.`,
-            });
-          }
-
-          // WhatsApp notification
-          if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
-            try {
-              const cleanPhone = brokerData.whatsapp.replace(/\D/g, "");
-              const alertMsg = `🔄 *Conversa do Plantão reassinada*\n\nVocê tem um contato aguardando atendimento na aba "Novos" do Plantão.\n\n⚡ Acesse o CRM para iniciar o atendimento.\n⏱️ Tempo: ${globalRoleta.tempo_reserva_minutos} min`;
-
-              await fetch(`${baseUrl}/send/text`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
-                body: JSON.stringify({ number: cleanPhone, text: alertMsg }),
+            if (brokerData?.user_id) {
+              await supabase.from("notifications").insert({
+                user_id: brokerData.user_id,
+                type: "roleta_timeout",
+                title: "Conversa reassinada (timeout)",
+                message: `Conversa do Plantão (${conv.display_name || conv.phone}) foi reassinada por timeout.`,
               });
-              console.log(`WhatsApp conv timeout notification to ${maskPhone(cleanPhone)}`);
-            } catch (whatsappErr) {
-              console.error("WhatsApp conv timeout notification failed:", whatsappErr);
+            }
+
+            if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
+              try {
+                const cleanPhone = brokerData.whatsapp.replace(/\D/g, "");
+                const alertMsg = `🔄 *Conversa do Plantão reassinada*\n\nVocê tem um contato aguardando atendimento na aba "Novos" do Plantão.\n\n⚡ Acesse o CRM para iniciar o atendimento.\n⏱️ Tempo: ${globalRoleta.tempo_reserva_minutos} min`;
+                await fetch(`${baseUrl}/send/text`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
+                  body: JSON.stringify({ number: cleanPhone, text: alertMsg }),
+                });
+              } catch (whatsappErr) {
+                console.error("WhatsApp conv timeout notification failed:", whatsappErr);
+              }
             }
           }
 
