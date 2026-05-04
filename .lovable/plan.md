@@ -1,67 +1,79 @@
-## Plano: corrigir leads do Plantão que ficam invisíveis
+## Objetivo
 
-### Diagnóstico confirmado
-O lead "Diego" (`+5551982252189`, criado às 20:58) ficou órfão: lead criado, mas sem `roleta_id`, sem `broker_id`, sem `lead_attribution`, sem `roletas_log` e **sem `conversation`**. Por isso não apareceu na aba "Novos" do Plantão. O webhook `handleGlobalInstanceMessage` abortou silenciosamente após criar o lead — provavelmente uma exceção não tratada em `lead_attribution.insert` / `unify_lead` / `fetch(roleta-distribuir)`.
-
----
-
-### 1. Recuperar o lead "Diego" agora (one-shot)
-
-Via insert tool:
-- Inserir `lead_attribution` com `landing_page=whatsapp_global`, `utm_source=whatsapp`, `utm_medium=plantao`.
-- Chamar `roleta-distribuir` (via curl_edge_functions) com `lead_id=5c16ca81-32ca-4795-a51b-bd9c16882e3b` e `source=whatsapp_global` para entrar em disputa na roleta "Plantão".
-- Inserir uma `conversation` com `source_instance=global`, `attendance_started=false`, `broker_id=lider_id` (Vinicius), `phone=+5551982252189`, `lead_id=5c16ca81...`, `display_name='Diego'`, `last_message_preview='(mensagem original perdida — verificar no WhatsApp do Plantão)'`, `last_message_at=2026-05-04 20:58:11`.
-
-Resultado: o lead aparece na aba "Novos" do Plantão para todos os corretores online (Jussara, Kely, Leonardo).
+1. Permitir que o **admin preencha o WhatsApp pessoal** de qualquer membro (corretor, líder, gerente) direto no `MemberFormDialog` da página de Equipe — resolvendo o caso da Kely.
+2. Criar uma **rota de perfil unificada** acessível por admin, líder e corretor, com o mesmo design premium da página "Gestão de membros e perfis".
+3. **Redesenhar** `BrokerProfile` para esse mesmo padrão visual (hero com gradiente, cards com `border-border/60`, KPIs/status pills, role-aware accents).
 
 ---
 
-### 2. Endurecer `handleGlobalInstanceMessage` no webhook
+## Mudanças
 
-**Arquivo:** `supabase/functions/whatsapp-webhook/index.ts` (linhas ~1797-1913).
+### 1. Banco — propagar WhatsApp ao broker
 
-Refatorar para que a criação da `conversation` aconteça **sempre** após criar o lead, mesmo se etapas auxiliares falharem:
+A coluna `brokers.whatsapp` é o que `notify-transfer` e demais notificações usam. Hoje a trigger `sync_broker_from_member` já materializa o broker a partir do membro, mas não conhece o WhatsApp.
 
-1. Criar lead (try/catch — se falhar, abortar com log).
-2. Inserir `lead_attribution` em try/catch isolado (warn em erro, não aborta).
-3. Tentar `unify_lead` em try/catch isolado (warn em erro, não aborta).
-4. **Criar a `conversation` ANTES de chamar `roleta-distribuir`**, com `broker_id` placeholder (líder da roleta resolvido localmente via query simples). Garante que o lead aparece em "Novos" mesmo que a distribuição falhe.
-5. Chamar `roleta-distribuir` em try/catch isolado. Se sucesso, atualizar a conversation com `roleta_modo`, `atribuido_em`, `reserva_expira_em` e o `broker_id` real (caso fila/round-robin) ou manter o líder (caso disputa).
-6. Adicionar `console.error("[plantao-orphan]", lead_id, step, err)` em cada catch para diagnóstico futuro.
+- Adicionar coluna `organization_members.whatsapp text` (nullable).
+- Atualizar a trigger `sync_broker_from_member` para propagar `whatsapp` e `full_name` para `brokers.whatsapp` / `brokers.name` quando mudar.
+- Quando o próprio usuário salvar via `/perfil`, gravar nas duas pontas (`organization_members` + `brokers`) numa só transação para evitar inconsistência.
 
-Isso elimina a classe inteira de bugs onde uma falha em qualquer chamada acessória esconde o lead da UI.
+### 2. `MemberFormDialog` — campo WhatsApp + edição completa
 
----
+No modo **editar** (e também no **criar direto**, opcionalmente):
 
-### 3. Job de reconciliação preventivo (cron)
+- Adicionar campo "WhatsApp pessoal (notificações)" com input de telefone (mesmo placeholder/máscara já usados no `BrokerProfile`).
+- Adicionar campo "Nome completo" editável também no modo edição (hoje só dá pra mudar role/ativo).
+- Persistir nos dois caminhos: `organization_members.whatsapp/full_name` e (via trigger) `brokers.whatsapp/name`.
+- Edge function `org-create-member-direct` recebe `whatsapp` opcional no payload.
 
-**Nova edge function:** `supabase/functions/reconcile-orphan-plantao-leads/index.ts`
+### 3. Nova rota universal `/perfil` — redesign no padrão Equipe
+
+Criar `src/pages/UserProfile.tsx` (substitui o atual `BrokerProfile.tsx`) e expor:
+
+- `/perfil` → rota única
+- `/corretor/perfil` continua existindo, mas redireciona para `/perfil`
+
+Layout no padrão da página de Equipe:
+
+- **Hero** com gradiente (`from-primary/[0.07] via-card to-card`), badge de papel (`RoleBadge`), avatar grande com gradient by-name e botão "Salvar" no canto direito.
+- **Grid 2 colunas (responsivo)** com cards `border-border/60`:
+  - Card "Identidade" — nome, e-mail (readonly), slug (readonly se broker).
+  - Card "WhatsApp pessoal (notificações)" — input destacado, com hint "Usado pelo sistema para te notificar sobre transferências e novos leads".
+  - Card "Status das integrações" — pills de WhatsApp Pessoal e Google Agenda (mantém visual atual mas dentro do novo grid).
+  - Card "Identificação no Plantão" — só aparece se `role` for broker/leader (admin/manager não aparece, pois não atende).
+- Footer fixo com botão "Salvar alterações" (mesmo padrão do `MemberFormDialog`).
 
 Lógica:
-```
-SELECT id, name, whatsapp, created_at
-FROM leads
-WHERE source = 'whatsapp_global'
-  AND created_at > now() - interval '2 hours'
-  AND id NOT IN (SELECT lead_id FROM conversations WHERE lead_id IS NOT NULL)
-LIMIT 50;
-```
 
-Para cada lead órfão:
-- Inserir `lead_attribution` se não existir.
-- Chamar `roleta-distribuir` com `source=whatsapp_global`.
-- Criar a `conversation` global (broker_id = líder ou broker atribuído).
-- Logar reconciliação em `lead_interactions` com tipo `roleta_atribuicao` e nota "Lead recuperado por reconciliação automática".
+- `useUserRole` resolve role.
+- Se for `admin/manager` sem `brokerId`, salva apenas em `organization_members` (`whatsapp`, `full_name`).
+- Se tiver `brokerId`, salva em ambos.
+- Esconder seções que não se aplicam ao perfil (ex.: "Identificação no Plantão" só pra quem atende).
 
-**Agendamento:** via insert tool, criar cron job `pg_cron` rodando a cada 5 minutos chamando essa função (usando `net.http_post` + anon key, conforme padrão Supabase).
+### 4. Pontos de entrada
+
+- **AdminSidebar**: trocar comportamento do avatar — em vez de `onLogout` direto, abre menu (Perfil / Sair). Adicionar item "Perfil" navegando para `/perfil`.
+- **BrokerSidebar**: o item "Perfil" já existe (`/corretor/perfil`) — passa a apontar para `/perfil`.
+- **Líder**: usa `BrokerLayout`, então herda o item de Perfil automaticamente.
+
+### 5. Limpeza
+
+- `BrokerProfile.tsx` vira um shim que re-exporta `UserProfile` (ou é deletado e a rota aponta para o novo).
+- `SettingsPanel` continua existindo para "alterar senha" e "preferências de notificação" — mover esse conteúdo para uma seção do novo `/perfil` em iteração futura (fora do escopo agora).
 
 ---
 
-### Arquivos afetados
-- `supabase/functions/whatsapp-webhook/index.ts` — refatorar `handleGlobalInstanceMessage`.
-- `supabase/functions/reconcile-orphan-plantao-leads/index.ts` — nova função.
-- One-shot via insert tool: recuperar lead Diego (attribution + conversation) + agendar cron.
-- One curl_edge_functions: chamar `roleta-distribuir` para o lead Diego.
+## Arquivos afetados
 
-### Risco
-Baixo. Refatoração é defensiva (apenas adiciona try/catch e reordena). Job de reconciliação é idempotente (skip se conversation já existe). Recuperação manual do Diego é localizada.
+- `supabase/migrations/<new>.sql` — coluna `whatsapp` em `organization_members` + atualização da trigger `sync_broker_from_member`.
+- `supabase/functions/org-create-member-direct/index.ts` — aceitar `whatsapp` no payload.
+- `src/components/admin-org/MemberFormDialog.tsx` — campos `whatsapp` e `full_name` em editar/criar.
+- `src/pages/UserProfile.tsx` — **novo** (redesign no padrão Equipe).
+- `src/pages/BrokerProfile.tsx` — vira re-export de `UserProfile` (ou removido).
+- `src/App.tsx` — rota `/perfil`.
+- `src/components/admin/AdminSidebar.tsx` — menu no avatar com item Perfil.
+- `src/components/broker/BrokerSidebar.tsx` — apontar para `/perfil` (opcional, mantém compat).
+
+## Confirmações antes de implementar
+
+1. Posso **adicionar a coluna `whatsapp` em `organization_members`** e ajustar a trigger? (resposta esperada: sim)
+2. O perfil unificado deve mostrar o card "Identificação no Plantão" também para **líderes** que atendem, ou só para `broker` puro? (proposta: broker + leader, esconder para admin/manager/owner)
