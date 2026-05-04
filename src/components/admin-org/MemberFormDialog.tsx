@@ -171,6 +171,20 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     }
   };
 
+  const callDirect = async (linkExisting: boolean) => {
+    const { data, error } = await supabase.functions.invoke("org-create-member-direct", {
+      body: {
+        organization_id: organizationId,
+        email: email.trim(),
+        full_name: fullName.trim(),
+        password,
+        role,
+        link_existing: linkExisting,
+      },
+    });
+    return { data: data as any, error };
+  };
+
   const submitDirect = async () => {
     if (!email.trim() || !fullName.trim() || !password.trim()) {
       toast.error("Preencha nome, e-mail e senha.");
@@ -182,20 +196,16 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("org-create-member-direct", {
-        body: {
-          organization_id: organizationId,
-          email: email.trim(),
-          full_name: fullName.trim(),
-          password,
-          role,
-        },
-      });
-      if (error || (data as any)?.error) {
-        const code = (data as any)?.error;
+      const { data, error } = await callDirect(false);
+      if (error || data?.error) {
+        const code = data?.error;
+        if (code === "user_already_exists") {
+          setExistsConfirm(true);
+          return;
+        }
         const msg =
           code === "plan_limit_reached"
-            ? `Limite do plano atingido (${(data as any).limit} corretores). Faça upgrade.`
+            ? `Limite do plano atingido (${data.limit} corretores). Faça upgrade.`
             : code === "password_too_short"
             ? "Senha precisa ter no mínimo 6 caracteres."
             : code === "invalid_email"
@@ -209,6 +219,25 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao criar membro.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmLinkExisting = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await callDirect(true);
+      if (error || data?.error) {
+        toast.error(data?.error || error?.message || "Erro ao vincular conta.");
+        return;
+      }
+      toast.success("Conta existente vinculada à imobiliária. A senha atual do usuário foi preservada.");
+      setExistsConfirm(false);
+      onSaved?.();
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao vincular conta.");
     } finally {
       setLoading(false);
     }
