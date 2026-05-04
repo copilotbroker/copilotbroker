@@ -325,7 +325,17 @@ export const KanbanCard = memo(function KanbanCard({
         </div>
 
         <div className="mt-3 flex items-center gap-1.5">
-          {lead.status === "new" && actionConfig ? (
+          {(lead as any).status_distribuicao === "em_disputa" && onClaimDisputa ? (
+            <Button
+              size="sm"
+              variant="warning"
+              onClick={(e) => { e.stopPropagation(); onClaimDisputa(lead.id); }}
+              className="h-8 gap-1.5 rounded-lg px-3 text-[11px] font-semibold"
+            >
+              <Play className="h-3.5 w-3.5" />
+              <span>Iniciar Atendimento</span>
+            </Button>
+          ) : lead.status === "new" && actionConfig ? (
             <Popover open={composerOpen} onOpenChange={setComposerOpen}>
               <PopoverTrigger asChild>
                 <Button
