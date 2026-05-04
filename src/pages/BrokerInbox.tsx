@@ -8,6 +8,7 @@ import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatMo
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, BrokerInboxTab } from "@/hooks/use-conversations";
 import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
+import { useInactivateLeadFromConversation } from "@/hooks/use-inactivate-lead-from-conversation";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useLogout } from "@/hooks/use-logout";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
