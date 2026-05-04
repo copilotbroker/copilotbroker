@@ -1546,6 +1546,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           created_at: string
+          full_name: string | null
           id: string
           invited_at: string | null
           invited_by: string | null
@@ -1556,12 +1557,14 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
           user_id: string
+          whatsapp: string | null
         }
         Insert: {
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
+          full_name?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
@@ -1572,12 +1575,14 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           user_id: string
+          whatsapp?: string | null
         }
         Update: {
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
+          full_name?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
@@ -1588,6 +1593,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           user_id?: string
+          whatsapp?: string | null
         }
         Relationships: [
           {
@@ -2772,6 +2778,7 @@ export type Database = {
           organization_id: string
           role: string
           user_id: string
+          whatsapp: string
         }[]
       }
       get_user_organization_ids: {

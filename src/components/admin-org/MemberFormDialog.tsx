@@ -48,6 +48,7 @@ interface MemberInput {
   full_name: string | null;
   role: OrgRole;
   is_active: boolean;
+  whatsapp?: string | null;
 }
 
 interface Props {
@@ -74,6 +75,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
   // Form fields
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [role, setRole] = useState<EditableRole>("broker");
@@ -90,6 +92,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     if (member) {
       setFullName(member.full_name ?? "");
       setEmail(member.email);
+      setWhatsapp(member.whatsapp ?? "");
       setPassword("");
       setRole((SELECTABLE_ROLES as readonly string[]).includes(member.role) ? (member.role as EditableRole) : "broker");
       setIsActive(member.is_active);
@@ -98,6 +101,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     } else {
       setFullName("");
       setEmail("");
+      setWhatsapp("");
       setPassword(generatePassword());
       setRole("broker");
       setIsActive(true);
@@ -110,19 +114,16 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     if (!member) return;
     setLoading(true);
     try {
-      // Atualiza papel se mudou
-      if (member.role !== role) {
+      const patch: Record<string, any> = {};
+      if (member.role !== role) patch.role = role;
+      if (member.is_active !== isActive) patch.is_active = isActive;
+      if ((member.full_name ?? "") !== fullName.trim()) patch.full_name = fullName.trim() || null;
+      if ((member.whatsapp ?? "") !== whatsapp.trim()) patch.whatsapp = whatsapp.trim() || null;
+
+      if (Object.keys(patch).length > 0) {
         const { error } = await supabase
           .from("organization_members" as any)
-          .update({ role })
-          .eq("id", member.id) as any;
-        if (error) throw error;
-      }
-      // Atualiza status ativo
-      if (member.is_active !== isActive) {
-        const { error } = await supabase
-          .from("organization_members" as any)
-          .update({ is_active: isActive })
+          .update(patch)
           .eq("id", member.id) as any;
         if (error) throw error;
       }
@@ -192,6 +193,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
         password,
         role,
         link_existing: linkExisting,
+        whatsapp: whatsapp.trim() || undefined,
       },
     });
     return { data: data as any, error };
@@ -336,16 +338,43 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
             </div>
           </div>
 
-          {/* Edição: status ativo */}
+          {/* Edição: dados pessoais + status */}
           {isEdit && (
-            <div className="rounded-xl border border-border/60 bg-background/40 p-4 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">Acesso ativo</div>
-                <div className="text-xs text-muted-foreground">
-                  Quando desativado, o membro não consegue mais entrar na imobiliária.
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Nome completo</Label>
+                  <Input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Maria Silva"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs flex items-center gap-1.5">
+                    WhatsApp pessoal
+                    <span className="text-[10px] font-normal text-muted-foreground">(notificações)</span>
+                  </Label>
+                  <Input
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    placeholder="(51) 99999-9999"
+                  />
                 </div>
               </div>
-              <Switch checked={isActive} onCheckedChange={setIsActive} />
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                O WhatsApp é usado pelo sistema para enviar avisos de transferência de lead e novos atendimentos a este membro.
+              </p>
+
+              <div className="rounded-xl border border-border/60 bg-background/40 p-4 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">Acesso ativo</div>
+                  <div className="text-xs text-muted-foreground">
+                    Quando desativado, o membro não consegue mais entrar na imobiliária.
+                  </div>
+                </div>
+                <Switch checked={isActive} onCheckedChange={setIsActive} />
+              </div>
             </div>
           )}
 
@@ -397,6 +426,17 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="maria@empresa.com"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs flex items-center gap-1.5">
+                    WhatsApp pessoal
+                    <span className="text-[10px] font-normal text-muted-foreground">(opcional — notificações)</span>
+                  </Label>
+                  <Input
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    placeholder="(51) 99999-9999"
                   />
                 </div>
                 <div>

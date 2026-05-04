@@ -33,6 +33,7 @@ import AdminCopilotConfig from "./pages/AdminCopilotConfig";
 import AdminAgenda from "./pages/AdminAgenda";
 import BrokerAgenda from "./pages/BrokerAgenda";
 import BrokerProfile from "./pages/BrokerProfile";
+import UserProfile from "./pages/UserProfile";
 import Termos from "./pages/Termos";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LeadPage from "./pages/LeadPage";
@@ -110,7 +111,9 @@ const App = () => (
             <Route path="/corretor/plantao" element={<BrokerPlantao />} />
             <Route path="/corretor/agenda" element={<BrokerAgenda />} />
             <Route path="/corretor/copiloto" element={<BrokerCopilotConfig />} />
-            <Route path="/corretor/perfil" element={<BrokerProfile />} />
+            <Route path="/corretor/perfil" element={<UserProfile />} />
+            <Route path="/perfil" element={<UserProfile />} />
+            <Route path="/admin/perfil" element={<UserProfile />} />
             <Route path="/corretor/lead/:leadId" element={<LeadPage />} />
             <Route path="/corretor/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />
             {/* /:brokerSlug/:citySlug/:projectSlug is registered inside LandingRoutes (broker-first dynamic) */}

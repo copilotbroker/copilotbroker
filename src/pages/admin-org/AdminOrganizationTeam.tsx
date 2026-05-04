@@ -67,6 +67,7 @@ interface MemberRow {
   joined_at: string | null;
   email: string;
   full_name: string | null;
+  whatsapp?: string | null;
 }
 
 const AdminOrganizationTeam = () => {
