@@ -197,13 +197,10 @@ export function useConversations(options: UseConversationsOptions = {}) {
       if (options.inboxTab === "novos") {
         // Global conversations pending attendance
         query = query.eq("source_instance", "global").eq("attendance_started", false);
-        // When a specific broker is selected, filter by that broker; otherwise admin sees all
+        // When a specific broker is selected, filter by that broker — but always include disputa
+        // (disputa conversations are placeholder-assigned to the roleta leader and visible to all members)
         if (options.brokerId) {
-          if (options.userRole === "admin") {
-            query = query.eq("broker_id", options.brokerId);
-          } else {
-            query = query.or(`broker_id.eq.${options.brokerId},roleta_modo.eq.disputa`);
-          }
+          query = query.or(`broker_id.eq.${options.brokerId},roleta_modo.eq.disputa`);
         }
       } else if (options.inboxTab === "outros") {
         // Team conversations (exclude own)
