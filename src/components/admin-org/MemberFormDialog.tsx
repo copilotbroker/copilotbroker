@@ -76,6 +76,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
   // Reset ao abrir/fechar
   useEffect(() => {
     if (!open) return;
+    setExistsConfirm(false);
     if (member) {
       setFullName(member.full_name ?? "");
       setEmail(member.email);
