@@ -121,8 +121,10 @@ export default function BrokerPlantao() {
   });
 
   // Novos conversations (separate query) — only fetch if checked in to a whatsapp_global roulette
+  // For leaders/admins: when viewing "all" OR their own card (default), don't filter by broker —
+  // show all team queue + disputa. Only filter when a specific team member is picked.
   const novosResolvedBrokerId = canSelectBroker
-    ? (selectedBrokerId === "all" ? undefined : selectedBrokerId || brokerId)
+    ? (selectedBrokerId === "all" || selectedBrokerId === brokerId ? undefined : selectedBrokerId || brokerId)
     : brokerId;
 
   const {
