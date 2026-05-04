@@ -395,27 +395,28 @@ Deno.serve(async (req) => {
             .eq("motivo", `conversation:${conv.id}`);
 
           if ((convReassignCount || 0) >= MAX_REASSIGNMENTS) {
-            console.log(`Conv ${conv.id} hit ${convReassignCount} reassignments - fallback to leader`);
+            console.log(`Conv ${conv.id} hit ${convReassignCount} reassignments - releasing to leaders/admins`);
 
             await supabase
               .from("conversations")
               .update({
-                broker_id: globalRoleta.lider_id,
+                broker_id: null,
                 reserva_expira_em: null,
                 atribuido_em: new Date().toISOString(),
+                roleta_vazia_flag: true,
               })
               .eq("id", conv.id);
 
-            // Also update lead.broker_id so Kanban card follows the reassignment
             if (conv.lead_id) {
               await supabase
                 .from("leads")
                 .update({
-                  broker_id: globalRoleta.lider_id,
-                  corretor_atribuido_id: globalRoleta.lider_id,
+                  broker_id: null,
+                  corretor_atribuido_id: null,
                   atribuido_em: new Date().toISOString(),
                   reserva_expira_em: null,
-                  status_distribuicao: "fallback_lider",
+                  status_distribuicao: "em_disputa",
+                  motivo_atribuicao: `Loop detectado (${convReassignCount} reassinações) - liberado para líderes/gerentes/admins`,
                 })
                 .eq("id", conv.lead_id);
             }
@@ -424,25 +425,37 @@ Deno.serve(async (req) => {
               roleta_id: globalRoleta.id,
               acao: "timeout_loop_breaker_conv",
               de_corretor_id: conv.broker_id,
-              para_corretor_id: globalRoleta.lider_id,
+              para_corretor_id: null,
               motivo: `conversation:${conv.id}`,
             });
 
-            // Notify leader
-            const { data: liderData } = await supabase
-              .from("brokers")
-              .select("name, user_id")
-              .eq("id", globalRoleta.lider_id)
-              .single();
-
-            if (liderData?.user_id) {
-              await supabase.from("notifications").insert({
-                user_id: liderData.user_id,
-                type: "roleta_loop_breaker",
-                title: "Conversa presa em loop de timeout",
-                message: `Conversa do Plantão (${conv.display_name || conv.phone}) passou por ${convReassignCount} reassinações sem atendimento.`,
-              });
-            }
+            // Notify org leaders/admins/managers
+            try {
+              const { data: leadOrg } = conv.lead_id
+                ? await supabase.from("leads").select("organization_id").eq("id", conv.lead_id).maybeSingle()
+                : { data: null as any };
+              const orgId = (leadOrg as any)?.organization_id ?? null;
+              const recipients = new Set<string>();
+              if (orgId) {
+                const { data: orgMembers } = await supabase
+                  .from("organization_members").select("user_id")
+                  .eq("organization_id", orgId).eq("approval_status", "approved").eq("is_active", true)
+                  .in("role", ["owner", "admin", "manager"]);
+                (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
+              }
+              const { data: leaderRoles } = await supabase
+                .from("user_roles").select("user_id").in("role", ["leader", "admin", "super_admin"]);
+              (leaderRoles || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
+              if (recipients.size) {
+                await supabase.from("notifications").insert(Array.from(recipients).map((uid) => ({
+                  user_id: uid,
+                  type: "roleta_loop_breaker",
+                  title: "Conversa do Plantão aguardando",
+                  message: `Conversa do Plantão (${conv.display_name || conv.phone}) passou por ${convReassignCount} reassinações sem atendimento. Disponível para qualquer líder/gerente assumir.`,
+                  lead_id: conv.lead_id,
+                })));
+              }
+            } catch (e) { console.error("notify leaders on conv-loop failed:", e); }
 
             convLoopBroken++;
             convProcessed++;
