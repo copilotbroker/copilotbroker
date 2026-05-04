@@ -84,6 +84,7 @@ const App = () => (
 
             {/* Auth and admin routes */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/corretor/cadastro" element={<BrokerSignup />} />
             <Route path="/corretor/admin" element={<Navigate to="/corretor/crm" replace />} />
             <Route path="/corretor/dashboard" element={<BrokerDashboard />} />
