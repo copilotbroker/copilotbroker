@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
           broker_id: newBrokerId,
           corretor_atribuido_id: newBrokerId,
           atribuido_em: new Date().toISOString(),
-          reserva_expira_em: statusDistribuicao === "fallback_lider" ? null : newExpira.toISOString(),
+          reserva_expira_em: isFallback ? null : newExpira.toISOString(),
           status_distribuicao: statusDistribuicao,
           motivo_atribuicao: motivo,
         })
@@ -228,7 +228,7 @@ Deno.serve(async (req) => {
       await supabase.from("roletas_log").insert({
         roleta_id: lead.roleta_id,
         lead_id: lead.id,
-        acao: statusDistribuicao === "fallback_lider" ? "timeout_fallback_lider" : "timeout_reassinado",
+        acao: isFallback ? "timeout_liberado_lideres" : "timeout_reassinado",
         de_corretor_id: lead.corretor_atribuido_id,
         para_corretor_id: newBrokerId,
         motivo,
@@ -240,17 +240,17 @@ Deno.serve(async (req) => {
         .select("name")
         .eq("id", lead.corretor_atribuido_id)
         .single();
-      const { data: paraBroker } = await supabase
-        .from("brokers")
-        .select("name")
-        .eq("id", newBrokerId)
-        .single();
+      const { data: paraBroker } = newBrokerId
+        ? await supabase.from("brokers").select("name").eq("id", newBrokerId).single()
+        : { data: null as any };
 
       // Register in lead timeline
       await supabase.from("lead_interactions").insert({
         lead_id: lead.id,
-        interaction_type: statusDistribuicao === "fallback_lider" ? "roleta_fallback" : "roleta_timeout",
-        notes: `Timeout de ${roleta.tempo_reserva_minutos}min. Transferido de ${deBroker?.name || "corretor anterior"} para ${paraBroker?.name || "novo corretor"}.`,
+        interaction_type: isFallback ? "roleta_fallback" : "roleta_timeout",
+        notes: isFallback
+          ? `Timeout de ${roleta.tempo_reserva_minutos}min. Sem corretores online — liberado para líderes/gerentes/admins.`
+          : `Timeout de ${roleta.tempo_reserva_minutos}min. Transferido de ${deBroker?.name || "corretor anterior"} para ${paraBroker?.name || "novo corretor"}.`,
       });
 
       // Notify new broker (in-app)
