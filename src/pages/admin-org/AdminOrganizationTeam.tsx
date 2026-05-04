@@ -243,9 +243,9 @@ const AdminOrganizationTeam = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="flex gap-2">
-            <Input readOnly value={inviteUrl} className="font-mono text-xs" />
-            <Button variant="outline" onClick={copyInvite}><Copy className="h-4 w-4 mr-2" />Copiar</Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input readOnly value={inviteUrl} className="font-mono text-xs min-w-0" />
+            <Button variant="outline" onClick={copyInvite} className="w-full sm:w-auto"><Copy className="h-4 w-4 mr-2" />Copiar</Button>
           </div>
         </CardContent>
       </Card>
