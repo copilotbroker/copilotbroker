@@ -106,18 +106,18 @@ Deno.serve(async (req) => {
         .eq("acao", "timeout_reassinado");
 
       if ((reassignmentCount || 0) >= MAX_REASSIGNMENTS) {
-        console.log(`Lead ${lead.id} hit ${reassignmentCount} reassignments - breaking loop, fallback to leader`);
+        console.log(`Lead ${lead.id} hit ${reassignmentCount} reassignments - releasing to leaders/admins`);
 
-        // Fallback to leader and STOP the timeout cycle
+        // Release to leaders/admins/managers (no specific broker)
         await supabase
           .from("leads")
           .update({
-            broker_id: roleta.lider_id,
-            corretor_atribuido_id: roleta.lider_id,
+            broker_id: null,
+            corretor_atribuido_id: null,
             atribuido_em: new Date().toISOString(),
-            reserva_expira_em: null, // No more timeout
-            status_distribuicao: "fallback_lider",
-            motivo_atribuicao: `Loop detectado (${reassignmentCount} reassinações) - atribuído ao líder`,
+            reserva_expira_em: null,
+            status_distribuicao: "em_disputa",
+            motivo_atribuicao: `Loop detectado (${reassignmentCount} reassinações) - liberado para líderes/gerentes/admins`,
           })
           .eq("id", lead.id);
 
@@ -126,46 +126,42 @@ Deno.serve(async (req) => {
           lead_id: lead.id,
           acao: "timeout_loop_breaker",
           de_corretor_id: lead.corretor_atribuido_id,
-          para_corretor_id: roleta.lider_id,
-          motivo: `Loop detectado: ${reassignmentCount} reassinações sem atendimento. Atribuído ao líder.`,
+          para_corretor_id: null,
+          motivo: `Loop detectado: ${reassignmentCount} reassinações sem atendimento. Liberado para líderes.`,
         });
-
-        const { data: liderData } = await supabase
-          .from("brokers")
-          .select("name, user_id")
-          .eq("id", roleta.lider_id)
-          .single();
 
         await supabase.from("lead_interactions").insert({
           lead_id: lead.id,
           interaction_type: "roleta_fallback",
-          notes: `Loop de timeout detectado (${reassignmentCount} reassinações). Nenhum corretor iniciou atendimento. Atribuído ao líder ${liderData?.name || "líder"}.`,
+          notes: `Loop de timeout detectado (${reassignmentCount} reassinações). Liberado para líderes/gerentes/admins iniciarem o atendimento.`,
         });
 
-        if (liderData?.user_id) {
-          await supabase.from("notifications").insert({
-            user_id: liderData.user_id,
-            type: "roleta_loop_breaker",
-            title: "Lead preso em loop de timeout",
-            message: `Lead ${lead.name} passou por ${reassignmentCount} reassinações sem atendimento e foi atribuído a você.`,
-            lead_id: lead.id,
-          });
-        }
-
-        // Trigger cadência for the leader
+        // Notify org leaders/admins/managers (best-effort)
         try {
-          await fetch(`${supabaseUrl}/functions/v1/auto-cadencia-10d`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({ leadId: lead.id }),
-          });
-          console.log("Auto cadencia triggered for leader (loop breaker), lead:", lead.id);
-        } catch (cadErr) {
-          console.error("Auto cadencia trigger failed (loop breaker):", cadErr);
-        }
+          const { data: leadOrg } = await supabase
+            .from("leads").select("organization_id").eq("id", lead.id).maybeSingle();
+          const orgId = (leadOrg as any)?.organization_id ?? null;
+          const recipients = new Set<string>();
+          if (orgId) {
+            const { data: orgMembers } = await supabase
+              .from("organization_members").select("user_id")
+              .eq("organization_id", orgId).eq("approval_status", "approved").eq("is_active", true)
+              .in("role", ["owner", "admin", "manager"]);
+            (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
+          }
+          const { data: leaderRoles } = await supabase
+            .from("user_roles").select("user_id").in("role", ["leader", "admin", "super_admin"]);
+          (leaderRoles || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
+          if (recipients.size) {
+            await supabase.from("notifications").insert(Array.from(recipients).map((uid) => ({
+              user_id: uid,
+              type: "roleta_loop_breaker",
+              title: "Lead preso em loop de timeout",
+              message: `Lead ${lead.name} passou por ${reassignmentCount} reassinações sem atendimento. Disponível para qualquer líder/gerente assumir.`,
+              lead_id: lead.id,
+            })));
+          }
+        } catch (e) { console.error("loop-breaker notify failed:", e); }
 
         loopBroken++;
         processed++;
@@ -184,15 +180,17 @@ Deno.serve(async (req) => {
         .order("ordem", { ascending: true });
 
       const activeMembros = membros || [];
-      let newBrokerId: string;
+      let newBrokerId: string | null;
       let statusDistribuicao: string;
       let motivo: string;
       let novaOrdem: number;
 
-      if (activeMembros.length === 0) {
-        newBrokerId = roleta.lider_id;
-        statusDistribuicao = "fallback_lider";
-        motivo = "Timeout - nenhum outro corretor online - atribuído ao líder";
+      const isFallback = activeMembros.length === 0;
+      if (isFallback) {
+        // Sem outro corretor online → libera para líderes/gerentes/admins
+        newBrokerId = null as any;
+        statusDistribuicao = "em_disputa";
+        motivo = "Timeout — sem corretores online — liberado para líderes/gerentes/admins";
         novaOrdem = roleta.ultimo_membro_ordem_atribuida;
       } else {
         const lastOrder = roleta.ultimo_membro_ordem_atribuida;
@@ -214,7 +212,7 @@ Deno.serve(async (req) => {
           broker_id: newBrokerId,
           corretor_atribuido_id: newBrokerId,
           atribuido_em: new Date().toISOString(),
-          reserva_expira_em: statusDistribuicao === "fallback_lider" ? null : newExpira.toISOString(),
+          reserva_expira_em: isFallback ? null : newExpira.toISOString(),
           status_distribuicao: statusDistribuicao,
           motivo_atribuicao: motivo,
         })
@@ -230,7 +228,7 @@ Deno.serve(async (req) => {
       await supabase.from("roletas_log").insert({
         roleta_id: lead.roleta_id,
         lead_id: lead.id,
-        acao: statusDistribuicao === "fallback_lider" ? "timeout_fallback_lider" : "timeout_reassinado",
+        acao: isFallback ? "timeout_liberado_lideres" : "timeout_reassinado",
         de_corretor_id: lead.corretor_atribuido_id,
         para_corretor_id: newBrokerId,
         motivo,
@@ -242,85 +240,92 @@ Deno.serve(async (req) => {
         .select("name")
         .eq("id", lead.corretor_atribuido_id)
         .single();
-      const { data: paraBroker } = await supabase
-        .from("brokers")
-        .select("name")
-        .eq("id", newBrokerId)
-        .single();
+      const { data: paraBroker } = newBrokerId
+        ? await supabase.from("brokers").select("name").eq("id", newBrokerId).single()
+        : { data: null as any };
 
       // Register in lead timeline
       await supabase.from("lead_interactions").insert({
         lead_id: lead.id,
-        interaction_type: statusDistribuicao === "fallback_lider" ? "roleta_fallback" : "roleta_timeout",
-        notes: `Timeout de ${roleta.tempo_reserva_minutos}min. Transferido de ${deBroker?.name || "corretor anterior"} para ${paraBroker?.name || "novo corretor"}.`,
+        interaction_type: isFallback ? "roleta_fallback" : "roleta_timeout",
+        notes: isFallback
+          ? `Timeout de ${roleta.tempo_reserva_minutos}min. Sem corretores online — liberado para líderes/gerentes/admins.`
+          : `Timeout de ${roleta.tempo_reserva_minutos}min. Transferido de ${deBroker?.name || "corretor anterior"} para ${paraBroker?.name || "novo corretor"}.`,
       });
 
-      // Notify new broker (in-app)
-      const { data: brokerData } = await supabase
-        .from("brokers")
-        .select("user_id, whatsapp")
-        .eq("id", newBrokerId)
-        .single();
+      // Notify new broker (in-app + WhatsApp) — only when there's a real new broker
+      if (newBrokerId) {
+        const { data: brokerData } = await supabase
+          .from("brokers")
+          .select("user_id, whatsapp")
+          .eq("id", newBrokerId)
+          .single();
 
-      if (brokerData?.user_id) {
-        await supabase.from("notifications").insert({
-          user_id: brokerData.user_id,
-          type: "roleta_timeout",
-          title: "Lead Reassinado (Timeout)",
-          message: `Lead ${lead.name} foi reassinado a você por timeout.`,
-          lead_id: lead.id,
-        });
-      }
-
-      // Notify new broker via WhatsApp (timeout = always hide lead data)
-      if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
-        try {
-          const cleanPhone = brokerData.whatsapp.replace(/\D/g, "");
-
-          // Get project name
-          let projectName = "Empreendimento";
-          if (lead.project_id) {
-            const { data: proj } = await supabase
-              .from("projects")
-              .select("name")
-              .eq("id", lead.project_id)
-              .single();
-            if (proj) projectName = proj.name;
-          }
-
-          const message = `🔄 *Lead reassinado por timeout*\n\n📋 *${projectName}*\n\n⚡ Acesse o CRM para ver os dados e iniciar o atendimento.\n⏱️ Tempo para atendimento: ${roleta.tempo_reserva_minutos} min`;
-
-          const resp = await fetch(`${baseUrl}/send/text`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "token": globalConfig.instance_token,
-            },
-            body: JSON.stringify({
-              number: cleanPhone,
-              text: message,
-            }),
+        if (brokerData?.user_id) {
+          await supabase.from("notifications").insert({
+            user_id: brokerData.user_id,
+            type: "roleta_timeout",
+            title: "Lead Reassinado (Timeout)",
+            message: `Lead ${lead.name} foi reassinado a você por timeout.`,
+            lead_id: lead.id,
           });
-
-          console.log(`WhatsApp timeout notification to ${maskPhone(cleanPhone)}: ${resp.status}`);
-        } catch (whatsappErr) {
-          console.error("WhatsApp timeout notification failed (non-critical):", whatsappErr);
         }
-      }
 
-      // Trigger auto-cadencia for the new broker (prevents infinite timeout loops)
-      try {
-        await fetch(`${supabaseUrl}/functions/v1/auto-cadencia-10d`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({ leadId: lead.id }),
-        });
-        console.log("Auto cadencia triggered after timeout reassignment, lead:", lead.id);
-      } catch (cadenciaErr) {
-        console.error("Auto cadencia trigger failed after timeout (non-critical):", cadenciaErr);
+        if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
+          try {
+            const cleanPhone = brokerData.whatsapp.replace(/\D/g, "");
+            let projectName = "Empreendimento";
+            if (lead.project_id) {
+              const { data: proj } = await supabase.from("projects").select("name").eq("id", lead.project_id).single();
+              if (proj) projectName = proj.name;
+            }
+            const message = `🔄 *Lead reassinado por timeout*\n\n📋 *${projectName}*\n\n⚡ Acesse o CRM para ver os dados e iniciar o atendimento.\n⏱️ Tempo para atendimento: ${roleta.tempo_reserva_minutos} min`;
+            const resp = await fetch(`${baseUrl}/send/text`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
+              body: JSON.stringify({ number: cleanPhone, text: message }),
+            });
+            console.log(`WhatsApp timeout notification to ${maskPhone(cleanPhone)}: ${resp.status}`);
+          } catch (whatsappErr) {
+            console.error("WhatsApp timeout notification failed (non-critical):", whatsappErr);
+          }
+        }
+
+        // Trigger auto-cadencia for the new broker
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/auto-cadencia-10d`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseServiceKey}` },
+            body: JSON.stringify({ leadId: lead.id }),
+          });
+        } catch (cadenciaErr) {
+          console.error("Auto cadencia trigger failed after timeout (non-critical):", cadenciaErr);
+        }
+      } else {
+        // Released to leaders/admins/managers — notify them
+        try {
+          const orgId = (await supabase.from("leads").select("organization_id").eq("id", lead.id).maybeSingle()).data?.organization_id ?? null;
+          const recipients = new Set<string>();
+          if (orgId) {
+            const { data: orgMembers } = await supabase
+              .from("organization_members").select("user_id")
+              .eq("organization_id", orgId).eq("approval_status", "approved").eq("is_active", true)
+              .in("role", ["owner", "admin", "manager"]);
+            (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
+          }
+          const { data: leaderRoles } = await supabase
+            .from("user_roles").select("user_id").in("role", ["leader", "admin", "super_admin"]);
+          (leaderRoles || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
+          if (recipients.size) {
+            await supabase.from("notifications").insert(Array.from(recipients).map((uid) => ({
+              user_id: uid,
+              type: "roleta_vazia",
+              title: "Lead aguardando atendimento",
+              message: `Lead ${lead.name} ficou sem corretores online após timeout. Disponível para qualquer líder/gerente assumir.`,
+              lead_id: lead.id,
+            })));
+          }
+        } catch (e) { console.error("notify leaders on timeout-fallback failed:", e); }
       }
 
       processed++;
@@ -390,27 +395,28 @@ Deno.serve(async (req) => {
             .eq("motivo", `conversation:${conv.id}`);
 
           if ((convReassignCount || 0) >= MAX_REASSIGNMENTS) {
-            console.log(`Conv ${conv.id} hit ${convReassignCount} reassignments - fallback to leader`);
+            console.log(`Conv ${conv.id} hit ${convReassignCount} reassignments - releasing to leaders/admins`);
 
             await supabase
               .from("conversations")
               .update({
-                broker_id: globalRoleta.lider_id,
+                broker_id: null,
                 reserva_expira_em: null,
                 atribuido_em: new Date().toISOString(),
+                roleta_vazia_flag: true,
               })
               .eq("id", conv.id);
 
-            // Also update lead.broker_id so Kanban card follows the reassignment
             if (conv.lead_id) {
               await supabase
                 .from("leads")
                 .update({
-                  broker_id: globalRoleta.lider_id,
-                  corretor_atribuido_id: globalRoleta.lider_id,
+                  broker_id: null,
+                  corretor_atribuido_id: null,
                   atribuido_em: new Date().toISOString(),
                   reserva_expira_em: null,
-                  status_distribuicao: "fallback_lider",
+                  status_distribuicao: "em_disputa",
+                  motivo_atribuicao: `Loop detectado (${convReassignCount} reassinações) - liberado para líderes/gerentes/admins`,
                 })
                 .eq("id", conv.lead_id);
             }
@@ -419,25 +425,37 @@ Deno.serve(async (req) => {
               roleta_id: globalRoleta.id,
               acao: "timeout_loop_breaker_conv",
               de_corretor_id: conv.broker_id,
-              para_corretor_id: globalRoleta.lider_id,
+              para_corretor_id: null,
               motivo: `conversation:${conv.id}`,
             });
 
-            // Notify leader
-            const { data: liderData } = await supabase
-              .from("brokers")
-              .select("name, user_id")
-              .eq("id", globalRoleta.lider_id)
-              .single();
-
-            if (liderData?.user_id) {
-              await supabase.from("notifications").insert({
-                user_id: liderData.user_id,
-                type: "roleta_loop_breaker",
-                title: "Conversa presa em loop de timeout",
-                message: `Conversa do Plantão (${conv.display_name || conv.phone}) passou por ${convReassignCount} reassinações sem atendimento.`,
-              });
-            }
+            // Notify org leaders/admins/managers
+            try {
+              const { data: leadOrg } = conv.lead_id
+                ? await supabase.from("leads").select("organization_id").eq("id", conv.lead_id).maybeSingle()
+                : { data: null as any };
+              const orgId = (leadOrg as any)?.organization_id ?? null;
+              const recipients = new Set<string>();
+              if (orgId) {
+                const { data: orgMembers } = await supabase
+                  .from("organization_members").select("user_id")
+                  .eq("organization_id", orgId).eq("approval_status", "approved").eq("is_active", true)
+                  .in("role", ["owner", "admin", "manager"]);
+                (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
+              }
+              const { data: leaderRoles } = await supabase
+                .from("user_roles").select("user_id").in("role", ["leader", "admin", "super_admin"]);
+              (leaderRoles || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
+              if (recipients.size) {
+                await supabase.from("notifications").insert(Array.from(recipients).map((uid) => ({
+                  user_id: uid,
+                  type: "roleta_loop_breaker",
+                  title: "Conversa do Plantão aguardando",
+                  message: `Conversa do Plantão (${conv.display_name || conv.phone}) passou por ${convReassignCount} reassinações sem atendimento. Disponível para qualquer líder/gerente assumir.`,
+                  lead_id: conv.lead_id,
+                })));
+              }
+            } catch (e) { console.error("notify leaders on conv-loop failed:", e); }
 
             convLoopBroken++;
             convProcessed++;
@@ -455,14 +473,13 @@ Deno.serve(async (req) => {
             .order("ordem", { ascending: true });
 
           const activeMembros = membros || [];
-          let newBrokerId: string;
+          let newBrokerId: string | null;
           let novaOrdem: number;
-          let isFallback = false;
+          const isFallback = activeMembros.length === 0;
 
-          if (activeMembros.length === 0) {
-            newBrokerId = globalRoleta.lider_id;
+          if (isFallback) {
+            newBrokerId = null;
             novaOrdem = globalRoleta.ultimo_membro_ordem_atribuida;
-            isFallback = true;
           } else {
             const lastOrder = globalRoleta.ultimo_membro_ordem_atribuida;
             const nextMembro = activeMembros.find((m: any) => m.ordem > lastOrder) || activeMembros[0];
@@ -481,10 +498,10 @@ Deno.serve(async (req) => {
               broker_id: newBrokerId,
               atribuido_em: new Date().toISOString(),
               reserva_expira_em: newExpira,
+              ...(isFallback ? { roleta_vazia_flag: true } : {}),
             })
             .eq("id", conv.id);
 
-          // Also update lead.broker_id so Kanban card follows the reassignment
           if (conv.lead_id) {
             await supabase
               .from("leads")
@@ -493,56 +510,49 @@ Deno.serve(async (req) => {
                 corretor_atribuido_id: newBrokerId,
                 atribuido_em: new Date().toISOString(),
                 reserva_expira_em: newExpira,
-                status_distribuicao: isFallback ? "fallback_lider" : "reassinado_timeout",
+                status_distribuicao: isFallback ? "em_disputa" : "reassinado_timeout",
               })
               .eq("id", conv.lead_id);
           }
 
-          // Update roleta pointer
           await supabase
             .from("roletas")
             .update({ ultimo_membro_ordem_atribuida: novaOrdem })
             .eq("id", globalRoleta.id);
 
-          // Log
           await supabase.from("roletas_log").insert({
             roleta_id: globalRoleta.id,
-            acao: isFallback ? "timeout_fallback_lider_conv" : "timeout_reassinado_conv",
+            acao: isFallback ? "timeout_liberado_lideres_conv" : "timeout_reassinado_conv",
             de_corretor_id: conv.broker_id,
             para_corretor_id: newBrokerId,
             motivo: `conversation:${conv.id}`,
           });
 
-          // Notify new broker
-          const { data: brokerData } = await supabase
-            .from("brokers")
-            .select("user_id, whatsapp")
-            .eq("id", newBrokerId)
-            .single();
+          if (newBrokerId) {
+            const { data: brokerData } = await supabase
+              .from("brokers").select("user_id, whatsapp").eq("id", newBrokerId).single();
 
-          if (brokerData?.user_id) {
-            await supabase.from("notifications").insert({
-              user_id: brokerData.user_id,
-              type: "roleta_timeout",
-              title: isFallback ? "Conversa do Plantão (fallback)" : "Conversa reassinada (timeout)",
-              message: `Conversa do Plantão (${conv.display_name || conv.phone}) foi ${isFallback ? "atribuída a você como líder" : "reassinada por timeout"}.`,
-            });
-          }
-
-          // WhatsApp notification
-          if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
-            try {
-              const cleanPhone = brokerData.whatsapp.replace(/\D/g, "");
-              const alertMsg = `🔄 *Conversa do Plantão reassinada*\n\nVocê tem um contato aguardando atendimento na aba "Novos" do Plantão.\n\n⚡ Acesse o CRM para iniciar o atendimento.\n⏱️ Tempo: ${globalRoleta.tempo_reserva_minutos} min`;
-
-              await fetch(`${baseUrl}/send/text`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
-                body: JSON.stringify({ number: cleanPhone, text: alertMsg }),
+            if (brokerData?.user_id) {
+              await supabase.from("notifications").insert({
+                user_id: brokerData.user_id,
+                type: "roleta_timeout",
+                title: "Conversa reassinada (timeout)",
+                message: `Conversa do Plantão (${conv.display_name || conv.phone}) foi reassinada por timeout.`,
               });
-              console.log(`WhatsApp conv timeout notification to ${maskPhone(cleanPhone)}`);
-            } catch (whatsappErr) {
-              console.error("WhatsApp conv timeout notification failed:", whatsappErr);
+            }
+
+            if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
+              try {
+                const cleanPhone = brokerData.whatsapp.replace(/\D/g, "");
+                const alertMsg = `🔄 *Conversa do Plantão reassinada*\n\nVocê tem um contato aguardando atendimento na aba "Novos" do Plantão.\n\n⚡ Acesse o CRM para iniciar o atendimento.\n⏱️ Tempo: ${globalRoleta.tempo_reserva_minutos} min`;
+                await fetch(`${baseUrl}/send/text`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
+                  body: JSON.stringify({ number: cleanPhone, text: alertMsg }),
+                });
+              } catch (whatsappErr) {
+                console.error("WhatsApp conv timeout notification failed:", whatsappErr);
+              }
             }
           }
 

@@ -151,11 +151,12 @@ Deno.serve(async (req) => {
     const isDisputa = (roleta as any).modo_distribuicao === "disputa";
 
     if (activeMembros.length === 0) {
-      assignedBrokerId = roleta.lider_id;
-      statusDistribuicao = "fallback_lider";
-      motivo = "Nenhum corretor online - atribuído ao líder";
+      // Sem corretores online → libera para líderes/gerentes/admins (mesmo tratamento de disputa)
+      assignedBrokerId = null;
+      statusDistribuicao = "em_disputa";
+      motivo = "Sem corretores online — liberado para líderes/gerentes/admins";
       novaOrdem = roleta.ultimo_membro_ordem_atribuida;
-      console.log("Fallback to leader:", assignedBrokerId);
+      console.log("No brokers online — released to leaders/admins/managers");
     } else if (isDisputa) {
       // Disputa mode: lead fica disponível para todos os online — primeiro a clicar fica
       assignedBrokerId = null;
@@ -253,20 +254,72 @@ Deno.serve(async (req) => {
       : (projectData?.name || "empreendimento");
 
     if (statusDistribuicao === "em_disputa") {
-      // Notify ALL online members
-      const memberIds = activeMembros.map((m: any) => m.corretor_id);
-      const { data: memberBrokers } = await supabase
-        .from("brokers").select("id, user_id, whatsapp").in("id", memberIds);
-      const notifRows = (memberBrokers || [])
-        .filter((b: any) => b.user_id)
-        .map((b: any) => ({
-          user_id: b.user_id,
-          type: "roleta_disputa",
-          title: "🔥 Lead em Disputa",
-          message: `Lead ${leadData?.name || ""} (${originLabel}) liberado para disputa. Quem reivindicar primeiro, atende!`,
+      const isEmptyQueue = activeMembros.length === 0;
+
+      // Resolve organization id (best-effort)
+      let orgId: string | null = null;
+      const { data: leadOrg } = await supabase
+        .from("leads").select("organization_id").eq("id", lead_id).maybeSingle();
+      orgId = (leadOrg as any)?.organization_id ?? null;
+
+      // Recipients: online members (normal disputa) OR org leaders/admins/managers (empty queue)
+      let recipientUserIds: string[] = [];
+      let recipientWhatsapps: string[] = [];
+
+      if (isEmptyQueue) {
+        // Flag conversation as "roleta vazia"
+        try {
+          await supabase.from("conversations")
+            .update({ roleta_vazia_flag: true }).eq("lead_id", lead_id);
+        } catch (e) { console.error("flag roleta_vazia failed:", e); }
+
+        const recipients = new Set<string>();
+        if (orgId) {
+          const { data: orgMembers } = await supabase
+            .from("organization_members")
+            .select("user_id")
+            .eq("organization_id", orgId)
+            .eq("approval_status", "approved")
+            .eq("is_active", true)
+            .in("role", ["owner", "admin", "manager"]);
+          (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
+        }
+        const { data: leaderRoles } = await supabase
+          .from("user_roles").select("user_id").in("role", ["leader", "admin", "super_admin"]);
+        (leaderRoles || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
+
+        recipientUserIds = Array.from(recipients);
+
+        if (recipientUserIds.length) {
+          const { data: leaderBrokers } = await supabase
+            .from("brokers").select("whatsapp").in("user_id", recipientUserIds);
+          recipientWhatsapps = (leaderBrokers || [])
+            .map((b: any) => b.whatsapp).filter(Boolean);
+        }
+      } else {
+        const memberIds = activeMembros.map((m: any) => m.corretor_id);
+        const { data: memberBrokers } = await supabase
+          .from("brokers").select("id, user_id, whatsapp").in("id", memberIds);
+        recipientUserIds = (memberBrokers || [])
+          .filter((b: any) => b.user_id).map((b: any) => b.user_id);
+        recipientWhatsapps = (memberBrokers || [])
+          .map((b: any) => b.whatsapp).filter(Boolean);
+      }
+
+      // In-app notifications
+      const notifTitle = isEmptyQueue ? "🔔 Lead aguardando atendimento" : "🔥 Lead em Disputa";
+      const notifMessage = isEmptyQueue
+        ? `Lead ${leadData?.name || ""} (${originLabel}) chegou sem corretores online. Qualquer líder/gerente pode iniciar o atendimento.`
+        : `Lead ${leadData?.name || ""} (${originLabel}) liberado para disputa. Quem reivindicar primeiro, atende!`;
+      if (recipientUserIds.length) {
+        await supabase.from("notifications").insert(recipientUserIds.map((uid) => ({
+          user_id: uid,
+          type: isEmptyQueue ? "roleta_vazia" : "roleta_disputa",
+          title: notifTitle,
+          message: notifMessage,
           lead_id,
-        }));
-      if (notifRows.length) await supabase.from("notifications").insert(notifRows);
+        })));
+      }
 
       // WhatsApp blast
       try {
@@ -277,10 +330,11 @@ Deno.serve(async (req) => {
         let baseUrl: string;
         try { baseUrl = new URL(envUrl).origin; } catch { baseUrl = envUrl.replace(/\/[^\/]+\/?$/, ""); }
         if (globalConfig?.instance_token && baseUrl) {
-          const msg = `🔥 *Lead em Disputa via Roleta*\n\n📋 *${originLabel}*\n\n⚡ Acesse o CRM → Pré-Atendimento e clique em *Iniciar Atendimento* para assumir.\n\n👥 Quem reivindicar primeiro, atende!`;
-          for (const b of (memberBrokers || [])) {
-            if (!b.whatsapp) continue;
-            const phone = b.whatsapp.replace(/\D/g, "");
+          const msg = isEmptyQueue
+            ? `🔔 *Lead aguardando atendimento*\n\n📋 *${originLabel}*\n\n⚠️ Nenhum corretor online no momento. Qualquer líder/gerente pode iniciar o atendimento via CRM → Pré-Atendimento.`
+            : `🔥 *Lead em Disputa via Roleta*\n\n📋 *${originLabel}*\n\n⚡ Acesse o CRM → Pré-Atendimento e clique em *Iniciar Atendimento* para assumir.\n\n👥 Quem reivindicar primeiro, atende!`;
+          for (const wpp of recipientWhatsapps) {
+            const phone = wpp.replace(/\D/g, "");
             fetch(`${baseUrl}/send/text`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
@@ -295,7 +349,7 @@ Deno.serve(async (req) => {
         status: statusDistribuicao,
         online_count: activeMembros.length,
         disputa: true,
-        lider_id: roleta.lider_id,
+        empty_queue: isEmptyQueue,
         roleta_id: roletaId,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -310,76 +364,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 7c. Roleta vazia — alert leaders/admins/managers and flag conversation
-    if (statusDistribuicao === "fallback_lider") {
-      try {
-        // Flag any existing conversation for this lead so the Inbox can highlight it.
-        await supabase
-          .from("conversations")
-          .update({ roleta_vazia_flag: true })
-          .eq("lead_id", lead_id);
-
-        // Resolve organization_id (prefer roleta -> lider broker -> lead)
-        let orgId: string | null = null;
-        const { data: liderBroker } = await supabase
-          .from("brokers")
-          .select("organization_id, user_id")
-          .eq("id", roleta.lider_id)
-          .maybeSingle();
-        orgId = liderBroker?.organization_id ?? null;
-        if (!orgId) {
-          const { data: leadOrg } = await supabase
-            .from("leads")
-            .select("organization_id")
-            .eq("id", lead_id)
-            .maybeSingle();
-          orgId = leadOrg?.organization_id ?? null;
-        }
-
-        const { data: roletaInfo } = await supabase
-          .from("roletas")
-          .select("nome")
-          .eq("id", roletaId)
-          .maybeSingle();
-
-        // Collect recipient user_ids: leader + org admins/managers/owners + global admins
-        const recipients = new Set<string>();
-        if (liderBroker?.user_id) recipients.add(liderBroker.user_id);
-
-        if (orgId) {
-          const { data: orgMembers } = await supabase
-            .from("organization_members")
-            .select("user_id")
-            .eq("organization_id", orgId)
-            .eq("approval_status", "approved")
-            .eq("is_active", true)
-            .in("role", ["owner", "admin", "manager"]);
-          (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
-        }
-
-        const { data: globalAdmins } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .in("role", ["admin", "super_admin"]);
-        (globalAdmins || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
-
-        if (recipients.size > 0) {
-          const title = "Roleta vazia: lead atribuído ao líder";
-          const message = `Lead ${leadData?.name || ""} chegou na roleta "${roletaInfo?.nome || ""}" sem corretores online. Atribuído ao líder por fallback.`;
-          const rows = Array.from(recipients).map((uid) => ({
-            user_id: uid,
-            type: "roleta_vazia",
-            title,
-            message,
-            lead_id,
-          }));
-          await supabase.from("notifications").insert(rows);
-          console.log(`[roleta-vazia] Notified ${rows.length} recipient(s) for lead ${lead_id}`);
-        }
-      } catch (vazErr) {
-        console.error("[roleta-vazia] alert failed (non-critical):", vazErr);
-      }
-    }
+    // 7c. (removido) — fallback_lider não é mais usado; tratamento agora ocorre em "em_disputa" com isEmptyQueue.
 
     // 7b. Check broker WhatsApp instance status
     let brokerInstanceDisconnected = false;

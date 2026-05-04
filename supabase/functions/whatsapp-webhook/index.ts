@@ -1855,8 +1855,9 @@ async function handleGlobalInstanceMessage(
     console.error(`[plantao-orphan] step=unify lead=${leadId}`, e);
   }
 
-  // Step 4: Resolve a placeholder broker (líder of the active plantão roleta).
-  // This guarantees we can create the conversation even if roleta-distribuir fails.
+  // Step 4: Resolve a placeholder broker (líder of the active plantão roleta) APENAS para
+  // permitir a criação inicial da conversa. Após roleta-distribuir, se for disputa/sem corretor,
+  // o broker_id é zerado para que qualquer líder/gerente/admin possa assumir.
   let placeholderBrokerId: string | null = null;
   try {
     const { data: roletaRow } = await supabase
@@ -1872,8 +1873,7 @@ async function handleGlobalInstanceMessage(
     console.error(`[plantao-orphan] step=resolve_lider lead=${leadId}`, e);
   }
 
-  // Step 5: Create the conversation FIRST (before roleta-distribuir).
-  // This ensures the lead is visible in "Novos" even if distribution fails.
+  // Step 5: Create the conversation (placeholder broker if available)
   let conversationId: string | undefined;
   let resultBrokerId: string | null = placeholderBrokerId;
 
@@ -1887,14 +1887,12 @@ async function handleGlobalInstanceMessage(
       if (conversationId) {
         await supabase.from("conversations").update({
           lead_id: leadId,
-          roleta_modo: "disputa", // tentative, refined below if roleta returns a mode
+          roleta_modo: "disputa",
         }).eq("id", conversationId);
       }
     } catch (e) {
       console.error(`[plantao-orphan] step=create_conversation lead=${leadId}`, e);
     }
-  } else {
-    console.warn(`[plantao-orphan] step=no_lider lead=${leadId} — no active plantão roleta found`);
   }
 
   // Step 6: Distribute via roleta-distribuir (best-effort)
@@ -1942,6 +1940,11 @@ async function handleGlobalInstanceMessage(
       if (assignedBrokerId && !isDisputa) {
         update.broker_id = assignedBrokerId;
         resultBrokerId = assignedBrokerId;
+      } else if (isDisputa) {
+        // Disputa or empty queue: clear placeholder so the conversation is unassigned
+        // until a leader/manager/admin/online broker explicitly claims it.
+        update.broker_id = null;
+        resultBrokerId = null;
       }
       await supabase.from("conversations").update(update).eq("id", conversationId);
     } catch (e) {

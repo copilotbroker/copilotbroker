@@ -153,13 +153,12 @@ const RoletaManagement = () => {
   };
 
   const handleCreate = async () => {
-    if (!formNome.trim() || !formLiderId) {
-      toast.error("Nome e líder são obrigatórios.");
+    if (!formNome.trim()) {
+      toast.error("Nome é obrigatório.");
       return;
     }
     const roletaId = await createRoleta({
       nome: formNome.trim(),
-      lider_id: formLiderId,
       tempo_reserva_minutos: formTimeout,
       timeout_ativo: formTimeoutAtivo,
       timeout_pausa_inicio: formPausaInicio,
@@ -270,19 +269,8 @@ const RoletaManagement = () => {
                   className="bg-[#141417] border-[#2a2a2e]"
                 />
               </div>
-              <div>
-                <Label>Líder Responsável</Label>
-                <Select value={formLiderId} onValueChange={setFormLiderId}>
-                  <SelectTrigger className="bg-[#141417] border-[#2a2a2e]">
-                    <SelectValue placeholder="Selecione o líder..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leaders.map(b => (
-                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Campo "Líder Responsável" removido — leads não são mais atribuídos automaticamente.
+                  Quando ninguém atende, qualquer líder/gerente/admin pode iniciar o atendimento. */}
               <div>
                 <div className="flex items-center justify-between">
                   <Label>Tempo máximo para atendimento</Label>
