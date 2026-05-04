@@ -488,29 +488,7 @@ export function ConversationThread({
         </div>
       </div>
 
-      {isNewLead && onStartAttendance && (
-        <div className="border-b border-primary/30 bg-primary/10 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Novo contato aguardando atendimento</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Clique para assumir este lead e criar um card no Kanban</p>
-            </div>
-            <Button
-              size="sm"
-              className="h-8 gap-1.5 text-xs font-medium"
-              onClick={onStartAttendance}
-              disabled={isStartingAttendance}
-            >
-              {isStartingAttendance ? (
-                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              ) : (
-                <UserRoundSearch className="h-3.5 w-3.5" />
-              )}
-              Iniciar Atendimento
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Banner de "Iniciar Atendimento" movido para o rodapé do chat */}
 
       {!isNewLead && !conversation.lead_id && onCreateLead && (
         <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2">
@@ -714,10 +692,26 @@ export function ConversationThread({
       )}
 
       {(isNewLead || isReadOnly) ? (
-        <div className="border-t border-border px-4 py-3 text-center">
-          <p className="text-xs text-muted-foreground">
-            {isNewLead ? "Inicie o atendimento para enviar mensagens" : "Modo supervisão — somente leitura"}
-          </p>
+        <div className="sticky bottom-0 z-20 border-t border-border bg-background px-4 py-3 pb-safe">
+          {isNewLead && onStartAttendance ? (
+            <Button
+              size="lg"
+              className="w-full h-12 gap-2 text-sm font-semibold"
+              onClick={onStartAttendance}
+              disabled={isStartingAttendance}
+            >
+              {isStartingAttendance ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+              ) : (
+                <UserRoundSearch className="h-4 w-4" />
+              )}
+              Iniciar atendimento para enviar mensagens
+            </Button>
+          ) : (
+            <p className="text-center text-xs text-muted-foreground">
+              Modo supervisão — somente leitura
+            </p>
+          )}
         </div>
       ) : (
         <div className="sticky bottom-0 z-20 space-y-2 border-t border-border bg-background px-3 pt-2 pb-3 pb-safe">
