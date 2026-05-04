@@ -254,20 +254,72 @@ Deno.serve(async (req) => {
       : (projectData?.name || "empreendimento");
 
     if (statusDistribuicao === "em_disputa") {
-      // Notify ALL online members
-      const memberIds = activeMembros.map((m: any) => m.corretor_id);
-      const { data: memberBrokers } = await supabase
-        .from("brokers").select("id, user_id, whatsapp").in("id", memberIds);
-      const notifRows = (memberBrokers || [])
-        .filter((b: any) => b.user_id)
-        .map((b: any) => ({
-          user_id: b.user_id,
-          type: "roleta_disputa",
-          title: "🔥 Lead em Disputa",
-          message: `Lead ${leadData?.name || ""} (${originLabel}) liberado para disputa. Quem reivindicar primeiro, atende!`,
+      const isEmptyQueue = activeMembros.length === 0;
+
+      // Resolve organization id (best-effort)
+      let orgId: string | null = null;
+      const { data: leadOrg } = await supabase
+        .from("leads").select("organization_id").eq("id", lead_id).maybeSingle();
+      orgId = (leadOrg as any)?.organization_id ?? null;
+
+      // Recipients: online members (normal disputa) OR org leaders/admins/managers (empty queue)
+      let recipientUserIds: string[] = [];
+      let recipientWhatsapps: string[] = [];
+
+      if (isEmptyQueue) {
+        // Flag conversation as "roleta vazia"
+        try {
+          await supabase.from("conversations")
+            .update({ roleta_vazia_flag: true }).eq("lead_id", lead_id);
+        } catch (e) { console.error("flag roleta_vazia failed:", e); }
+
+        const recipients = new Set<string>();
+        if (orgId) {
+          const { data: orgMembers } = await supabase
+            .from("organization_members")
+            .select("user_id")
+            .eq("organization_id", orgId)
+            .eq("approval_status", "approved")
+            .eq("is_active", true)
+            .in("role", ["owner", "admin", "manager"]);
+          (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
+        }
+        const { data: leaderRoles } = await supabase
+          .from("user_roles").select("user_id").in("role", ["leader", "admin", "super_admin"]);
+        (leaderRoles || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
+
+        recipientUserIds = Array.from(recipients);
+
+        if (recipientUserIds.length) {
+          const { data: leaderBrokers } = await supabase
+            .from("brokers").select("whatsapp").in("user_id", recipientUserIds);
+          recipientWhatsapps = (leaderBrokers || [])
+            .map((b: any) => b.whatsapp).filter(Boolean);
+        }
+      } else {
+        const memberIds = activeMembros.map((m: any) => m.corretor_id);
+        const { data: memberBrokers } = await supabase
+          .from("brokers").select("id, user_id, whatsapp").in("id", memberIds);
+        recipientUserIds = (memberBrokers || [])
+          .filter((b: any) => b.user_id).map((b: any) => b.user_id);
+        recipientWhatsapps = (memberBrokers || [])
+          .map((b: any) => b.whatsapp).filter(Boolean);
+      }
+
+      // In-app notifications
+      const notifTitle = isEmptyQueue ? "🔔 Lead aguardando atendimento" : "🔥 Lead em Disputa";
+      const notifMessage = isEmptyQueue
+        ? `Lead ${leadData?.name || ""} (${originLabel}) chegou sem corretores online. Qualquer líder/gerente pode iniciar o atendimento.`
+        : `Lead ${leadData?.name || ""} (${originLabel}) liberado para disputa. Quem reivindicar primeiro, atende!`;
+      if (recipientUserIds.length) {
+        await supabase.from("notifications").insert(recipientUserIds.map((uid) => ({
+          user_id: uid,
+          type: isEmptyQueue ? "roleta_vazia" : "roleta_disputa",
+          title: notifTitle,
+          message: notifMessage,
           lead_id,
-        }));
-      if (notifRows.length) await supabase.from("notifications").insert(notifRows);
+        })));
+      }
 
       // WhatsApp blast
       try {
@@ -278,10 +330,11 @@ Deno.serve(async (req) => {
         let baseUrl: string;
         try { baseUrl = new URL(envUrl).origin; } catch { baseUrl = envUrl.replace(/\/[^\/]+\/?$/, ""); }
         if (globalConfig?.instance_token && baseUrl) {
-          const msg = `🔥 *Lead em Disputa via Roleta*\n\n📋 *${originLabel}*\n\n⚡ Acesse o CRM → Pré-Atendimento e clique em *Iniciar Atendimento* para assumir.\n\n👥 Quem reivindicar primeiro, atende!`;
-          for (const b of (memberBrokers || [])) {
-            if (!b.whatsapp) continue;
-            const phone = b.whatsapp.replace(/\D/g, "");
+          const msg = isEmptyQueue
+            ? `🔔 *Lead aguardando atendimento*\n\n📋 *${originLabel}*\n\n⚠️ Nenhum corretor online no momento. Qualquer líder/gerente pode iniciar o atendimento via CRM → Pré-Atendimento.`
+            : `🔥 *Lead em Disputa via Roleta*\n\n📋 *${originLabel}*\n\n⚡ Acesse o CRM → Pré-Atendimento e clique em *Iniciar Atendimento* para assumir.\n\n👥 Quem reivindicar primeiro, atende!`;
+          for (const wpp of recipientWhatsapps) {
+            const phone = wpp.replace(/\D/g, "");
             fetch(`${baseUrl}/send/text`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
@@ -296,7 +349,7 @@ Deno.serve(async (req) => {
         status: statusDistribuicao,
         online_count: activeMembros.length,
         disputa: true,
-        lider_id: roleta.lider_id,
+        empty_queue: isEmptyQueue,
         roleta_id: roletaId,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
