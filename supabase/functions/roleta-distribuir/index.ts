@@ -291,7 +291,12 @@ Deno.serve(async (req) => {
       } catch (e) { console.error("disputa whatsapp blast failed:", e); }
 
       return new Response(JSON.stringify({
-        success: true, status: statusDistribuicao, online_count: activeMembros.length,
+        success: true,
+        status: statusDistribuicao,
+        online_count: activeMembros.length,
+        disputa: true,
+        lider_id: roleta.lider_id,
+        roleta_id: roletaId,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 

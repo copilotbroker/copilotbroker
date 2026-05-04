@@ -1846,6 +1846,8 @@ async function handleGlobalInstanceMessage(
 
   // Step 2: Call roleta-distribuir to assign the lead via the unified roleta
   let assignedBrokerId: string | null = null;
+  let isDisputa = false;
+  let disputaLiderId: string | null = null;
   try {
     const distribResp = await fetch(`${SUPABASE_URL}/functions/v1/roleta-distribuir`, {
       method: "POST",
@@ -1858,12 +1860,18 @@ async function handleGlobalInstanceMessage(
 
     const distribJson = await distribResp.json().catch(() => ({}));
     assignedBrokerId = distribJson.assigned_to || null;
+    isDisputa = !!distribJson.disputa;
+    disputaLiderId = distribJson.lider_id || null;
     console.log(`🎯 roleta-distribuir result for plantão lead ${leadId}:`, distribJson);
   } catch (distribErr) {
     console.error("roleta-distribuir call failed:", distribErr);
   }
 
-  if (!assignedBrokerId) {
+  // For disputa mode: lead has no broker yet, but we still need a conversation in Plantão "Novos".
+  // Use lider_id as placeholder broker_id (RLS allows roleta members to see/claim it).
+  const conversationBrokerId = assignedBrokerId || disputaLiderId;
+
+  if (!conversationBrokerId) {
     console.warn(`⚠️ No broker assigned to plantão lead ${leadId}; message will be archived without conversation.`);
     return {};
   }
@@ -1871,7 +1879,7 @@ async function handleGlobalInstanceMessage(
   // Step 3: Archive message to conversation (creates it with source_instance=global, attendance_started=false)
   const result = await archiveMessageToConversation(
     supabase, phone, messageText, direction, undefined, senderName, sentBy,
-    uazapiMessageId, messageType, metadata, assignedBrokerId, "global"
+    uazapiMessageId, messageType, metadata, conversationBrokerId, "global"
   );
 
   // Step 4: Link conversation to the lead and copy timeout/roleta info from leads
@@ -1883,8 +1891,8 @@ async function handleGlobalInstanceMessage(
       .single();
 
     // Get roleta modo for the conversation badge
-    let roletaModo: string | null = null;
-    if (leadInfo?.roleta_id) {
+    let roletaModo: string | null = isDisputa ? "disputa" : null;
+    if (!roletaModo && leadInfo?.roleta_id) {
       const { data: rData } = await supabase
         .from("roletas")
         .select("modo_distribuicao")
@@ -1901,8 +1909,8 @@ async function handleGlobalInstanceMessage(
     }).eq("id", result.conversationId);
   }
 
-  console.log(`✅ Plantão message handled: phone=${phone} → lead=${leadId} → broker=${assignedBrokerId}`);
-  return { brokerId: assignedBrokerId, conversationId: result.conversationId };
+  console.log(`✅ Plantão message handled: phone=${phone} → lead=${leadId} → broker=${conversationBrokerId} (disputa=${isDisputa})`);
+  return { brokerId: conversationBrokerId, conversationId: result.conversationId };
 }
 
 async function createGlobalLead(
