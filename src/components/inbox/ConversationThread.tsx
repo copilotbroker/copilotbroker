@@ -521,7 +521,7 @@ export function ConversationThread({
           </Button>
         </div>
       )}
-      {isCopilot && (
+      {(conversation as any).attendance_started && isCopilot && (
         <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2">
           <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
             <User className="h-3.5 w-3.5" /> Modo Copiloto
