@@ -429,6 +429,17 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
                   />
                 </div>
                 <div>
+                  <Label className="text-xs flex items-center gap-1.5">
+                    WhatsApp pessoal
+                    <span className="text-[10px] font-normal text-muted-foreground">(opcional — notificações)</span>
+                  </Label>
+                  <Input
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    placeholder="(51) 99999-9999"
+                  />
+                </div>
+                <div>
                   <Label className="text-xs">Senha provisória</Label>
                   <div className="flex gap-2">
                     <Input
