@@ -13,6 +13,7 @@ interface Body {
   password: string;
   role: "manager" | "leader" | "broker";
   link_existing?: boolean;
+  whatsapp?: string;
 }
 
 const VALID_ROLES = ["manager", "leader", "broker"];
@@ -152,6 +153,8 @@ Deno.serve(async (req) => {
           approval_status: "approved",
           approved_at: new Date().toISOString(),
           joined_at: new Date().toISOString(),
+          full_name: body.full_name.trim() || null,
+          whatsapp: body.whatsapp?.trim() || null,
         },
         { onConflict: "organization_id,user_id,role" },
       );
