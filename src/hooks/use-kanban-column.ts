@@ -127,7 +127,7 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     queryKey: countKey,
     queryFn: async () => {
       let query = supabase.from("leads").select("id", { count: "exact", head: true });
-      query = applyFilters(query, filters);
+      query = applyFilters(query, filters, status);
       query = applyEffectiveStatusFilter(query, status, activeFlowIdList);
       const { count, error } = await query;
       if (error) throw error;
@@ -152,7 +152,7 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
         .order("last_interaction_at", { ascending: false })
         .range(pageParam, pageParam + PAGE_SIZE - 1);
 
-      query = applyFilters(query, filters);
+      query = applyFilters(query, filters, status);
       query = applyEffectiveStatusFilter(query, status, activeFlowIdList);
 
       const { data, error } = await query;
