@@ -5,17 +5,25 @@ import { Check, X, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const matrix = [
-  { perm: "Ver dashboard", roles: { owner: true, admin: true, manager: true, leader: true, broker: true } },
-  { perm: "Gerenciar corretores", roles: { owner: true, admin: true, manager: true, leader: false, broker: false } },
-  { perm: "Configurar roletas", roles: { owner: true, admin: true, manager: true, leader: false, broker: false } },
-  { perm: "Gerenciar empreendimentos", roles: { owner: true, admin: true, manager: false, leader: false, broker: false } },
-  { perm: "Trocar plano da conta", roles: { owner: true, admin: false, manager: false, leader: false, broker: false } },
-  { perm: "Ver leads próprios", roles: { owner: true, admin: true, manager: true, leader: true, broker: true } },
-  { perm: "Ver leads do time", roles: { owner: true, admin: true, manager: true, leader: true, broker: false } },
-  { perm: "Ver leads de toda imobiliária", roles: { owner: true, admin: true, manager: false, leader: false, broker: false } },
+  { perm: "Atender leads (Inbox + Copiloto)", roles: { manager: true, leader: true, broker: true } },
+  { perm: "Ver dashboard pessoal", roles: { manager: true, leader: true, broker: true } },
+  { perm: "Ver leads próprios", roles: { manager: true, leader: true, broker: true } },
+  { perm: "Ver leads da equipe", roles: { manager: true, leader: true, broker: false } },
+  { perm: "Ver leads de toda a imobiliária", roles: { manager: true, leader: false, broker: false } },
+  { perm: "Gerenciar corretores e equipes", roles: { manager: true, leader: false, broker: false } },
+  { perm: "Configurar roletas e distribuição", roles: { manager: true, leader: false, broker: false } },
+  { perm: "Gerenciar empreendimentos e landing pages", roles: { manager: true, leader: false, broker: false } },
+  { perm: "Configurar WhatsApp global da imobiliária", roles: { manager: true, leader: false, broker: false } },
+  { perm: "Ver dashboard e performance da equipe", roles: { manager: true, leader: true, broker: false } },
+  { perm: "Trocar plano e dados de cobrança", roles: { manager: true, leader: false, broker: false } },
 ];
 
-const roles = ["owner", "admin", "manager", "leader", "broker"] as const;
+const roles = ["manager", "leader", "broker"] as const;
+const roleLabels: Record<typeof roles[number], string> = {
+  manager: "Gerente",
+  leader: "Líder",
+  broker: "Corretor",
+};
 
 const AdminOrganizationPermissions = () => {
   const navigate = useNavigate();
@@ -42,7 +50,7 @@ const AdminOrganizationPermissions = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Permissão</TableHead>
-                {roles.map((r) => <TableHead key={r} className="text-center capitalize">{r}</TableHead>)}
+                {roles.map((r) => <TableHead key={r} className="text-center">{roleLabels[r]}</TableHead>)}
               </TableRow>
             </TableHeader>
             <TableBody>
