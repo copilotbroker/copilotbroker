@@ -482,7 +482,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
           )}
         </div>
 
-        <DialogFooter className="px-7 py-4 border-t border-border/50 bg-muted/20">
+        <DialogFooter className="px-4 sm:px-7 py-3 sm:py-4 border-t border-border/50 bg-muted/20 gap-2 flex-col sm:flex-row">
           {isEdit ? (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
