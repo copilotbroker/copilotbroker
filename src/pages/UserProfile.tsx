@@ -221,29 +221,29 @@ export default function UserProfile() {
         {/* HERO */}
         <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.07] via-card to-card p-4 sm:p-8">
           <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-            <div className="flex items-center gap-4 min-w-0">
-              <Avatar className={cn("h-16 w-16 ring-2 ring-offset-2 ring-offset-background shrink-0", meta.ring)}>
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-5">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <Avatar className={cn("h-14 w-14 sm:h-16 sm:w-16 ring-2 ring-offset-2 ring-offset-background shrink-0", meta.ring)}>
                 <AvatarFallback
                   className={cn(
-                    "text-lg font-bold text-white bg-gradient-to-br",
+                    "text-base sm:text-lg font-bold text-white bg-gradient-to-br",
                     gradientOf(profile.user_email || profile.user_id),
                   )}
                 >
                   {initialsOf(displayName)}
                 </AvatarFallback>
               </Avatar>
-              <div className="space-y-1.5 min-w-0">
-                <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
                   <Sparkles className="h-3.5 w-3.5" />
                   Meu perfil
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight truncate">
                   {displayName}
                 </h1>
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
                   <RoleBadge role={effectiveRole} size="md" />
-                  <span className="text-xs text-muted-foreground truncate">{profile.user_email}</span>
+                  <span className="text-xs text-muted-foreground truncate min-w-0 max-w-full">{profile.user_email}</span>
                 </div>
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function UserProfile() {
               size="lg"
               onClick={handleSave}
               disabled={isSaving}
-              className="shadow-lg shadow-primary/20 self-start lg:self-auto gap-2"
+              className="shadow-lg shadow-primary/20 self-stretch lg:self-auto gap-2 w-full lg:w-auto"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salvar alterações
