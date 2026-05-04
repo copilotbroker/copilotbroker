@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Settings,
   Plus,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoEnove from "@/assets/logo-enove-mini.png";
