@@ -222,6 +222,27 @@ const Auth = () => {
     }
   };
 
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      toast.error("Informe seu e-mail.");
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Enviamos um link de redefinição para seu e-mail.");
+      setIsForgotOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao enviar e-mail de redefinição.");
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center">
