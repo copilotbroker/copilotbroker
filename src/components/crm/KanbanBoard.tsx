@@ -397,12 +397,13 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     toast.success("Atendimento iniciado!");
     invalidateAll();
     // Abre direto a conversa no WhatsApp do Plantão
+    const plantaoBase = isAdmin ? "/admin/plantao" : "/corretor/plantao";
     if (result.conversation_id) {
-      navigate(`/corretor/plantao?conversationId=${result.conversation_id}`);
-    } else if (lead) {
-      navigate(`/corretor/plantao`);
+      navigate(`${plantaoBase}?conversationId=${result.conversation_id}`);
+    } else {
+      navigate(plantaoBase);
     }
-  }, [invalidateAll, navigate]);
+  }, [invalidateAll, navigate, isAdmin]);
 
   const handleDispatchWhatsApp = (status: LeadStatus) => {
     setWhatsappPreselectedStatus(status);
