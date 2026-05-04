@@ -36,6 +36,7 @@ export const ADMIN_TAB_BY_SEGMENT: Record<string, AdminRouteTabId> = {
   crm: "crm",
   leads: "leads",
   corretores: "brokers",
+  organizacao: "brokers",
   roletas: "roletas",
   empreendimentos: "projects",
   inbox: "inbox",
