@@ -371,7 +371,7 @@ export default function UserProfile() {
                 </div>
 
                 {/* Google Agenda */}
-                <div className="rounded-xl border border-border/60 bg-background/40 p-4 flex items-center justify-between gap-3">
+                <div className="rounded-xl border border-border/60 bg-background/40 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
@@ -379,14 +379,14 @@ export default function UserProfile() {
                     )}>
                       <CalendarDays className={cn("h-5 w-5", calendarConnected ? "text-emerald-400" : "text-muted-foreground")} />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">Google Agenda</p>
                       <p className="text-[11px] text-muted-foreground truncate">
                         {calendarConnection?.google_email || "Sincronize seus compromissos"}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     {calendarConnected ? (
                       <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Conectado
