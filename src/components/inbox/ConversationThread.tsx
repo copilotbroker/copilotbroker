@@ -80,6 +80,8 @@ interface ConversationThreadProps {
   /** Return conversation from personal back to global instance */
   onReturnToGlobal?: () => void;
   isReturningToGlobal?: boolean;
+  /** Inactivate the linked lead with reason */
+  onInactivateLead?: (reason: string) => Promise<void>;
 }
 
 const getMessageStatusIcon = (status?: string) => {
