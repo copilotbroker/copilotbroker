@@ -198,9 +198,9 @@ export default function UserProfile() {
   const meta = ROLE_META[effectiveRole] ?? ROLE_META.broker;
   const displayName = name || profile?.user_email || "Você";
 
-  const Layout = isAdminUI ? AdminLayout : BrokerLayout;
+  const Layout: any = isAdminUI ? AdminLayout : BrokerLayout;
   const layoutProps: any = isAdminUI
-    ? { activeView: "profile", onLogout: handleLogout }
+    ? { activeTab: "crm", onLogout: handleLogout }
     : {
         viewMode: "kanban",
         onViewChange: (mode: string) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm"),
