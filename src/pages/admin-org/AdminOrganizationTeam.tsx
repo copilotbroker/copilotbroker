@@ -267,25 +267,27 @@ const AdminOrganizationTeam = () => {
             {pendentes.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/60 p-3"
+                className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-background/60 p-3"
               >
-                <Avatar className="h-9 w-9">
+                <Avatar className="h-9 w-9 shrink-0">
                   <AvatarFallback
                     className={cn("text-xs font-semibold text-white bg-gradient-to-br", gradientOf(m.email || m.user_id))}
                   >
                     {initialsOf(m.full_name ?? m.email)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 basis-0">
                   <div className="text-sm font-medium truncate">{m.full_name ?? m.email}</div>
                   <div className="text-[11px] text-muted-foreground truncate">{m.email}</div>
                 </div>
-                <Button size="sm" onClick={() => approveMember(m.id)}>
-                  <Check className="h-3.5 w-3.5 mr-1" />Aprovar
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => rejectMember(m.id)}>
-                  <X className="h-3.5 w-3.5 mr-1" />Rejeitar
-                </Button>
+                <div className="flex gap-2 ml-auto">
+                  <Button size="sm" onClick={() => approveMember(m.id)}>
+                    <Check className="h-3.5 w-3.5 mr-1" />Aprovar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => rejectMember(m.id)}>
+                    <X className="h-3.5 w-3.5 mr-1" />Rejeitar
+                  </Button>
+                </div>
               </div>
             ))}
           </CardContent>
