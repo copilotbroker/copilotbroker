@@ -132,8 +132,10 @@ export function ConversationThread({
   isPullingToPersonal,
   onReturnToGlobal,
   isReturningToGlobal,
+  onInactivateLead,
 }: ConversationThreadProps) {
   const [inputValue, setInputValue] = useState("");
+  const [perdaModalOpen, setPerdaModalOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
