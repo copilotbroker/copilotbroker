@@ -199,7 +199,11 @@ export function ConversationList({
   }, [conversations, quickFilter, selectedLabelId, leadLabelMap]);
 
   const getLastPreview = (conv: Conversation) => {
-    const preview = conv.last_message_preview || "Sem mensagens";
+    const rawPreview = conv.last_message_preview || "Sem mensagens";
+    if (rawPreview.startsWith("[Undecryptable]")) {
+      return "🔒 Mensagem criptografada (peça para reenviar)";
+    }
+    const preview = rawPreview;
     switch (conv.last_message_type) {
       case "image":
         return preview === "Sem mensagens" ? "📷 Foto" : `📷 ${preview}`;
