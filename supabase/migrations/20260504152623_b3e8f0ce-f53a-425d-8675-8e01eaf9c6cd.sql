@@ -1,0 +1,1 @@
+ALTER TYPE public.distribution_status ADD VALUE IF NOT EXISTS 'em_disputa';

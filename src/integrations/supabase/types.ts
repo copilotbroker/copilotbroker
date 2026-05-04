@@ -2832,6 +2832,7 @@ export type Database = {
         | "reassinado_timeout"
         | "fallback_lider"
         | "atendimento_iniciado"
+        | "em_disputa"
       interaction_type:
         | "status_change"
         | "note_added"
@@ -3005,6 +3006,7 @@ export const Constants = {
         "reassinado_timeout",
         "fallback_lider",
         "atendimento_iniciado",
+        "em_disputa",
       ],
       interaction_type: [
         "status_change",
