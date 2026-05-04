@@ -217,9 +217,9 @@ export default function UserProfile() {
 
   return (
     <Layout {...layoutProps}>
-      <div className="space-y-6 p-6 max-w-5xl mx-auto">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 max-w-5xl mx-auto w-full min-w-0 overflow-x-hidden">
         {/* HERO */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.07] via-card to-card p-6 sm:p-8">
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.07] via-card to-card p-4 sm:p-8">
           <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
             <div className="flex items-center gap-4 min-w-0">
