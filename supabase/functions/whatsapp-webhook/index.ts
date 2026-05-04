@@ -1794,60 +1794,112 @@ async function handleGlobalInstanceMessage(
     return { brokerId: anyGlobalConv.broker_id as string, conversationId: result.conversationId };
   }
 
-  // Step 1: Create lead immediately (matches landing-page flow)
+  // Step 1: Create or reuse lead
   const canonicalPhone = getCanonicalPhone(phone);
-
-  const { data: existingPhoneLead } = await supabase
-    .from("leads")
-    .select("id")
-    .in("whatsapp", phoneVariants)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
   let leadId: string | null = null;
 
-  if (existingPhoneLead) {
-    leadId = existingPhoneLead.id as string;
-    console.log(`📋 Reusing existing lead ${leadId} for plantão phone ${phone}`);
-  } else {
-    const { data: newLead, error: leadErr } = await supabase
+  try {
+    const { data: existingPhoneLead } = await supabase
       .from("leads")
-      .insert({
-        name: senderName || canonicalPhone,
-        whatsapp: canonicalPhone,
-        source: "whatsapp_global",
-        lead_origin: "whatsapp_plantao",
-        status: "new",
-      })
       .select("id")
-      .single();
+      .in("whatsapp", phoneVariants)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (leadErr || !newLead) {
-      console.error(`❌ Failed to create plantão lead:`, leadErr);
-      return {};
+    if (existingPhoneLead) {
+      leadId = existingPhoneLead.id as string;
+      console.log(`📋 Reusing existing lead ${leadId} for plantão phone ${phone}`);
+    } else {
+      const { data: newLead, error: leadErr } = await supabase
+        .from("leads")
+        .insert({
+          name: senderName || canonicalPhone,
+          whatsapp: canonicalPhone,
+          source: "whatsapp_global",
+          lead_origin: "whatsapp_plantao",
+          status: "new",
+        })
+        .select("id")
+        .single();
+
+      if (leadErr || !newLead) {
+        console.error(`[plantao-orphan] step=create_lead phone=${phone}`, leadErr);
+        return {};
+      }
+      leadId = (newLead as any).id as string;
+      console.log(`✅ Created plantão lead ${leadId}`);
     }
+  } catch (e) {
+    console.error(`[plantao-orphan] step=lookup_or_create_lead phone=${phone}`, e);
+    return {};
+  }
 
-    leadId = (newLead as any).id as string;
-    console.log(`✅ Created plantão lead ${leadId}`);
-
-    // Insert attribution
+  // Step 2: Attribution (non-blocking)
+  try {
     await supabase.from("lead_attribution").insert({
       lead_id: leadId,
       landing_page: "whatsapp_global",
       utm_source: "whatsapp",
       utm_medium: "plantao",
-    }).catch((e) => console.error("Attribution insert failed (non-critical):", e));
-
-    // Try unify
-    const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
-    if (unifiedId) leadId = unifiedId as string;
+    });
+  } catch (e) {
+    console.error(`[plantao-orphan] step=attribution lead=${leadId}`, e);
   }
 
-  // Step 2: Call roleta-distribuir to assign the lead via the unified roleta
+  // Step 3: Unify (non-blocking)
+  try {
+    const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
+    if (unifiedId) leadId = unifiedId as string;
+  } catch (e) {
+    console.error(`[plantao-orphan] step=unify lead=${leadId}`, e);
+  }
+
+  // Step 4: Resolve a placeholder broker (líder of the active plantão roleta).
+  // This guarantees we can create the conversation even if roleta-distribuir fails.
+  let placeholderBrokerId: string | null = null;
+  try {
+    const { data: roletaRow } = await supabase
+      .from("roletas")
+      .select("lider_id")
+      .eq("ativa", true)
+      .or("escopo_empreendimentos.eq.todas_landing_pages_e_plantao,tipo_origem.eq.whatsapp_global")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    placeholderBrokerId = (roletaRow as any)?.lider_id || null;
+  } catch (e) {
+    console.error(`[plantao-orphan] step=resolve_lider lead=${leadId}`, e);
+  }
+
+  // Step 5: Create the conversation FIRST (before roleta-distribuir).
+  // This ensures the lead is visible in "Novos" even if distribution fails.
+  let conversationId: string | undefined;
+  let resultBrokerId: string | null = placeholderBrokerId;
+
+  if (placeholderBrokerId) {
+    try {
+      const result = await archiveMessageToConversation(
+        supabase, phone, messageText, direction, undefined, senderName, sentBy,
+        uazapiMessageId, messageType, metadata, placeholderBrokerId, "global"
+      );
+      conversationId = result.conversationId;
+      if (conversationId) {
+        await supabase.from("conversations").update({
+          lead_id: leadId,
+          roleta_modo: "disputa", // tentative, refined below if roleta returns a mode
+        }).eq("id", conversationId);
+      }
+    } catch (e) {
+      console.error(`[plantao-orphan] step=create_conversation lead=${leadId}`, e);
+    }
+  } else {
+    console.warn(`[plantao-orphan] step=no_lider lead=${leadId} — no active plantão roleta found`);
+  }
+
+  // Step 6: Distribute via roleta-distribuir (best-effort)
   let assignedBrokerId: string | null = null;
   let isDisputa = false;
-  let disputaLiderId: string | null = null;
   try {
     const distribResp = await fetch(`${SUPABASE_URL}/functions/v1/roleta-distribuir`, {
       method: "POST",
@@ -1857,60 +1909,48 @@ async function handleGlobalInstanceMessage(
       },
       body: JSON.stringify({ lead_id: leadId, source: "whatsapp_global" }),
     });
-
     const distribJson = await distribResp.json().catch(() => ({}));
     assignedBrokerId = distribJson.assigned_to || null;
     isDisputa = !!distribJson.disputa;
-    disputaLiderId = distribJson.lider_id || null;
     console.log(`🎯 roleta-distribuir result for plantão lead ${leadId}:`, distribJson);
   } catch (distribErr) {
-    console.error("roleta-distribuir call failed:", distribErr);
+    console.error(`[plantao-orphan] step=roleta_distribuir lead=${leadId}`, distribErr);
   }
 
-  // For disputa mode: lead has no broker yet, but we still need a conversation in Plantão "Novos".
-  // Use lider_id as placeholder broker_id (RLS allows roleta members to see/claim it).
-  const conversationBrokerId = assignedBrokerId || disputaLiderId;
-
-  if (!conversationBrokerId) {
-    console.warn(`⚠️ No broker assigned to plantão lead ${leadId}; message will be archived without conversation.`);
-    return {};
-  }
-
-  // Step 3: Archive message to conversation (creates it with source_instance=global, attendance_started=false)
-  const result = await archiveMessageToConversation(
-    supabase, phone, messageText, direction, undefined, senderName, sentBy,
-    uazapiMessageId, messageType, metadata, conversationBrokerId, "global"
-  );
-
-  // Step 4: Link conversation to the lead and copy timeout/roleta info from leads
-  if (result.conversationId) {
-    const { data: leadInfo } = await supabase
-      .from("leads")
-      .select("roleta_id, reserva_expira_em, atribuido_em")
-      .eq("id", leadId)
-      .single();
-
-    // Get roleta modo for the conversation badge
-    let roletaModo: string | null = isDisputa ? "disputa" : null;
-    if (!roletaModo && leadInfo?.roleta_id) {
-      const { data: rData } = await supabase
-        .from("roletas")
-        .select("modo_distribuicao")
-        .eq("id", leadInfo.roleta_id)
+  // Step 7: Refine conversation with real broker / roleta info
+  if (conversationId) {
+    try {
+      const { data: leadInfo } = await supabase
+        .from("leads")
+        .select("roleta_id, reserva_expira_em, atribuido_em")
+        .eq("id", leadId)
         .single();
-      roletaModo = (rData as any)?.modo_distribuicao || "fila";
-    }
 
-    await supabase.from("conversations").update({
-      lead_id: leadId,
-      roleta_modo: roletaModo,
-      atribuido_em: leadInfo?.atribuido_em || new Date().toISOString(),
-      reserva_expira_em: leadInfo?.reserva_expira_em || null,
-    }).eq("id", result.conversationId);
+      let roletaModo: string = isDisputa ? "disputa" : "fila";
+      if (!isDisputa && leadInfo?.roleta_id) {
+        const { data: rData } = await supabase
+          .from("roletas").select("modo_distribuicao").eq("id", leadInfo.roleta_id).single();
+        roletaModo = (rData as any)?.modo_distribuicao || "fila";
+      }
+
+      const update: Record<string, unknown> = {
+        roleta_modo: roletaModo,
+        atribuido_em: leadInfo?.atribuido_em || new Date().toISOString(),
+        reserva_expira_em: leadInfo?.reserva_expira_em || null,
+      };
+      // For round-robin (non-disputa), reassign conversation to the real broker
+      if (assignedBrokerId && !isDisputa) {
+        update.broker_id = assignedBrokerId;
+        resultBrokerId = assignedBrokerId;
+      }
+      await supabase.from("conversations").update(update).eq("id", conversationId);
+    } catch (e) {
+      console.error(`[plantao-orphan] step=refine_conversation lead=${leadId}`, e);
+    }
   }
 
-  console.log(`✅ Plantão message handled: phone=${phone} → lead=${leadId} → broker=${conversationBrokerId} (disputa=${isDisputa})`);
-  return { brokerId: conversationBrokerId, conversationId: result.conversationId };
+  console.log(`✅ Plantão message handled: phone=${phone} → lead=${leadId} → broker=${resultBrokerId} (disputa=${isDisputa})`);
+  return { brokerId: resultBrokerId || undefined, conversationId };
 }
 
 async function createGlobalLead(

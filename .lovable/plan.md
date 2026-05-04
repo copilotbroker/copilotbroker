@@ -1,43 +1,67 @@
+## Plano: corrigir leads do Plantão que ficam invisíveis
 
-## Causa raiz
+### Diagnóstico confirmado
+O lead "Diego" (`+5551982252189`, criado às 20:58) ficou órfão: lead criado, mas sem `roleta_id`, sem `broker_id`, sem `lead_attribution`, sem `roletas_log` e **sem `conversation`**. Por isso não apareceu na aba "Novos" do Plantão. O webhook `handleGlobalInstanceMessage` abortou silenciosamente após criar o lead — provavelmente uma exceção não tratada em `lead_attribution.insert` / `unify_lead` / `fetch(roleta-distribuir)`.
 
-O e-mail `kely.enove@gmail.com` **já existia** em `auth.users` (cadastro anterior com senha `Enove123!`). Quando você criou a Kely de novo na Enove Imobiliária com `enove123`, a edge function `org-create-member-direct` fez o seguinte:
+---
 
-1. Tentou `admin.auth.admin.createUser({ email, password: "enove123" })` → falhou com "user already registered".
-2. Caiu no branch de fallback (linhas 95–105): **localizou o usuário existente pelo e-mail e apenas vinculou à org, ignorando silenciosamente a senha nova**.
-3. Resultado: o vínculo foi criado, mas a senha continuou sendo a antiga (`Enove123!`).
+### 1. Recuperar o lead "Diego" agora (one-shot)
 
-Por isso só funcionou com `Enove123!`. Não há duplicidade de conta nem bug de auth — é a edge function que silenciosamente reaproveita o usuário sem avisar e sem atualizar a senha.
+Via insert tool:
+- Inserir `lead_attribution` com `landing_page=whatsapp_global`, `utm_source=whatsapp`, `utm_medium=plantao`.
+- Chamar `roleta-distribuir` (via curl_edge_functions) com `lead_id=5c16ca81-32ca-4795-a51b-bd9c16882e3b` e `source=whatsapp_global` para entrar em disputa na roleta "Plantão".
+- Inserir uma `conversation` com `source_instance=global`, `attendance_started=false`, `broker_id=lider_id` (Vinicius), `phone=+5551982252189`, `lead_id=5c16ca81...`, `display_name='Diego'`, `last_message_preview='(mensagem original perdida — verificar no WhatsApp do Plantão)'`, `last_message_at=2026-05-04 20:58:11`.
 
-## Decisão de design
+Resultado: o lead aparece na aba "Novos" do Plantão para todos os corretores online (Jussara, Kely, Leonardo).
 
-**Não** atualizar a senha automaticamente quando o usuário já existe. Isso seria uma falha de segurança: um gerente da Imobiliária A poderia sobrescrever a senha de um usuário que pertence à Imobiliária B só por adivinhar o e-mail.
+---
 
-Em vez disso:
-- Detectar o caso "usuário já existe" **antes** de tentar criar.
-- Retornar um erro claro com uma ação sugerida.
-- Na UI, mostrar um diálogo: *"Esse e-mail já tem conta no Copilot Broker. Quer apenas vinculá-lo a esta imobiliária (ele usará a senha que já tem) ou enviar um convite por e-mail?"*
+### 2. Endurecer `handleGlobalInstanceMessage` no webhook
 
-## Mudanças
+**Arquivo:** `supabase/functions/whatsapp-webhook/index.ts` (linhas ~1797-1913).
 
-### 1. `supabase/functions/org-create-member-direct/index.ts`
-- Antes de chamar `createUser`, fazer um lookup pelo e-mail (via `admin.auth.admin.listUsers` ou query em `auth.users`).
-- Se já existir e o body **não** trouxer `link_existing: true`, retornar `409 { error: "user_already_exists", existing_user_id }`.
-- Se vier `link_existing: true`, pular a criação, **não** mexer na senha, apenas fazer o upsert em `organization_members`.
-- Manter o fluxo atual (criar com a senha informada) só quando o usuário realmente não existe.
+Refatorar para que a criação da `conversation` aconteça **sempre** após criar o lead, mesmo se etapas auxiliares falharem:
 
-### 2. `src/components/admin-org/MemberFormDialog.tsx`
-- Tratar a resposta `409 user_already_exists`: abrir um sub-diálogo de confirmação com 2 opções:
-  - **"Vincular conta existente"** → reenvia a request com `link_existing: true`. Mostra aviso: *"O usuário fará login com a senha atual dele. Se ele esqueceu, peça para usar 'Esqueci minha senha' em /auth."*
-  - **"Cancelar e enviar convite"** → fecha o modal de criação direta e abre o `InviteMemberDialog` já preenchido.
-- Toast de sucesso pós-vínculo: *"Conta existente vinculada à imobiliária. Senha atual preservada."*
+1. Criar lead (try/catch — se falhar, abortar com log).
+2. Inserir `lead_attribution` em try/catch isolado (warn em erro, não aborta).
+3. Tentar `unify_lead` em try/catch isolado (warn em erro, não aborta).
+4. **Criar a `conversation` ANTES de chamar `roleta-distribuir`**, com `broker_id` placeholder (líder da roleta resolvido localmente via query simples). Garante que o lead aparece em "Novos" mesmo que a distribuição falhe.
+5. Chamar `roleta-distribuir` em try/catch isolado. Se sucesso, atualizar a conversation com `roleta_modo`, `atribuido_em`, `reserva_expira_em` e o `broker_id` real (caso fila/round-robin) ou manter o líder (caso disputa).
+6. Adicionar `console.error("[plantao-orphan]", lead_id, step, err)` em cada catch para diagnóstico futuro.
 
-### 3. Limpeza do estado da Kely (one-off)
-- A senha dela hoje é `Enove123!`. Se você quiser resetar para `enove123` agora, eu posso rodar uma migração/admin call dedicada **uma vez** para esse `user_id`. Confirme se quer essa ação ou se prefere que ela mesma use "Esqueci a senha".
+Isso elimina a classe inteira de bugs onde uma falha em qualquer chamada acessória esconde o lead da UI.
 
-## Detalhes técnicos
+---
 
-- O lookup por e-mail via `listUsers({ perPage: 200 })` não escala. Trocar por `admin.from("auth.users" as any).select("id,email").eq("email", emailNorm).maybeSingle()` (service role tem acesso ao schema `auth`).
-- Manter a auditoria em `admin_audit_logs` com `action: "member.link_existing"` quando for vínculo (em vez de `member.create_direct`).
-- Validação de autorização (super_admin OR owner/admin/manager da org) permanece inalterada.
-- Schema/RLS não muda.
+### 3. Job de reconciliação preventivo (cron)
+
+**Nova edge function:** `supabase/functions/reconcile-orphan-plantao-leads/index.ts`
+
+Lógica:
+```
+SELECT id, name, whatsapp, created_at
+FROM leads
+WHERE source = 'whatsapp_global'
+  AND created_at > now() - interval '2 hours'
+  AND id NOT IN (SELECT lead_id FROM conversations WHERE lead_id IS NOT NULL)
+LIMIT 50;
+```
+
+Para cada lead órfão:
+- Inserir `lead_attribution` se não existir.
+- Chamar `roleta-distribuir` com `source=whatsapp_global`.
+- Criar a `conversation` global (broker_id = líder ou broker atribuído).
+- Logar reconciliação em `lead_interactions` com tipo `roleta_atribuicao` e nota "Lead recuperado por reconciliação automática".
+
+**Agendamento:** via insert tool, criar cron job `pg_cron` rodando a cada 5 minutos chamando essa função (usando `net.http_post` + anon key, conforme padrão Supabase).
+
+---
+
+### Arquivos afetados
+- `supabase/functions/whatsapp-webhook/index.ts` — refatorar `handleGlobalInstanceMessage`.
+- `supabase/functions/reconcile-orphan-plantao-leads/index.ts` — nova função.
+- One-shot via insert tool: recuperar lead Diego (attribution + conversation) + agendar cron.
+- One curl_edge_functions: chamar `roleta-distribuir` para o lead Diego.
+
+### Risco
+Baixo. Refatoração é defensiva (apenas adiciona try/catch e reordena). Job de reconciliação é idempotente (skip se conversation já existe). Recuperação manual do Diego é localizada.
