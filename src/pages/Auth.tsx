@@ -415,6 +415,44 @@ const Auth = () => {
         </div>
       </div>
       </div>
+
+      {isForgotOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setIsForgotOpen(false)}>
+          <div className="bg-[#1e1e22] border border-[#2a2a2e] rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-semibold text-white mb-2">Esqueci minha senha</h3>
+            <p className="text-sm text-slate-400 mb-5">Enviaremos um link para redefinir sua senha.</p>
+            <form onSubmit={handleForgotSubmit} className="space-y-4">
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3.5 bg-[#0f0f12] border border-[#2a2a2e] rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-[#FFFF00]/50 focus:ring-2 focus:ring-[#FFFF00]/20"
+                  placeholder="seu@email.com"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotOpen(false)}
+                  className="flex-1 py-3 rounded-xl border border-[#2a2a2e] text-slate-300 hover:bg-[#0f0f12] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingReset}
+                  className="flex-1 py-3 bg-[#FFFF00] text-black font-bold rounded-xl hover:shadow-[0_0_20px_rgba(255,255,0,0.4)] disabled:opacity-50"
+                >
+                  {isSendingReset ? "Enviando..." : "Enviar link"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };
