@@ -48,6 +48,7 @@ interface MemberInput {
   full_name: string | null;
   role: OrgRole;
   is_active: boolean;
+  whatsapp?: string | null;
 }
 
 interface Props {
@@ -74,6 +75,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
   // Form fields
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [role, setRole] = useState<EditableRole>("broker");
@@ -90,6 +92,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     if (member) {
       setFullName(member.full_name ?? "");
       setEmail(member.email);
+      setWhatsapp(member.whatsapp ?? "");
       setPassword("");
       setRole((SELECTABLE_ROLES as readonly string[]).includes(member.role) ? (member.role as EditableRole) : "broker");
       setIsActive(member.is_active);
@@ -98,6 +101,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     } else {
       setFullName("");
       setEmail("");
+      setWhatsapp("");
       setPassword(generatePassword());
       setRole("broker");
       setIsActive(true);
@@ -110,19 +114,16 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
     if (!member) return;
     setLoading(true);
     try {
-      // Atualiza papel se mudou
-      if (member.role !== role) {
+      const patch: Record<string, any> = {};
+      if (member.role !== role) patch.role = role;
+      if (member.is_active !== isActive) patch.is_active = isActive;
+      if ((member.full_name ?? "") !== fullName.trim()) patch.full_name = fullName.trim() || null;
+      if ((member.whatsapp ?? "") !== whatsapp.trim()) patch.whatsapp = whatsapp.trim() || null;
+
+      if (Object.keys(patch).length > 0) {
         const { error } = await supabase
           .from("organization_members" as any)
-          .update({ role })
-          .eq("id", member.id) as any;
-        if (error) throw error;
-      }
-      // Atualiza status ativo
-      if (member.is_active !== isActive) {
-        const { error } = await supabase
-          .from("organization_members" as any)
-          .update({ is_active: isActive })
+          .update(patch)
           .eq("id", member.id) as any;
         if (error) throw error;
       }
