@@ -1627,7 +1627,22 @@ app.post("/sync-all", async (c) => {
       .in("role", ["admin", "super_admin"])
       .limit(1);
 
-    if (!roleData || roleData.length === 0) {
+    let isAuthorized = !!(roleData && roleData.length > 0);
+
+    // Fallback: aceita owner/admin/manager de qualquer organização ativa.
+    if (!isAuthorized) {
+      const { data: memberRoles } = await supabaseAdmin
+        .from("organization_members")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .eq("approval_status", "approved")
+        .in("role", ["owner", "admin", "manager"])
+        .limit(1);
+      isAuthorized = !!(memberRoles && memberRoles.length > 0);
+    }
+
+    if (!isAuthorized) {
       return c.json({ error: "Admin access required" }, 403, getHonoCors(c));
     }
 
