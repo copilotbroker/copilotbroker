@@ -60,6 +60,7 @@ interface KanbanCardProps {
   onScheduleWhatsApp?: (leadId: string, content: string, scheduledAt: string) => Promise<void>;
   onCallClick?: (leadId: string) => void;
   onTransfer?: (leadId: string) => void;
+  onClaimDisputa?: (leadId: string) => void;
 }
 
 type KanbanActionConfig = {
