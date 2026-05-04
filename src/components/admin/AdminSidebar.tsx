@@ -149,7 +149,7 @@ export function AdminSidebar({ activeTab, onLogout, onAddLead }: AdminSidebarPro
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={onLogout}
+                onClick={() => navigate("/admin/perfil")}
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-primary/50 transition-colors"
               >
                 <Avatar className="w-full h-full">
@@ -157,6 +157,21 @@ export function AdminSidebar({ activeTab, onLogout, onAddLead }: AdminSidebarPro
                     {userInitial}
                   </AvatarFallback>
                 </Avatar>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-card border-border text-foreground">
+              Meu Perfil
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onLogout}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                aria-label="Sair"
+              >
+                <LogOut className="w-5 h-5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" className="bg-card border-border text-foreground">
