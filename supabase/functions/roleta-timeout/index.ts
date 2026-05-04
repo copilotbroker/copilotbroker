@@ -118,6 +118,7 @@ Deno.serve(async (req) => {
             reserva_expira_em: null,
             status_distribuicao: "em_disputa",
             motivo_atribuicao: `Loop detectado (${reassignmentCount} reassinações) - liberado para líderes/gerentes/admins`,
+            liberado_lideres: true,
           })
           .eq("id", lead.id);
 
@@ -215,6 +216,7 @@ Deno.serve(async (req) => {
           reserva_expira_em: isFallback ? null : newExpira.toISOString(),
           status_distribuicao: statusDistribuicao,
           motivo_atribuicao: motivo,
+          liberado_lideres: isFallback,
         })
         .eq("id", lead.id);
 
@@ -417,6 +419,7 @@ Deno.serve(async (req) => {
                   reserva_expira_em: null,
                   status_distribuicao: "em_disputa",
                   motivo_atribuicao: `Loop detectado (${convReassignCount} reassinações) - liberado para líderes/gerentes/admins`,
+                  liberado_lideres: true,
                 })
                 .eq("id", conv.lead_id);
             }

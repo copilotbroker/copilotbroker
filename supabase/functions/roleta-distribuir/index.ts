@@ -186,6 +186,8 @@ Deno.serve(async (req) => {
       : null;
 
     // 4. Update lead
+    // Liberar para líderes/gerentes APENAS quando não houve corretor online
+    const liberadoLideres = activeMembros.length === 0 && statusDistribuicao === "em_disputa";
     const { error: updateLeadError } = await supabase
       .from("leads")
       .update({
@@ -196,6 +198,7 @@ Deno.serve(async (req) => {
         reserva_expira_em: reservaExpira ? reservaExpira.toISOString() : null,
         status_distribuicao: statusDistribuicao,
         motivo_atribuicao: motivo,
+        liberado_lideres: liberadoLideres,
       })
       .eq("id", lead_id);
 

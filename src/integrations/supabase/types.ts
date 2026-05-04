@@ -1270,6 +1270,7 @@ export type Database = {
           last_interaction_at: string | null
           lead_origin: string | null
           lead_origin_detail: string | null
+          liberado_lideres: boolean
           motivo_atribuicao: string | null
           name: string
           notes: string | null
@@ -1313,6 +1314,7 @@ export type Database = {
           last_interaction_at?: string | null
           lead_origin?: string | null
           lead_origin_detail?: string | null
+          liberado_lideres?: boolean
           motivo_atribuicao?: string | null
           name: string
           notes?: string | null
@@ -1356,6 +1358,7 @@ export type Database = {
           last_interaction_at?: string | null
           lead_origin?: string | null
           lead_origin_detail?: string | null
+          liberado_lideres?: boolean
           motivo_atribuicao?: string | null
           name?: string
           notes?: string | null
