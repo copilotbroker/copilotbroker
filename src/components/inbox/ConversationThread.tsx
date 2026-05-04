@@ -668,7 +668,19 @@ export function ConversationThread({
                         </span>
                       )}
                       {!isOutbound && msg.sender_name && <span className="mb-1 block text-[10px] text-muted-foreground">{msg.sender_name}</span>}
-                      {msg.message_type === "text" ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : <MessageMedia msg={msg} />}
+                      {msg.message_type === "text" ? (
+                        msg.content?.startsWith("[Undecryptable]") ? (
+                          <p className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[12px] text-amber-300">
+                            <span aria-hidden>🔒</span>
+                            <span>
+                              O WhatsApp do remetente não conseguiu descriptografar esta mensagem.
+                              Peça para ele reenviá-la.
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                        )
+                      ) : <MessageMedia msg={msg} />}
                       <span className={cn(
                         "mt-1 flex items-center justify-end gap-1 text-[10px]",
                         msg.status === "failed" ? "text-destructive" : "text-muted-foreground"
