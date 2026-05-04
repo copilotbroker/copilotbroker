@@ -459,6 +459,26 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
           )}
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={existsConfirm} onOpenChange={setExistsConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Esse e-mail já tem conta no Copilot Broker</AlertDialogTitle>
+            <AlertDialogDescription>
+              Já existe um usuário com <strong className="text-foreground">{email}</strong>. Por segurança, não vamos sobrescrever a senha dele.
+              <br /><br />
+              Você pode <strong className="text-foreground">vincular essa conta existente</strong> a esta imobiliária — ele entrará no CRM com a mesma senha que já usa. Se ele esqueceu, pode redefinir em <code>/auth</code> usando "Esqueci minha senha".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLinkExisting} disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Vincular conta existente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
