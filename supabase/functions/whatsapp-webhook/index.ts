@@ -2062,10 +2062,41 @@ async function handleIncomingMessage(
   }
 
   let mediaMetadata = extractMediaMetadata(msg, payload);
-  const messageText = msg.text || mediaMetadata.caption || "";
+
+  // Broaden text extraction: UAZAPI v2 can place text in several locations depending on message subtype
+  const msgRaw = (payload.message as Record<string, unknown>) || {};
+  const contentRaw = (msgRaw.content as Record<string, unknown>) || {};
+  const dataRaw = (payload.data as Record<string, unknown>) || {};
+  const extendedText = (contentRaw.extendedTextMessage as Record<string, unknown>)?.text as string | undefined;
+  const conversationText = contentRaw.conversation as string | undefined;
+  const buttonsResp = (contentRaw.buttonsResponseMessage as Record<string, unknown>)?.selectedDisplayText as string | undefined;
+  const listResp = (contentRaw.listResponseMessage as Record<string, unknown>)?.title as string | undefined;
+  const templateResp = (contentRaw.templateButtonReplyMessage as Record<string, unknown>)?.selectedDisplayText as string | undefined;
+  const reactionText = (contentRaw.reactionMessage as Record<string, unknown>)?.text as string | undefined;
+  const dataText = typeof dataRaw.text === "string" ? dataRaw.text : undefined;
+  const dataContentText = typeof (dataRaw.content as Record<string, unknown>)?.text === "string"
+    ? ((dataRaw.content as Record<string, unknown>).text as string)
+    : undefined;
+
+  const messageText = msg.text
+    || extendedText
+    || conversationText
+    || buttonsResp
+    || listResp
+    || templateResp
+    || reactionText
+    || dataText
+    || dataContentText
+    || mediaMetadata.caption
+    || "";
   const resolvedMessageType = inferMessageType(messageText, typeof mediaMetadata.mime_type === "string" ? mediaMetadata.mime_type : undefined, typeof mediaMetadata.raw_type === "string" ? mediaMetadata.raw_type : undefined);
   if (resolvedMessageType !== "text") {
     mediaMetadata = await persistInboundMediaIfNeeded(supabase, payload, phone, resolvedMessageType, mediaMetadata);
+  }
+
+  // Flag undecryptable messages so the UI can show a friendly notice
+  if (messageText.startsWith("[Undecryptable]") || messageText.includes("Não foi possível descriptografar")) {
+    (mediaMetadata as Record<string, unknown>).undecryptable = true;
   }
 
   // Extract Facebook CTWA / ad referral context
