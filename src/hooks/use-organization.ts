@@ -99,6 +99,19 @@ export const useOrganization = () => {
 
   const setActiveOrg = (orgId: string) => {
     try { window.localStorage.setItem(ACTIVE_ORG_KEY, orgId); } catch { /* ignore */ }
+    // Update cache synchronously so UI reflects the switch immediately,
+    // even if the org is not in the user's memberships (super_admin impersonation).
+    queryClient.setQueryData(["organization-context"], (prev: any) => {
+      if (!prev) return prev;
+      const membershipMatch = (prev.memberships ?? []).find((m: OrganizationMembership) => m.organization_id === orgId) ?? null;
+      return {
+        ...prev,
+        activeOrgId: orgId,
+        activeOrg: membershipMatch?.organization ?? prev.activeOrg,
+        activeOrgRole: membershipMatch?.role ?? prev.activeOrgRole,
+      };
+    });
+    // Refetch in background to pick up org details for super_admin (non-member orgs).
     queryClient.invalidateQueries({ queryKey: ["organization-context"] });
   };
 
