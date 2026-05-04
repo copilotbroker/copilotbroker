@@ -184,7 +184,7 @@ const AdminOrganizationTeam = () => {
   };
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 max-w-7xl mx-auto w-full min-w-0 overflow-x-hidden">
       <Button
         variant="ghost"
         size="sm"
@@ -195,23 +195,23 @@ const AdminOrganizationTeam = () => {
       </Button>
 
       {/* HERO */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.07] via-card to-card p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.07] via-card to-card p-4 sm:p-8">
         <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-          <div className="space-y-1.5 max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
+        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-5">
+          <div className="space-y-1.5 max-w-2xl min-w-0">
+            <div className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/80">
               <Users2 className="h-3.5 w-3.5" />
               Equipe da imobiliária
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-bold tracking-tight">
               Gestão de membros e perfis
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Adicione Gerentes, Líderes e Corretores. Cada perfil já vem com permissões e fluxos de
               trabalho prontos no Copilot Broker.
             </p>
           </div>
-          <Button size="lg" onClick={openCreate} disabled={limitReached} className="shadow-lg shadow-primary/20 self-start lg:self-auto">
+          <Button size="lg" onClick={openCreate} disabled={limitReached} className="shadow-lg shadow-primary/20 self-stretch lg:self-auto w-full lg:w-auto">
             <UserPlus className="h-4 w-4 mr-2" />Adicionar membro
           </Button>
         </div>
