@@ -185,10 +185,12 @@ Deno.serve(async (req) => {
       let motivo: string;
       let novaOrdem: number;
 
-      if (activeMembros.length === 0) {
-        newBrokerId = roleta.lider_id;
-        statusDistribuicao = "fallback_lider";
-        motivo = "Timeout - nenhum outro corretor online - atribuído ao líder";
+      const isFallback = activeMembros.length === 0;
+      if (isFallback) {
+        // Sem outro corretor online → libera para líderes/gerentes/admins
+        newBrokerId = null as any;
+        statusDistribuicao = "em_disputa";
+        motivo = "Timeout — sem corretores online — liberado para líderes/gerentes/admins";
         novaOrdem = roleta.ultimo_membro_ordem_atribuida;
       } else {
         const lastOrder = roleta.ultimo_membro_ordem_atribuida;
