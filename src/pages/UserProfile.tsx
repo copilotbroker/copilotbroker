@@ -419,14 +419,14 @@ export default function UserProfile() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/40 p-4">
-                  <div className="space-y-0.5">
+                <div className="flex items-start sm:items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/40 p-3 sm:p-4">
+                  <div className="space-y-0.5 min-w-0 flex-1">
                     <Label className="text-sm font-medium">Exibir meu nome antes das mensagens</Label>
                     <p className="text-xs text-muted-foreground">
                       Quando ativado, seu nome aparecerá antes de cada mensagem enviada pela conexão global.
                     </p>
                   </div>
-                  <Switch checked={showNameOnGlobal} onCheckedChange={setShowNameOnGlobal} />
+                  <Switch checked={showNameOnGlobal} onCheckedChange={setShowNameOnGlobal} className="shrink-0" />
                 </div>
 
                 {showNameOnGlobal && (
