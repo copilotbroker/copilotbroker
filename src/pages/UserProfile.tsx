@@ -464,8 +464,8 @@ export default function UserProfile() {
 
         <Separator className="bg-border/60" />
 
-        <div className="flex justify-end pb-6">
-          <Button onClick={handleSave} disabled={isSaving} size="lg" className="gap-2">
+        <div className="flex justify-stretch sm:justify-end pb-6">
+          <Button onClick={handleSave} disabled={isSaving} size="lg" className="gap-2 w-full sm:w-auto">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Salvar alterações
           </Button>
