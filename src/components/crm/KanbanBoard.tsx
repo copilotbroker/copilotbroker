@@ -375,6 +375,35 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     });
   }, []);
 
+  const handleClaimDisputa = useCallback(async (leadId: string) => {
+    const lead = allLeadsRef.current.get(leadId);
+    const { data, error } = await (supabase as any).rpc("claim_disputed_lead", { _lead_id: leadId });
+    if (error) {
+      toast.error("Erro ao reivindicar lead");
+      return;
+    }
+    const result = data as any;
+    if (!result?.success) {
+      if (result?.error === "already_claimed" || result?.error === "race_lost") {
+        toast.info("Outro corretor já assumiu este lead");
+      } else if (result?.error === "not_eligible") {
+        toast.error("Você precisa estar online (check-in) na roleta para assumir");
+      } else {
+        toast.error("Não foi possível reivindicar o lead");
+      }
+      invalidateAll();
+      return;
+    }
+    toast.success("Atendimento iniciado!");
+    invalidateAll();
+    // Abre direto a conversa no WhatsApp do Plantão
+    if (result.conversation_id) {
+      navigate(`/corretor/plantao?conversation=${result.conversation_id}`);
+    } else if (lead) {
+      navigate(`/corretor/plantao`);
+    }
+  }, [invalidateAll, navigate]);
+
   const handleDispatchWhatsApp = (status: LeadStatus) => {
     setWhatsappPreselectedStatus(status);
     setWhatsappCampaignOpen(true);
