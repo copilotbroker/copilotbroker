@@ -234,6 +234,12 @@ export const KanbanCard = memo(function KanbanCard({
                 </Badge>
               )}
 
+              {(lead as any).status_distribuicao === "em_disputa" && (
+                <Badge className="bg-amber-500/15 text-amber-400 hover:bg-amber-500/15 text-[10px] uppercase tracking-wide animate-pulse">
+                  🔥 Em Disputa
+                </Badge>
+              )}
+
               {isNew && (
                 <Badge className="bg-crm-info/15 text-crm-info hover:bg-crm-info/15 text-[10px] uppercase tracking-wide">
                   Novo
