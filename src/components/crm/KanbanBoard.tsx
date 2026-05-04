@@ -375,6 +375,36 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     });
   }, []);
 
+  const handleClaimDisputa = useCallback(async (leadId: string) => {
+    const lead = allLeadsRef.current.get(leadId);
+    const { data, error } = await (supabase as any).rpc("claim_disputed_lead", { _lead_id: leadId });
+    if (error) {
+      toast.error("Erro ao reivindicar lead");
+      return;
+    }
+    const result = data as any;
+    if (!result?.success) {
+      if (result?.error === "already_claimed" || result?.error === "race_lost") {
+        toast.info("Outro corretor já assumiu este lead");
+      } else if (result?.error === "not_eligible") {
+        toast.error("Você precisa estar online (check-in) na roleta para assumir");
+      } else {
+        toast.error("Não foi possível reivindicar o lead");
+      }
+      invalidateAll();
+      return;
+    }
+    toast.success("Atendimento iniciado!");
+    invalidateAll();
+    // Abre direto a conversa no WhatsApp do Plantão
+    const plantaoBase = isAdmin ? "/admin/plantao" : "/corretor/plantao";
+    if (result.conversation_id) {
+      navigate(`${plantaoBase}?conversationId=${result.conversation_id}`);
+    } else {
+      navigate(plantaoBase);
+    }
+  }, [invalidateAll, navigate, isAdmin]);
+
   const handleDispatchWhatsApp = (status: LeadStatus) => {
     setWhatsappPreselectedStatus(status);
     setWhatsappCampaignOpen(true);
@@ -785,6 +815,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
                 onScheduleWhatsApp={handleScheduleWhatsApp}
                 onCallClick={handleCallClick}
                 onTransfer={handleCardTransfer}
+                onClaimDisputa={handleClaimDisputa}
               />
             ))}
           </div>

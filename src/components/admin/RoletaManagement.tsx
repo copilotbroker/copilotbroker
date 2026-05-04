@@ -463,44 +463,42 @@ const RoletaManagement = () => {
                 </div>
               )}
               {formTipoOrigem === "whatsapp_global" && (
-                <>
-                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                    <p className="text-xs text-muted-foreground">
-                      <MessageCircle className="w-3 h-3 inline mr-1 text-emerald-500" />
-                      Leads recebidos pela instância global do WhatsApp serão distribuídos por esta roleta.
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Modo de distribuição</Label>
-                    <RadioGroup value={formModoDistribuicao} onValueChange={(v) => setFormModoDistribuicao(v as "fila" | "disputa")} className="mt-2">
-                      <label className="flex items-start gap-2 cursor-pointer">
-                        <RadioGroupItem value="fila" className="mt-0.5" />
-                        <div>
-                          <span className="text-sm text-foreground font-medium flex items-center gap-1">
-                            <Target className="w-3.5 h-3.5 text-primary" />
-                            Fila (round-robin)
-                          </span>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            O lead aparece apenas para o corretor da vez. Se não atender no tempo, passa para o próximo.
-                          </p>
-                        </div>
-                      </label>
-                      <label className="flex items-start gap-2 cursor-pointer mt-2">
-                        <RadioGroupItem value="disputa" className="mt-0.5" />
-                        <div>
-                          <span className="text-sm text-foreground font-medium flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5 text-amber-500" />
-                            Disputa (quem pegar primeiro)
-                          </span>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            O lead aparece para todos os corretores online. Quem reivindicar primeiro, atende.
-                          </p>
-                        </div>
-                      </label>
-                    </RadioGroup>
-                  </div>
-                </>
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                  <p className="text-xs text-muted-foreground">
+                    <MessageCircle className="w-3 h-3 inline mr-1 text-emerald-500" />
+                    Leads recebidos pela instância global do WhatsApp serão distribuídos por esta roleta.
+                  </p>
+                </div>
               )}
+              <div>
+                <Label>Modo de distribuição</Label>
+                <RadioGroup value={formModoDistribuicao} onValueChange={(v) => setFormModoDistribuicao(v as "fila" | "disputa")} className="mt-2">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <RadioGroupItem value="fila" className="mt-0.5" />
+                    <div>
+                      <span className="text-sm text-foreground font-medium flex items-center gap-1">
+                        <Target className="w-3.5 h-3.5 text-primary" />
+                        Fila (round-robin)
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        O lead aparece apenas para o corretor da vez. Se não atender no tempo, passa para o próximo.
+                      </p>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-2 cursor-pointer mt-2">
+                    <RadioGroupItem value="disputa" className="mt-0.5" />
+                    <div>
+                      <span className="text-sm text-foreground font-medium flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5 text-amber-500" />
+                        Disputa (quem pegar primeiro)
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        O lead aparece para todos os corretores online em "Pré-Atendimento". Quem clicar em <strong>Iniciar Atendimento</strong> primeiro, atende.
+                      </p>
+                    </div>
+                  </label>
+                </RadioGroup>
+              </div>
               <div className="flex gap-3 pt-4">
                 <DialogClose asChild>
                   <Button variant="outline" className="flex-1">Cancelar</Button>
@@ -800,35 +798,33 @@ const RoletaManagement = () => {
                         )}
                       </div>
                     </div>
-                    {/* Distribution Mode (only for whatsapp_global) */}
-                    {(roleta as any).tipo_origem === "whatsapp_global" && (
-                      <div className="bg-[#141417] rounded-lg p-3 space-y-2">
-                        <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-                          <Target className="w-4 h-4 text-primary" />
-                          Modo de distribuição
-                        </Label>
-                        <RadioGroup
-                          value={(roleta as any).modo_distribuicao || "fila"}
-                          onValueChange={(v) => updateRoleta(roleta.id, { modo_distribuicao: v } as any)}
-                          className="mt-1"
-                        >
-                          <label className="flex items-start gap-2 cursor-pointer">
-                            <RadioGroupItem value="fila" className="mt-0.5" />
-                            <div>
-                              <span className="text-xs text-foreground font-medium">Fila (round-robin)</span>
-                              <p className="text-[10px] text-muted-foreground">Lead aparece apenas para o corretor da vez.</p>
-                            </div>
-                          </label>
-                          <label className="flex items-start gap-2 cursor-pointer mt-1">
-                            <RadioGroupItem value="disputa" className="mt-0.5" />
-                            <div>
-                              <span className="text-xs text-foreground font-medium">Disputa (quem pegar primeiro)</span>
-                              <p className="text-[10px] text-muted-foreground">Lead aparece para todos os corretores online.</p>
-                            </div>
-                          </label>
-                        </RadioGroup>
-                      </div>
-                    )}
+                    {/* Distribution Mode — disponível para todas as roletas */}
+                    <div className="bg-[#141417] rounded-lg p-3 space-y-2">
+                      <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Target className="w-4 h-4 text-primary" />
+                        Modo de distribuição
+                      </Label>
+                      <RadioGroup
+                        value={(roleta as any).modo_distribuicao || "fila"}
+                        onValueChange={(v) => updateRoleta(roleta.id, { modo_distribuicao: v } as any)}
+                        className="mt-1"
+                      >
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <RadioGroupItem value="fila" className="mt-0.5" />
+                          <div>
+                            <span className="text-xs text-foreground font-medium">Fila (round-robin)</span>
+                            <p className="text-[10px] text-muted-foreground">Lead aparece apenas para o corretor da vez.</p>
+                          </div>
+                        </label>
+                        <label className="flex items-start gap-2 cursor-pointer mt-1">
+                          <RadioGroupItem value="disputa" className="mt-0.5" />
+                          <div>
+                            <span className="text-xs text-foreground font-medium">Disputa (quem pegar primeiro)</span>
+                            <p className="text-[10px] text-muted-foreground">Lead aparece para todos os corretores online em "Pré-Atendimento".</p>
+                          </div>
+                        </label>
+                      </RadioGroup>
+                    </div>
 
                     <div className="flex flex-wrap gap-2">
                       <Button

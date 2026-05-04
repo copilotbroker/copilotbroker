@@ -60,6 +60,7 @@ interface KanbanCardProps {
   onScheduleWhatsApp?: (leadId: string, content: string, scheduledAt: string) => Promise<void>;
   onCallClick?: (leadId: string) => void;
   onTransfer?: (leadId: string) => void;
+  onClaimDisputa?: (leadId: string) => void;
 }
 
 type KanbanActionConfig = {
@@ -107,6 +108,7 @@ export const KanbanCard = memo(function KanbanCard({
   onScheduleWhatsApp,
   onCallClick,
   onTransfer,
+  onClaimDisputa,
 }: KanbanCardProps) {
   const [composerOpen, setComposerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -232,6 +234,12 @@ export const KanbanCard = memo(function KanbanCard({
                 </Badge>
               )}
 
+              {(lead as any).status_distribuicao === "em_disputa" && (
+                <Badge className="bg-amber-500/15 text-amber-400 hover:bg-amber-500/15 text-[10px] uppercase tracking-wide animate-pulse">
+                  🔥 Em Disputa
+                </Badge>
+              )}
+
               {isNew && (
                 <Badge className="bg-crm-info/15 text-crm-info hover:bg-crm-info/15 text-[10px] uppercase tracking-wide">
                   Novo
@@ -323,7 +331,17 @@ export const KanbanCard = memo(function KanbanCard({
         </div>
 
         <div className="mt-3 flex items-center gap-1.5">
-          {lead.status === "new" && actionConfig ? (
+          {(lead as any).status_distribuicao === "em_disputa" && onClaimDisputa ? (
+            <Button
+              size="sm"
+              variant="warning"
+              onClick={(e) => { e.stopPropagation(); onClaimDisputa(lead.id); }}
+              className="h-8 gap-1.5 rounded-lg px-3 text-[11px] font-semibold"
+            >
+              <Play className="h-3.5 w-3.5" />
+              <span>Iniciar Atendimento</span>
+            </Button>
+          ) : lead.status === "new" && actionConfig ? (
             <Popover open={composerOpen} onOpenChange={setComposerOpen}>
               <PopoverTrigger asChild>
                 <Button
