@@ -1,109 +1,60 @@
-## Objetivo
+# Plano: Logout no Master + acesso do maicon à Enove Imobiliária
 
-1. **Checkout automático só em dias úteis**: o job de checkout automático da roleta deve pular sábados e domingos (UTC-3).
-2. **Alerta de roleta vazia**: quando um lead chega via roleta e não há nenhum corretor online, o fluxo atual (fallback para o líder) é mantido, mas líderes, admins e gerentes recebem uma notificação clara — tanto na tela de Roletas quanto no Inbox/Plantão Global — informando que aquela roleta está vazia e que o lead foi atribuído ao líder por fallback.
+## Diagnóstico
 
----
+### 1. Logout do Master Panel
+O componente `src/components/master/MasterLayout.tsx` não possui nenhum botão/menu de logout. O header só tem `SidebarTrigger` e o título; a sidebar só lista as 4 seções. Por isso é impossível sair pela UI — o super_admin fica preso no `/master/*`.
 
-## Parte 1 — Auto-checkout só em dias úteis
+### 2. Maicon na Enove Imobiliária
+Consultando o banco, o estado **atual** é:
 
-### Mudança técnica (Edge function `roleta-auto-checkout`)
+| Email | Org | Role org | app_role | Ativo | Aprovado |
+|---|---|---|---|---|---|
+| maicon.enove@gmail.com | Enove Select | owner | super_admin + admin | ✅ | ✅ |
+| maicon.enove@gmail.com | **Enove Imobiliária** | **owner** | super_admin + admin | ✅ | ✅ |
+| pablo.enove@gmail.com | Enove Select | owner | super_admin + admin | ✅ | ✅ |
 
-No início do handler, calcular o dia da semana em UTC-3 e abortar cedo se for sábado (6) ou domingo (0):
+Ou seja, **maicon JÁ está vinculado como owner/admin/manager-equivalente à Enove Imobiliária** no banco. O que provavelmente está acontecendo na percepção do usuário:
 
-```ts
-function isWeekendUTC3(): boolean {
-  const d = new Date(Date.now() - 3 * 60 * 60 * 1000);
-  const dow = d.getUTCDay(); // 0 = Sun, 6 = Sat
-  return dow === 0 || dow === 6;
-}
+- Ele entra no painel admin operacional (`/admin/*`) mas o `OrgSwitcher` mostra "Enove Select" como ativa por causa do `localStorage` (bug discutido recentemente — fix do `setActiveOrg` síncrono).
+- Ao tentar trocar para Enove Imobiliária e abrir a tela "Equipe / Admins" (`AdminOrganizationTeam`), ele não aparece listado lá — provavelmente porque a query `get_organization_members_with_users` lista membros, mas o usuário corrente (ele mesmo) pode estar sendo escondido, ou a tela filtra apenas roles ≠ owner.
+- Outra hipótese: o `useUserRole` global está cacheando role baseada na **primeira** membership e não na org ativa, então em Enove Imobiliária ele não se vê como "admin".
 
-if (isWeekendUTC3()) {
-  return new Response(
-    JSON.stringify({ ok: true, skipped: "weekend", target_utc3: nowHHMM_UTC3() }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
-  );
-}
-```
+Preciso confirmar 2 coisas com pequena inspeção de código durante a implementação:
+- Se `AdminOrganizationTeam` filtra/oculta o owner ou o próprio usuário.
+- Se `useUserRole` e telas dependem de `activeOrgId` para resolver membership.
 
-O cron continua rodando a cada minuto; nos fins de semana ele simplesmente retorna sem fazer nada. Idempotente, sem side effects.
+## Mudanças
 
-### UI (`RoletaManagement.tsx`)
+### A. Adicionar logout no Master Panel
+Editar `src/components/master/MasterLayout.tsx`:
+- No `<header>`, adicionar à direita um menu com avatar + email do super_admin.
+- Item "Sair" usando o hook centralizado `useLogout()` (limpa React Query, faz `signOut`, redireciona).
+- Após sair de `/master/*`, redirecionar para `/master/login` (não `/auth`) — para isso, criar variante leve do logout ou navegar manualmente após o `signOut`.
 
-No bloco do toggle "Checkout automático", atualizar o texto de apoio:
+Ajuste mínimo: usar o hook + `navigate("/master/login", { replace: true })` no clique.
 
-> "Todos os corretores online nesta roleta receberão checkout automático neste horário (fuso UTC-3). **Não executa aos sábados e domingos.**"
+### B. Garantir que maicon enxergue Enove Imobiliária e seja reconhecido como admin lá
 
-Sem novos campos no banco — comportamento fixo.
+1. **Confirmar visualmente na tela `AdminOrganizationTeam`** que o maicon aparece na lista. Se a UI esconde owners ou o próprio usuário, ajustar para sempre mostrar.
 
----
+2. **Revisar `useUserRole`** (`src/hooks/use-user-role.ts`):
+   - Hoje resolve role olhando para *qualquer* membership aprovada/ativa do usuário, sem considerar `activeOrgId`.
+   - Como ele tem owner em ambas as orgs, isso está funcionando — mas vale validar que ao trocar org, queries scoped (`organization_id`) refazem fetch (já garantido pelo `OrganizationProvider.setActiveOrg` que invalida queries não-`organization-context`).
 
-## Parte 2 — Notificar líderes/admins quando a roleta estiver vazia
+3. **Validar OrgSwitcher**: garantir que liste as duas orgs em que ele é membro. Se só lista uma, corrigir a query do `useOrganization` para retornar todas as memberships ativas/aprovadas (não só a primeira).
 
-Mantém o fluxo atual: o lead continua sendo atribuído imediatamente ao líder via `fallback_lider`. Adicionamos camadas de visibilidade.
+4. **Pablo**: ele NÃO está em Enove Imobiliária. Não vou adicioná-lo automaticamente — se for desejado, perguntar depois.
 
-### 2.1 Marcação no banco
+### C. Sem mudanças de banco
+Não é necessária migration. Maicon já está como owner ativo aprovado em ambas as orgs.
 
-Para conseguir filtrar/destacar esses casos sem mudar a lógica de atribuição, usamos o que já existe:
+## Arquivos a editar
+- `src/components/master/MasterLayout.tsx` — adicionar header com avatar + logout para `/master/login`.
+- `src/hooks/use-organization.ts` — verificar que `memberships` retorna todas as orgs ativas do usuário (provavelmente já faz; ajustar se necessário).
+- `src/components/OrgSwitcher.tsx` — garantir que Enove Imobiliária apareça na lista de troca.
+- `src/pages/admin-org/AdminOrganizationTeam.tsx` — garantir que maicon (owner) apareça na listagem de membros da Enove Imobiliária.
 
-- `leads.status_distribuicao = 'fallback_lider'`
-- `leads.motivo_atribuicao = 'Nenhum corretor online - atribuído ao líder'`
-
-Adicionar um campo extra na conversa criada para esse lead (quando aplicável) para destacá-la na UI:
-
-- Migration: `ALTER TABLE conversations ADD COLUMN roleta_vazia_flag boolean NOT NULL DEFAULT false;`
-
-E na edge `roleta-distribuir`, quando `statusDistribuicao === 'fallback_lider'`, marcar a conversa correspondente (se existir) com `roleta_vazia_flag = true`. Para leads novos sem conversa ainda, o webhook que cria a conversa pode herdar essa flag a partir do lead.
-
-### 2.2 Notificação push (tabela `notifications`)
-
-Na edge `roleta-distribuir`, quando cair no `fallback_lider`, inserir notificações para:
-
-- O próprio líder (`roleta.lider_id`)
-- Todos os usuários da organização com role `admin`, `manager` ou `super_admin`
-
-Conteúdo:
-- `title`: "Roleta vazia: lead atribuído ao líder"
-- `body`: "Lead {nome} chegou na roleta {nome_roleta} sem corretores online. Atribuído ao líder por fallback."
-- `lead_id`: id do lead
-- `type`: `roleta_vazia`
-
-Reaproveitar o padrão existente do `notify-new-lead` / hook `use-notifications`.
-
-### 2.3 Painel "Roletas vazias" na tela de gestão (`RoletaManagement.tsx`)
-
-Adicionar, no topo da página (acima da lista de roletas), um banner condicional:
-
-- Query: leads das últimas 24h com `status_distribuicao = 'fallback_lider'` E `motivo_atribuicao` indicando "Nenhum corretor online", agrupados por roleta.
-- Renderiza: "⚠️ N leads das últimas 24h caíram no fallback de líder por roleta vazia" com lista colapsável (lead, roleta, horário, líder atribuído) e botão "Ver no Inbox".
-- Visível apenas para admin/manager/super_admin (já é a tela `/admin/...`).
-
-### 2.4 Destaque no Inbox/Plantão Global
-
-No `ConversationList.tsx` / `AdminInbox`, quando uma conversa tiver `roleta_vazia_flag = true` E o atendimento ainda não tiver sido iniciado (`attendance_started = false`):
-
-- Badge roxo/amarelo no card: "Roleta vazia"
-- Texto auxiliar: "Sem corretores online — atribuído ao líder {nome}"
-- Botão "Assumir atendimento" continua disponível para admins/líderes/managers (já existe via fluxo de claim/transferência).
-
-Quando qualquer corretor (incluindo o líder) iniciar o atendimento, a flag é limpa via trigger ou no próprio fluxo de claim.
-
----
-
-## Arquivos afetados
-
-- **Editado**: `supabase/functions/roleta-auto-checkout/index.ts` — guard de fim de semana.
-- **Editado**: `supabase/functions/roleta-distribuir/index.ts` — marcar `roleta_vazia_flag` e disparar `notifications` no fallback.
-- **Nova migration**: adiciona `conversations.roleta_vazia_flag boolean default false`.
-- **Editado**: `src/components/admin/RoletaManagement.tsx` — texto do auto-checkout + banner de "roletas vazias últimas 24h".
-- **Editado**: `src/components/inbox/ConversationList.tsx` (e/ou painel da conversa) — badge "Roleta vazia".
-- **Editado**: `src/types/roleta.ts` / tipos de conversation se necessário.
-
----
-
-## Observações
-
-- Fluxo de atribuição **não muda**: lead segue indo para o líder imediatamente. Apenas adicionamos visibilidade.
-- A flag `roleta_vazia_flag` é pontual da conversa, não muda RLS — admins/líderes/managers já têm acesso supervisório via políticas existentes.
-- O auto-checkout no fim de semana é completamente skip — não loga, não atualiza nada, mantém idempotência.
-- Não há feriados configuráveis nesta versão (apenas sábado/domingo).
+## Como validar
+1. Logar em `/master/login` com maicon → clicar avatar → "Sair" → cair em `/master/login` limpo.
+2. Logar como maicon em `/auth` → `OrgSwitcher` deve listar **Enove Select** e **Enove Imobiliária** → trocar para Enove Imobiliária → abrir Equipe → ver maicon listado como owner/admin → conseguir adicionar plantão global.
