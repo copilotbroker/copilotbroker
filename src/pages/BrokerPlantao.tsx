@@ -85,14 +85,23 @@ export default function BrokerPlantao() {
   useEffect(() => {
     if (!brokerId) return;
     const checkGlobalCheckin = async () => {
+      // Considera check-in válido em:
+      // - Roletas tipo whatsapp_global (legado)
+      // - Roletas catch-all landing_page com escopo "todas_landing_pages_e_plantao" (Plantão unificado)
       const { data } = await (supabase
         .from("roletas_membros" as any)
-        .select("id, roleta:roletas!inner(id, tipo_origem)")
+        .select("id, roleta:roletas!inner(id, tipo_origem, escopo_empreendimentos, ativa)")
         .eq("corretor_id", brokerId)
         .eq("ativo", true)
         .eq("status_checkin", true)
-        .eq("roleta.tipo_origem", "whatsapp_global") as any);
-      setIsCheckedInGlobal((data as any[] || []).length > 0);
+        .eq("roleta.ativa", true) as any);
+      const eligible = (data as any[] || []).filter((m) => {
+        const r = m.roleta;
+        if (!r) return false;
+        return r.tipo_origem === "whatsapp_global"
+          || r.escopo_empreendimentos === "todas_landing_pages_e_plantao";
+      });
+      setIsCheckedInGlobal(eligible.length > 0);
     };
     checkGlobalCheckin();
     const interval = setInterval(checkGlobalCheckin, 15000);
