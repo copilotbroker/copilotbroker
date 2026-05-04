@@ -45,6 +45,7 @@ export default function BrokerPlantao() {
   const [teamBrokers, setTeamBrokers] = useState<{ id: string; name: string }[]>([]);
 
   const { role, isLeader } = useUserRole();
+  const inactivateLeadFromConv = useInactivateLeadFromConversation();
 
   useEffect(() => {
     const getBrokerId = async () => {
