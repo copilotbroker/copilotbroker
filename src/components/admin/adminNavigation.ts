@@ -8,7 +8,7 @@ export const ADMIN_ROUTE_TABS = [
   { id: "inbox", label: "Meu WhatsApp", path: "/admin/inbox", icon: WhatsAppInboxIcon },
   { id: "plantao", label: "WhatsApp do Plantão", path: "/admin/plantao", icon: WhatsAppPlantaoIcon },
   { id: "agenda", label: "Agenda", path: "/admin/agenda", icon: CalendarDays },
-  { id: "brokers", label: "Corretores", path: "/admin/corretores", icon: Users },
+  { id: "brokers", label: "Corretores", path: "/admin/organizacao/equipe", icon: Users },
   { id: "roletas", label: "Roletas", path: "/admin/roletas", icon: RotateCw },
   { id: "projects", label: "Landing Pages", path: "/admin/empreendimentos", icon: Building2 },
   { id: "copilot", label: "Copiloto", path: "/admin/copiloto", icon: Bot },
