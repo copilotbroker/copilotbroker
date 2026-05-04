@@ -1940,6 +1940,11 @@ async function handleGlobalInstanceMessage(
       if (assignedBrokerId && !isDisputa) {
         update.broker_id = assignedBrokerId;
         resultBrokerId = assignedBrokerId;
+      } else if (isDisputa) {
+        // Disputa or empty queue: clear placeholder so the conversation is unassigned
+        // until a leader/manager/admin/online broker explicitly claims it.
+        update.broker_id = null;
+        resultBrokerId = null;
       }
       await supabase.from("conversations").update(update).eq("id", conversationId);
     } catch (e) {
