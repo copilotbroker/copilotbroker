@@ -144,10 +144,11 @@ Deno.serve(async (req) => {
       .order("ordem", { ascending: true });
 
     const activeMembros = membros || [];
-    let assignedBrokerId: string;
+    let assignedBrokerId: string | null = null;
     let statusDistribuicao: string;
     let motivo: string;
     let novaOrdem: number;
+    const isDisputa = (roleta as any).modo_distribuicao === "disputa";
 
     if (activeMembros.length === 0) {
       assignedBrokerId = roleta.lider_id;
@@ -155,6 +156,13 @@ Deno.serve(async (req) => {
       motivo = "Nenhum corretor online - atribuído ao líder";
       novaOrdem = roleta.ultimo_membro_ordem_atribuida;
       console.log("Fallback to leader:", assignedBrokerId);
+    } else if (isDisputa) {
+      // Disputa mode: lead fica disponível para todos os online — primeiro a clicar fica
+      assignedBrokerId = null;
+      statusDistribuicao = "em_disputa";
+      motivo = `Disputa - liberado para ${activeMembros.length} corretor(es) online`;
+      novaOrdem = roleta.ultimo_membro_ordem_atribuida;
+      console.log("Disputa mode: lead released to", activeMembros.length, "brokers");
     } else {
       const lastOrder = roleta.ultimo_membro_ordem_atribuida;
       let nextMembro = activeMembros.find(m => m.ordem > lastOrder);
@@ -171,7 +179,7 @@ Deno.serve(async (req) => {
 
     const now = new Date();
     // Only set expiration if timeout is active and not fallback
-    const shouldSetExpiration = timeoutAtivo && statusDistribuicao !== "fallback_lider";
+    const shouldSetExpiration = timeoutAtivo && statusDistribuicao !== "fallback_lider" && statusDistribuicao !== "em_disputa";
     const reservaExpira = shouldSetExpiration
       ? new Date(now.getTime() + roleta.tempo_reserva_minutos * 60 * 1000)
       : null;
@@ -205,30 +213,30 @@ Deno.serve(async (req) => {
     await supabase.from("roletas_log").insert({
       roleta_id: roletaId,
       lead_id: lead_id,
-      acao: statusDistribuicao === "fallback_lider" ? "fallback_lider" : "atribuicao_inicial",
+      acao: statusDistribuicao === "fallback_lider" ? "fallback_lider"
+            : statusDistribuicao === "em_disputa" ? "atribuicao_inicial"
+            : "atribuicao_inicial",
       para_corretor_id: assignedBrokerId,
       motivo: motivo,
     });
 
-    // 6b. Register in lead timeline
-    const { data: assignedBroker } = await supabase
-      .from("brokers")
-      .select("name")
-      .eq("id", assignedBrokerId)
-      .single();
+    // 6b. Timeline
+    const { data: assignedBroker } = assignedBrokerId
+      ? await supabase.from("brokers").select("name").eq("id", assignedBrokerId).single()
+      : { data: null as any };
 
     await supabase.from("lead_interactions").insert({
       lead_id: lead_id,
       interaction_type: statusDistribuicao === "fallback_lider" ? "roleta_fallback" : "roleta_atribuicao",
-      notes: `Atribuído via roleta para ${assignedBroker?.name || "corretor"}. ${motivo}`,
+      notes: statusDistribuicao === "em_disputa"
+        ? `Liberado em disputa. ${motivo}`
+        : `Atribuído via roleta para ${assignedBroker?.name || "corretor"}. ${motivo}`,
     });
 
-    // 7. Create notification for the assigned broker
-    const { data: brokerData } = await supabase
-      .from("brokers")
-      .select("user_id, whatsapp")
-      .eq("id", assignedBrokerId)
-      .single();
+    // 7. Notifications
+    const { data: brokerData } = assignedBrokerId
+      ? await supabase.from("brokers").select("user_id, whatsapp").eq("id", assignedBrokerId).single()
+      : { data: null as any };
 
     const { data: leadData } = await supabase
       .from("leads")
@@ -243,6 +251,49 @@ Deno.serve(async (req) => {
     const originLabel = leadSource === "whatsapp_global"
       ? "WhatsApp do Plantão"
       : (projectData?.name || "empreendimento");
+
+    if (statusDistribuicao === "em_disputa") {
+      // Notify ALL online members
+      const memberIds = activeMembros.map((m: any) => m.corretor_id);
+      const { data: memberBrokers } = await supabase
+        .from("brokers").select("id, user_id, whatsapp").in("id", memberIds);
+      const notifRows = (memberBrokers || [])
+        .filter((b: any) => b.user_id)
+        .map((b: any) => ({
+          user_id: b.user_id,
+          type: "roleta_disputa",
+          title: "🔥 Lead em Disputa",
+          message: `Lead ${leadData?.name || ""} (${originLabel}) liberado para disputa. Quem reivindicar primeiro, atende!`,
+          lead_id,
+        }));
+      if (notifRows.length) await supabase.from("notifications").insert(notifRows);
+
+      // WhatsApp blast
+      try {
+        const { data: globalConfig } = await supabase
+          .from("global_whatsapp_config").select("instance_token")
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        const envUrl = Deno.env.get("UAZAPI_INSTANCE_URL") || "";
+        let baseUrl: string;
+        try { baseUrl = new URL(envUrl).origin; } catch { baseUrl = envUrl.replace(/\/[^\/]+\/?$/, ""); }
+        if (globalConfig?.instance_token && baseUrl) {
+          const msg = `🔥 *Lead em Disputa via Roleta*\n\n📋 *${originLabel}*\n\n⚡ Acesse o CRM → Pré-Atendimento e clique em *Iniciar Atendimento* para assumir.\n\n👥 Quem reivindicar primeiro, atende!`;
+          for (const b of (memberBrokers || [])) {
+            if (!b.whatsapp) continue;
+            const phone = b.whatsapp.replace(/\D/g, "");
+            fetch(`${baseUrl}/send/text`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "token": globalConfig.instance_token },
+              body: JSON.stringify({ number: phone, text: msg }),
+            }).catch(() => {});
+          }
+        }
+      } catch (e) { console.error("disputa whatsapp blast failed:", e); }
+
+      return new Response(JSON.stringify({
+        success: true, status: statusDistribuicao, online_count: activeMembros.length,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     if (brokerData?.user_id && leadData) {
       await supabase.from("notifications").insert({

@@ -2757,6 +2757,7 @@ export type Database = {
         Args: { _feature_key: string; _org_id: string }
         Returns: Json
       }
+      claim_disputed_lead: { Args: { _lead_id: string }; Returns: Json }
       get_my_broker_id: { Args: never; Returns: string }
       get_my_roleta_ids: { Args: never; Returns: string[] }
       get_organization_members_with_users: {
@@ -2832,6 +2833,7 @@ export type Database = {
         | "reassinado_timeout"
         | "fallback_lider"
         | "atendimento_iniciado"
+        | "em_disputa"
       interaction_type:
         | "status_change"
         | "note_added"
@@ -3005,6 +3007,7 @@ export const Constants = {
         "reassinado_timeout",
         "fallback_lider",
         "atendimento_iniciado",
+        "em_disputa",
       ],
       interaction_type: [
         "status_change",
