@@ -51,25 +51,42 @@ const fetchOrgContext = async (): Promise<Omit<OrganizationState, "isOwnerOrAdmi
   const memberships = (membersRes.data ?? []) as OrganizationMembership[];
 
   let activeOrgId: string | null = null;
+  let storedFromLS: string | null = null;
   try {
-    const stored = typeof window !== "undefined" ? window.localStorage.getItem(ACTIVE_ORG_KEY) : null;
-    if (stored && memberships.some((m) => m.organization_id === stored)) {
-      activeOrgId = stored;
+    storedFromLS = typeof window !== "undefined" ? window.localStorage.getItem(ACTIVE_ORG_KEY) : null;
+    if (storedFromLS && memberships.some((m) => m.organization_id === storedFromLS)) {
+      activeOrgId = storedFromLS;
     }
   } catch { /* ignore */ }
+
+  // Super admin can impersonate any org (even non-member). Honor the stored choice.
+  if (!activeOrgId && isSuperAdmin && storedFromLS) {
+    activeOrgId = storedFromLS;
+  }
 
   if (!activeOrgId && memberships.length > 0) {
     activeOrgId = memberships[0].organization_id;
   }
 
-  const active = memberships.find((m) => m.organization_id === activeOrgId) ?? null;
+  let active = memberships.find((m) => m.organization_id === activeOrgId) ?? null;
+
+  // For super_admin viewing a non-member org, fetch that org's metadata.
+  let activeOrgData = active?.organization ?? null;
+  if (!activeOrgData && isSuperAdmin && activeOrgId) {
+    const { data: orgData } = await supabase
+      .from("organizations" as any)
+      .select("id,name,slug,status,logo_url,favicon_url,primary_color,secondary_color,display_name")
+      .eq("id", activeOrgId)
+      .maybeSingle() as any;
+    if (orgData) activeOrgData = orgData as OrganizationMembership["organization"];
+  }
 
   return {
     isSuperAdmin,
     memberships,
     activeOrgId,
-    activeOrg: active?.organization ?? null,
-    activeOrgRole: active?.role ?? null,
+    activeOrg: activeOrgData,
+    activeOrgRole: active?.role ?? (isSuperAdmin ? "super_admin" : null),
   };
 };
 
