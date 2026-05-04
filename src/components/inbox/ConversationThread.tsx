@@ -822,6 +822,16 @@ export function ConversationThread({
           </div>
         </div>
       )}
+
+      {onInactivateLead && (
+        <PerdaModal
+          open={perdaModalOpen}
+          onOpenChange={setPerdaModalOpen}
+          onConfirm={async (reason) => {
+            await onInactivateLead(reason);
+          }}
+        />
+      )}
     </div>
   );
 }
