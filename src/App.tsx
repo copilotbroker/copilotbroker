@@ -13,6 +13,7 @@ import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import Home from "./pages/Home";
 import { LandingRoutes } from "@/components/LandingRoutes";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Admin from "./pages/Admin";
 import DesignSystem from "./pages/DesignSystem";
 
