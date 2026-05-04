@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
         .order("ordem", { ascending: true });
 
       const activeMembros = membros || [];
-      let newBrokerId: string;
+      let newBrokerId: string | null;
       let statusDistribuicao: string;
       let motivo: string;
       let novaOrdem: number;
