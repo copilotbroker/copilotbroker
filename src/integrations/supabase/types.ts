@@ -706,7 +706,7 @@ export type Database = {
           ai_mode: string
           atribuido_em: string | null
           attendance_started: boolean
-          broker_id: string
+          broker_id: string | null
           copilot_suggestions_count: number
           created_at: string
           display_name: string | null
@@ -735,7 +735,7 @@ export type Database = {
           ai_mode?: string
           atribuido_em?: string | null
           attendance_started?: boolean
-          broker_id: string
+          broker_id?: string | null
           copilot_suggestions_count?: number
           created_at?: string
           display_name?: string | null
@@ -764,7 +764,7 @@ export type Database = {
           ai_mode?: string
           atribuido_em?: string | null
           attendance_started?: boolean
-          broker_id?: string
+          broker_id?: string | null
           copilot_suggestions_count?: number
           created_at?: string
           display_name?: string | null
@@ -2106,7 +2106,7 @@ export type Database = {
           created_at: string
           escopo_empreendimentos: string
           id: string
-          lider_id: string
+          lider_id: string | null
           modo_distribuicao: string
           nome: string
           organization_id: string | null
@@ -2125,7 +2125,7 @@ export type Database = {
           created_at?: string
           escopo_empreendimentos?: string
           id?: string
-          lider_id: string
+          lider_id?: string | null
           modo_distribuicao?: string
           nome: string
           organization_id?: string | null
@@ -2144,7 +2144,7 @@ export type Database = {
           created_at?: string
           escopo_empreendimentos?: string
           id?: string
-          lider_id?: string
+          lider_id?: string | null
           modo_distribuicao?: string
           nome?: string
           organization_id?: string | null
