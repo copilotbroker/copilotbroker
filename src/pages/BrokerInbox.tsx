@@ -8,7 +8,6 @@ import { CreateLeadFromChatModal } from "@/components/inbox/CreateLeadFromChatMo
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, BrokerInboxTab } from "@/hooks/use-conversations";
 import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
-import { useInactivateLeadFromConversation } from "@/hooks/use-inactivate-lead-from-conversation";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useLogout } from "@/hooks/use-logout";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
@@ -143,7 +142,6 @@ export default function BrokerInbox() {
     }, autoCreateLead);
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
-  const inactivateLeadFromConv = useInactivateLeadFromConversation();
 
   useEffect(() => {
     const convId = searchParams.get("conversationId");
@@ -417,12 +415,6 @@ export default function BrokerInbox() {
                 isNewLead={isNewConversation}
                 onStartAttendance={handleStartAttendance}
                 isStartingAttendance={isStartingAttendance}
-                onInactivateLead={async (reason) => {
-                  if (!selectedConversation?.lead_id) return;
-                  await inactivateLeadFromConv(selectedConversation.lead_id, reason);
-                  fetchConversations();
-                  handleBack();
-                }}
               />
             )}
           </div>
