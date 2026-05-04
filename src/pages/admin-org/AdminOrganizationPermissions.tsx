@@ -50,7 +50,7 @@ const AdminOrganizationPermissions = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Permissão</TableHead>
-                {roles.map((r) => <TableHead key={r} className="text-center capitalize">{r}</TableHead>)}
+                {roles.map((r) => <TableHead key={r} className="text-center">{roleLabels[r]}</TableHead>)}
               </TableRow>
             </TableHeader>
             <TableBody>
