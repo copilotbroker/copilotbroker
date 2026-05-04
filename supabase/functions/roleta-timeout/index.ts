@@ -118,6 +118,7 @@ Deno.serve(async (req) => {
             reserva_expira_em: null,
             status_distribuicao: "em_disputa",
             motivo_atribuicao: `Loop detectado (${reassignmentCount} reassinações) - liberado para líderes/gerentes/admins`,
+            liberado_lideres: true,
           })
           .eq("id", lead.id);
 
