@@ -106,18 +106,18 @@ Deno.serve(async (req) => {
         .eq("acao", "timeout_reassinado");
 
       if ((reassignmentCount || 0) >= MAX_REASSIGNMENTS) {
-        console.log(`Lead ${lead.id} hit ${reassignmentCount} reassignments - breaking loop, fallback to leader`);
+        console.log(`Lead ${lead.id} hit ${reassignmentCount} reassignments - releasing to leaders/admins`);
 
-        // Fallback to leader and STOP the timeout cycle
+        // Release to leaders/admins/managers (no specific broker)
         await supabase
           .from("leads")
           .update({
-            broker_id: roleta.lider_id,
-            corretor_atribuido_id: roleta.lider_id,
+            broker_id: null,
+            corretor_atribuido_id: null,
             atribuido_em: new Date().toISOString(),
-            reserva_expira_em: null, // No more timeout
-            status_distribuicao: "fallback_lider",
-            motivo_atribuicao: `Loop detectado (${reassignmentCount} reassinações) - atribuído ao líder`,
+            reserva_expira_em: null,
+            status_distribuicao: "em_disputa",
+            motivo_atribuicao: `Loop detectado (${reassignmentCount} reassinações) - liberado para líderes/gerentes/admins`,
           })
           .eq("id", lead.id);
 
@@ -126,46 +126,42 @@ Deno.serve(async (req) => {
           lead_id: lead.id,
           acao: "timeout_loop_breaker",
           de_corretor_id: lead.corretor_atribuido_id,
-          para_corretor_id: roleta.lider_id,
-          motivo: `Loop detectado: ${reassignmentCount} reassinações sem atendimento. Atribuído ao líder.`,
+          para_corretor_id: null,
+          motivo: `Loop detectado: ${reassignmentCount} reassinações sem atendimento. Liberado para líderes.`,
         });
-
-        const { data: liderData } = await supabase
-          .from("brokers")
-          .select("name, user_id")
-          .eq("id", roleta.lider_id)
-          .single();
 
         await supabase.from("lead_interactions").insert({
           lead_id: lead.id,
           interaction_type: "roleta_fallback",
-          notes: `Loop de timeout detectado (${reassignmentCount} reassinações). Nenhum corretor iniciou atendimento. Atribuído ao líder ${liderData?.name || "líder"}.`,
+          notes: `Loop de timeout detectado (${reassignmentCount} reassinações). Liberado para líderes/gerentes/admins iniciarem o atendimento.`,
         });
 
-        if (liderData?.user_id) {
-          await supabase.from("notifications").insert({
-            user_id: liderData.user_id,
-            type: "roleta_loop_breaker",
-            title: "Lead preso em loop de timeout",
-            message: `Lead ${lead.name} passou por ${reassignmentCount} reassinações sem atendimento e foi atribuído a você.`,
-            lead_id: lead.id,
-          });
-        }
-
-        // Trigger cadência for the leader
+        // Notify org leaders/admins/managers (best-effort)
         try {
-          await fetch(`${supabaseUrl}/functions/v1/auto-cadencia-10d`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({ leadId: lead.id }),
-          });
-          console.log("Auto cadencia triggered for leader (loop breaker), lead:", lead.id);
-        } catch (cadErr) {
-          console.error("Auto cadencia trigger failed (loop breaker):", cadErr);
-        }
+          const { data: leadOrg } = await supabase
+            .from("leads").select("organization_id").eq("id", lead.id).maybeSingle();
+          const orgId = (leadOrg as any)?.organization_id ?? null;
+          const recipients = new Set<string>();
+          if (orgId) {
+            const { data: orgMembers } = await supabase
+              .from("organization_members").select("user_id")
+              .eq("organization_id", orgId).eq("approval_status", "approved").eq("is_active", true)
+              .in("role", ["owner", "admin", "manager"]);
+            (orgMembers || []).forEach((m: any) => m.user_id && recipients.add(m.user_id));
+          }
+          const { data: leaderRoles } = await supabase
+            .from("user_roles").select("user_id").in("role", ["leader", "admin", "super_admin"]);
+          (leaderRoles || []).forEach((r: any) => r.user_id && recipients.add(r.user_id));
+          if (recipients.size) {
+            await supabase.from("notifications").insert(Array.from(recipients).map((uid) => ({
+              user_id: uid,
+              type: "roleta_loop_breaker",
+              title: "Lead preso em loop de timeout",
+              message: `Lead ${lead.name} passou por ${reassignmentCount} reassinações sem atendimento. Disponível para qualquer líder/gerente assumir.`,
+              lead_id: lead.id,
+            })));
+          }
+        } catch (e) { console.error("loop-breaker notify failed:", e); }
 
         loopBroken++;
         processed++;
