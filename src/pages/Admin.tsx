@@ -599,7 +599,22 @@ const Admin = () => {
           </div>
         </>
       ) : activeTab === "brokers" ? (
-        <BrokerManagement />
+        <div className="p-6">
+          <div className="rounded-2xl border border-border/60 bg-card p-8 text-center max-w-2xl mx-auto">
+            <h2 className="text-xl font-semibold mb-2">Gestão de equipe foi atualizada</h2>
+            <p className="text-sm text-muted-foreground mb-5">
+              Adicionar e editar Gerentes, Líderes e Corretores agora acontece numa tela dedicada,
+              com perfis visuais e permissões claras. Funcionalidades operacionais (equipes, líderes
+              e roletas) continuam aqui nas demais abas.
+            </p>
+            <button
+              onClick={() => navigate("/admin/organizacao/equipe")}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:brightness-110 transition"
+            >
+              Ir para Gestão de Equipe →
+            </button>
+          </div>
+        </div>
       ) : activeTab === "roletas" ? (
         <RoletaManagement />
       ) : activeTab === "projects" ? (
