@@ -34,7 +34,7 @@ export function useRoletas() {
     fetchRoletas();
   }, [fetchRoletas]);
 
-  const createRoleta = async (data: { nome: string; lider_id: string; tempo_reserva_minutos: number }): Promise<string | null> => {
+  const createRoleta = async (data: { nome: string; lider_id?: string | null; tempo_reserva_minutos: number }): Promise<string | null> => {
     try {
       const { data: created, error } = await (supabase
         .from("roletas" as any)
