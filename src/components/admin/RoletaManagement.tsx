@@ -153,13 +153,12 @@ const RoletaManagement = () => {
   };
 
   const handleCreate = async () => {
-    if (!formNome.trim() || !formLiderId) {
-      toast.error("Nome e líder são obrigatórios.");
+    if (!formNome.trim()) {
+      toast.error("Nome é obrigatório.");
       return;
     }
     const roletaId = await createRoleta({
       nome: formNome.trim(),
-      lider_id: formLiderId,
       tempo_reserva_minutos: formTimeout,
       timeout_ativo: formTimeoutAtivo,
       timeout_pausa_inicio: formPausaInicio,
