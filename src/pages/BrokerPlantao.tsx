@@ -476,6 +476,12 @@ export default function BrokerPlantao() {
                 onTransfer={handleTransferFromInbox}
                 onPullToPersonal={handlePullToPersonal}
                 isPullingToPersonal={isPullingToPersonal}
+                onInactivateLead={async (reason) => {
+                  if (!selectedConversation?.lead_id) return;
+                  await inactivateLeadFromConv(selectedConversation.lead_id, reason);
+                  fetchConversations();
+                  handleBack();
+                }}
               />
             )}
           </div>
