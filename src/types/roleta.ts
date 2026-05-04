@@ -11,7 +11,7 @@ export type RoletaEscopoEmpreendimentos = 'especifico' | 'todas_landing_pages' |
 export interface Roleta {
   id: string;
   nome: string;
-  lider_id: string;
+  lider_id: string | null;
   tempo_reserva_minutos: number;
   timeout_ativo: boolean;
   ativa: boolean;
