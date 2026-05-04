@@ -272,7 +272,7 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden border-border/60 bg-card">
+      <DialogContent className="max-w-2xl w-[calc(100vw-1.5rem)] sm:w-full p-0 gap-0 overflow-hidden border-border/60 bg-card">
         {/* Hero header */}
         <div className="relative px-7 pt-7 pb-5 border-b border-border/50 bg-gradient-to-br from-primary/5 via-card to-card overflow-hidden">
           <div className="absolute -top-16 -right-16 h-44 w-44 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
