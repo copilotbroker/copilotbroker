@@ -9,10 +9,13 @@ export function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get("origin") || "";
   const isAllowed =
     origin === "https://onovocondominio.com.br" ||
+    origin === "https://www.onovocondominio.com.br" ||
+    origin === "https://copilotbroker.com.br" ||
+    origin === "https://www.copilotbroker.com.br" ||
     origin.endsWith(".lovable.app") ||
     origin.endsWith(".lovableproject.com");
 
-  const allowedOrigin = isAllowed ? origin : "https://onovocondominio.com.br";
+  const allowedOrigin = isAllowed ? origin : "https://copilotbroker.com.br";
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers":
