@@ -388,6 +388,21 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
                   />
                 </div>
               </div>
+
+              <div>
+                <Label className="text-xs">E-mail de acesso</Label>
+                <Input
+                  type="email"
+                  autoComplete="off"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="pessoa@empresa.com"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  Alterar o e-mail muda o login do membro. A senha atual é preservada.
+                </p>
+              </div>
+
               <p className="text-[11px] text-muted-foreground -mt-1">
                 O WhatsApp é usado pelo sistema para enviar avisos de transferência de lead e novos atendimentos a este membro.
               </p>
