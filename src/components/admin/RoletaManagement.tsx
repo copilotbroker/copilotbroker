@@ -170,19 +170,23 @@ const RoletaManagement = () => {
       toast.error("Nome é obrigatório.");
       return;
     }
+    if (!formSrcLP && !formSrcWPP) {
+      toast.error("Selecione pelo menos uma origem de leads.");
+      return;
+    }
+    const { tipo_origem, escopo } = deriveOrigem();
     const roletaId = await createRoleta({
       nome: formNome.trim(),
       tempo_reserva_minutos: formTimeout,
       timeout_ativo: formTimeoutAtivo,
       timeout_pausa_inicio: formPausaInicio,
       timeout_pausa_fim: formPausaFim,
-      tipo_origem: formTipoOrigem,
+      tipo_origem,
       modo_distribuicao: formModoDistribuicao,
-      escopo_empreendimentos: formTipoOrigem === "landing_page" ? formEscopoEmpreendimentos : "especifico",
+      escopo_empreendimentos: escopo,
     } as any);
     if (roletaId) {
-      // Vincular empreendimentos selecionados (only for landing_page + escopo especifico)
-      if (formTipoOrigem === "landing_page" && formEscopoEmpreendimentos === "especifico") {
+      if (tipo_origem === "landing_page" && escopo === "especifico") {
         for (const projectId of formSelectedProjects) {
           await addEmpreendimento(roletaId, projectId);
         }
@@ -195,9 +199,10 @@ const RoletaManagement = () => {
       setFormPausaInicio("21:00");
       setFormPausaFim("09:00");
       setFormSelectedProjects([]);
-      setFormTipoOrigem("landing_page");
+      setFormSrcLP(true);
+      setFormSrcWPP(true);
+      setFormLPScope("todas");
       setFormModoDistribuicao("fila");
-      setFormEscopoEmpreendimentos("todas_landing_pages_e_plantao");
     }
   };
 
