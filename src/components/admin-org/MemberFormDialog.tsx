@@ -127,6 +127,32 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
           .eq("id", member.id) as any;
         if (error) throw error;
       }
+
+      // Atualização de e-mail (auth.users) — somente se mudou
+      const newEmail = email.trim().toLowerCase();
+      if (newEmail && newEmail !== (member.email ?? "").toLowerCase()) {
+        const { data: emailRes, error: emailErr } = await supabase.functions.invoke(
+          "org-update-member-email",
+          {
+            body: {
+              organization_id: organizationId,
+              target_user_id: member.user_id,
+              new_email: newEmail,
+            },
+          },
+        );
+        if (emailErr || (emailRes as any)?.error) {
+          const code = (emailRes as any)?.error;
+          const msg =
+            code === "email_already_in_use"
+              ? "Esse e-mail já está em uso por outra conta."
+              : code === "invalid_email"
+              ? "E-mail inválido."
+              : code || emailErr?.message || "Erro ao atualizar e-mail.";
+          throw new Error(msg);
+        }
+      }
+
       toast.success("Membro atualizado.");
       onSaved?.();
       onOpenChange(false);
