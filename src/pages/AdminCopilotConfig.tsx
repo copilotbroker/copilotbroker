@@ -55,7 +55,6 @@ const TAB_GROUPS = [
       { id: "overview", label: "Visão Global", icon: Eye },
       { id: "global-connection", label: "Conexão Global", icon: Globe },
       { id: "connection", label: "Conexão", icon: Wifi },
-      { id: "campaigns", label: "Campanhas", icon: Megaphone },
       { id: "queue", label: "Fila", icon: Send },
       { id: "automation", label: "Follow-up", icon: Bot },
       { id: "security", label: "Segurança", icon: Shield },
@@ -290,10 +289,6 @@ export default function AdminCopilotConfig() {
 
             <TabsContent value="connection" className="mt-4">
               <ConnectionTab />
-            </TabsContent>
-
-            <TabsContent value="campaigns" className="mt-4">
-              <CampaignsTab />
             </TabsContent>
 
             <TabsContent value="queue" className="mt-4">

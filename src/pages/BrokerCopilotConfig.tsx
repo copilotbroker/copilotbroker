@@ -7,7 +7,7 @@ import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Wifi, Send, Shield, Megaphone, Bot, Sparkles, Lock } from "lucide-react";
 import { ConnectionTab } from "@/components/whatsapp/ConnectionTab";
-import { CampaignsTab } from "@/components/whatsapp/CampaignsTab";
+
 import { QueueTab } from "@/components/whatsapp/QueueTab";
 import { SecurityTab } from "@/components/whatsapp/SecurityTab";
 import { AutoMessageTab } from "@/components/whatsapp/AutoMessageTab";
@@ -126,10 +126,6 @@ export default function BrokerCopilotConfig() {
 
           <TabsContent value="automation" className="mt-6">
             <AutoMessageTab />
-          </TabsContent>
-
-          <TabsContent value="campaigns" className="mt-6">
-            <CampaignsTab />
           </TabsContent>
 
           <TabsContent value="queue" className="mt-6">
