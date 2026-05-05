@@ -267,12 +267,19 @@ export function AutoCadenciaRuleEditor({
 
     // Cadence creation (auto/manual)
     const isNew = !editingRule;
-    const finalProjectId = wizardType === "manual" ? null : (projectId === "all" ? null : projectId);
-    const data = {
+    const isAuto = wizardType === "automatic";
+    const forceNullProject = isAuto && triggerLeadSource !== "landing_page";
+    const finalProjectId = wizardType === "manual"
+      ? null
+      : forceNullProject
+        ? null
+        : (projectId === "all" ? null : projectId);
+    const data: any = {
       name: ruleName.trim(),
       project_id: finalProjectId,
       is_active: isNew ? false : true,
     };
+    if (isAuto) data.trigger_lead_source = triggerLeadSource;
 
     let success;
     if (editingRule) {
