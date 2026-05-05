@@ -27,6 +27,7 @@ interface Broker {
   id: string;
   slug: string;
   name: string;
+  organization_slug?: string | null;
 }
 
 export function useBrokerProjects(brokerId?: string | null) {
@@ -38,24 +39,32 @@ export function useBrokerProjects(brokerId?: string | null) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const buildUrl = (project: Project, brokerSlug: string, forBrokerId?: string) => {
+  const buildUrl = (project: Project, brokerSlug: string, forBrokerId?: string, orgSlug?: string | null) => {
+    const orgPrefix = orgSlug ? `/${orgSlug}` : "";
     if (project.created_by_broker_id && project.created_by_broker_id === forBrokerId) {
-      return `/${brokerSlug}/${project.city_slug}/${project.slug}`;
+      return `${orgPrefix}/${brokerSlug}/${project.city_slug}/${project.slug}`;
     }
-    if (project.slug === "estanciavelha") return `/estanciavelha/${brokerSlug}`;
-    if (project.slug === "prontos") return `/prontos/${brokerSlug}`;
-    return `/${project.city_slug}/${project.slug}/${brokerSlug}`;
+    if (project.slug === "estanciavelha") return `${orgPrefix}/estanciavelha/${brokerSlug}`;
+    if (project.slug === "prontos") return `${orgPrefix}/prontos/${brokerSlug}`;
+    return `${orgPrefix}/${project.city_slug}/${project.slug}/${brokerSlug}`;
   };
 
   const fetchBroker = useCallback(async () => {
     if (!brokerId) return;
     const { data, error } = await supabase
       .from("brokers")
-      .select("id, slug, name")
+      .select("id, slug, name, organization:organizations(slug)")
       .eq("id", brokerId)
       .maybeSingle();
     if (error) { console.error("Error fetching broker:", error); return; }
-    setBroker(data);
+    if (data) {
+      setBroker({
+        id: (data as any).id,
+        slug: (data as any).slug,
+        name: (data as any).name,
+        organization_slug: (data as any).organization?.slug ?? null,
+      });
+    }
   }, [brokerId]);
 
   const fetchBrokerProjects = useCallback(async () => {
