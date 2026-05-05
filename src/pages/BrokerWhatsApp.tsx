@@ -8,7 +8,7 @@ import { BrokerSidebar } from "@/components/broker/BrokerSidebar";
 import { BrokerBottomNav } from "@/components/broker/BrokerBottomNav";
 import { Loader2, Wifi, Send, Shield, Megaphone, Bot } from "lucide-react";
 import { ConnectionTab } from "@/components/whatsapp/ConnectionTab";
-import { CampaignsTab } from "@/components/whatsapp/CampaignsTab";
+
 import { QueueTab } from "@/components/whatsapp/QueueTab";
 import { SecurityTab } from "@/components/whatsapp/SecurityTab";
 import { AutoMessageTab } from "@/components/whatsapp/AutoMessageTab";
@@ -90,13 +90,6 @@ export default function BrokerWhatsApp() {
                 <span className="hidden sm:inline">Conexão</span>
               </TabsTrigger>
               <TabsTrigger 
-                value="campaigns" 
-                className="text-slate-400 data-[state=active]:bg-[#2a2a2e] data-[state=active]:text-white hover:text-white flex items-center gap-2"
-              >
-                <Megaphone className="w-4 h-4" />
-                <span className="hidden sm:inline">Campanhas</span>
-              </TabsTrigger>
-              <TabsTrigger 
                 value="queue" 
                 className="text-slate-400 data-[state=active]:bg-[#2a2a2e] data-[state=active]:text-white hover:text-white flex items-center gap-2"
               >
@@ -121,10 +114,6 @@ export default function BrokerWhatsApp() {
 
             <TabsContent value="connection" className="mt-6">
               <ConnectionTab />
-            </TabsContent>
-
-            <TabsContent value="campaigns" className="mt-6">
-              <CampaignsTab />
             </TabsContent>
 
             <TabsContent value="queue" className="mt-6">

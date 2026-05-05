@@ -7,7 +7,7 @@ import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Wifi, Send, Shield, Megaphone, Bot, Sparkles, Lock } from "lucide-react";
 import { ConnectionTab } from "@/components/whatsapp/ConnectionTab";
-import { CampaignsTab } from "@/components/whatsapp/CampaignsTab";
+
 import { QueueTab } from "@/components/whatsapp/QueueTab";
 import { SecurityTab } from "@/components/whatsapp/SecurityTab";
 import { AutoMessageTab } from "@/components/whatsapp/AutoMessageTab";
@@ -102,10 +102,6 @@ export default function BrokerCopilotConfig() {
                 <Bot className="w-4 h-4" />
                 <span className="hidden sm:inline">Follow-up</span>
               </TabsTrigger>
-            <TabsTrigger value="campaigns" className="text-slate-400 data-[state=active]:bg-[#2a2a2e] data-[state=active]:text-white hover:text-white flex items-center gap-2">
-              <Megaphone className="w-4 h-4" />
-              <span className="hidden sm:inline">Campanhas</span>
-            </TabsTrigger>
             <TabsTrigger value="queue" className="text-slate-400 data-[state=active]:bg-[#2a2a2e] data-[state=active]:text-white hover:text-white flex items-center gap-2">
               <Send className="w-4 h-4" />
               <span className="hidden sm:inline">Fila</span>
@@ -126,10 +122,6 @@ export default function BrokerCopilotConfig() {
 
           <TabsContent value="automation" className="mt-6">
             <AutoMessageTab />
-          </TabsContent>
-
-          <TabsContent value="campaigns" className="mt-6">
-            <CampaignsTab />
           </TabsContent>
 
           <TabsContent value="queue" className="mt-6">
