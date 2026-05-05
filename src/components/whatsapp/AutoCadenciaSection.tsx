@@ -65,13 +65,7 @@ export function AutoCadenciaSection() {
   const activeCampaigns = bulkCampaigns.filter(c => !["completed", "cancelled"].includes(c.status));
   const archivedCampaigns = bulkCampaigns.filter(c => ["completed", "cancelled"].includes(c.status));
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-5 h-5 animate-spin text-primary" />
-      </div>
-    );
-  }
+
 
   const automaticRules = rules.filter((r) => r.cadence_type === "automatic");
   const manualRules = rules.filter((r) => r.cadence_type !== "automatic");
