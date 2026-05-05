@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     // 1. Fetch lead (using effective ID after unification)
     const { data: lead, error: leadError } = await supabase
       .from("leads")
-      .select("id, broker_id, project_id, status, whatsapp, name")
+      .select("id, broker_id, project_id, status, whatsapp, name, source, lead_origin")
       .eq("id", effectiveLeadId)
       .single();
 
@@ -161,33 +161,45 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 4. Check for active rule (project-specific first, then global)
-    let rule = null;
-    if (lead.project_id) {
+    // 4. Determine lead source and find compatible active rule
+    const isWhatsAppLead =
+      (lead as any).lead_origin === "whatsapp_plantao" ||
+      (lead as any).source === "whatsapp_global";
+    const leadSource = isWhatsAppLead ? "whatsapp" : "landing_page";
+    const compatibleSources = [leadSource, "both"];
+
+    let rule: any = null;
+
+    if (!isWhatsAppLead && lead.project_id) {
+      // LP lead with project: prefer project-specific LP rule
       const { data } = await supabase
         .from("broker_auto_cadencia_rules")
         .select("*")
         .eq("broker_id", lead.broker_id)
         .eq("project_id", lead.project_id)
         .eq("is_active", true)
+        .in("trigger_lead_source", compatibleSources)
         .maybeSingle();
       rule = data;
     }
 
     if (!rule) {
+      // Fallback to global rules (project_id IS NULL) compatible with this source
+      // For WhatsApp leads we always look here since they don't carry project_id
       const { data } = await supabase
         .from("broker_auto_cadencia_rules")
         .select("*")
         .eq("broker_id", lead.broker_id)
         .is("project_id", null)
         .eq("is_active", true)
+        .in("trigger_lead_source", compatibleSources)
         .maybeSingle();
       rule = data;
     }
 
     if (!rule) {
-      console.log("No active cadencia rule for broker:", lead.broker_id);
-      return new Response(JSON.stringify({ status: "skipped", reason: "no_active_rule" }), {
+      console.log(`No active cadencia rule for broker ${lead.broker_id} matching source ${leadSource}`);
+      return new Response(JSON.stringify({ status: "skipped", reason: "no_active_rule_for_source" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

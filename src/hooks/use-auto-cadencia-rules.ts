@@ -11,6 +11,7 @@ export interface AutoCadenciaStep {
 }
 
 export type CadenceType = 'manual' | 'automatic';
+export type TriggerLeadSource = 'landing_page' | 'whatsapp' | 'both';
 
 export interface BrokerAutoCadenciaRule {
   id: string;
@@ -19,6 +20,7 @@ export interface BrokerAutoCadenciaRule {
   project_id: string | null;
   is_active: boolean;
   cadence_type: CadenceType;
+  trigger_lead_source: TriggerLeadSource;
   created_at: string;
   updated_at: string;
   project?: { id: string; name: string } | null;
@@ -98,7 +100,7 @@ export function useAutoCadenciaRules() {
     }));
   };
 
-  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; cadence_type?: CadenceType; steps: AutoCadenciaStep[] }) => {
+  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; cadence_type?: CadenceType; trigger_lead_source?: TriggerLeadSource; steps: AutoCadenciaStep[] }) => {
     if (!brokerId) return null;
     setIsSaving(true);
     try {
@@ -110,6 +112,7 @@ export function useAutoCadenciaRules() {
           project_id: data.project_id,
           is_active: data.is_active,
           cadence_type: data.cadence_type || 'manual',
+          trigger_lead_source: data.trigger_lead_source || 'landing_page',
         })
         .select(`*, project:projects(id, name)`)
         .single();
@@ -132,7 +135,7 @@ export function useAutoCadenciaRules() {
     }
   };
 
-  const updateRule = async (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => {
+  const updateRule = async (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean; trigger_lead_source: TriggerLeadSource }>, steps?: AutoCadenciaStep[]) => {
     setIsSaving(true);
     try {
       const { data: updated, error } = await (supabase

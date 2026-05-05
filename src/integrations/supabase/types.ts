@@ -188,6 +188,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           project_id: string | null
+          trigger_lead_source: string
           updated_at: string | null
         }
         Insert: {
@@ -198,6 +199,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           project_id?: string | null
+          trigger_lead_source?: string
           updated_at?: string | null
         }
         Update: {
@@ -208,6 +210,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           project_id?: string | null
+          trigger_lead_source?: string
           updated_at?: string | null
         }
         Relationships: [
