@@ -26,7 +26,7 @@ import { STATUS_CONFIG, LEAD_ORIGINS, getOriginDisplayLabel } from "@/types/crm"
 import type { LeadStatus, CRMLead } from "@/types/crm";
 import { replaceTemplateVariables } from "@/types/whatsapp";
 import { DelayIntervalPicker, formatDelayHuman } from "./DelayIntervalPicker";
-import type { BrokerAutoCadenciaRule, AutoCadenciaStep, CadenceType } from "@/hooks/use-auto-cadencia-rules";
+import type { BrokerAutoCadenciaRule, AutoCadenciaStep, CadenceType, TriggerLeadSource } from "@/hooks/use-auto-cadencia-rules";
 
 type WizardType = "automatic" | "manual" | "campaign";
 
@@ -34,8 +34,8 @@ interface AutoCadenciaRuleEditorProps {
   isOpen: boolean;
   onClose: () => void;
   editingRule: BrokerAutoCadenciaRule | null;
-  createRule: (data: { name?: string; project_id: string | null; is_active: boolean; cadence_type?: CadenceType; steps: AutoCadenciaStep[] }) => Promise<any>;
-  updateRule: (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => Promise<any>;
+  createRule: (data: { name?: string; project_id: string | null; is_active: boolean; cadence_type?: CadenceType; trigger_lead_source?: TriggerLeadSource; steps: AutoCadenciaStep[] }) => Promise<any>;
+  updateRule: (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean; trigger_lead_source: TriggerLeadSource }>, steps?: AutoCadenciaStep[]) => Promise<any>;
   isSaving: boolean;
   rules: BrokerAutoCadenciaRule[];
   onCreated?: (ruleId: string) => void;
