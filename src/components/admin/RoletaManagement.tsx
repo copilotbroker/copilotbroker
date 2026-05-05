@@ -76,9 +76,22 @@ const RoletaManagement = () => {
   const [formPausaInicio, setFormPausaInicio] = useState("21:00");
   const [formPausaFim, setFormPausaFim] = useState("09:00");
   const [formSelectedProjects, setFormSelectedProjects] = useState<string[]>([]);
-  const [formTipoOrigem, setFormTipoOrigem] = useState<RoletaTipoOrigem>("landing_page");
+  // Sources: ambos podem estar ativos simultaneamente
+  const [formSrcLP, setFormSrcLP] = useState(true);
+  const [formSrcWPP, setFormSrcWPP] = useState(true);
+  const [formLPScope, setFormLPScope] = useState<"todas" | "especifico">("todas");
   const [formModoDistribuicao, setFormModoDistribuicao] = useState<"fila" | "disputa">("fila");
-  const [formEscopoEmpreendimentos, setFormEscopoEmpreendimentos] = useState<"especifico" | "todas_landing_pages" | "todas_landing_pages_e_plantao">("todas_landing_pages_e_plantao");
+
+  // Deriva tipo_origem + escopo_empreendimentos a partir das fontes selecionadas
+  const deriveOrigem = (): { tipo_origem: RoletaTipoOrigem; escopo: "especifico" | "todas_landing_pages" | "todas_landing_pages_e_plantao" } => {
+    if (formSrcLP && formSrcWPP) {
+      return { tipo_origem: "landing_page", escopo: "todas_landing_pages_e_plantao" };
+    }
+    if (formSrcLP && !formSrcWPP) {
+      return { tipo_origem: "landing_page", escopo: formLPScope === "todas" ? "todas_landing_pages" : "especifico" };
+    }
+    return { tipo_origem: "whatsapp_global", escopo: "especifico" };
+  };
 
   // Add member state
   const [addMemberRoletaId, setAddMemberRoletaId] = useState<string | null>(null);
