@@ -679,9 +679,11 @@ export function useConversationMessages(
       ? URL.createObjectURL(fileToUpload)
       : undefined;
 
+    const conversationSourceInstance = (conversation as any)?.source_instance || "personal";
     const optimisticMetadata: Record<string, unknown> = {
       ...(normalizedPayload.metadata || {}),
       client_id: clientId,
+      source_instance: conversationSourceInstance,
       ...(fileToUpload ? { file_name: fileToUpload.name, mime_type: fileToUpload.type, size_bytes: fileToUpload.size } : {}),
       ...(localPreviewUrl ? { file_url: localPreviewUrl, _local_preview: true } : {}),
     };
