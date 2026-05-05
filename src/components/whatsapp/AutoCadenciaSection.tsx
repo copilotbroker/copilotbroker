@@ -98,6 +98,16 @@ export function AutoCadenciaSection() {
           )}>
             {rule.cadence_type === "automatic" ? "⚡ Auto" : "📋 Manual"}
           </span>
+          {rule.cadence_type === "automatic" && (
+            <span className={cn(
+              "px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0",
+              rule.trigger_lead_source === "whatsapp" && "bg-purple-500/20 text-purple-300",
+              rule.trigger_lead_source === "both" && "bg-cyan-500/20 text-cyan-300",
+              (!rule.trigger_lead_source || rule.trigger_lead_source === "landing_page") && "bg-emerald-500/20 text-emerald-300",
+            )}>
+              {rule.trigger_lead_source === "whatsapp" ? "WPP" : rule.trigger_lead_source === "both" ? "LP+WPP" : "LP"}
+            </span>
+          )}
           {showSwitch && (
             rule.is_active ? (
               <span className="flex items-center gap-1 text-xs text-emerald-400 shrink-0">
