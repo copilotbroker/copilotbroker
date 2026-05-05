@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     // 1. Fetch lead (using effective ID after unification)
     const { data: lead, error: leadError } = await supabase
       .from("leads")
-      .select("id, broker_id, project_id, status, whatsapp, name")
+      .select("id, broker_id, project_id, status, whatsapp, name, source, lead_origin")
       .eq("id", effectiveLeadId)
       .single();
 
