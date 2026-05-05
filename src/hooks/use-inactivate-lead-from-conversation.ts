@@ -38,6 +38,19 @@ export function useInactivateLeadFromConversation() {
 
       if (error) throw error;
 
+      // Archive linked conversations so they leave the inbox list
+      await supabase
+        .from("conversations")
+        .update({ is_archived: true, status: "closed", updated_at: now } as any)
+        .eq("lead_id", leadId);
+
+      // Cancel pending scheduled WhatsApp messages for this lead
+      await supabase
+        .from("whatsapp_message_queue")
+        .update({ status: "cancelled", updated_at: now } as any)
+        .eq("lead_id", leadId)
+        .in("status", ["queued", "scheduled"]);
+
       const { data: { user } } = await supabase.auth.getUser();
       await supabase.from("lead_interactions").insert({
         lead_id: leadId,
