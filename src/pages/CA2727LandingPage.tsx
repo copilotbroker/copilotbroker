@@ -41,6 +41,29 @@ const CA2727LandingPage = () => {
     fetchProject();
   }, []);
 
+  useEffect(() => {
+    const fetchBroker = async () => {
+      if (!brokerSlug) {
+        setBrokerId(undefined);
+        return;
+      }
+      const { data } = await supabase
+        .from("brokers")
+        .select("id")
+        .eq("slug", brokerSlug)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (data) {
+        setBrokerId(data.id);
+      } else {
+        // broker slug inválido — volta para landing principal
+        const base = location.pathname.replace(/\/obrigado$/, "").split("/").slice(0, -1).join("/");
+        navigate(base || "/", { replace: true });
+      }
+    };
+    fetchBroker();
+  }, [brokerSlug, location.pathname, navigate]);
+
   const canonicalUrl = "https://onovocondominio.com.br/estanciavelha/ca2727";
 
   const residenceSchema = {
