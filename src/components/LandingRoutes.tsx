@@ -73,8 +73,11 @@ export function LandingRoutes({ prefix = "" }: { prefix?: string }) {
 
       {/* Estancia Velha */}
       <Route path={`${p}/estanciavelha`} element={<EstanciaVelhaTeaser />} />
-      <Route path={`${p}/estanciavelha/ca2727`} element={<CA2727LandingPage />} />
-      <Route path={`${p}/estanciavelha/ca2727/obrigado`} element={<CA2727LandingPage />} />
+      {/* CA2727 — exclusivo da Enove Imobiliária (somente prefixo org-scoped) */}
+      {prefix && <Route path={`${p}/estanciavelha/ca2727`} element={<CA2727LandingPage />} />}
+      {prefix && <Route path={`${p}/estanciavelha/ca2727/obrigado`} element={<CA2727LandingPage />} />}
+      {prefix && <Route path={`${p}/estanciavelha/ca2727/:brokerSlug`} element={<CA2727LandingPage />} />}
+      {prefix && <Route path={`${p}/estanciavelha/ca2727/:brokerSlug/obrigado`} element={<CA2727LandingPage />} />}
       <Route path={`${p}/estanciavelha/hantower`} element={<HantowerLandingPage />} />
       <Route path={`${p}/estanciavelha/sentower`} element={<SentowerLandingPage />} />
       <Route path={`${p}/estanciavelha/sentower/obrigado`} element={<SentowerLandingPage />} />

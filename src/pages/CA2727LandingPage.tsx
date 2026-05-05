@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/use-page-tracking";
@@ -16,8 +16,11 @@ import {
 
 const CA2727LandingPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { brokerSlug } = useParams<{ brokerSlug?: string }>();
   const submitted = location.pathname.endsWith("/obrigado");
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
+  const [brokerId, setBrokerId] = useState<string | undefined>(undefined);
 
   usePageTracking(projectId);
 
@@ -37,6 +40,29 @@ const CA2727LandingPage = () => {
 
     fetchProject();
   }, []);
+
+  useEffect(() => {
+    const fetchBroker = async () => {
+      if (!brokerSlug) {
+        setBrokerId(undefined);
+        return;
+      }
+      const { data } = await supabase
+        .from("brokers")
+        .select("id")
+        .eq("slug", brokerSlug)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (data) {
+        setBrokerId(data.id);
+      } else {
+        // broker slug inválido — volta para landing principal
+        const base = location.pathname.replace(/\/obrigado$/, "").split("/").slice(0, -1).join("/");
+        navigate(base || "/", { replace: true });
+      }
+    };
+    fetchBroker();
+  }, [brokerSlug, location.pathname, navigate]);
 
   const canonicalUrl = "https://onovocondominio.com.br/estanciavelha/ca2727";
 
@@ -102,7 +128,7 @@ const CA2727LandingPage = () => {
           <CA2727FeaturesSection />
           <CA2727LifestyleSection />
           <CA2727CTASection />
-          <CA2727FormSection projectId={projectId} submitted={submitted} />
+          <CA2727FormSection projectId={projectId} brokerId={brokerId} submitted={submitted} allowBrokerSelection={!brokerId} />
         </main>
         <CA2727FloatingCTA />
         <CA2727Footer />
