@@ -135,7 +135,7 @@ export function useAutoCadenciaRules() {
     }
   };
 
-  const updateRule = async (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean }>, steps?: AutoCadenciaStep[]) => {
+  const updateRule = async (id: string, data: Partial<{ name: string; project_id: string | null; is_active: boolean; trigger_lead_source: TriggerLeadSource }>, steps?: AutoCadenciaStep[]) => {
     setIsSaving(true);
     try {
       const { data: updated, error } = await (supabase
