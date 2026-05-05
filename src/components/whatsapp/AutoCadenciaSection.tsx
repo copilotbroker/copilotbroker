@@ -225,54 +225,64 @@ export function AutoCadenciaSection() {
             )}
           </div>
 
-          {/* 3. Campanhas Ativas */}
+          {/* 3. Campanhas (ativas + histórico) */}
           <div>
-            <SectionHeader icon={Megaphone} title="Campanhas Ativas" count={activeCampaigns.length} accent="text-purple-400" />
-            {activeCampaigns.length > 0 ? (
-              <div className="space-y-2">
-                {activeCampaigns.map((campaign) => (
-                  <CampaignCard
-                    key={campaign.id}
-                    campaign={campaign}
-                    onPause={(id) => pauseCampaign(id)}
-                    onResume={(id) => resumeCampaign(id)}
-                    onCancel={(id) => cancelCampaign(id)}
-                    onViewDetail={(c) => handleCampaignDetail(c)}
-                    onDuplicate={() => {}}
-                    onDelete={(id) => deleteCampaign(id)}
-                  />
-                ))}
+            <SectionHeader icon={Megaphone} title="Campanhas" count={bulkCampaigns.length} accent="text-purple-400" />
+
+            {/* Ativas */}
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Ativas ({activeCampaigns.length})
+                </span>
               </div>
-            ) : (
-              <EmptyHint text="Nenhuma campanha em andamento." />
+              {activeCampaigns.length > 0 ? (
+                <div className="space-y-2">
+                  {activeCampaigns.map((campaign) => (
+                    <CampaignCard
+                      key={campaign.id}
+                      campaign={campaign}
+                      onPause={(id) => pauseCampaign(id)}
+                      onResume={(id) => resumeCampaign(id)}
+                      onCancel={(id) => cancelCampaign(id)}
+                      onViewDetail={(c) => handleCampaignDetail(c)}
+                      onDuplicate={() => {}}
+                      onDelete={(id) => deleteCampaign(id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <EmptyHint text="Nenhuma campanha em andamento." />
+              )}
+            </div>
+
+            {/* Histórico (inativas) */}
+            {archivedCampaigns.length > 0 && (
+              <Collapsible open={showArchived} onOpenChange={setShowArchived}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#111114]">
+                    <Archive className="w-4 h-4" />
+                    Histórico ({archivedCampaigns.length})
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 mt-2">
+                  {archivedCampaigns.map((campaign) => (
+                    <CampaignCard
+                      key={campaign.id}
+                      campaign={campaign}
+                      onPause={(id) => pauseCampaign(id)}
+                      onResume={(id) => resumeCampaign(id)}
+                      onCancel={(id) => cancelCampaign(id)}
+                      onViewDetail={(c) => handleCampaignDetail(c)}
+                      onDuplicate={() => {}}
+                      onDelete={(id) => deleteCampaign(id)}
+                    />
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
-
-          {/* 4. Histórico de Campanhas */}
-          {archivedCampaigns.length > 0 && (
-            <Collapsible open={showArchived} onOpenChange={setShowArchived}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#111114] mt-2">
-                  <Archive className="w-4 h-4" />
-                  Histórico de Campanhas ({archivedCampaigns.length})
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2 mt-2">
-                {archivedCampaigns.map((campaign) => (
-                  <CampaignCard
-                    key={campaign.id}
-                    campaign={campaign}
-                    onPause={(id) => pauseCampaign(id)}
-                    onResume={(id) => resumeCampaign(id)}
-                    onCancel={(id) => cancelCampaign(id)}
-                    onViewDetail={(c) => handleCampaignDetail(c)}
-                    onDuplicate={() => {}}
-                    onDelete={(id) => deleteCampaign(id)}
-                  />
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
-          )}
         </>
       )}
 
