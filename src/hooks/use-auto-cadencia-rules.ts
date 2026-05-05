@@ -11,6 +11,7 @@ export interface AutoCadenciaStep {
 }
 
 export type CadenceType = 'manual' | 'automatic';
+export type TriggerLeadSource = 'landing_page' | 'whatsapp' | 'both';
 
 export interface BrokerAutoCadenciaRule {
   id: string;
@@ -19,6 +20,7 @@ export interface BrokerAutoCadenciaRule {
   project_id: string | null;
   is_active: boolean;
   cadence_type: CadenceType;
+  trigger_lead_source: TriggerLeadSource;
   created_at: string;
   updated_at: string;
   project?: { id: string; name: string } | null;
