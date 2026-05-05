@@ -336,21 +336,64 @@ export function AutoCadenciaRuleEditor({
       </div>
 
       {wizardType === "automatic" && (
-        <div className="space-y-2">
-          <Label className="text-slate-300">Empreendimento</Label>
-          <Select value={projectId} onValueChange={setProjectId}>
-            <SelectTrigger className="bg-[#141417] border-[#2a2a2e] text-white min-h-[44px]">
-              <SelectValue placeholder="Selecione o empreendimento" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
-              <SelectItem value="all" className="text-white">🌐 Todos os empreendimentos</SelectItem>
-              {brokerProjects.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>
+        <>
+          <div className="space-y-2">
+            <Label className="text-slate-300">Disparar para leads vindos de</Label>
+            <RadioGroup
+              value={triggerLeadSource}
+              onValueChange={(v) => setTriggerLeadSource(v as TriggerLeadSource)}
+              className="space-y-2"
+            >
+              {[
+                { value: "landing_page", label: "Landing Page", desc: "Leads cadastrados pelas páginas de captura." },
+                { value: "whatsapp", label: "WhatsApp", desc: "Apenas leads vindos do Plantão (WhatsApp Global)." },
+                { value: "both", label: "WhatsApp e Landing Page", desc: "Dispara para leads de ambas as origens." },
+              ].map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                    triggerLeadSource === opt.value
+                      ? "border-emerald-500/50 bg-emerald-500/5"
+                      : "border-[#2a2a2e] bg-[#141417] hover:border-[#3a3a3e]"
+                  }`}
+                >
+                  <RadioGroupItem value={opt.value} className="mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white">{opt.label}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{opt.desc}</p>
+                  </div>
+                </label>
               ))}
-            </SelectContent>
-          </Select>
-          {projectHasRule && <p className="text-xs text-red-400">Já existe uma cadência automática para este empreendimento</p>}
-        </div>
+            </RadioGroup>
+          </div>
+
+          {triggerLeadSource === "landing_page" ? (
+            <div className="space-y-2">
+              <Label className="text-slate-300">Empreendimento</Label>
+              <Select value={projectId} onValueChange={setProjectId}>
+                <SelectTrigger className="bg-[#141417] border-[#2a2a2e] text-white min-h-[44px]">
+                  <SelectValue placeholder="Selecione o empreendimento" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1e1e22] border-[#2a2a2e]">
+                  <SelectItem value="all" className="text-white">🌐 Todos os empreendimentos</SelectItem>
+                  {brokerProjects.map((p) => (
+                    <SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {projectHasRule && <p className="text-xs text-red-400">Já existe uma cadência automática de Landing Page para este empreendimento</p>}
+            </div>
+          ) : (
+            <Alert className="bg-[#141417] border-[#2a2a2e]">
+              <AlertDescription className="text-xs text-slate-400">
+                Leads vindos do WhatsApp não têm empreendimento identificado, então a cadência será aplicada para todos.
+              </AlertDescription>
+            </Alert>
+          )}
+          {projectHasRule && triggerLeadSource !== "landing_page" && (
+            <p className="text-xs text-red-400">Já existe uma cadência automática de {triggerLeadSource === "whatsapp" ? "WhatsApp" : "WhatsApp+LP"} configurada</p>
+          )}
+        </>
       )}
 
       {wizardType === "campaign" && renderCampaignFilters()}
