@@ -262,254 +262,291 @@ const RoletaManagement = () => {
             setFormPausaInicio("21:00");
             setFormPausaFim("09:00");
             setFormSelectedProjects([]);
-            setFormTipoOrigem("landing_page");
+            setFormSrcLP(true);
+            setFormSrcWPP(true);
+            setFormLPScope("todas");
             setFormModoDistribuicao("fila");
-            setFormEscopoEmpreendimentos("todas_landing_pages_e_plantao");
           }
         }}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground hover:brightness-110">
-              <Plus className="w-5 h-5 mr-2" />
+            <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20">
+              <Plus className="w-5 h-5" />
               Nova Roleta
-            </Button>
+            </button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nova Roleta</DialogTitle>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0f0f12] border-[#2a2a2e]">
+            <DialogHeader className="pb-4 border-b border-[#1e1e22]">
+              <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
+                  <Shuffle className="w-4 h-4 text-primary" />
+                </div>
+                Nova Roleta
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground pl-11">Configure como os leads serão distribuídos entre os corretores.</p>
             </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div>
-                <Label>Nome da Roleta</Label>
+
+            <div className="space-y-6 mt-6">
+              {/* SECTION: Identificação */}
+              <section>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Identificação</h3>
+                <Label className="text-xs text-muted-foreground">Nome da Roleta</Label>
                 <Input
                   value={formNome}
                   onChange={(e) => setFormNome(e.target.value)}
                   placeholder="Ex: Roleta GoldenView"
-                  className="bg-[#141417] border-[#2a2a2e]"
+                  className="mt-1.5 bg-[#141417] border-[#2a2a2e] h-11"
                 />
-              </div>
-              {/* Campo "Líder Responsável" removido — leads não são mais atribuídos automaticamente.
-                  Quando ninguém atende, qualquer líder/gerente/admin pode iniciar o atendimento. */}
-              <div>
-                <div className="flex items-center justify-between">
-                  <Label>Tempo máximo para atendimento</Label>
-                  <Switch
-                    checked={formTimeoutAtivo}
-                    onCheckedChange={setFormTimeoutAtivo}
-                  />
+              </section>
+
+              {/* SECTION: Origem dos leads */}
+              <section>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Origem dos leads</h3>
+                <p className="text-xs text-muted-foreground mb-3">Selecione uma ou mais fontes que alimentam esta roleta.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Card Landing Pages */}
+                  <button
+                    type="button"
+                    onClick={() => setFormSrcLP(!formSrcLP)}
+                    className={cn(
+                      "relative text-left p-4 rounded-xl border-2 transition-all group overflow-hidden",
+                      formSrcLP
+                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                        : "border-[#2a2a2e] bg-[#141417] hover:border-[#3a3a3e]"
+                    )}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className={cn(
+                        "w-9 h-9 rounded-lg flex items-center justify-center transition-colors",
+                        formSrcLP ? "bg-primary/20" : "bg-[#1e1e22]"
+                      )}>
+                        <Building2 className={cn("w-4 h-4", formSrcLP ? "text-primary" : "text-muted-foreground")} />
+                      </div>
+                      <Checkbox checked={formSrcLP} className="pointer-events-none" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground">Landing Pages</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Leads de empreendimentos institucionais.</p>
+                  </button>
+
+                  {/* Card WhatsApp Global */}
+                  <button
+                    type="button"
+                    onClick={() => setFormSrcWPP(!formSrcWPP)}
+                    className={cn(
+                      "relative text-left p-4 rounded-xl border-2 transition-all group overflow-hidden",
+                      formSrcWPP
+                        ? "border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10"
+                        : "border-[#2a2a2e] bg-[#141417] hover:border-[#3a3a3e]"
+                    )}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className={cn(
+                        "w-9 h-9 rounded-lg flex items-center justify-center transition-colors",
+                        formSrcWPP ? "bg-emerald-500/20" : "bg-[#1e1e22]"
+                      )}>
+                        <MessageCircle className={cn("w-4 h-4", formSrcWPP ? "text-emerald-400" : "text-muted-foreground")} />
+                      </div>
+                      <Checkbox checked={formSrcWPP} className="pointer-events-none" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground">WhatsApp Global</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Leads do WhatsApp do plantão.</p>
+                  </button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formTimeoutAtivo
-                    ? "Lead será redistribuído automaticamente se não atendido. A notificação WhatsApp não exibirá os dados do lead."
-                    : "Sem prazo para atendimento. A notificação WhatsApp incluirá nome e telefone do lead."}
-                </p>
-                {formTimeoutAtivo && (
-                  <>
-                    <Label className="mt-3 block">Tempo de Reserva</Label>
-                    <div className="flex items-center gap-3 mt-2">
-                      <Slider
-                        value={[formTimeout]}
-                        onValueChange={([v]) => setFormTimeout(v)}
-                        min={1}
-                        max={60}
-                        step={1}
-                        className="flex-1"
-                      />
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Input
-                          type="number"
-                          min={1}
-                          max={60}
-                          value={formTimeout}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value, 10);
-                            if (!isNaN(val) && val >= 1 && val <= 60) {
-                              setFormTimeout(val);
-                            }
-                          }}
-                          className="w-16 h-8 text-xs text-center bg-[#141417] border-[#2a2a2e]"
-                        />
-                        <span className="text-xs text-muted-foreground">min</span>
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <Label className="text-xs">Horário sem transferência</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Select value={formPausaInicio} onValueChange={setFormPausaInicio}>
-                          <SelectTrigger className="w-24 bg-[#141417] border-[#2a2a2e] h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 24 }, (_, i) => {
-                              const h = String(i).padStart(2, "0") + ":00";
-                              return <SelectItem key={h} value={h}>{h}</SelectItem>;
-                            })}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-xs text-muted-foreground">até</span>
-                        <Select value={formPausaFim} onValueChange={setFormPausaFim}>
-                          <SelectTrigger className="w-24 bg-[#141417] border-[#2a2a2e] h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 24 }, (_, i) => {
-                              const h = String(i).padStart(2, "0") + ":00";
-                              return <SelectItem key={h} value={h}>{h}</SelectItem>;
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">Nesse horário, leads não serão redistribuídos.</p>
-                    </div>
-                  </>
+
+                {!formSrcLP && !formSrcWPP && (
+                  <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Selecione pelo menos uma origem.
+                  </p>
                 )}
-              </div>
-              <div>
-                <Label>Origem dos leads</Label>
-                <RadioGroup value={formTipoOrigem} onValueChange={(v) => setFormTipoOrigem(v as RoletaTipoOrigem)} className="mt-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <RadioGroupItem value="landing_page" />
-                    <Building2 className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-foreground">Landing Pages (empreendimentos)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <RadioGroupItem value="whatsapp_global" />
-                    <MessageCircle className="w-4 h-4 text-emerald-500" />
-                    <span className="text-sm text-foreground">WhatsApp Global (plantão)</span>
-                  </label>
-                </RadioGroup>
-              </div>
-              {formTipoOrigem === "landing_page" && (
-                <div className="space-y-3">
-                  <div>
-                    <Label>Escopo de empreendimentos</Label>
+
+                {/* Escopo de empreendimentos — apenas se LP estiver ativo */}
+                {formSrcLP && (
+                  <div className="mt-4 p-4 rounded-xl bg-[#141417] border border-[#1e1e22]">
+                    <Label className="text-xs text-muted-foreground">Escopo das Landing Pages</Label>
                     <RadioGroup
-                      value={formEscopoEmpreendimentos}
-                      onValueChange={(v) => setFormEscopoEmpreendimentos(v as "especifico" | "todas_landing_pages" | "todas_landing_pages_e_plantao")}
-                      className="mt-2"
+                      value={formLPScope}
+                      onValueChange={(v) => setFormLPScope(v as "todas" | "especifico")}
+                      className="mt-3 space-y-2"
                     >
-                      <label className="flex items-start gap-2 cursor-pointer">
-                        <RadioGroupItem value="todas_landing_pages_e_plantao" className="mt-0.5" />
+                      <label className={cn(
+                        "flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-colors",
+                        formLPScope === "todas" ? "border-primary/50 bg-primary/5" : "border-[#2a2a2e] hover:border-[#3a3a3e]"
+                      )}>
+                        <RadioGroupItem value="todas" className="mt-0.5" />
                         <div>
-                          <span className="text-sm text-foreground font-medium">
-                            Todas as Landing Pages + WhatsApp do Plantão
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            Recomendado — captura leads de todos os empreendimentos institucionais e também do WhatsApp do Plantão. Apenas uma roleta ativa pode usar este escopo.
-                          </p>
+                          <span className="text-sm text-foreground font-medium">Todas as Landing Pages</span>
+                          <p className="text-[11px] text-muted-foreground">Inclui automaticamente todos os empreendimentos institucionais, presentes e futuros.</p>
                         </div>
                       </label>
-                      <label className="flex items-start gap-2 cursor-pointer mt-2">
-                        <RadioGroupItem value="todas_landing_pages" className="mt-0.5" />
-                        <div>
-                          <span className="text-sm text-foreground font-medium">
-                            Todas as Landing Pages da Imobiliária
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            Inclui automaticamente todos os empreendimentos institucionais, presentes e futuros (sem WhatsApp do Plantão).
-                          </p>
-                        </div>
-                      </label>
-                      <label className="flex items-start gap-2 cursor-pointer mt-2">
+                      <label className={cn(
+                        "flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-colors",
+                        formLPScope === "especifico" ? "border-primary/50 bg-primary/5" : "border-[#2a2a2e] hover:border-[#3a3a3e]"
+                      )}>
                         <RadioGroupItem value="especifico" className="mt-0.5" />
                         <div>
-                          <span className="text-sm text-foreground font-medium">Selecionar empreendimentos específicos</span>
-                          <p className="text-xs text-muted-foreground">
-                            Vincular manualmente cada empreendimento que entra nesta roleta.
-                          </p>
+                          <span className="text-sm text-foreground font-medium">Empreendimentos específicos</span>
+                          <p className="text-[11px] text-muted-foreground">Selecionar manualmente quais empreendimentos entram nesta roleta.</p>
                         </div>
                       </label>
                     </RadioGroup>
-                  </div>
 
-                  {formEscopoEmpreendimentos === "especifico" && (
-                    <div>
-                      <Label>Empreendimentos</Label>
-                      <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
-                        {projects.length === 0 ? (
-                          <p className="text-xs text-muted-foreground">Nenhum empreendimento disponível.</p>
-                        ) : (
-                          projects.map(p => (
-                            <label key={p.id} className="flex items-center gap-2 cursor-pointer">
-                              <Checkbox
-                                checked={formSelectedProjects.includes(p.id)}
-                                onCheckedChange={(checked) => {
-                                  setFormSelectedProjects(prev =>
-                                    checked
-                                      ? [...prev, p.id]
-                                      : prev.filter(id => id !== p.id)
-                                  );
-                                }}
-                              />
-                              <span className="text-sm text-foreground">{p.name}</span>
-                              <span className="text-xs text-muted-foreground">({p.city})</span>
-                            </label>
-                          ))
-                        )}
+                    {formLPScope === "especifico" && (
+                      <div className="mt-3 pt-3 border-t border-[#1e1e22]">
+                        <Label className="text-xs text-muted-foreground">Empreendimentos vinculados</Label>
+                        <div className="space-y-1.5 mt-2 max-h-40 overflow-y-auto pr-1">
+                          {projects.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">Nenhum empreendimento disponível.</p>
+                          ) : (
+                            projects.map(p => (
+                              <label key={p.id} className="flex items-center gap-2 cursor-pointer p-2 rounded-md hover:bg-[#1e1e22]">
+                                <Checkbox
+                                  checked={formSelectedProjects.includes(p.id)}
+                                  onCheckedChange={(checked) => {
+                                    setFormSelectedProjects(prev =>
+                                      checked ? [...prev, p.id] : prev.filter(id => id !== p.id)
+                                    );
+                                  }}
+                                />
+                                <span className="text-sm text-foreground">{p.name}</span>
+                                <span className="text-xs text-muted-foreground">({p.city})</span>
+                              </label>
+                            ))
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )}
+              </section>
 
-                  {formEscopoEmpreendimentos === "todas_landing_pages" && (
-                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
-                      <p className="text-xs text-muted-foreground">
-                        <Building2 className="w-3 h-3 inline mr-1 text-primary" />
-                        Esta roleta receberá automaticamente leads de qualquer empreendimento institucional. Apenas uma roleta ativa pode usar este escopo.
-                      </p>
-                    </div>
-                  )}
-
-                  {formEscopoEmpreendimentos === "todas_landing_pages_e_plantao" && (
-                    <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                      <p className="text-xs text-muted-foreground">
-                        <MessageCircle className="w-3 h-3 inline mr-1 text-emerald-500" />
-                        Esta roleta receberá automaticamente leads das landing pages institucionais <strong>e</strong> do WhatsApp do Plantão. Apenas uma roleta ativa pode usar este escopo.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-              {formTipoOrigem === "whatsapp_global" && (
-                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                  <p className="text-xs text-muted-foreground">
-                    <MessageCircle className="w-3 h-3 inline mr-1 text-emerald-500" />
-                    Leads recebidos pela instância global do WhatsApp serão distribuídos por esta roleta.
-                  </p>
-                </div>
-              )}
-              <div>
-                <Label>Modo de distribuição</Label>
-                <RadioGroup value={formModoDistribuicao} onValueChange={(v) => setFormModoDistribuicao(v as "fila" | "disputa")} className="mt-2">
-                  <label className="flex items-start gap-2 cursor-pointer">
+              {/* SECTION: Modo de distribuição */}
+              <section>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Modo de distribuição</h3>
+                <RadioGroup
+                  value={formModoDistribuicao}
+                  onValueChange={(v) => setFormModoDistribuicao(v as "fila" | "disputa")}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                >
+                  <label className={cn(
+                    "flex items-start gap-2.5 p-4 rounded-xl border-2 cursor-pointer transition-all",
+                    formModoDistribuicao === "fila"
+                      ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                      : "border-[#2a2a2e] bg-[#141417] hover:border-[#3a3a3e]"
+                  )}>
                     <RadioGroupItem value="fila" className="mt-0.5" />
                     <div>
-                      <span className="text-sm text-foreground font-medium flex items-center gap-1">
+                      <span className="text-sm text-foreground font-semibold flex items-center gap-1.5">
                         <Target className="w-3.5 h-3.5 text-primary" />
                         Fila (round-robin)
                       </span>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        O lead aparece apenas para o corretor da vez. Se não atender no tempo, passa para o próximo.
-                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-1">O lead aparece para o corretor da vez. Se não atender, passa para o próximo.</p>
                     </div>
                   </label>
-                  <label className="flex items-start gap-2 cursor-pointer mt-2">
+                  <label className={cn(
+                    "flex items-start gap-2.5 p-4 rounded-xl border-2 cursor-pointer transition-all",
+                    formModoDistribuicao === "disputa"
+                      ? "border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10"
+                      : "border-[#2a2a2e] bg-[#141417] hover:border-[#3a3a3e]"
+                  )}>
                     <RadioGroupItem value="disputa" className="mt-0.5" />
                     <div>
-                      <span className="text-sm text-foreground font-medium flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-amber-500" />
-                        Disputa (quem pegar primeiro)
+                      <span className="text-sm text-foreground font-semibold flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-amber-400" />
+                        Disputa
                       </span>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        O lead aparece para todos os corretores online em "Pré-Atendimento". Quem clicar em <strong>Iniciar Atendimento</strong> primeiro, atende.
-                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-1">O lead aparece para todos os corretores online. Quem clicar primeiro, atende.</p>
                     </div>
                   </label>
                 </RadioGroup>
-              </div>
-              <div className="flex gap-3 pt-4">
+              </section>
+
+              {/* SECTION: Tempo de atendimento */}
+              <section>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Tempo de atendimento</h3>
+                <div className="p-4 rounded-xl bg-[#141417] border border-[#1e1e22] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm text-foreground flex items-center gap-1.5">
+                        <Timer className="w-3.5 h-3.5 text-amber-400" />
+                        Tempo máximo para atendimento
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {formTimeoutAtivo
+                          ? "Lead será redistribuído se não atendido. Notificação WhatsApp sem dados do lead."
+                          : "Sem prazo. Notificação WhatsApp inclui nome e telefone."}
+                      </p>
+                    </div>
+                    <Switch checked={formTimeoutAtivo} onCheckedChange={setFormTimeoutAtivo} />
+                  </div>
+
+                  {formTimeoutAtivo && (
+                    <div className="pt-3 border-t border-[#1e1e22] space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Tempo de Reserva</Label>
+                        <div className="flex items-center gap-3 mt-2">
+                          <Slider
+                            value={[formTimeout]}
+                            onValueChange={([v]) => setFormTimeout(v)}
+                            min={1}
+                            max={60}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Input
+                              type="number"
+                              min={1}
+                              max={60}
+                              value={formTimeout}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                if (!isNaN(val) && val >= 1 && val <= 60) setFormTimeout(val);
+                              }}
+                              className="w-16 h-8 text-xs text-center bg-[#0e0e11] border-[#2a2a2e]"
+                            />
+                            <span className="text-xs text-muted-foreground">min</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Horário sem transferência</Label>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Select value={formPausaInicio} onValueChange={setFormPausaInicio}>
+                            <SelectTrigger className="w-24 bg-[#0e0e11] border-[#2a2a2e] h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 24 }, (_, i) => {
+                                const h = String(i).padStart(2, "0") + ":00";
+                                return <SelectItem key={h} value={h}>{h}</SelectItem>;
+                              })}
+                            </SelectContent>
+                          </Select>
+                          <span className="text-xs text-muted-foreground">até</span>
+                          <Select value={formPausaFim} onValueChange={setFormPausaFim}>
+                            <SelectTrigger className="w-24 bg-[#0e0e11] border-[#2a2a2e] h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 24 }, (_, i) => {
+                                const h = String(i).padStart(2, "0") + ":00";
+                                return <SelectItem key={h} value={h}>{h}</SelectItem>;
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-1">Nesse horário leads não serão redistribuídos.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <div className="flex gap-3 pt-4 border-t border-[#1e1e22]">
                 <DialogClose asChild>
-                  <Button variant="outline" className="flex-1">Cancelar</Button>
+                  <Button variant="outline" className="flex-1 border-[#2a2a2e] hover:bg-[#1e1e22]">Cancelar</Button>
                 </DialogClose>
-                <Button onClick={handleCreate} className="flex-1 bg-primary text-primary-foreground">
+                <Button
+                  onClick={handleCreate}
+                  disabled={!formSrcLP && !formSrcWPP}
+                  className="flex-1 bg-primary text-primary-foreground hover:brightness-110 shadow-lg shadow-primary/20"
+                >
                   Criar Roleta
                 </Button>
               </div>
