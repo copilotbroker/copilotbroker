@@ -73,7 +73,108 @@ export function AutoCadenciaSection() {
     );
   }
 
-  const hasContent = rules.length > 0 || activeCampaigns.length > 0 || archivedCampaigns.length > 0;
+  const automaticRules = rules.filter((r) => r.cadence_type === "automatic");
+  const manualRules = rules.filter((r) => r.cadence_type !== "automatic");
+  const hasContent =
+    rules.length > 0 || activeCampaigns.length > 0 || archivedCampaigns.length > 0;
+
+  const renderRuleCard = (rule: BrokerAutoCadenciaRule, showSwitch: boolean) => (
+    <div
+      key={rule.id}
+      className={cn(
+        "p-3 sm:p-4 rounded-xl border transition-all cursor-pointer active:scale-[0.99]",
+        rule.is_active && showSwitch
+          ? "bg-[#111114] border-emerald-500/30"
+          : "bg-[#111114] border-[#1e1e22]",
+        showSwitch && !rule.is_active && "opacity-60"
+      )}
+      onClick={() => handleEdit(rule)}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          <span className={cn(
+            "px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide truncate max-w-[160px] sm:max-w-[200px]",
+            rule.project_id ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-500/20 text-slate-300"
+          )}>
+            {rule.name || rule.project?.name || "Cadência"}
+          </span>
+          <span className={cn(
+            "px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0",
+            rule.cadence_type === "automatic" ? "bg-amber-500/20 text-amber-400" : "bg-blue-500/20 text-blue-400"
+          )}>
+            {rule.cadence_type === "automatic" ? "⚡ Auto" : "📋 Manual"}
+          </span>
+          {showSwitch && (
+            rule.is_active ? (
+              <span className="flex items-center gap-1 text-xs text-emerald-400 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Ativo
+              </span>
+            ) : (
+              <span className="text-xs text-slate-500 shrink-0">Inativo</span>
+            )
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {showSwitch && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <Switch checked={rule.is_active} onCheckedChange={() => toggleRuleActive(rule.id, !rule.is_active)} className="data-[state=checked]:bg-emerald-500" />
+            </div>
+          )}
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(rule); }} className="text-slate-400 hover:text-white h-8 w-8 p-0">
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(rule.id); }} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8 p-0">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Excluir</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+      <p className="text-xs text-slate-500 mt-2">
+        {rule.steps_count && rule.steps_count > 0 ? rule.steps_count : 7} etapas
+        {rule.project?.name && ` · ${rule.project.name}`}
+      </p>
+    </div>
+  );
+
+  const SectionHeader = ({
+    icon: Icon,
+    title,
+    count,
+    accent,
+  }: { icon: typeof Zap; title: string; count: number; accent: string }) => (
+    <div className="flex items-center gap-2 mt-2 mb-2">
+      <Icon className={cn("w-4 h-4", accent)} />
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">{title}</span>
+      <span className="text-xs text-slate-500">({count})</span>
+    </div>
+  );
+
+  const EmptyHint = ({ text }: { text: string }) => (
+    <div className="px-3 py-3 rounded-lg border border-dashed border-[#1e1e22] text-xs text-slate-500">
+      {text}
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -85,7 +186,7 @@ export function AutoCadenciaSection() {
           </div>
           <div className="min-w-0">
             <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">Cadências de Follow-up</h2>
-            <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Configure sequências de follow-up para seus leads</p>
+            <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Automáticas, manuais e campanhas em lote</p>
           </div>
         </div>
         <Button onClick={handleCreateNew} className="gap-2 w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700">
@@ -94,7 +195,6 @@ export function AutoCadenciaSection() {
         </Button>
       </div>
 
-      {/* Empty state */}
       {!hasContent && (
         <div className="text-center py-8 bg-[#111114] rounded-xl border border-[#1e1e22]">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-3">
@@ -109,125 +209,77 @@ export function AutoCadenciaSection() {
         </div>
       )}
 
-      {/* Cadence rules list */}
-      {rules.length > 0 && (
-        <div className="space-y-2">
-          {rules.map((rule) => (
-            <div
-              key={rule.id}
-              className={cn(
-                "p-3 sm:p-4 rounded-xl border transition-all cursor-pointer active:scale-[0.99]",
-                rule.is_active ? "bg-[#111114] border-emerald-500/30" : "bg-[#111114] border-[#1e1e22] opacity-60"
-              )}
-              onClick={() => handleEdit(rule)}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                  <span className={cn(
-                    "px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide truncate max-w-[160px] sm:max-w-[200px]",
-                    rule.project_id ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-500/20 text-slate-300"
-                  )}>
-                    {rule.name || rule.project?.name || "Cadência"}
-                  </span>
-                  <span className={cn(
-                    "px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0",
-                    rule.cadence_type === "automatic" ? "bg-amber-500/20 text-amber-400" : "bg-blue-500/20 text-blue-400"
-                  )}>
-                    {rule.cadence_type === "automatic" ? "⚡ Auto" : "📋 Manual"}
-                  </span>
-                  {rule.cadence_type === "automatic" && (
-                    rule.is_active ? (
-                      <span className="flex items-center gap-1 text-xs text-emerald-400 shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Ativo
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-500 shrink-0">Inativo</span>
-                    )
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {rule.cadence_type === "automatic" && (
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <Switch checked={rule.is_active} onCheckedChange={() => toggleRuleActive(rule.id, !rule.is_active)} className="data-[state=checked]:bg-emerald-500" />
-                    </div>
-                  )}
-                  <TooltipProvider delayDuration={300}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(rule); }} className="text-slate-400 hover:text-white h-8 w-8 p-0">
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Editar</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <TooltipProvider delayDuration={300}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(rule.id); }} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8 p-0">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Excluir</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </div>
-              <p className="text-xs text-slate-500 mt-2">
-                {rule.steps_count && rule.steps_count > 0 ? rule.steps_count : 7} etapas
-                {rule.project?.name && ` · ${rule.project.name}`}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Active Campaigns */}
-      {activeCampaigns.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mt-4 mb-1">
-            <Megaphone className="w-4 h-4 text-purple-400" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Campanhas Ativas</span>
+      {hasContent && (
+        <>
+          {/* 1. Cadências Automáticas */}
+          <div>
+            <SectionHeader icon={Zap} title="Cadências Automáticas" count={automaticRules.length} accent="text-amber-400" />
+            {automaticRules.length > 0 ? (
+              <div className="space-y-2">{automaticRules.map((r) => renderRuleCard(r, true))}</div>
+            ) : (
+              <EmptyHint text="Nenhuma cadência automática. Crie uma para disparar follow-ups quando um novo lead for atribuído." />
+            )}
           </div>
-          {activeCampaigns.map((campaign) => (
-            <CampaignCard
-              key={campaign.id}
-              campaign={campaign}
-              onPause={(id) => pauseCampaign(id)}
-              onResume={(id) => resumeCampaign(id)}
-              onCancel={(id) => cancelCampaign(id)}
-              onViewDetail={(c) => handleCampaignDetail(c)}
-              onDuplicate={() => {}}
-              onDelete={(id) => deleteCampaign(id)}
-            />
-          ))}
-        </div>
-      )}
 
-      {/* Archived Campaigns */}
-      {archivedCampaigns.length > 0 && (
-        <Collapsible open={showArchived} onOpenChange={setShowArchived}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#111114] mt-2">
-              <Archive className="w-4 h-4" />
-              Histórico ({archivedCampaigns.length})
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2 mt-2">
-            {archivedCampaigns.map((campaign) => (
-              <CampaignCard
-                key={campaign.id}
-                campaign={campaign}
-                onPause={(id) => pauseCampaign(id)}
-                onResume={(id) => resumeCampaign(id)}
-                onCancel={(id) => cancelCampaign(id)}
-                onViewDetail={(c) => handleCampaignDetail(c)}
-                onDuplicate={() => {}}
-                onDelete={(id) => deleteCampaign(id)}
-              />
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
+          {/* 2. Cadências Cadastradas (manuais) */}
+          <div>
+            <SectionHeader icon={Pencil} title="Cadências Cadastradas" count={manualRules.length} accent="text-blue-400" />
+            {manualRules.length > 0 ? (
+              <div className="space-y-2">{manualRules.map((r) => renderRuleCard(r, false))}</div>
+            ) : (
+              <EmptyHint text="Cadências aplicadas manualmente nos leads (pela página do lead) aparecem aqui." />
+            )}
+          </div>
+
+          {/* 3. Campanhas Ativas */}
+          <div>
+            <SectionHeader icon={Megaphone} title="Campanhas Ativas" count={activeCampaigns.length} accent="text-purple-400" />
+            {activeCampaigns.length > 0 ? (
+              <div className="space-y-2">
+                {activeCampaigns.map((campaign) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    onPause={(id) => pauseCampaign(id)}
+                    onResume={(id) => resumeCampaign(id)}
+                    onCancel={(id) => cancelCampaign(id)}
+                    onViewDetail={(c) => handleCampaignDetail(c)}
+                    onDuplicate={() => {}}
+                    onDelete={(id) => deleteCampaign(id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyHint text="Nenhuma campanha em andamento." />
+            )}
+          </div>
+
+          {/* 4. Histórico de Campanhas */}
+          {archivedCampaigns.length > 0 && (
+            <Collapsible open={showArchived} onOpenChange={setShowArchived}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#111114] mt-2">
+                  <Archive className="w-4 h-4" />
+                  Histórico de Campanhas ({archivedCampaigns.length})
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2 mt-2">
+                {archivedCampaigns.map((campaign) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    onPause={(id) => pauseCampaign(id)}
+                    onResume={(id) => resumeCampaign(id)}
+                    onCancel={(id) => cancelCampaign(id)}
+                    onViewDetail={(c) => handleCampaignDetail(c)}
+                    onDuplicate={() => {}}
+                    onDelete={(id) => deleteCampaign(id)}
+                  />
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </>
       )}
 
       {/* Editor */}
