@@ -89,7 +89,7 @@ export function useBrokerProjects(brokerId?: string | null) {
         const item: BrokerProject = {
           id: bp.id,
           project,
-          url: buildUrl(project, broker.slug, brokerId),
+          url: buildUrl(project, broker.slug, brokerId, broker.organization_slug),
         };
         if (project.created_by_broker_id === brokerId) {
           ownProjects.push(item);
@@ -214,7 +214,7 @@ export function useBrokerProjects(brokerId?: string | null) {
       if (error) throw error;
 
       setBroker((prev) => prev ? { ...prev, slug: newSlug } : null);
-      const rebuildUrls = (list: BrokerProject[]) => list.map((bp) => ({ ...bp, url: buildUrl(bp.project, newSlug, brokerId) }));
+      const rebuildUrls = (list: BrokerProject[]) => list.map((bp) => ({ ...bp, url: buildUrl(bp.project, newSlug, brokerId, broker?.organization_slug) }));
       setBrokerProjects(rebuildUrls);
       setMyCreatedProjects(rebuildUrls);
 
@@ -237,7 +237,7 @@ export function useBrokerProjects(brokerId?: string | null) {
 
   const getProjectUrl = (project: Project) => {
     if (!broker) return "";
-    return buildUrl(project, broker.slug, brokerId);
+    return buildUrl(project, broker.slug, brokerId, broker.organization_slug);
   };
 
   const unassociatedProjects = availableProjects.filter(
