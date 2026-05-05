@@ -212,9 +212,14 @@ export function AutoCadenciaRuleEditor({
   const projectHasRule = useMemo(() => {
     if (editingRule) return false;
     if (wizardType !== "automatic") return false;
-    const target = projectId === "all" ? null : projectId;
-    return rules.some(r => r.project_id === target && r.cadence_type === "automatic");
-  }, [projectId, rules, editingRule, wizardType]);
+    // For WhatsApp/both sources, project_id is forced to null
+    const target = (triggerLeadSource !== "landing_page") ? null : (projectId === "all" ? null : projectId);
+    return rules.some(r =>
+      r.project_id === target &&
+      r.cadence_type === "automatic" &&
+      (r.trigger_lead_source || "landing_page") === triggerLeadSource
+    );
+  }, [projectId, rules, editingRule, wizardType, triggerLeadSource]);
 
   // Step helpers
   const addStep = () => setSteps(prev => [...prev, { messageContent: "", delayMinutes: 1440, sendIfReplied: false }]);
