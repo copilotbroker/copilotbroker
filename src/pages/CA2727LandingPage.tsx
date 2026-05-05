@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/use-page-tracking";
@@ -16,8 +16,11 @@ import {
 
 const CA2727LandingPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { brokerSlug } = useParams<{ brokerSlug?: string }>();
   const submitted = location.pathname.endsWith("/obrigado");
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
+  const [brokerId, setBrokerId] = useState<string | undefined>(undefined);
 
   usePageTracking(projectId);
 
