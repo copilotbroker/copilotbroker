@@ -128,7 +128,7 @@ const CA2727LandingPage = () => {
           <CA2727FeaturesSection />
           <CA2727LifestyleSection />
           <CA2727CTASection />
-          <CA2727FormSection projectId={projectId} submitted={submitted} />
+          <CA2727FormSection projectId={projectId} brokerId={brokerId} submitted={submitted} allowBrokerSelection={!brokerId} />
         </main>
         <CA2727FloatingCTA />
         <CA2727Footer />
