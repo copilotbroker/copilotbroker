@@ -84,6 +84,7 @@ export function AutoCadenciaRuleEditor({
   const [brokerProjects, setBrokerProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectId, setProjectId] = useState<string>("all");
+  const [triggerLeadSource, setTriggerLeadSource] = useState<TriggerLeadSource>("landing_page");
 
   // Campaign fields
   const [selectedStatuses, setSelectedStatuses] = useState<LeadStatus[]>([]);
