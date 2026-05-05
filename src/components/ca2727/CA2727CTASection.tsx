@@ -59,7 +59,7 @@ const CA2727CTASection = () => {
               ))}
             </div>
 
-            <p className="text-xl sm:text-2xl font-serif font-bold text-white drop-shadow-lg mb-4">
+            <p className="text-4xl sm:text-5xl md:text-6xl font-serif font-bold text-gold-gradient drop-shadow-lg mb-4 leading-tight">
               R$ 3.900.000
             </p>
 
