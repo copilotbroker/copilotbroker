@@ -100,7 +100,7 @@ export function useAutoCadenciaRules() {
     }));
   };
 
-  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; cadence_type?: CadenceType; steps: AutoCadenciaStep[] }) => {
+  const createRule = async (data: { name?: string; project_id: string | null; is_active: boolean; cadence_type?: CadenceType; trigger_lead_source?: TriggerLeadSource; steps: AutoCadenciaStep[] }) => {
     if (!brokerId) return null;
     setIsSaving(true);
     try {
@@ -112,6 +112,7 @@ export function useAutoCadenciaRules() {
           project_id: data.project_id,
           is_active: data.is_active,
           cadence_type: data.cadence_type || 'manual',
+          trigger_lead_source: data.trigger_lead_source || 'landing_page',
         })
         .select(`*, project:projects(id, name)`)
         .single();
