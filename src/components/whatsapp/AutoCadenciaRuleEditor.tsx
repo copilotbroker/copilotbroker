@@ -141,6 +141,7 @@ export function AutoCadenciaRuleEditor({
       setRuleName(editingRule.name || "");
       setProjectId(editingRule.project_id || "all");
       setWizardType(editingRule.cadence_type || "manual");
+      setTriggerLeadSource(editingRule.trigger_lead_source || "landing_page");
       setWizardStep(2); // skip type selection when editing
 
       setLoadingSteps(true);
@@ -164,6 +165,7 @@ export function AutoCadenciaRuleEditor({
       setRuleName("");
       setProjectId("all");
       setWizardType("manual");
+      setTriggerLeadSource("landing_page");
       setWizardStep(1);
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
       setSelectedStatuses([]);
