@@ -1,26 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Clock } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import heroImg from "@/assets/copilot-hero.jpg";
 
 const WHATSAPP_URL =
   "https://wa.me/5551982227001?text=Quero%20ativar%20meu%20Copilot%20Broker%20agora";
 
-const useCountdown = (initialSeconds: number) => {
-  const [s, setS] = useState(initialSeconds);
-  useEffect(() => {
-    const t = setInterval(() => setS((v) => (v > 0 ? v - 1 : initialSeconds)), 1000);
-    return () => clearInterval(t);
-  }, [initialSeconds]);
-  const hh = String(Math.floor(s / 3600)).padStart(2, "0");
-  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
-  const ss = String(s % 60).padStart(2, "0");
-  return `${hh}:${mm}:${ss}`;
-};
-
 const HomeHero = () => {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  const countdown = useCountdown(8 * 3600);
 
   useEffect(() => {
     const t = setTimeout(() => setIsVisible(true), 100);
@@ -29,12 +16,6 @@ const HomeHero = () => {
 
   return (
     <>
-      {/* Countdown bar */}
-      <div className="bg-primary text-primary-foreground py-2.5 px-4 text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
-        <Clock className="w-4 h-4" aria-hidden="true" />
-        Oferta especial expira em <span className="font-mono tabular-nums">{countdown}</span>
-      </div>
-
       <section
         ref={sectionRef}
         className="relative min-h-[90vh] flex items-center justify-center px-4 py-16 sm:py-20 overflow-hidden bg-[#0a0a0f]"
