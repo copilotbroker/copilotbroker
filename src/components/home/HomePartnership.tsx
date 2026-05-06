@@ -1,5 +1,56 @@
 import { useEffect, useRef, useState } from "react";
-import { Quote, TrendingUp } from "lucide-react";
+import { Quote, TrendingUp, ChevronLeft, ChevronRight, Star } from "lucide-react";
+
+const testimonials = [
+  {
+    name: "Rafael Mendes",
+    role: "Corretor há 8 anos · Porto Alegre",
+    initials: "RM",
+    text: "Cara, eu ia desistir desse lead da landing de Canoas. Tinha mandado duas mensagens, ele sumiu. No 5º toque do Copilot ele respondeu \"oi, desculpa, tava em obra\" e marcou visita pra sábado. Fechei R$ 380 mil. Esse lead tava MORTO pra mim.",
+  },
+  {
+    name: "Camila Borges",
+    role: "Corretora · Novo Hamburgo",
+    initials: "CB",
+    text: "Eu sou péssima pra dar continuidade. Atendo bem na primeira, depois esqueço, vou pra outro. Agora o sistema lembra por mim. Mês passado fechei 2 vendas que vieram do follow-up automático, leads de mais de 20 dias atrás.",
+  },
+  {
+    name: "Diego Almeida",
+    role: "Corretor · Caxias do Sul",
+    initials: "DA",
+    text: "Confesso que paguei meio desconfiado. R$ 97 parecia barato demais. Em 12 dias o sistema reativou um lead antigo que eu tinha dado como perdido. Visita marcada, proposta aceita. Já se pagou umas 200 vezes. Sério.",
+  },
+  {
+    name: "Juliana Reis",
+    role: "Corretora · Gramado",
+    initials: "JR",
+    text: "O que mais me ajudou foi a tranquilidade. Antes eu dormia pensando \"ai, esqueci de responder o fulano\". Agora não. O bot dá conta dos toques, eu entro pra fechar. Minha cabeça agradece tanto quanto meu bolso.",
+  },
+  {
+    name: "Marcos Vinícius",
+    role: "Corretor · Pelotas",
+    initials: "MV",
+    text: "Tô há 12 anos no mercado e sempre achei que CRM era frescura de gerente. Esse aqui é diferente, é como ter um estagiário que só faz follow-up e nunca dorme. Em 2 meses dobrei minha taxa de agendamento.",
+  },
+  {
+    name: "Patrícia Lopes",
+    role: "Corretora · Bento Gonçalves",
+    initials: "PL",
+    text: "Importei uma planilha velha de 80 leads esquecidos. Coloquei na cadência 10D só pra testar. 6 voltaram a falar comigo. Fechei 1. Esse lead tava parado há quase um ano. Não tem como não recomendar.",
+  },
+  {
+    name: "Eduardo Tavares",
+    role: "Corretor · Canoas",
+    initials: "ET",
+    text: "Sou daqueles que odeia tecnologia. Levei 25 minutos pra configurar tudo, achei que ia travar em algum lugar. Não travou. Tá rodando. E o que mais me impressiona é que as mensagens não parecem robô, parecem eu falando.",
+  },
+  {
+    name: "Larissa Schmidt",
+    role: "Corretora · São Leopoldo",
+    initials: "LS",
+    text: "Trabalho com lançamentos. O volume de lead na semana de abertura é insano e eu sempre perdia uns 30%. Agora o Copilot atende todo mundo na hora, qualifica, e eu só pego os quentes. Mudou meu jogo.",
+  },
+];
 
 const HomePartnership = () => {
   const [isVisible, setIsVisible] = useState(false);
