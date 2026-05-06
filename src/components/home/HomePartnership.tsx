@@ -107,38 +107,111 @@ const HomePartnership = () => {
           </p>
         </div>
 
-        {/* Testimonial */}
+        {/* Testimonials Carousel */}
         <div className="text-center mb-8">
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-bold uppercase tracking-wider mb-5">
-            Corretores de imobiliária
+            Quem usa, conta
           </span>
           <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white mb-2">
-            Quem usa, não larga mais
+            Histórias reais de corretores
           </h3>
+          <p className="text-white/60 text-sm sm:text-base">
+            Sem script, sem maquiagem. Do jeito que eles mandaram.
+          </p>
         </div>
 
-        <article className="max-w-2xl mx-auto p-8 rounded-xl bg-[#111114] border border-[#1e1e22] relative">
-          <Quote
-            className="absolute top-6 right-6 w-10 h-10 text-primary/20"
-            aria-hidden="true"
-          />
-          <p className="text-white/90 text-base sm:text-lg leading-relaxed mb-6 font-serif italic">
-            "Eu achava que precisava de mais leads. Na real, eu só precisava parar de
-            abandonar os que já tinha. O Copilot Broker faz isso por mim, no automático.
-            Algo tão simples mudou completamente meu resultado."
-          </p>
-          <div className="flex items-center gap-4 border-t border-[#1e1e22] pt-5">
-            <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center">
-              <span className="text-primary font-bold text-lg">RM</span>
-            </div>
-            <div>
-              <p className="text-white font-semibold">Rafael Mendes</p>
-              <p className="text-white/55 text-sm">Corretor de imobiliária</p>
-            </div>
-          </div>
-        </article>
+        <TestimonialsCarousel />
       </div>
     </section>
+  );
+};
+
+const TestimonialsCarousel = () => {
+  const [index, setIndex] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setIndex((i) => (i + 1) % testimonials.length);
+    }, 6000);
+    return () => clearInterval(t);
+  }, []);
+
+  const go = (dir: number) => {
+    setIndex((i) => (i + dir + testimonials.length) % testimonials.length);
+  };
+
+  return (
+    <div className="relative max-w-2xl mx-auto">
+      <div className="overflow-hidden rounded-xl">
+        <div
+          ref={trackRef}
+          className="flex transition-transform duration-500 ease-out"
+          style={{ transform: `translateX(-${index * 100}%)` }}
+        >
+          {testimonials.map((t) => (
+            <article
+              key={t.name}
+              className="w-full shrink-0 p-6 sm:p-8 bg-[#111114] border border-[#1e1e22] relative"
+            >
+              <Quote
+                className="absolute top-5 right-5 w-9 h-9 text-primary/15"
+                aria-hidden="true"
+              />
+              <div className="flex gap-1 mb-4" aria-label="5 estrelas">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                ))}
+              </div>
+              <p className="text-white/90 text-sm sm:text-base leading-relaxed mb-6 font-serif italic">
+                "{t.text}"
+              </p>
+              <div className="flex items-center gap-4 border-t border-[#1e1e22] pt-5">
+                <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                  <span className="text-primary font-bold text-base">{t.initials}</span>
+                </div>
+                <div className="text-left">
+                  <p className="text-white font-semibold text-sm sm:text-base">{t.name}</p>
+                  <p className="text-white/55 text-xs sm:text-sm">{t.role}</p>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-between mt-5">
+        <button
+          onClick={() => go(-1)}
+          aria-label="Depoimento anterior"
+          className="w-10 h-10 rounded-full bg-[#111114] border border-[#1e1e22] hover:border-primary/40 text-white/70 hover:text-primary flex items-center justify-center transition-all"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <div className="flex gap-2">
+          {testimonials.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              aria-label={`Depoimento ${i + 1}`}
+              className={`h-2 rounded-full transition-all ${
+                i === index ? "w-8 bg-primary" : "w-2 bg-white/20 hover:bg-white/40"
+              }`}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={() => go(1)}
+          aria-label="Próximo depoimento"
+          className="w-10 h-10 rounded-full bg-[#111114] border border-[#1e1e22] hover:border-primary/40 text-white/70 hover:text-primary flex items-center justify-center transition-all"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
   );
 };
 
