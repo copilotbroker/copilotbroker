@@ -49,7 +49,7 @@ const HomeHero = () => {
           </p>
 
           <p className="text-base sm:text-lg text-white/65 max-w-3xl mx-auto mb-10 leading-relaxed">
-            O mercado já decidiu: o lead agenda depois do 6º, 7º toque. Você faz dois,
+            O mercado já decidiu: <strong className="text-white">o lead agenda depois do 6º, 7º toque</strong>. Você faz dois,
             ele não responde, e você chama de "curioso". Enquanto isso, outro corretor
             com o mesmo lead está usando a <strong className="text-white">cadência 10D validada</strong> de
             forma automática e fecha uma venda que era pra ser sua.
