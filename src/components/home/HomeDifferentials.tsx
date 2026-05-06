@@ -1,36 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, MessageCircle, BarChart3, Shuffle, Bell, Calendar } from "lucide-react";
+import { Repeat, Bot, Calendar } from "lucide-react";
 
-const features = [
+const cards = [
+  {
+    icon: Repeat,
+    title: "Cadência validada",
+    desc: "7 toques em 10 dias, no timing certo. 100% dos leads ativados.",
+    extra: "O follow-up roda até levantar a primeira oportunidade.",
+  },
   {
     icon: Bot,
-    title: "IA que atende em segundos",
-    desc: "Copiloto com Gemini responde, qualifica e agenda visita 24/7. Lead nunca espera resposta.",
-  },
-  {
-    icon: Shuffle,
-    title: "Roleta inteligente de leads",
-    desc: "Distribui automaticamente entre corretores online. Sem briga, sem favorecimento, sem lead parado.",
-  },
-  {
-    icon: MessageCircle,
-    title: "WhatsApp oficial integrado",
-    desc: "Tudo dentro do app. Histórico salvo, áudio transcrito, mídia organizada por lead.",
-  },
-  {
-    icon: Bell,
-    title: "Cadência automática anti-perda",
-    desc: "Follow-up de 1, 3, 7 e 15 dias enviado sozinho. Reativa lead frio sem corretor lembrar.",
+    title: "Roda sozinho",
+    desc: "Você foca em visita e fechamento. O motor não para.",
+    extra: "Sem precisar lembrar, anotar ou abrir planilha.",
   },
   {
     icon: Calendar,
-    title: "Agenda sincronizada com Google",
-    desc: "Visitas viram eventos automáticos. Notificação para corretor e cliente. Zero no-show.",
-  },
-  {
-    icon: BarChart3,
-    title: "Dashboard de performance ao vivo",
-    desc: "Saiba qual corretor vende, qual canal converte e onde o dinheiro está vazando.",
+    title: "Mais visitas",
+    desc: "O pipeline enche enquanto você vende.",
+    extra: "Cada lead retorna no momento de comprar.",
   },
 ];
 
@@ -39,60 +27,79 @@ const HomeDifferentials = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => entry.isIntersecting && setIsVisible(true),
+    const o = new IntersectionObserver(
+      ([e]) => e.isIntersecting && setIsVisible(true),
       { threshold: 0.1 }
     );
-    if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => observer.disconnect();
+    if (sectionRef.current) o.observe(sectionRef.current);
+    return () => o.disconnect();
   }, []);
 
   return (
     <section
       ref={sectionRef}
       className="py-16 sm:py-20 px-4 bg-[#0a0a0f]"
-      aria-labelledby="differentials-heading"
+      aria-labelledby="diff-heading"
     >
-      <div className="container max-w-6xl">
+      <div className="container max-w-5xl">
         <div
-          className={`text-center mb-14 transition-all duration-700 ${
+          className={`text-center mb-12 transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
           }`}
         >
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-bold uppercase tracking-wider mb-5">
-            A solução
+            Nasceu dentro de uma imobiliária
           </span>
           <h2
-            id="differentials-heading"
-            className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 leading-tight"
+            id="diff-heading"
+            className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5 leading-tight"
           >
-            O <span className="text-primary">Copilot Broker</span> faz o trabalho que sua
-            equipe não dá conta.
+            Uma metodologia que nossos corretores{" "}
+            <span className="text-primary">viciaram</span>
           </h2>
-          <p className="text-white/70 max-w-2xl mx-auto text-base sm:text-lg">
-            Um sistema único que centraliza WhatsApp, IA, CRM, roleta e agenda — feito
-            para imobiliárias que querem vender mais sem contratar mais gente.
+          <p className="text-white/70 text-base sm:text-lg max-w-3xl mx-auto leading-relaxed">
+            Percebemos que nossos melhores corretores não eram os mais talentosos.
+            Eram os que <strong className="text-white">não paravam de fazer follow-up</strong>.
+          </p>
+          <p className="text-white/65 text-base sm:text-lg max-w-3xl mx-auto leading-relaxed mt-4">
+            Então criamos um processo interno de <strong className="text-primary">7 toques estratégicos em 10 dias</strong> e
+            automatizamos tudo. O resultado? Corretores que antes fechavam 1 venda passaram
+            a fechar 3 a 4 no mesmo período.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {features.map(({ icon: Icon, title, desc }, i) => (
+        <div className="grid md:grid-cols-3 gap-5 mb-12">
+          {cards.map(({ icon: Icon, title, desc, extra }, i) => (
             <article
               key={title}
-              className={`p-6 rounded-xl bg-[#111114] border border-[#1e1e22] hover:border-primary/40 hover:-translate-y-1 transition-all duration-500 ${
+              className={`p-6 rounded-xl bg-[#111114] border border-[#1e1e22] hover:border-primary/40 transition-all duration-500 ${
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
               }`}
-              style={{ transitionDelay: `${150 + i * 100}ms` }}
+              style={{ transitionDelay: `${150 + i * 120}ms` }}
             >
               <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center mb-4">
                 <Icon className="w-6 h-6 text-primary" aria-hidden="true" />
               </div>
-              <h3 className="font-serif text-xl font-semibold text-white mb-2">
-                {title}
-              </h3>
-              <p className="text-white/65 text-sm leading-relaxed">{desc}</p>
+              <h3 className="font-serif text-xl font-semibold text-white mb-2">{title}</h3>
+              <p className="text-white/75 text-sm mb-3 leading-relaxed">{desc}</p>
+              <p className="text-white/55 text-xs leading-relaxed border-t border-[#1e1e22] pt-3">
+                {extra}
+              </p>
             </article>
           ))}
+        </div>
+
+        <div className="max-w-3xl mx-auto p-6 sm:p-8 rounded-xl bg-[#111114] border border-[#1e1e22] text-center">
+          <p className="text-white/70 text-base sm:text-lg mb-3">O lead diz:</p>
+          <p className="font-serif italic text-xl sm:text-2xl text-white/90 mb-4">
+            "Só estou pesquisando"
+          </p>
+          <p className="text-primary font-bold text-base sm:text-lg mb-4">
+            7 toques depois: <span className="text-white">"Quando posso visitar?"</span>
+          </p>
+          <p className="text-white/60 text-sm">
+            E tudo isso acontece <strong className="text-white">sem você mexer um dedo</strong>.
+          </p>
         </div>
       </div>
     </section>
