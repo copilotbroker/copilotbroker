@@ -113,10 +113,10 @@ const HomePartnership = () => {
             Quem usa, conta
           </span>
           <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white mb-2">
-            Histórias reais de corretores
+            O que os corretores estão achando
           </h3>
           <p className="text-white/60 text-sm sm:text-base">
-            Sem script, sem maquiagem. Do jeito que eles mandaram.
+            Direto de quem está usando no dia a dia.
           </p>
         </div>
 
