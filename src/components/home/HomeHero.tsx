@@ -32,20 +32,20 @@ const HomeHero = () => {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
           }`}
         >
-          <p className="text-primary text-sm sm:text-base font-bold uppercase tracking-[0.25em] mb-4">
+          <span className="inline-block px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs sm:text-sm font-bold uppercase tracking-[0.2em] mb-6">
             Copilot Broker
-          </p>
+          </span>
 
           <h1
             id="hero-heading"
             className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.05] mb-6"
           >
-            O parceiro dos <span className="text-primary">corretores de imóveis</span>
+            Você não precisa de mais leads. Precisa de um{" "}
+            <span className="text-primary">motor que não para no 2º contato</span>.
           </h1>
 
-          <p className="text-lg sm:text-xl md:text-2xl text-white/85 leading-relaxed max-w-3xl mx-auto mb-6">
-            Você não precisa de mais leads. Precisa de um{" "}
-            <strong className="text-primary">motor que não para no 2º contato</strong>.
+          <p className="font-serif text-lg sm:text-xl md:text-2xl text-white/85 leading-relaxed max-w-3xl mx-auto mb-6">
+            O parceiro dos <strong className="text-primary">corretores de imóveis</strong>.
           </p>
 
           <p className="text-base sm:text-lg text-white/65 max-w-3xl mx-auto mb-10 leading-relaxed">
