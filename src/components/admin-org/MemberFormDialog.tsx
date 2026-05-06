@@ -382,10 +382,9 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
                     WhatsApp pessoal
                     <span className="text-[10px] font-normal text-muted-foreground">(notificações)</span>
                   </Label>
-                  <Input
+                  <WhatsAppInput
                     value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                    placeholder="(51) 99999-9999"
+                    onChange={setWhatsapp}
                   />
                 </div>
               </div>
