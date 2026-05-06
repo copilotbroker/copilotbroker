@@ -1,38 +1,24 @@
 import { useEffect, useRef, useState } from "react";
+import { MessageCircle } from "lucide-react";
+
+const WHATSAPP_URL =
+  "https://wa.me/5551997010323?text=Quero%20saber%20mais%20sobre%20o%20Copilot%20Broker";
 
 const steps = [
   {
     number: "01",
-    title: "Pré-lançamento",
-    description: "Construção da base de demanda e posicionamento do produto.",
-    items: [
-      "Estratégia comercial",
-      "Criação da jornada do cliente",
-      "Estruturação da captação de leads",
-      "Formação da lista qualificada de interessados",
-    ],
+    title: "Conecta seu WhatsApp",
+    desc: "Em 10 minutos seu número está plugado, com QR Code ou pareamento. Sem perder histórico.",
   },
   {
     number: "02",
-    title: "Lançamento",
-    description: "Execução coordenada para alta velocidade de vendas.",
-    items: [
-      "Gestão de plantões e equipe",
-      "Operação de vendas orientada por dados",
-      "Acompanhamento em tempo real",
-      "Conversão intensiva de leads",
-    ],
+    title: "IA assume o atendimento",
+    desc: "O copiloto responde, qualifica perfil, agenda visita e distribui pra equipe certa — 24h por dia.",
   },
   {
     number: "03",
-    title: "Pós-lançamento",
-    description: "Continuidade do processo até a última unidade vendida.",
-    items: [
-      "Gestão de estoque",
-      "Campanhas de giro",
-      "Relacionamento com clientes",
-      "Suporte comercial contínuo",
-    ],
+    title: "Você fecha mais negócio",
+    desc: "Corretor recebe lead pronto, com contexto e horário marcado. É só ir e bater o martelo.",
   },
 ];
 
@@ -42,7 +28,7 @@ const HomeProcess = () => {
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+      ([entry]) => entry.isIntersecting && setIsVisible(true),
       { threshold: 0.15 }
     );
     if (sectionRef.current) observer.observe(sectionRef.current);
@@ -52,50 +38,62 @@ const HomeProcess = () => {
   return (
     <section
       ref={sectionRef}
-      className="py-12 sm:py-16 px-4"
+      className="py-16 sm:py-20 px-4 bg-[#0f0f12]"
       aria-labelledby="process-heading"
     >
       <div className="container max-w-5xl">
-        <div className={`text-center mb-14 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-          <div className="divider-gold mx-auto mb-6" aria-hidden="true" />
-          <h2 id="process-heading" className="section-title mb-4">
-            Participamos de todo o{" "}
-            <span className="text-primary">ciclo do lançamento</span>
+        <div
+          className={`text-center mb-14 transition-all duration-700 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          }`}
+        >
+          <span className="inline-block px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-bold uppercase tracking-wider mb-5">
+            Como funciona
+          </span>
+          <h2
+            id="process-heading"
+            className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 leading-tight"
+          >
+            Em <span className="text-primary">3 passos</span> sua imobiliária está
+            faturando mais
           </h2>
         </div>
 
-        <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8">
-          {steps.map(({ number, title, description, items }, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {steps.map(({ number, title, desc }, i) => (
             <article
               key={number}
-              className={`relative transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+              className={`relative p-7 rounded-xl bg-[#111114] border border-[#1e1e22] transition-all duration-700 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              }`}
               style={{ transitionDelay: `${200 + i * 150}ms` }}
             >
-              {/* Number */}
-              <span className="block font-serif text-5xl sm:text-6xl font-bold text-primary/15 mb-2 leading-none select-none" aria-hidden="true">
+              <span
+                className="block font-serif text-6xl font-bold text-primary mb-4 leading-none"
+                aria-hidden="true"
+              >
                 {number}
               </span>
-
-              <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-foreground mb-3">
+              <h3 className="font-serif text-xl sm:text-2xl font-semibold text-white mb-3">
                 {title}
               </h3>
-              <p className="text-muted-foreground text-sm sm:text-base mb-5">{description}</p>
-
-              <ul className="space-y-2" role="list">
-                {items.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-sm text-foreground/80">
-                    <span className="w-1 h-1 rounded-full bg-primary mt-2 shrink-0" aria-hidden="true" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <p className="text-white/65 text-sm sm:text-base leading-relaxed">{desc}</p>
             </article>
           ))}
         </div>
 
-        <p className={`text-center text-lg sm:text-xl font-serif text-primary italic mt-14 transition-all duration-700 delay-700 ${isVisible ? "opacity-100" : "opacity-0"}`}>
-          Nosso compromisso não termina no dia do lançamento.
-        </p>
+        <div className="text-center">
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-8 py-5 rounded-xl bg-primary text-primary-foreground font-bold text-base sm:text-lg shadow-[0_0_60px_hsl(var(--primary)/0.5)] hover:scale-[1.03] transition-all"
+          >
+            <MessageCircle className="w-6 h-6" aria-hidden="true" />
+            QUERO ATIVAR O COPILOT NA MINHA IMOBILIÁRIA
+          </a>
+          <p className="text-white/50 text-xs mt-3">Resposta em até 5 minutos no WhatsApp</p>
+        </div>
       </div>
     </section>
   );
