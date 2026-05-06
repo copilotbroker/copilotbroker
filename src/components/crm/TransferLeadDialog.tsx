@@ -275,22 +275,14 @@ export function TransferLeadDialog({
               </TabsContent>
             </Tabs>
           ) : (
-            <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-              <SelectTrigger className="bg-[#0f0f12] border-[#3a3a3e] text-slate-200">
-                <SelectValue placeholder="Selecione o corretor destino..." />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1e1e22] border-[#3a3a3e]">
-                {availableBrokers.map(broker => (
-                  <SelectItem
-                    key={broker.id}
-                    value={broker.id}
-                    className="text-slate-200 focus:bg-[#2a2a2e] focus:text-white"
-                  >
-                    {broker.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <BrokerPicker
+              brokers={filteredBrokers}
+              totalCount={availableBrokers.length}
+              selectedId={selectedBrokerId}
+              onSelect={setSelectedBrokerId}
+              search={brokerSearch}
+              onSearchChange={setBrokerSearch}
+            />
           )}
         </div>
 
