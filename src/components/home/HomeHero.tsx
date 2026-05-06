@@ -3,7 +3,7 @@ import { MessageCircle, Clock } from "lucide-react";
 import heroImg from "@/assets/copilot-hero.jpg";
 
 const WHATSAPP_URL =
-  "https://wa.me/5551997010323?text=Quero%20ativar%20meu%20Copilot%20Broker%20agora";
+  "https://wa.me/5551982227001?text=Quero%20ativar%20meu%20Copilot%20Broker%20agora";
 
 const useCountdown = (initialSeconds: number) => {
   const [s, setS] = useState(initialSeconds);
