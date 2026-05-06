@@ -42,41 +42,6 @@ const Home = () => {
       </a>
 
       <div className="min-h-screen bg-[#0a0a0f] flex flex-col dark">
-        {/* Sticky Header with persistent CTA */}
-        <header
-          className="sticky top-0 z-40 py-3 px-4 bg-[#0a0a0f]/90 backdrop-blur-md border-b border-[#1e1e22]"
-          role="banner"
-        >
-          <nav
-            className="container flex items-center justify-between"
-            aria-label="Navegação principal"
-          >
-            <a
-              href="/"
-              className="transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
-              aria-label="Copilot Broker"
-            >
-              <img
-                src={logoEnove}
-                alt="Copilot Broker"
-                className="h-9 sm:h-10 w-auto"
-                width="120"
-                height="40"
-                loading="eager"
-              />
-            </a>
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-bold text-xs sm:text-sm hover:scale-[1.03] transition-all shadow-[0_0_30px_hsl(var(--primary)/0.4)]"
-            >
-              <MessageCircle className="w-4 h-4" aria-hidden="true" />
-              <span className="hidden sm:inline">FALAR NO WHATSAPP</span>
-              <span className="sm:hidden">WHATSAPP</span>
-            </a>
-          </nav>
-        </header>
 
         <main id="main-content" className="flex-1" role="main">
           <HomeHero />
