@@ -1,69 +1,53 @@
-# Reorganizar WhatsApp: remover aba Campanhas e estruturar Follow-up
+# Corrigir códigos de país faltando nos WhatsApps dos corretores
 
-## Objetivo
+## Diagnóstico
 
-Eliminar a aba **Campanhas** das páginas do admin/líder e do corretor. A criação de campanhas continua existindo, porém apenas via botão **Nova Cadência** (dentro de Follow-up), e o conteúdo passa a ser apresentado em 4 seções bem separadas dentro da aba Follow-up.
+Confirmei via consulta no banco. Os 14 números recuperados foram salvos sem o código do país (`55`):
 
-## Mudanças
+- `51998172927` (Guilherme Graeff) — deveria ser `5551998172927`
+- `51999030199` (Jean Costa) — deveria ser `5551999030199`
+- ...e assim por diante para os 14 corretores
 
-### 1. Remover aba "Campanhas"
+Apenas 2 registros já estão corretos (`5551993329525` Pedro Rocha, `5551981953266` Kely Monique).
 
-Em todas as páginas que ainda têm a aba `campaigns`:
+**Causa raiz:** A recuperação na conversa anterior pegou os números do `admin_audit_logs` exatamente como o usuário digitou no formulário antigo (sem máscara), que aceitava só DDD+número. Como o WhatsAppInput agora exige código do país, esses números ficam sendo interpretados como Canadá (+1 51...) ou inválidos.
 
-- `src/pages/AdminCopilotConfig.tsx` — remover item `{ id: "campaigns", label: "Campanhas", icon: Megaphone }` da lista de tabs e o `<TabsContent value="campaigns">` que renderiza `<CampaignsTab />`.
-- `src/pages/BrokerCopilotConfig.tsx` — remover `<TabsTrigger value="campaigns">` e `<TabsContent value="campaigns">`.
-- `src/pages/BrokerWhatsApp.tsx` — remover `<TabsTrigger value="campaigns">` e `<TabsContent value="campaigns">`.
-- Remover imports do `CampaignsTab` nas 3 páginas.
-- Manter o componente `CampaignsTab.tsx` no repositório por enquanto (não excluir arquivo) — fica órfão e pode ser apagado depois sem risco.
+## Etapa 1 — Migração de dados (UPDATE)
 
-### 2. Reestruturar `AutoCadenciaSection.tsx`
+Rodar UPDATE direcionado, prefixando `55` apenas em registros brasileiros sem código do país:
 
-Hoje o componente mistura tudo numa lista única. Reorganizar em 4 blocos colapsáveis/visuais, cada um com cabeçalho próprio (ícone + título + contador):
+```sql
+-- Tabela brokers
+UPDATE public.brokers
+SET whatsapp = '55' || whatsapp,
+    updated_at = now()
+WHERE whatsapp IS NOT NULL
+  AND length(regexp_replace(whatsapp, '[^0-9]', '', 'g')) IN (10, 11)
+  AND whatsapp !~ '^55';
 
-```text
-┌─ Follow-up ──────────────────────────────────┐
-│ [⚡] Cadências Automáticas        (n)        │
-│     Lista das rules cadence_type='automatic' │
-│     com Switch ligar/desligar (já existe)    │
-│                                              │
-│ [📋] Cadências Cadastradas        (n)        │
-│     Lista das rules cadence_type='manual'    │
-│     (aplicadas manualmente na página do lead)│
-│     Sem switch — só editar/excluir           │
-│                                              │
-│ [📣] Campanhas Ativas             (n)        │
-│     bulkCampaigns com status ≠ completed/    │
-│     cancelled — usa CampaignCard             │
-│                                              │
-│ [🗄] Histórico de Campanhas       (n)        │
-│     Collapsible (default fechado) com        │
-│     campanhas completed + cancelled          │
-└──────────────────────────────────────────────┘
+-- Tabela organization_members (mesmo critério)
+UPDATE public.organization_members
+SET whatsapp = '55' || whatsapp
+WHERE whatsapp IS NOT NULL
+  AND length(regexp_replace(whatsapp, '[^0-9]', '', 'g')) IN (10, 11)
+  AND whatsapp !~ '^55';
 ```
 
-Detalhes:
+Critério: número limpo com 10 ou 11 dígitos (formato BR sem país) e que não comece com `55`. Não toca em números já corretos (ex.: `5551...`) nem em números internacionais válidos.
 
-- O botão **Nova Cadência** continua no topo (já abre o `AutoCadenciaRuleEditor`, que permite escolher tipo automático/manual e também criar campanhas em lote — fluxo já existente).
-- Filtrar `rules` por `cadence_type === "automatic"` e `=== "manual"` para popular as duas primeiras seções.
-- Reaproveitar a lógica atual de `bulkCampaigns / activeCampaigns / archivedCampaigns` para as duas últimas seções.
-- Cada seção mostra empty state curto ("Nenhuma cadência automática", etc.) quando vazia, em vez do empty state global atual.
-- Manter o badge "⚡ Auto" / "📋 Manual" nos cards individuais por consistência.
-- Substituir o título "Cadências de Follow-up" do header pelo mesmo, mas o subtítulo passa a ser "Automáticas, manuais e campanhas em lote".
+## Etapa 2 — Validação pós-correção
 
-### 3. Sem mudanças em backend / banco
+Após o UPDATE, rodo um SELECT para confirmar que todos os 14 corretores agora têm `5551...` (13 dígitos) e que nenhum número internacional legítimo foi alterado por engano.
 
-Nenhuma alteração de schema, RLS ou edge function. A separação é puramente de UI; os dados (`broker_auto_cadencia_rules.cadence_type` e `whatsapp_campaigns.status`) já existem.
+## Etapa 3 — Garantir que não acontece de novo
 
-## Arquivos a editar
+A causa raiz da gravação sem código do país já foi corrigida na conversa anterior:
+- `MemberFormDialog.tsx` agora usa `WhatsAppInput` (sempre concatena código do país)
+- `OrgBrokerPublicSignup.tsx` idem
+- `org-broker-public-signup/index.ts` persiste o número limpo nas duas tabelas
 
-- `src/pages/AdminCopilotConfig.tsx`
-- `src/pages/BrokerCopilotConfig.tsx`
-- `src/pages/BrokerWhatsApp.tsx`
-- `src/components/whatsapp/AutoCadenciaSection.tsx`
+Não é necessária nenhuma alteração de código adicional — apenas a migração de dados.
 
-## Validação
+## Resultado esperado
 
-- Admin/líder: aba Campanhas some; aba Follow-up mostra as 4 seções.
-- Corretor: idem.
-- Botão "Nova Cadência" continua criando rules e campanhas normalmente.
-- Cadências manuais existentes (criadas via página do lead) aparecem em "Cadências Cadastradas".
+Os 14 corretores passam a aparecer corretamente no cadastro com a bandeira do Brasil 🇧🇷 e o número formatado `+55 (51) 9XXXX-XXXX`.
