@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { MessageCircle } from "lucide-react";
 
 const WHATSAPP_URL =
-  "https://wa.me/5551997010323?text=Quero%20o%20Copilot%20Broker%20agora";
+  "https://wa.me/5551982227001?text=Quero%20o%20Copilot%20Broker%20agora";
 
 const faqs = [
   {
