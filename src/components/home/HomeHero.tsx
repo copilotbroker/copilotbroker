@@ -36,7 +36,7 @@ const HomeHero = () => {
           <img
             src={logoCopilot}
             alt="Copilot Broker"
-            className="inline-block h-12 sm:h-16 md:h-20 w-auto mb-6"
+            className="inline-block h-36 sm:h-48 md:h-60 w-auto mb-6"
           />
 
           <h1
