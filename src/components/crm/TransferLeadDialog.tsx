@@ -49,8 +49,17 @@ export function TransferLeadDialog({
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
   const [selectedRoletaId, setSelectedRoletaId] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState(false);
+  const [brokerSearch, setBrokerSearch] = useState("");
 
-  const availableBrokers = brokers.filter(b => b.id !== currentBrokerId);
+  const availableBrokers = useMemo(
+    () => brokers.filter(b => b.id !== currentBrokerId),
+    [brokers, currentBrokerId],
+  );
+  const filteredBrokers = useMemo(() => {
+    const q = brokerSearch.trim().toLowerCase();
+    if (!q) return availableBrokers;
+    return availableBrokers.filter(b => b.name.toLowerCase().includes(q));
+  }, [availableBrokers, brokerSearch]);
 
   const handleTransfer = async () => {
     if (mode === "corretor" && !selectedBrokerId) return;
