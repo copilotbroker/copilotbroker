@@ -242,22 +242,14 @@ export function TransferLeadDialog({
               </TabsList>
 
               <TabsContent value="corretor" className="mt-4">
-                <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-                  <SelectTrigger className="bg-[#0f0f12] border-[#3a3a3e] text-slate-200">
-                    <SelectValue placeholder="Selecione o corretor destino..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1e1e22] border-[#3a3a3e]">
-                    {availableBrokers.map(broker => (
-                      <SelectItem
-                        key={broker.id}
-                        value={broker.id}
-                        className="text-slate-200 focus:bg-[#2a2a2e] focus:text-white"
-                      >
-                        {broker.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <BrokerPicker
+                  brokers={filteredBrokers}
+                  totalCount={availableBrokers.length}
+                  selectedId={selectedBrokerId}
+                  onSelect={setSelectedBrokerId}
+                  search={brokerSearch}
+                  onSearchChange={setBrokerSearch}
+                />
               </TabsContent>
 
               <TabsContent value="roleta" className="mt-4 space-y-3">
@@ -265,7 +257,7 @@ export function TransferLeadDialog({
                   <SelectTrigger className="bg-[#0f0f12] border-[#3a3a3e] text-slate-200">
                     <SelectValue placeholder="Selecione a roleta..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1e1e22] border-[#3a3a3e]">
+                  <SelectContent className="bg-[#1e1e22] border-[#3a3a3e] max-h-72">
                     {roletas.map(roleta => (
                       <SelectItem
                         key={roleta.id}
