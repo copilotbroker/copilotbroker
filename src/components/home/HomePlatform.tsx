@@ -28,6 +28,7 @@ const HomePlatform = () => {
 
   return (
     <section
+      id="oferta"
       ref={sectionRef}
       className="py-16 sm:py-20 px-4 bg-[#0f0f12]"
       aria-labelledby="platform-heading"
