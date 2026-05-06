@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Target, BarChart3, Users, Gauge, HeartHandshake } from "lucide-react";
+import { X, Clock, UserX, FileX, PhoneOff } from "lucide-react";
 
-const items = [
-{ icon: Target, label: "Planejamento estratégico" },
-{ icon: BarChart3, label: "Estrutura de marketing e geração de demanda" },
-{ icon: Users, label: "Gestão comercial especializada" },
-{ icon: Gauge, label: "Operação de vendas orientada por dados" },
-{ icon: HeartHandshake, label: "Relacionamento contínuo com leads e clientes" }];
-
+const pains = [
+  { icon: Clock, text: "Lead chega às 22h e ninguém responde até o outro dia." },
+  { icon: UserX, text: "Corretor sumiu? O lead vai junto. E nunca mais volta." },
+  { icon: FileX, text: "Planilha do Excel, caderno, post-it... e o follow-up perdido." },
+  { icon: PhoneOff, text: "Cliente já foi atendido? Outro corretor liga e queima a marca." },
+];
 
 const HomePositioning = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -15,7 +14,7 @@ const HomePositioning = () => {
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => {if (entry.isIntersecting) setIsVisible(true);},
+      ([entry]) => entry.isIntersecting && setIsVisible(true),
       { threshold: 0.2 }
     );
     if (sectionRef.current) observer.observe(sectionRef.current);
@@ -26,47 +25,59 @@ const HomePositioning = () => {
     <section
       ref={sectionRef}
       id="posicionamento"
-      className="py-12 sm:py-16 px-4"
-      aria-labelledby="positioning-heading">
-
-      <div className={`container max-w-4xl transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-        <div className="divider-gold mx-auto mb-6" aria-hidden="true" />
-
-        <h2 id="positioning-heading" className="section-title text-center mb-8">
-          Lançamentos exigem método,{" "}
-          <span className="text-primary">não improviso</span>
+      className="py-16 sm:py-20 px-4 bg-[#0f0f12]"
+      aria-labelledby="positioning-heading"
+    >
+      <div
+        className={`container max-w-4xl transition-all duration-700 ${
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
+      >
+        <h2
+          id="positioning-heading"
+          className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white text-center mb-6 leading-tight"
+        >
+          Se você é dono de imobiliária, esse cenário é{" "}
+          <span className="text-destructive">familiar</span>:
         </h2>
 
-        <div className="space-y-5 text-base sm:text-lg text-muted-foreground leading-relaxed mb-10">
-          <p>
-            Lançar um empreendimento não é apenas colocar unidades à venda.
-            É construir posicionamento, gerar demanda qualificada e conduzir um processo comercial estruturado capaz de converter interesse em vendas reais.
-          </p>
-          <p className="text-foreground font-medium">A Enove Select nasceu com esse foco.</p>
-          <p>
-            Somos especialistas em lançamentos imobiliários e estruturamos toda a jornada comercial do empreendimento:
-          </p>
-        </div>
+        <p className="text-center text-white/70 mb-12 text-base sm:text-lg max-w-2xl mx-auto">
+          Toda imobiliária do RS sangra dinheiro nesses 4 buracos invisíveis. Veja se
+          você se identifica:
+        </p>
 
         <ul className="space-y-4 mb-10" role="list">
-          {items.map(({ icon: Icon, label }, i) =>
-          <li
-            key={label}
-            className={`flex items-center gap-4 transition-all duration-500 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"}`}
-            style={{ transitionDelay: `${200 + i * 100}ms` }}>
-
-              <Icon className="w-5 h-5 text-primary shrink-0" aria-hidden="true" />
-              <span className="text-foreground/90 text-base sm:text-lg">{label}</span>
+          {pains.map(({ icon: Icon, text }, i) => (
+            <li
+              key={text}
+              className={`flex items-start gap-4 p-5 rounded-xl bg-[#111114] border border-destructive/20 transition-all duration-500 ${
+                isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"
+              }`}
+              style={{ transitionDelay: `${200 + i * 100}ms` }}
+            >
+              <div className="shrink-0 w-10 h-10 rounded-lg bg-destructive/15 flex items-center justify-center">
+                <Icon className="w-5 h-5 text-destructive" aria-hidden="true" />
+              </div>
+              <div className="flex items-start gap-2 pt-1.5">
+                <X className="w-4 h-4 text-destructive shrink-0 mt-1" aria-hidden="true" />
+                <span className="text-white/90 text-base sm:text-lg">{text}</span>
+              </div>
             </li>
-          )}
+          ))}
         </ul>
 
-        <p className="text-center text-lg sm:text-xl font-serif text-primary italic">
-          Nosso objetivo é simples: maximizar velocidade de vendas e valorização do produto.
-        </p>
+        <div className="text-center mt-12 p-6 rounded-xl bg-primary/5 border border-primary/30">
+          <p className="text-lg sm:text-xl font-serif text-white italic">
+            Cada lead perdido é{" "}
+            <span className="text-primary not-italic font-bold">
+              R$ 8.000 a R$ 40.000
+            </span>{" "}
+            de comissão indo embora.
+          </p>
+        </div>
       </div>
-    </section>);
-
+    </section>
+  );
 };
 
 export default HomePositioning;
