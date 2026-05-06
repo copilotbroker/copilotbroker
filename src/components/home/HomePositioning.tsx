@@ -31,7 +31,7 @@ const HomePositioning = () => {
   return (
     <section
       ref={sectionRef}
-      id="posicionamento"
+      id="vender-mais"
       className="py-16 sm:py-20 px-4 bg-[#0f0f12]"
       aria-labelledby="positioning-heading"
     >
