@@ -63,6 +63,8 @@ Deno.serve(async (req) => {
       return json({ ok: true, already_member: true, status: existing.approval_status });
     }
 
+    const whatsappClean = (body.whatsapp || "").replace(/\D/g, "") || null;
+
     // Insert as broker, pending approval
     await admin.from("organization_members").insert({
       organization_id: org.id,
@@ -71,7 +73,17 @@ Deno.serve(async (req) => {
       is_active: false,
       approval_status: "pending",
       joined_at: new Date().toISOString(),
+      full_name: fullName,
+      whatsapp: whatsappClean,
     });
+
+    // Also persist on brokers table if a broker profile already exists
+    if (whatsappClean) {
+      await admin
+        .from("brokers")
+        .update({ whatsapp: whatsappClean, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+    }
 
     await admin.from("admin_audit_logs").insert({
       organization_id: org.id,

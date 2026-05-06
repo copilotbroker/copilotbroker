@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { WhatsAppInput } from "@/components/ui/whatsapp-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -381,10 +382,9 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
                     WhatsApp pessoal
                     <span className="text-[10px] font-normal text-muted-foreground">(notificações)</span>
                   </Label>
-                  <Input
+                  <WhatsAppInput
                     value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                    placeholder="(51) 99999-9999"
+                    onChange={setWhatsapp}
                   />
                 </div>
               </div>
@@ -474,10 +474,9 @@ export const MemberFormDialog = ({ open, onOpenChange, organizationId, member, o
                     WhatsApp pessoal
                     <span className="text-[10px] font-normal text-muted-foreground">(opcional — notificações)</span>
                   </Label>
-                  <Input
+                  <WhatsAppInput
                     value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                    placeholder="(51) 99999-9999"
+                    onChange={setWhatsapp}
                   />
                 </div>
                 <div>

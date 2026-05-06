@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { WhatsAppInput } from "@/components/ui/whatsapp-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, UserPlus, CheckCircle2, AlertCircle } from "lucide-react";
@@ -128,7 +129,7 @@ const OrgBrokerPublicSignup = () => {
               </div>
               <div className="space-y-2">
                 <Label>WhatsApp</Label>
-                <Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} placeholder="(51) 9 9999-9999" />
+                <WhatsAppInput value={form.whatsapp} onChange={(value) => setForm({ ...form, whatsapp: value })} />
               </div>
               <div className="space-y-2">
                 <Label>Senha (min. 8) *</Label>
