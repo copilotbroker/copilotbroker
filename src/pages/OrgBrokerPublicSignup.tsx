@@ -129,7 +129,7 @@ const OrgBrokerPublicSignup = () => {
               </div>
               <div className="space-y-2">
                 <Label>WhatsApp</Label>
-                <Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} placeholder="(51) 9 9999-9999" />
+                <WhatsAppInput value={form.whatsapp} onChange={(value) => setForm({ ...form, whatsapp: value })} />
               </div>
               <div className="space-y-2">
                 <Label>Senha (min. 8) *</Label>
