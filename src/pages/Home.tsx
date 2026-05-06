@@ -1,6 +1,4 @@
 import { Helmet } from "react-helmet-async";
-import { MessageCircle } from "lucide-react";
-import logoEnove from "@/assets/logo-enove.png";
 import Footer from "@/components/Footer";
 import {
   HomeHero,
@@ -11,9 +9,6 @@ import {
   HomePlatform,
   HomeCTA,
 } from "@/components/home";
-
-const WHATSAPP_URL =
-  "https://wa.me/5551982227001?text=Quero%20saber%20mais%20sobre%20o%20Copilot%20Broker";
 
 const Home = () => {
   return (
