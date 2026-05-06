@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { ArrowRightLeft, RotateCw } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowRightLeft, RotateCw, Search, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -47,8 +49,17 @@ export function TransferLeadDialog({
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>("");
   const [selectedRoletaId, setSelectedRoletaId] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState(false);
+  const [brokerSearch, setBrokerSearch] = useState("");
 
-  const availableBrokers = brokers.filter(b => b.id !== currentBrokerId);
+  const availableBrokers = useMemo(
+    () => brokers.filter(b => b.id !== currentBrokerId),
+    [brokers, currentBrokerId],
+  );
+  const filteredBrokers = useMemo(() => {
+    const q = brokerSearch.trim().toLowerCase();
+    if (!q) return availableBrokers;
+    return availableBrokers.filter(b => b.name.toLowerCase().includes(q));
+  }, [availableBrokers, brokerSearch]);
 
   const handleTransfer = async () => {
     if (mode === "corretor" && !selectedBrokerId) return;
@@ -231,22 +242,14 @@ export function TransferLeadDialog({
               </TabsList>
 
               <TabsContent value="corretor" className="mt-4">
-                <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-                  <SelectTrigger className="bg-[#0f0f12] border-[#3a3a3e] text-slate-200">
-                    <SelectValue placeholder="Selecione o corretor destino..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1e1e22] border-[#3a3a3e]">
-                    {availableBrokers.map(broker => (
-                      <SelectItem
-                        key={broker.id}
-                        value={broker.id}
-                        className="text-slate-200 focus:bg-[#2a2a2e] focus:text-white"
-                      >
-                        {broker.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <BrokerPicker
+                  brokers={filteredBrokers}
+                  totalCount={availableBrokers.length}
+                  selectedId={selectedBrokerId}
+                  onSelect={setSelectedBrokerId}
+                  search={brokerSearch}
+                  onSearchChange={setBrokerSearch}
+                />
               </TabsContent>
 
               <TabsContent value="roleta" className="mt-4 space-y-3">
@@ -254,7 +257,7 @@ export function TransferLeadDialog({
                   <SelectTrigger className="bg-[#0f0f12] border-[#3a3a3e] text-slate-200">
                     <SelectValue placeholder="Selecione a roleta..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1e1e22] border-[#3a3a3e]">
+                  <SelectContent className="bg-[#1e1e22] border-[#3a3a3e] max-h-72">
                     {roletas.map(roleta => (
                       <SelectItem
                         key={roleta.id}
@@ -272,22 +275,14 @@ export function TransferLeadDialog({
               </TabsContent>
             </Tabs>
           ) : (
-            <Select value={selectedBrokerId} onValueChange={setSelectedBrokerId}>
-              <SelectTrigger className="bg-[#0f0f12] border-[#3a3a3e] text-slate-200">
-                <SelectValue placeholder="Selecione o corretor destino..." />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1e1e22] border-[#3a3a3e]">
-                {availableBrokers.map(broker => (
-                  <SelectItem
-                    key={broker.id}
-                    value={broker.id}
-                    className="text-slate-200 focus:bg-[#2a2a2e] focus:text-white"
-                  >
-                    {broker.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <BrokerPicker
+              brokers={filteredBrokers}
+              totalCount={availableBrokers.length}
+              selectedId={selectedBrokerId}
+              onSelect={setSelectedBrokerId}
+              search={brokerSearch}
+              onSearchChange={setBrokerSearch}
+            />
           )}
         </div>
 
@@ -313,5 +308,56 @@ export function TransferLeadDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface BrokerPickerProps {
+  brokers: { id: string; name: string }[];
+  totalCount: number;
+  selectedId: string;
+  onSelect: (id: string) => void;
+  search: string;
+  onSearchChange: (v: string) => void;
+}
+
+function BrokerPicker({ brokers, totalCount, selectedId, onSelect, search, onSearchChange }: BrokerPickerProps) {
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+        <Input
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder={`Buscar entre ${totalCount} corretor(es)...`}
+          className="pl-8 bg-[#0f0f12] border-[#3a3a3e] text-slate-200 placeholder:text-slate-500 h-9"
+        />
+      </div>
+      <div className="max-h-64 overflow-y-auto rounded-md border border-[#3a3a3e] bg-[#0f0f12] divide-y divide-[#1e1e22]">
+        {brokers.length === 0 ? (
+          <div className="px-3 py-6 text-center text-xs text-slate-500">
+            Nenhum corretor encontrado.
+          </div>
+        ) : (
+          brokers.map((b) => {
+            const isSelected = b.id === selectedId;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => onSelect(b.id)}
+                className={cn(
+                  "w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-colors",
+                  "text-slate-200 hover:bg-[#2a2a2e]",
+                  isSelected && "bg-[#2a2a2e] text-white",
+                )}
+              >
+                <span className="truncate">{b.name}</span>
+                {isSelected && <Check className="h-3.5 w-3.5 text-[#FFFF00] shrink-0 ml-2" />}
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 }
