@@ -56,9 +56,7 @@ const HomeHero = () => {
           </p>
 
           <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#oferta"
             className="inline-flex items-center gap-3 px-8 py-5 rounded-xl bg-primary text-primary-foreground font-bold text-base sm:text-lg shadow-[0_0_60px_hsl(var(--primary)/0.5)] hover:scale-[1.03] transition-all"
           >
             <MessageCircle className="w-6 h-6" aria-hidden="true" />
