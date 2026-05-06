@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import heroImg from "@/assets/copilot-hero.jpg";
+import logoCopilot from "@/assets/logo-copilot.png";
 
 const WHATSAPP_URL =
   "https://wa.me/5551982227001?text=Quero%20ativar%20meu%20Copilot%20Broker%20agora";
@@ -32,9 +33,11 @@ const HomeHero = () => {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
           }`}
         >
-          <span className="inline-block px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs sm:text-sm font-bold uppercase tracking-[0.2em] mb-6">
-            Copilot Broker
-          </span>
+          <img
+            src={logoCopilot}
+            alt="Copilot Broker"
+            className="inline-block h-6 sm:h-7 w-auto mb-6"
+          />
 
           <h1
             id="hero-heading"
