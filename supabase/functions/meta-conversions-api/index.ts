@@ -22,6 +22,10 @@ const PIXEL_CONFIGS: Record<string, { tokenEnv: string; defaultUrl: string }> = 
     tokenEnv: "META_CONVERSIONS_API_TOKEN",
     defaultUrl: "https://onovocondominio.com.br/ivoti/stuttgart",
   },
+  "27492837196985855": {
+    tokenEnv: "META_CONVERSIONS_API_TOKEN_HORIZON",
+    defaultUrl: "https://onovocondominio.com.br/estanciavelha/ca2727",
+  },
 };
 
 const DEFAULT_PIXEL_ID = "880409748241568";
