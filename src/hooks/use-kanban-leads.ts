@@ -100,43 +100,18 @@ export function useKanbanLeads({ brokerId, isAdmin = false, projectId }: UseKanb
     }
   }, [invalidateAll]);
 
-  const inactivateLead = useCallback(async (leadId: string, reason: string, oldStatus: LeadStatus) => {
-    await cancelCadenciaForLead(leadId);
-    return updateLead(
-      leadId,
-      { status: "inactive" as LeadStatus, inactivation_reason: reason, inactivated_at: new Date().toISOString(), data_perda: new Date().toISOString(), etapa_perda: oldStatus } as any,
-      { logInactivation: true, oldStatus, inactivationReason: reason }
-    );
-  }, [updateLead]);
+  const inactivateLead = useCallback(async (leadId: string, reason: string, _oldStatus: LeadStatus) => {
+    return leadActions.inactivateLead(leadId, reason);
+  }, [leadActions]);
 
   const iniciarAtendimento = useCallback(async (leadId: string) => {
-    try {
-      const now = new Date().toISOString();
-      const [userResult, updateResult] = await Promise.all([
-        supabase.auth.getUser().then(async ({ data }) => {
-          const { data: broker } = await supabase.from("brokers").select("id, name").eq("user_id", data.user?.id ?? "").single();
-          return { user: data.user, broker };
-        }),
-        supabase.from("leads")
-          .update({ status: "info_sent" as any, atendimento_iniciado_em: now, status_distribuicao: 'atendimento_iniciado' as any, reserva_expira_em: null, updated_at: now })
-          .eq("id", leadId),
-      ]);
-
-      if (updateResult.error) throw updateResult.error;
-
-      supabase.from("lead_interactions").insert({
-        lead_id: leadId, interaction_type: "atendimento_iniciado" as any, old_status: "new", new_status: "info_sent",
-        broker_id: userResult.broker?.id, notes: `Atendimento iniciado por ${userResult.broker?.name || "corretor"}`, created_by: userResult.user?.id,
-      }).then(({ error }) => { if (error) console.error("Erro ao logar interação:", error); });
-
-      invalidateStatuses("new", "info_sent");
-      return { success: true, userId: userResult.user?.id };
-    } catch (error) {
-      console.error("Erro ao iniciar atendimento:", error);
-      toast.error("Erro ao iniciar atendimento.");
-      return { success: false };
+    const result = await leadActions.iniciarAtendimento(leadId);
+    if (result.success) {
+      const { data: { user } } = await supabase.auth.getUser();
+      return { success: true, userId: user?.id };
     }
-  }, [invalidateStatuses]);
+    return { success: false };
+  }, [leadActions]);
 
   const registrarAgendamento = useCallback(async (leadId: string, dataAgendamento: Date, tipoAgendamento: string) => {
     try {
