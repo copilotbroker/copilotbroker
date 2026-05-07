@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CRMLead, LeadStatus } from "@/types/crm";
 import { toast } from "sonner";
 import { cancelCadenciaForLead } from "@/hooks/use-cadencia-ativa";
+import { useLeadActions } from "@/hooks/use-lead-actions";
 
 interface UseKanbanLeadsOptions {
   brokerId?: string | null;
