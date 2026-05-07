@@ -2827,6 +2827,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      pull_global_conversation_to_personal: {
+        Args: { _conversation_id: string }
+        Returns: Json
+      }
       transfer_lead: {
         Args: { _lead_id: string; _new_broker_id: string }
         Returns: undefined

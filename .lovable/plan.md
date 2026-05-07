@@ -1,61 +1,83 @@
-## Diagnóstico
+## Problema
 
-Hoje as ações de Kanban e Inbox vivem em código separado e divergem:
+Quando o corretor clica em **"Puxar para meu WhatsApp"** numa conversa do Plantão (instância global), o app faz:
 
-| Ação | Kanban (`useKanbanLeads`) | Inbox (handlers locais nas páginas) |
-|---|---|---|
-| Iniciar atendimento | `iniciarAtendimento` muda `status → info_sent`, grava interação, invalida queries | `BrokerPlantao.handleStartAttendance` / `AdminPlantao.handleStartAttendance` / `BrokerInbox.handleStartAttendance` duplicam a lógica, cada um com pequenas diferenças |
-| Avançar etapa | flow completo com modais (agendamento, comparecimento, proposta, venda) | `handleAdvanceStatus` faz só `update({status})` cru — não cria interação, não invalida nada |
-| Inativar lead | `inactivateLead` (PerdaModal no Kanban) cancela cadência + atualiza lead | `useInactivateLeadFromConversation` existe e faz tudo (cancela cadência, arquiva conversa, cancela fila WhatsApp), mas só está plugado em **`BrokerPlantao`** — `BrokerInbox`, `AdminInbox` e `AdminPlantao` **não passam `onInactivateLead`** ao `ConversationThread`, então o botão Inativar nem aparece |
+```ts
+update conversations set source_instance='personal' where id=...
+```
 
-Resultado prático:
-- Inativar pelo Plantão funciona; pelos outros inboxes nem dá pra clicar.
-- "Iniciar atendimento" pelo inbox às vezes não reflete no Kanban porque a invalidação do React Query não roda nas páginas do inbox e o realtime depende da tabela `leads` estar no `supabase_realtime` publication (só `conversations` e `messages` foram adicionadas explicitamente).
+Isso falha por causa do índice único:
+
+```
+idx_conversations_broker_phone UNIQUE (broker_id, phone_normalized, COALESCE(source_instance,'personal'))
+```
+
+Se o corretor **já tem uma conversa pessoal com o mesmo telefone**, virar a global em personal viola o índice → "Erro ao migrar conversa".
+
+Além disso, hoje a conversa global fica "presa" naquele corretor (continua existindo como personal), o que impede que esse mesmo lead, ao chamar de novo, caia na roleta.
+
+## Comportamento esperado
+
+- **Global**: 1 conversa por telefone (índice `idx_conversations_global_phone_unique`). Só 1 corretor pode estar atendendo lá.
+- **Personal**: várias conversas pessoais para o mesmo telefone podem coexistir (1 por corretor).
+- Ao "Puxar":
+  - Se o corretor **não** tem conversa pessoal com aquele telefone → simplesmente vira `personal`.
+  - Se **já tem** uma conversa pessoal com aquele telefone → **unificar**: mover mensagens da global para a pessoal existente, atualizar lead, **deletar a conversa global** para liberar o telefone, fazendo com que a próxima mensagem entre na roleta novamente.
 
 ## Solução
 
-Centralizar todas as transições de status do lead em **um único hook compartilhado** que:
-1. Atualiza o banco (lead + conversa quando aplicável).
-2. Loga `lead_interactions`.
-3. Invalida as React Query keys do Kanban (`kanban-column`, `kanban-count`, `kanban-active-flow-ids`).
-4. É chamado tanto pelo Kanban quanto pelo Inbox.
+### 1. Migration: criar RPC `pull_global_conversation_to_personal`
 
-Com a invalidação compartilhada + realtime ativo, os dois lados ficam sempre em sincronia sem polling pesado.
+`SECURITY DEFINER`, recebe `_conversation_id uuid`. Lógica:
 
-### Passos
+1. Resolver `_caller_broker_id` via `get_my_broker_id()` (se admin sem broker, abortar com erro claro).
+2. Carregar a conversa origem; validar `source_instance='global'`.
+3. Buscar conversa pessoal existente: `broker_id=_caller AND phone_normalized=<phone> AND source_instance='personal'`.
+4. **Caso A — existe pessoal**:
+   - `UPDATE conversation_messages SET conversation_id=<personal_id> WHERE conversation_id=<global_id>`.
+   - `UPDATE whatsapp_message_queue SET conversation_id=<personal_id> WHERE conversation_id=<global_id>` (se a coluna existir; checar e ignorar se não).
+   - Atualizar a conversa pessoal: `lead_id` (se a global tinha e a pessoal não), `attendance_started=true`, `display_name`, `last_message_*` recomputados a partir da última mensagem, `unread_count` recomputado.
+   - Atualizar lead vinculado: `broker_id=_caller`, `corretor_atribuido_id=_caller`, `status_distribuicao='atendimento_iniciado'`, `atendimento_iniciado_em=COALESCE(...,now())`.
+   - `DELETE FROM conversations WHERE id=<global_id>` → libera o telefone do índice global; próxima inbound passa pelo webhook → roleta.
+   - Registrar `lead_interactions` tipo `note` ("Conversa global unificada na pessoal por <broker>").
+5. **Caso B — não existe pessoal**:
+   - `UPDATE conversations SET source_instance='personal', broker_id=_caller, attendance_started=true, updated_at=now() WHERE id=<global_id>`.
+6. Retornar `jsonb { success, conversation_id, merged }`.
 
-**1. Habilitar realtime para `leads`** (migration)
-- `ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;`
-- Garante que mudanças feitas em qualquer aba/usuário propaguem para o `KanbanBoard` (que já tem o subscriber em `kanban-realtime`).
+Tratar tudo dentro do bloco para evitar deadlock com triggers; usar `FOR UPDATE` na conversa global no início.
 
-**2. Criar `src/hooks/use-lead-actions.ts`** — hook único e leve com:
-- `iniciarAtendimento(leadId, { conversationId? })` — move `new → info_sent`, marca `attendance_started` na conversa se passada, loga interação, invalida `["kanban-column"]` para `new` e `info_sent`.
-- `advanceStatus(leadId, fromStatus, toStatus, { note? })` — substitui o `handleAdvanceStatus` cru das páginas de inbox; cria `lead_interactions` com `interaction_type="status_change"`, invalida queries afetadas.
-- `inactivateLead(leadId, reason)` — versão única que combina o que `useInactivateLeadFromConversation` e `useKanbanLeads.inactivateLead` fazem hoje: cancela cadência, atualiza lead (`status=inactive`, `inactivation_reason`, `inactivated_at`, `data_perda`, `etapa_perda`), arquiva conversas vinculadas (`is_archived=true, status="closed"`), cancela fila WhatsApp, loga interação, invalida queries.
+### 2. Frontend: usar a RPC
 
-**3. Refatorar pontos de uso**
-- `useKanbanLeads.iniciarAtendimento` e `.inactivateLead` viram wrappers finos sobre `useLeadActions`.
-- `BrokerPlantao`, `AdminPlantao`, `BrokerInbox`, `AdminInbox`:
-  - `handleStartAttendance` passa a chamar `useLeadActions.iniciarAtendimento`.
-  - `handleAdvanceStatus` passa a chamar `useLeadActions.advanceStatus`.
-  - **Plugar `onInactivateLead={(reason) => leadActions.inactivateLead(lead.id, reason)}`** no `ConversationThread` em todas as 4 páginas (hoje só `BrokerPlantao` tem).
-- Apagar `useInactivateLeadFromConversation` (substituído).
+Em `src/pages/BrokerPlantao.tsx` (`handlePullToPersonal`) e `src/pages/AdminPlantao.tsx` (`handlePullToPersonal`):
 
-**4. UI/UX**
-- Sem mudanças visuais — botão Inativar (já existe no `ConversationThread`) e botão "Avançar para X" (em `LeadContextPanel`) passam a funcionar consistentemente em todos os inboxes.
-- Toast unificado ("Lead inativado", "Atendimento iniciado", "Status atualizado para X").
+```ts
+const { data, error } = await supabase.rpc("pull_global_conversation_to_personal", {
+  _conversation_id: selectedConversation.id,
+});
+if (error) throw error;
+const targetId = (data as any)?.conversation_id ?? selectedConversation.id;
+const merged = (data as any)?.merged;
+toast.success(merged
+  ? "Conversa unificada com seu WhatsApp pessoal!"
+  : "Conversa migrada para seu WhatsApp pessoal!");
+navigate(`${basePath}/inbox?conversationId=${targetId}`);
+```
 
-### Resultado esperado
+Sem outras mudanças visuais.
 
-- Inativar lead em qualquer inbox = lead some do Kanban (vai pra coluna Inativos), cadências canceladas, conversa arquivada.
-- Iniciar atendimento no inbox = card no Kanban move automaticamente de "Novos" para "Info Enviada" em tempo real (via realtime + invalidação).
-- Avançar etapa no `LeadContextPanel` do inbox = card move de coluna no Kanban e gera linha no histórico do lead.
-- Solução leve: zero polling extra, apenas o canal realtime de `leads` + invalidações pontuais por status afetado.
+### 3. Memória
 
-### Arquivos tocados
+Adicionar 1 entrada em `mem://features/whatsapp-pull-to-personal` documentando a regra (global=1, personal=N; pull unifica e deleta global) e referência no `mem://index.md`.
 
-- novo: `src/hooks/use-lead-actions.ts`
-- editado: `src/hooks/use-kanban-leads.ts` (delegar para o novo hook)
-- editado: `src/pages/BrokerInbox.tsx`, `src/pages/AdminInbox.tsx`, `src/pages/BrokerPlantao.tsx`, `src/pages/AdminPlantao.tsx` (handlers + prop `onInactivateLead`)
-- removido: `src/hooks/use-inactivate-lead-from-conversation.ts`
-- migration: adicionar `public.leads` ao `supabase_realtime` publication
+## Arquivos afetados
+
+- `supabase/migrations/<novo>.sql` (nova função RPC)
+- `src/pages/BrokerPlantao.tsx` (handlePullToPersonal)
+- `src/pages/AdminPlantao.tsx` (handlePullToPersonal)
+- `mem://features/whatsapp-pull-to-personal` + `mem://index.md`
+
+## Riscos
+
+- Mover `conversation_messages` em massa: rápido (índice por `conversation_id`).
+- Triggers de `update_conversation_on_message` rodam só em INSERT, então `UPDATE conversation_id` não dispara recomputo automático — por isso recomputamos `last_message_*` e `unread_count` manualmente na pessoal.
+- Caso `whatsapp_message_queue` não tenha `conversation_id`, ignorar silenciosamente (verificar schema antes de gerar a migration).
