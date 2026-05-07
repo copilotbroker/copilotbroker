@@ -259,13 +259,17 @@ export default function AdminPlantao() {
     if (!selectedConversation) return;
     setIsPullingToPersonal(true);
     try {
-      const { error } = await supabase
-        .from("conversations")
-        .update({ source_instance: "personal" } as any)
-        .eq("id", selectedConversation.id);
+      const { data, error } = await supabase.rpc(
+        "pull_global_conversation_to_personal" as any,
+        { _conversation_id: selectedConversation.id } as any
+      );
       if (error) throw error;
-      toast.success("Conversa migrada para seu WhatsApp pessoal!");
-      navigate(`/admin/inbox?conversationId=${selectedConversation.id}`);
+      const targetId = (data as any)?.conversation_id ?? selectedConversation.id;
+      const merged = (data as any)?.merged;
+      toast.success(merged
+        ? "Conversa unificada com seu WhatsApp pessoal!"
+        : "Conversa migrada para seu WhatsApp pessoal!");
+      navigate(`/admin/inbox?conversationId=${targetId}`);
     } catch (err) {
       console.error("Erro ao migrar conversa:", err);
       toast.error("Erro ao migrar conversa");
