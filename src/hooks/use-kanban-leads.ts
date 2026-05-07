@@ -14,6 +14,7 @@ interface UseKanbanLeadsOptions {
 
 export function useKanbanLeads({ brokerId, isAdmin = false, projectId }: UseKanbanLeadsOptions) {
   const queryClient = useQueryClient();
+  const leadActions = useLeadActions();
 
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["kanban-column"] });
