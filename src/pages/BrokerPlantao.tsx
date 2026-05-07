@@ -361,10 +361,8 @@ export default function BrokerPlantao() {
   const handleAdvanceStatus = useCallback(async (newStatus: string) => {
     const lead = selectedConversation?.lead as any;
     if (!lead) return;
-    const { error } = await supabase.from("leads").update({ status: newStatus } as any).eq("id", lead.id);
-    if (error) toast.error("Erro ao atualizar status");
-    else toast.success("Status atualizado!");
-  }, [selectedConversation]);
+    await leadActions.advanceStatus(lead.id, newStatus);
+  }, [selectedConversation, leadActions]);
 
   const handleLogout = useLogout({ silent: true });
 
