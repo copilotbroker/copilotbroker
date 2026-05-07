@@ -426,6 +426,7 @@ export default function BrokerInbox() {
                 isNewLead={isNewConversation}
                 onStartAttendance={handleStartAttendance}
                 isStartingAttendance={isStartingAttendance}
+                onInactivateLead={selectedConversation?.lead_id ? handleInactivateFromInbox : undefined}
               />
             )}
           </div>
