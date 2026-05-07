@@ -7,7 +7,7 @@ import { LeadContextPanel } from "@/components/inbox/LeadContextPanel";
 import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
 import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
-import { useInactivateLeadFromConversation } from "@/hooks/use-inactivate-lead-from-conversation";
+import { useLeadActions } from "@/hooks/use-lead-actions";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useUserRole } from "@/hooks/use-user-role";
 import { toast } from "sonner";
@@ -45,7 +45,7 @@ export default function BrokerPlantao() {
   const [teamBrokers, setTeamBrokers] = useState<{ id: string; name: string }[]>([]);
 
   const { role, isLeader } = useUserRole();
-  const inactivateLeadFromConv = useInactivateLeadFromConversation();
+  const leadActions = useLeadActions();
 
   useEffect(() => {
     const getBrokerId = async () => {
@@ -361,10 +361,8 @@ export default function BrokerPlantao() {
   const handleAdvanceStatus = useCallback(async (newStatus: string) => {
     const lead = selectedConversation?.lead as any;
     if (!lead) return;
-    const { error } = await supabase.from("leads").update({ status: newStatus } as any).eq("id", lead.id);
-    if (error) toast.error("Erro ao atualizar status");
-    else toast.success("Status atualizado!");
-  }, [selectedConversation]);
+    await leadActions.advanceStatus(lead.id, newStatus);
+  }, [selectedConversation, leadActions]);
 
   const handleLogout = useLogout({ silent: true });
 
@@ -478,7 +476,7 @@ export default function BrokerPlantao() {
                 isPullingToPersonal={isPullingToPersonal}
                 onInactivateLead={async (reason) => {
                   if (!selectedConversation?.lead_id) return;
-                  await inactivateLeadFromConv(selectedConversation.lead_id, reason);
+                  await leadActions.inactivateLead(selectedConversation.lead_id, reason);
                   fetchConversations();
                   handleBack();
                 }}

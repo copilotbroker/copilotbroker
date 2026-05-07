@@ -1,53 +1,61 @@
-# Corrigir códigos de país faltando nos WhatsApps dos corretores
-
 ## Diagnóstico
 
-Confirmei via consulta no banco. Os 14 números recuperados foram salvos sem o código do país (`55`):
+Hoje as ações de Kanban e Inbox vivem em código separado e divergem:
 
-- `51998172927` (Guilherme Graeff) — deveria ser `5551998172927`
-- `51999030199` (Jean Costa) — deveria ser `5551999030199`
-- ...e assim por diante para os 14 corretores
+| Ação | Kanban (`useKanbanLeads`) | Inbox (handlers locais nas páginas) |
+|---|---|---|
+| Iniciar atendimento | `iniciarAtendimento` muda `status → info_sent`, grava interação, invalida queries | `BrokerPlantao.handleStartAttendance` / `AdminPlantao.handleStartAttendance` / `BrokerInbox.handleStartAttendance` duplicam a lógica, cada um com pequenas diferenças |
+| Avançar etapa | flow completo com modais (agendamento, comparecimento, proposta, venda) | `handleAdvanceStatus` faz só `update({status})` cru — não cria interação, não invalida nada |
+| Inativar lead | `inactivateLead` (PerdaModal no Kanban) cancela cadência + atualiza lead | `useInactivateLeadFromConversation` existe e faz tudo (cancela cadência, arquiva conversa, cancela fila WhatsApp), mas só está plugado em **`BrokerPlantao`** — `BrokerInbox`, `AdminInbox` e `AdminPlantao` **não passam `onInactivateLead`** ao `ConversationThread`, então o botão Inativar nem aparece |
 
-Apenas 2 registros já estão corretos (`5551993329525` Pedro Rocha, `5551981953266` Kely Monique).
+Resultado prático:
+- Inativar pelo Plantão funciona; pelos outros inboxes nem dá pra clicar.
+- "Iniciar atendimento" pelo inbox às vezes não reflete no Kanban porque a invalidação do React Query não roda nas páginas do inbox e o realtime depende da tabela `leads` estar no `supabase_realtime` publication (só `conversations` e `messages` foram adicionadas explicitamente).
 
-**Causa raiz:** A recuperação na conversa anterior pegou os números do `admin_audit_logs` exatamente como o usuário digitou no formulário antigo (sem máscara), que aceitava só DDD+número. Como o WhatsAppInput agora exige código do país, esses números ficam sendo interpretados como Canadá (+1 51...) ou inválidos.
+## Solução
 
-## Etapa 1 — Migração de dados (UPDATE)
+Centralizar todas as transições de status do lead em **um único hook compartilhado** que:
+1. Atualiza o banco (lead + conversa quando aplicável).
+2. Loga `lead_interactions`.
+3. Invalida as React Query keys do Kanban (`kanban-column`, `kanban-count`, `kanban-active-flow-ids`).
+4. É chamado tanto pelo Kanban quanto pelo Inbox.
 
-Rodar UPDATE direcionado, prefixando `55` apenas em registros brasileiros sem código do país:
+Com a invalidação compartilhada + realtime ativo, os dois lados ficam sempre em sincronia sem polling pesado.
 
-```sql
--- Tabela brokers
-UPDATE public.brokers
-SET whatsapp = '55' || whatsapp,
-    updated_at = now()
-WHERE whatsapp IS NOT NULL
-  AND length(regexp_replace(whatsapp, '[^0-9]', '', 'g')) IN (10, 11)
-  AND whatsapp !~ '^55';
+### Passos
 
--- Tabela organization_members (mesmo critério)
-UPDATE public.organization_members
-SET whatsapp = '55' || whatsapp
-WHERE whatsapp IS NOT NULL
-  AND length(regexp_replace(whatsapp, '[^0-9]', '', 'g')) IN (10, 11)
-  AND whatsapp !~ '^55';
-```
+**1. Habilitar realtime para `leads`** (migration)
+- `ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;`
+- Garante que mudanças feitas em qualquer aba/usuário propaguem para o `KanbanBoard` (que já tem o subscriber em `kanban-realtime`).
 
-Critério: número limpo com 10 ou 11 dígitos (formato BR sem país) e que não comece com `55`. Não toca em números já corretos (ex.: `5551...`) nem em números internacionais válidos.
+**2. Criar `src/hooks/use-lead-actions.ts`** — hook único e leve com:
+- `iniciarAtendimento(leadId, { conversationId? })` — move `new → info_sent`, marca `attendance_started` na conversa se passada, loga interação, invalida `["kanban-column"]` para `new` e `info_sent`.
+- `advanceStatus(leadId, fromStatus, toStatus, { note? })` — substitui o `handleAdvanceStatus` cru das páginas de inbox; cria `lead_interactions` com `interaction_type="status_change"`, invalida queries afetadas.
+- `inactivateLead(leadId, reason)` — versão única que combina o que `useInactivateLeadFromConversation` e `useKanbanLeads.inactivateLead` fazem hoje: cancela cadência, atualiza lead (`status=inactive`, `inactivation_reason`, `inactivated_at`, `data_perda`, `etapa_perda`), arquiva conversas vinculadas (`is_archived=true, status="closed"`), cancela fila WhatsApp, loga interação, invalida queries.
 
-## Etapa 2 — Validação pós-correção
+**3. Refatorar pontos de uso**
+- `useKanbanLeads.iniciarAtendimento` e `.inactivateLead` viram wrappers finos sobre `useLeadActions`.
+- `BrokerPlantao`, `AdminPlantao`, `BrokerInbox`, `AdminInbox`:
+  - `handleStartAttendance` passa a chamar `useLeadActions.iniciarAtendimento`.
+  - `handleAdvanceStatus` passa a chamar `useLeadActions.advanceStatus`.
+  - **Plugar `onInactivateLead={(reason) => leadActions.inactivateLead(lead.id, reason)}`** no `ConversationThread` em todas as 4 páginas (hoje só `BrokerPlantao` tem).
+- Apagar `useInactivateLeadFromConversation` (substituído).
 
-Após o UPDATE, rodo um SELECT para confirmar que todos os 14 corretores agora têm `5551...` (13 dígitos) e que nenhum número internacional legítimo foi alterado por engano.
+**4. UI/UX**
+- Sem mudanças visuais — botão Inativar (já existe no `ConversationThread`) e botão "Avançar para X" (em `LeadContextPanel`) passam a funcionar consistentemente em todos os inboxes.
+- Toast unificado ("Lead inativado", "Atendimento iniciado", "Status atualizado para X").
 
-## Etapa 3 — Garantir que não acontece de novo
+### Resultado esperado
 
-A causa raiz da gravação sem código do país já foi corrigida na conversa anterior:
-- `MemberFormDialog.tsx` agora usa `WhatsAppInput` (sempre concatena código do país)
-- `OrgBrokerPublicSignup.tsx` idem
-- `org-broker-public-signup/index.ts` persiste o número limpo nas duas tabelas
+- Inativar lead em qualquer inbox = lead some do Kanban (vai pra coluna Inativos), cadências canceladas, conversa arquivada.
+- Iniciar atendimento no inbox = card no Kanban move automaticamente de "Novos" para "Info Enviada" em tempo real (via realtime + invalidação).
+- Avançar etapa no `LeadContextPanel` do inbox = card move de coluna no Kanban e gera linha no histórico do lead.
+- Solução leve: zero polling extra, apenas o canal realtime de `leads` + invalidações pontuais por status afetado.
 
-Não é necessária nenhuma alteração de código adicional — apenas a migração de dados.
+### Arquivos tocados
 
-## Resultado esperado
-
-Os 14 corretores passam a aparecer corretamente no cadastro com a bandeira do Brasil 🇧🇷 e o número formatado `+55 (51) 9XXXX-XXXX`.
+- novo: `src/hooks/use-lead-actions.ts`
+- editado: `src/hooks/use-kanban-leads.ts` (delegar para o novo hook)
+- editado: `src/pages/BrokerInbox.tsx`, `src/pages/AdminInbox.tsx`, `src/pages/BrokerPlantao.tsx`, `src/pages/AdminPlantao.tsx` (handlers + prop `onInactivateLead`)
+- removido: `src/hooks/use-inactivate-lead-from-conversation.ts`
+- migration: adicionar `public.leads` ao `supabase_realtime` publication

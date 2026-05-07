@@ -9,6 +9,7 @@ import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, BrokerInboxTab } from "@/hooks/use-conversations";
 import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
+import { useLeadActions } from "@/hooks/use-lead-actions";
 import { useLogout } from "@/hooks/use-logout";
 import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { useUserRole } from "@/hooks/use-user-role";
@@ -274,13 +275,23 @@ export default function BrokerInbox() {
     });
   }, [selectedConversation, brokerId]);
 
+  const leadActions = useLeadActions();
+
   const handleAdvanceStatus = useCallback(async (newStatus: string) => {
     const lead = selectedConversation?.lead as any;
     if (!lead) return;
-    const { error } = await supabase.from("leads").update({ status: newStatus } as any).eq("id", lead.id);
-    if (error) toast.error("Erro ao atualizar status");
-    else toast.success("Status atualizado!");
-  }, [selectedConversation]);
+    await leadActions.advanceStatus(lead.id, newStatus);
+  }, [selectedConversation, leadActions]);
+
+  const handleInactivateFromInbox = useCallback(async (reason: string) => {
+    const lead = selectedConversation?.lead as any;
+    if (!lead) return;
+    const ok = await leadActions.inactivateLead(lead.id, reason);
+    if (ok) {
+      setSelectedConversation(null);
+      fetchConversations();
+    }
+  }, [selectedConversation, leadActions, fetchConversations]);
 
   const [isReturningToGlobal, setIsReturningToGlobal] = useState(false);
 
@@ -415,6 +426,7 @@ export default function BrokerInbox() {
                 isNewLead={isNewConversation}
                 onStartAttendance={handleStartAttendance}
                 isStartingAttendance={isStartingAttendance}
+                onInactivateLead={selectedConversation?.lead_id ? handleInactivateFromInbox : undefined}
               />
             )}
           </div>
