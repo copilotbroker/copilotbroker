@@ -376,6 +376,7 @@ export default function AdminInbox() {
                   isNewLead={isNewConversation}
                   onStartAttendance={handleStartAttendance}
                   isStartingAttendance={isStartingAttendance}
+                  onInactivateLead={selectedConversation?.lead_id ? handleInactivateFromInbox : undefined}
                 />
               )}
             </div>
