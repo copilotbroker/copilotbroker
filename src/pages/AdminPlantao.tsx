@@ -431,6 +431,7 @@ export default function AdminPlantao() {
                   isNewLead={isNewLeadConversation}
                   onStartAttendance={handleStartAttendance}
                   isStartingAttendance={isStartingAttendance}
+                  onInactivateLead={selectedConversation?.lead_id ? handleInactivateFromInbox : undefined}
                   isReadOnly={isReadOnlyConversation}
                   onTransfer={handleTransferFromInbox}
                   onPullToPersonal={handlePullToPersonal}
