@@ -127,6 +127,28 @@ const CA2727FormSection = ({ projectId, brokerId, submitted, allowBrokerSelectio
         },
       }).catch(console.error);
 
+      // Meta Pixel + Conversions API (deduplicação via event_id)
+      const eventId = crypto.randomUUID();
+      const PIXEL_ID = "27492837196985855";
+      const getCookie = (k: string) => {
+        const m = document.cookie.match(new RegExp("(?:^|; )" + k + "=([^;]*)"));
+        return m ? decodeURIComponent(m[1]) : undefined;
+      };
+      if (typeof window !== "undefined" && window.fbq) {
+        (window.fbq as Function)("track", "Lead", {}, { eventID: eventId });
+      }
+      supabase.functions.invoke("meta-conversions-api", {
+        body: {
+          pixel_id: PIXEL_ID,
+          event_name: "Lead",
+          event_id: eventId,
+          event_source_url: window.location.href,
+          fbp: getCookie("_fbp"),
+          fbc: getCookie("_fbc"),
+          user_data: { fn: name.trim(), ph: whatsapp },
+        },
+      }).catch(console.warn);
+
       const basePath = location.pathname.replace(/\/obrigado$/, "").replace(/\/+$/, "");
       navigate(`${basePath}/obrigado`, { replace: true });
     } catch (error) {
