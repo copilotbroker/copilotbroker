@@ -9,6 +9,7 @@ import { TransferLeadDialog } from "@/components/crm/TransferLeadDialog";
 import { useConversations, useConversationMessages, Conversation, InboxTab } from "@/hooks/use-conversations";
 import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
+import { useLeadActions } from "@/hooks/use-lead-actions";
 import { toast } from "sonner";
 import { useLogout } from "@/hooks/use-logout";
 import { useIsMobile } from "@/hooks/use-mobile";
