@@ -19,6 +19,7 @@ import ProntosBrokerPage from "@/pages/ProntosBrokerPage";
 import HantowerLandingPage from "@/pages/hantower/HantowerLandingPage";
 import SentowerLandingPage from "@/pages/sentower/SentowerLandingPage";
 import CA2727LandingPage from "@/pages/CA2727LandingPage";
+import CA2589LandingPage from "@/pages/CA2589LandingPage";
 import NAULandingPage from "@/pages/nau/NAULandingPage";
 import NAUBrokerLandingPage from "@/pages/nau/NAUBrokerLandingPage";
 import TermosNAU from "@/pages/nau/TermosNAU";
@@ -78,6 +79,11 @@ export function LandingRoutes({ prefix = "" }: { prefix?: string }) {
       {prefix && <Route path={`${p}/estanciavelha/ca2727/obrigado`} element={<CA2727LandingPage />} />}
       {prefix && <Route path={`${p}/estanciavelha/ca2727/:brokerSlug`} element={<CA2727LandingPage />} />}
       {prefix && <Route path={`${p}/estanciavelha/ca2727/:brokerSlug/obrigado`} element={<CA2727LandingPage />} />}
+      {/* CA2589 — exclusivo da Enove Imobiliária */}
+      {prefix && <Route path={`${p}/estanciavelha/ca2589`} element={<CA2589LandingPage />} />}
+      {prefix && <Route path={`${p}/estanciavelha/ca2589/obrigado`} element={<CA2589LandingPage />} />}
+      {prefix && <Route path={`${p}/estanciavelha/ca2589/:brokerSlug`} element={<CA2589LandingPage />} />}
+      {prefix && <Route path={`${p}/estanciavelha/ca2589/:brokerSlug/obrigado`} element={<CA2589LandingPage />} />}
       <Route path={`${p}/estanciavelha/hantower`} element={<HantowerLandingPage />} />
       <Route path={`${p}/estanciavelha/sentower`} element={<SentowerLandingPage />} />
       <Route path={`${p}/estanciavelha/sentower/obrigado`} element={<SentowerLandingPage />} />
