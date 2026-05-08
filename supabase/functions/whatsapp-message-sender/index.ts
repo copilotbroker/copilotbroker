@@ -1,5 +1,6 @@
 import { Hono } from "https://deno.land/x/hono@v3.12.11/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { isPersonalCooldownActive } from "../_shared/cooldown.ts";
 
 const app = new Hono().basePath("/whatsapp-message-sender");
 
