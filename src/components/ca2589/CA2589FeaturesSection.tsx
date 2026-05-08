@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Bed, Bath, Car, Maximize, Sun, Flame, Waves, Wifi, Trees, Utensils } from "lucide-react";
+import { Bed, Bath, Car, Maximize, Sun, Flame, Waves, Home, Trees, Utensils } from "lucide-react";
 
 const features = [
-  { icon: Bed, label: "3 Suítes", detail: "Amplas e confortáveis" },
+  { icon: Bed, label: "4 Suítes", detail: "Sendo 1 master com closet" },
   { icon: Bath, label: "5 Banheiros", detail: "Acabamento premium" },
   { icon: Car, label: "4 Vagas", detail: "2 cobertas + 2 descobertas" },
-  { icon: Maximize, label: "372m²", detail: "Área construída" },
+  { icon: Maximize, label: "323m²", detail: "Área construída" },
   { icon: Sun, label: "Energia Solar", detail: "Sistema fotovoltaico" },
   { icon: Flame, label: "Lareira", detail: "Sala de estar" },
-  { icon: Waves, label: "Piscina", detail: "Área externa" },
-  { icon: Wifi, label: "Automação", detail: "Casa inteligente" },
-  { icon: Trees, label: "Vista Verde", detail: "Frente para natureza" },
-  { icon: Utensils, label: "Varanda Gourmet", detail: "Com churrasqueira" },
+  { icon: Waves, label: "Piscina Aquecida", detail: "Área externa" },
+  { icon: Home, label: "Home Office", detail: "Espaço dedicado" },
+  { icon: Trees, label: "Vista para o Lago", detail: "Próxima ao lago do Horizon" },
+  { icon: Utensils, label: "Espaço Gourmet", detail: "Com churrasqueira" },
 ];
 
 const CA2589FeaturesSection = () => {
