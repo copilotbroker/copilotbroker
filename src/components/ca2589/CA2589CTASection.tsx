@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Home, MapPin, Maximize } from "lucide-react";
 
-const CTA_IMG = "https://flip-prod-fotos.s3.amazonaws.com/cb25fb26-3d1f-4082-832d-94cc17844129.jpeg";
+const CTA_IMG = "https://flip-prod-fotos.s3.amazonaws.com/3b55f6eb-ef76-4dce-b5c8-7b6ae54f780b.jpeg";
 
 const features = [
   { icon: Home, text: "Horizon Clube Residencial" },
-  { icon: Maximize, text: "372m² construídos" },
+  { icon: Maximize, text: "323m² construídos" },
   { icon: MapPin, text: "Estância Velha, RS" },
 ];
 
