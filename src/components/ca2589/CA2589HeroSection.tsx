@@ -56,8 +56,8 @@ const CA2589HeroSection = () => {
           <div className="w-16 h-px bg-primary/50 mx-auto mb-4" />
 
           <p className="text-sm sm:text-base text-white/70 mb-6 max-w-2xl mx-auto">
-            372m² de elegância e conforto em uma das casas mais exclusivas de Estância Velha. 
-            3 suítes, piscina, energia solar e vista para o pôr do sol.
+            323m² de elegância e conforto em uma das casas mais exclusivas de Estância Velha.
+            4 suítes, piscina aquecida, energia solar e vista para o pôr do sol.
           </p>
 
           <a
