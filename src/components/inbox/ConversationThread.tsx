@@ -830,7 +830,7 @@ export function ConversationThread({
                 <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
                   {buildScheduledDateTime() ? `Envio para ${formatScheduledAt(buildScheduledDateTime()!.toISOString())}` : "Selecione uma data e horário válidos."}
                 </div>
-                <Button className="w-full" onClick={handleSchedule} disabled={!canScheduleText || isScheduling}>
+                <Button className="w-full" onClick={handleSchedule} disabled={!canScheduleText || isScheduling || isPersonalLocked}>
                   {isScheduling ? "Programando..." : "Confirmar agendamento"}
                 </Button>
               </PopoverContent>
