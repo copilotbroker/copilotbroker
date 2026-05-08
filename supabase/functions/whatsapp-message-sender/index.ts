@@ -1,5 +1,6 @@
 import { Hono } from "https://deno.land/x/hono@v3.12.11/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { isPersonalCooldownActive } from "../_shared/cooldown.ts";
 
 const app = new Hono().basePath("/whatsapp-message-sender");
 
@@ -623,6 +624,14 @@ app.post("/process", async (c) => {
       }
       if (instance.daily_sent_count >= instance.daily_limit) {
         console.log(`Instance ${instance.instance_name} reached daily limit, skipping`);
+        continue;
+      }
+
+      // Anti-block protection: skip cadence dispatch during the first 24h
+      // after the broker connected their personal QR. Inbound replies are
+      // routed by the webhook independently; this only delays cold outbound.
+      if (isPersonalCooldownActive((instance as unknown as { connected_at?: string | null }).connected_at)) {
+        console.log(`Instance ${instance.instance_name} within 24h connection cooldown, skipping cadence dispatch`);
         continue;
       }
 

@@ -27,6 +27,7 @@ import {
   X,
   Square,
   Wifi,
+  ShieldAlert,
 } from "lucide-react";
 import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
 import { AdReferralCard } from "./AdReferralCard";
@@ -40,6 +41,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Conversation, ConversationMessage, OutboundMessagePayload, ScheduledConversationMessage } from "@/hooks/use-conversations";
 import { cn } from "@/lib/utils";
+import { useBrokerPersonalCooldown } from "@/hooks/use-broker-personal-cooldown";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 // supabase import removed — file uploads moved to use-conversations hook
@@ -154,6 +156,20 @@ export function ConversationThread({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+
+  // Anti-block protection: 24h cooldown after broker connects personal WhatsApp.
+  // During cooldown the broker can only REPLY (after lead inbound), never initiate cold contact.
+  const personalCooldown = useBrokerPersonalCooldown((conversation as any).broker_id);
+  const sourceInstance = (conversation as any).source_instance || "personal";
+  const hasInboundFromLead = useMemo(
+    () => messages.some((m) => m.direction === "inbound"),
+    [messages]
+  );
+  const isPersonalLocked =
+    sourceInstance !== "global" && personalCooldown.active && !hasInboundFromLead;
+  const cooldownTooltip = isPersonalLocked
+    ? `Proteção anti-bloqueio: aguarde ${personalCooldown.hoursRemaining}h após conectar para iniciar contatos pelo seu WhatsApp pessoal. Você pode responder normalmente assim que o cliente enviar a primeira mensagem.`
+    : undefined;
 
   // Fetch lead attribution for the linked lead (shows ad tracking info)
   const { data: leadAttribution } = useQuery({
@@ -736,6 +752,18 @@ export function ConversationThread({
             </div>
           )}
 
+          {isPersonalLocked && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <p className="leading-snug">
+                <span className="font-semibold">Proteção anti-bloqueio ativa.</span>{" "}
+                Para preservar seu número, novos contatos pelo seu WhatsApp pessoal serão liberados em{" "}
+                <span className="font-semibold tabular-nums">{personalCooldown.hoursRemaining}h</span>.
+                Você pode responder normalmente assim que o cliente enviar a primeira mensagem ou usar o WhatsApp da imobiliária.
+              </p>
+            </div>
+          )}
+
           <div className="flex items-end gap-2">
             <input
               ref={fileInputRef}
@@ -744,10 +772,10 @@ export function ConversationThread({
               accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
               onChange={(e) => setPendingFile(e.target.files?.[0] || null)}
             />
-            <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion} title="Pedir sugestão ao Copiloto">
+            <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={onRequestSuggestion} disabled={isGeneratingSuggestion || isPersonalLocked} title={cooldownTooltip || "Pedir sugestão ao Copiloto"}>
               {isGeneratingSuggestion ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" /> : <Sparkles className="h-5 w-5" />}
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
+            <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()} disabled={isPersonalLocked} title={cooldownTooltip || "Anexar arquivo"}>
               <Paperclip className="h-4 w-4" />
             </Button>
             <Textarea
@@ -760,18 +788,27 @@ export function ConversationThread({
                 el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
               }}
               onKeyDown={handleKeyDown}
-              placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem... (Enter para enviar, Shift+Enter para quebrar linha)"}
+              disabled={isPersonalLocked}
+              title={cooldownTooltip}
+              placeholder={
+                isPersonalLocked
+                  ? `Aguarde ${personalCooldown.hoursRemaining}h para iniciar contato pelo seu WhatsApp pessoal`
+                  : pendingFile
+                  ? "Adicione uma legenda opcional..."
+                  : "Digite sua mensagem... (Enter para enviar, Shift+Enter para quebrar linha)"
+              }
               className={cn(
                 "max-h-[160px] min-h-[36px] resize-none overflow-y-auto py-2 text-sm",
                 (conversation as any).source_instance === "global"
                   ? "border-purple-500/40 focus-visible:ring-purple-500/30"
-                  : "border-emerald-500/40 focus-visible:ring-emerald-500/30"
+                  : "border-emerald-500/40 focus-visible:ring-emerald-500/30",
+                isPersonalLocked && "opacity-60 cursor-not-allowed"
               )}
               rows={1}
             />
             <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
               <PopoverTrigger asChild>
-                <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canScheduleText || isScheduling || isSending} title="Programar envio">
+                <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canScheduleText || isScheduling || isSending || isPersonalLocked} title={cooldownTooltip || "Programar envio"}>
                   <CalendarClock className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
@@ -793,7 +830,7 @@ export function ConversationThread({
                 <div className="rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
                   {buildScheduledDateTime() ? `Envio para ${formatScheduledAt(buildScheduledDateTime()!.toISOString())}` : "Selecione uma data e horário válidos."}
                 </div>
-                <Button className="w-full" onClick={handleSchedule} disabled={!canScheduleText || isScheduling}>
+                <Button className="w-full" onClick={handleSchedule} disabled={!canScheduleText || isScheduling || isPersonalLocked}>
                   {isScheduling ? "Programando..." : "Confirmar agendamento"}
                 </Button>
               </PopoverContent>
@@ -817,11 +854,11 @@ export function ConversationThread({
                 </Button>
               </div>
             ) : (!inputValue.trim() && !pendingFile) ? (
-              <Button size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={startRecording} disabled={isSending} title="Gravar áudio">
+              <Button size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={startRecording} disabled={isSending || isPersonalLocked} title={cooldownTooltip || "Gravar áudio"}>
                 <Mic className="h-5 w-5" />
               </Button>
             ) : (
-              <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
+              <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending || isPersonalLocked} title={cooldownTooltip}>
                 <Send className="h-4 w-4" />
               </Button>
             )}
