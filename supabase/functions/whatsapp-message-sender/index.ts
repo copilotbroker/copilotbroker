@@ -627,6 +627,14 @@ app.post("/process", async (c) => {
         continue;
       }
 
+      // Anti-block protection: skip cadence dispatch during the first 24h
+      // after the broker connected their personal QR. Inbound replies are
+      // routed by the webhook independently; this only delays cold outbound.
+      if (isPersonalCooldownActive((instance as unknown as { connected_at?: string | null }).connected_at)) {
+        console.log(`Instance ${instance.instance_name} within 24h connection cooldown, skipping cadence dispatch`);
+        continue;
+      }
+
       // Get next scheduled message for this broker (PERSONAL channel only)
       const { data: messages, error: msgError } = await supabase
         .from("whatsapp_message_queue")
