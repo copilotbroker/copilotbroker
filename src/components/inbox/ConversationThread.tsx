@@ -752,6 +752,18 @@ export function ConversationThread({
             </div>
           )}
 
+          {isPersonalLocked && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <p className="leading-snug">
+                <span className="font-semibold">Proteção anti-bloqueio ativa.</span>{" "}
+                Para preservar seu número, novos contatos pelo seu WhatsApp pessoal serão liberados em{" "}
+                <span className="font-semibold tabular-nums">{personalCooldown.hoursRemaining}h</span>.
+                Você pode responder normalmente assim que o cliente enviar a primeira mensagem ou usar o WhatsApp da imobiliária.
+              </p>
+            </div>
+          )}
+
           <div className="flex items-end gap-2">
             <input
               ref={fileInputRef}
