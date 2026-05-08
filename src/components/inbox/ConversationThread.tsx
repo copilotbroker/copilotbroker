@@ -157,6 +157,20 @@ export function ConversationThread({
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
+  // Anti-block protection: 24h cooldown after broker connects personal WhatsApp.
+  // During cooldown the broker can only REPLY (after lead inbound), never initiate cold contact.
+  const personalCooldown = useBrokerPersonalCooldown((conversation as any).broker_id);
+  const sourceInstance = (conversation as any).source_instance || "personal";
+  const hasInboundFromLead = useMemo(
+    () => messages.some((m) => m.direction === "inbound"),
+    [messages]
+  );
+  const isPersonalLocked =
+    sourceInstance !== "global" && personalCooldown.active && !hasInboundFromLead;
+  const cooldownTooltip = isPersonalLocked
+    ? `Proteção anti-bloqueio: aguarde ${personalCooldown.hoursRemaining}h após conectar para iniciar contatos pelo seu WhatsApp pessoal. Você pode responder normalmente assim que o cliente enviar a primeira mensagem.`
+    : undefined;
+
   // Fetch lead attribution for the linked lead (shows ad tracking info)
   const { data: leadAttribution } = useQuery({
     queryKey: ["lead-attribution-chat", conversation.lead_id],
