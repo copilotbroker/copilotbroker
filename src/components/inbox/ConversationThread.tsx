@@ -854,11 +854,11 @@ export function ConversationThread({
                 </Button>
               </div>
             ) : (!inputValue.trim() && !pendingFile) ? (
-              <Button size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={startRecording} disabled={isSending} title="Gravar áudio">
+              <Button size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={startRecording} disabled={isSending || isPersonalLocked} title={cooldownTooltip || "Gravar áudio"}>
                 <Mic className="h-5 w-5" />
               </Button>
             ) : (
-              <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending}>
+              <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleSend} disabled={(!inputValue.trim() && !pendingFile) || isSending || isPersonalLocked} title={cooldownTooltip}>
                 <Send className="h-4 w-4" />
               </Button>
             )}
