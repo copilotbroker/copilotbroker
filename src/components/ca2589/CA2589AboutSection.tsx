@@ -123,24 +123,25 @@ const CA2589AboutSection = () => {
             </p>
 
             <p className="text-base sm:text-lg text-white/70 mb-4 leading-relaxed">
-              Com <strong className="text-white">372m² de área construída</strong> sobre um terreno de 400m², esta casa combina 
-              sofisticação, conforto e tecnologia no coração do <strong className="text-white">Condomínio Horizon Clube Residencial</strong>, 
-              em Estância Velha.
+              Com <strong className="text-white">323m² de área construída</strong> sobre um terreno de 411m², esta residência 
+              combina sofisticação, conforto e integração com a natureza no <strong className="text-white">Condomínio Horizon Clube Residencial</strong>, 
+              em Estância Velha — próxima ao lago, com vista privilegiada.
             </p>
 
             <p className="text-base sm:text-lg text-white/70 mb-6 leading-relaxed">
-              São <strong className="text-white">3 suítes amplas</strong>, lavabo, sala de estar com lareira e ambientes de 
-              cozinha e jantar integrados. A área externa é um convite ao lazer: varanda gourmet com churrasqueira, piscina e uma 
-              <strong className="text-white"> vista deslumbrante para o pôr do sol</strong>, com frente para área verde.
+              São <strong className="text-white">4 suítes</strong>, sendo uma master com closet, ambientes de sala de estar, 
+              jantar e living integrados, <strong className="text-white">pé-direito em madeira</strong>, lareira, home office, 
+              lavabo e lavanderia. Na área externa, espaço gourmet com churrasqueira, 
+              <strong className="text-white"> piscina aquecida</strong> e varanda com vista para o pôr do sol.
             </p>
 
             <div className="w-16 h-px bg-primary/50 mx-auto my-8" />
 
             <p className="font-serif text-xl md:text-2xl font-semibold text-white">
-              Automação completa, energia solar fotovoltaica
+              Energia solar fotovoltaica, garagem coberta para 2 carros
             </p>
             <p className="font-serif text-xl md:text-2xl font-semibold text-primary">
-              e um cenário inesquecível todos os dias.
+              e uma vista inesquecível todos os dias.
             </p>
 
             {/* Gallery */}
