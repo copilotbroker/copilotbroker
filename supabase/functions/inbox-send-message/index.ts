@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 import { getCorsHeaders } from "../_shared/security.ts";
+import { cooldownInfo } from "../_shared/cooldown.ts";
 
 const UAZAPI_INSTANCE_URL = Deno.env.get("UAZAPI_INSTANCE_URL") || "";
 const UAZAPI_TOKEN = Deno.env.get("UAZAPI_TOKEN") || "";
