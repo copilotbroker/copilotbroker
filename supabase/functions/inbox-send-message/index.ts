@@ -226,7 +226,7 @@ serve(async (req) => {
       // Route through broker's personal instance
       const { data: instance } = await supabase
         .from("broker_whatsapp_instances")
-        .select("instance_name, instance_token, status")
+        .select("instance_name, instance_token, status, connected_at")
         .eq("broker_id", conv.broker_id)
         .maybeSingle();
 
@@ -236,6 +236,33 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      // Anti-block protection: during the first 24h after connecting, prevent
+      // sending the FIRST outbound message to a contact (cold contact).
+      // Replies are allowed once the lead has sent at least one inbound message.
+      const cd = cooldownInfo(instance.connected_at);
+      if (cd.active) {
+        const { data: inboundMsg } = await supabase
+          .from("conversation_messages")
+          .select("id")
+          .eq("conversation_id", conversation_id)
+          .eq("direction", "inbound")
+          .limit(1)
+          .maybeSingle();
+
+        if (!inboundMsg) {
+          return new Response(
+            JSON.stringify({
+              error: `Proteção anti-bloqueio: aguarde ${cd.hoursRemaining}h após conectar para iniciar contatos pelo seu WhatsApp pessoal. Você pode responder normalmente assim que o cliente enviar a primeira mensagem.`,
+              code: "PERSONAL_INSTANCE_COOLDOWN",
+              unlocks_at: cd.unlocksAt,
+              hours_remaining: cd.hoursRemaining,
+            }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+
       instanceToken = instance.instance_token;
     }
 
