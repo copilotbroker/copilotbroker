@@ -788,12 +788,21 @@ export function ConversationThread({
                 el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
               }}
               onKeyDown={handleKeyDown}
-              placeholder={pendingFile ? "Adicione uma legenda opcional..." : "Digite sua mensagem... (Enter para enviar, Shift+Enter para quebrar linha)"}
+              disabled={isPersonalLocked}
+              title={cooldownTooltip}
+              placeholder={
+                isPersonalLocked
+                  ? `Aguarde ${personalCooldown.hoursRemaining}h para iniciar contato pelo seu WhatsApp pessoal`
+                  : pendingFile
+                  ? "Adicione uma legenda opcional..."
+                  : "Digite sua mensagem... (Enter para enviar, Shift+Enter para quebrar linha)"
+              }
               className={cn(
                 "max-h-[160px] min-h-[36px] resize-none overflow-y-auto py-2 text-sm",
                 (conversation as any).source_instance === "global"
                   ? "border-purple-500/40 focus-visible:ring-purple-500/30"
-                  : "border-emerald-500/40 focus-visible:ring-emerald-500/30"
+                  : "border-emerald-500/40 focus-visible:ring-emerald-500/30",
+                isPersonalLocked && "opacity-60 cursor-not-allowed"
               )}
               rows={1}
             />
