@@ -808,7 +808,7 @@ export function ConversationThread({
             />
             <Popover open={scheduleOpen} onOpenChange={setScheduleOpen}>
               <PopoverTrigger asChild>
-                <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canScheduleText || isScheduling || isSending} title="Programar envio">
+                <Button size="icon" variant="outline" className="h-9 w-9 flex-shrink-0" disabled={!canScheduleText || isScheduling || isSending || isPersonalLocked} title={cooldownTooltip || "Programar envio"}>
                   <CalendarClock className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
