@@ -1,83 +1,62 @@
-## Problema
+## Objetivo
 
-Quando o corretor clica em **"Puxar para meu WhatsApp"** numa conversa do Plantão (instância global), o app faz:
+Impedir que o corretor envie a **primeira mensagem** (contato frio) pela sua **instância pessoal de WhatsApp** durante as primeiras **24 horas** após conectar o QR Code. Resposta a mensagens recebidas continua liberada. A instância **global da imobiliária** continua funcionando normalmente.
 
-```ts
-update conversations set source_instance='personal' where id=...
-```
+## Regra de negócio
 
-Isso falha por causa do índice único:
+Para uma conversa rotear pela instância **pessoal** (`conversations.source_instance = 'personal'`), o envio só é permitido se **alguma** das condições for verdadeira:
 
-```
-idx_conversations_broker_phone UNIQUE (broker_id, phone_normalized, COALESCE(source_instance,'personal'))
-```
+1. Já se passaram **≥ 24 horas** desde `broker_whatsapp_instances.connected_at`; **ou**
+2. A conversa **já recebeu pelo menos uma mensagem inbound** do cliente (cliente "abriu" o canal). Tecnicamente: existe uma `conversation_messages` com `direction = 'inbound'` para essa `conversation_id` cuja origem foi a instância pessoal — ou simplesmente `conversations.last_message_direction` já passou por `inbound` em algum momento (ver detalhes técnicos).
 
-Se o corretor **já tem uma conversa pessoal com o mesmo telefone**, virar a global em personal viola o índice → "Erro ao migrar conversa".
+Casos cobertos:
 
-Além disso, hoje a conversa global fica "presa" naquele corretor (continua existindo como personal), o que impede que esse mesmo lead, ao chamar de novo, caia na roleta.
+- **Bloqueia:** corretor recém-conectado tenta mandar a 1ª mensagem para um lead novo pela pessoal.
+- **Bloqueia:** "Puxar para meu WhatsApp pessoal" pode ser feito (conversão para personal liberada), mas o envio fica travado até o cliente responder ou completarem 24 h.
+- **Libera:** cliente já mandou mensagem para o corretor → pode responder mesmo dentro das 24 h.
+- **Libera:** envio pela instância **global** da imobiliária (sempre permitido).
+- **Libera:** após 24 h da conexão, contato frio liberado normalmente.
 
-## Comportamento esperado
+Se o corretor desconectar e reconectar, o relógio reinicia (novo `connected_at`).
 
-- **Global**: 1 conversa por telefone (índice `idx_conversations_global_phone_unique`). Só 1 corretor pode estar atendendo lá.
-- **Personal**: várias conversas pessoais para o mesmo telefone podem coexistir (1 por corretor).
-- Ao "Puxar":
-  - Se o corretor **não** tem conversa pessoal com aquele telefone → simplesmente vira `personal`.
-  - Se **já tem** uma conversa pessoal com aquele telefone → **unificar**: mover mensagens da global para a pessoal existente, atualizar lead, **deletar a conversa global** para liberar o telefone, fazendo com que a próxima mensagem entre na roleta novamente.
+## Mudanças
 
-## Solução
+### 1. Backend — `supabase/functions/inbox-send-message/index.ts`
+No bloco onde `conv.source_instance !== 'global'` (envio pela pessoal), antes de chamar UAZAPI:
 
-### 1. Migration: criar RPC `pull_global_conversation_to_personal`
+- Buscar `connected_at` da `broker_whatsapp_instances` do corretor.
+- Se `connected_at` existe e `now - connected_at < 24h`:
+  - Verificar se essa conversa tem alguma `conversation_messages` com `direction = 'inbound'` (consulta `select id ... limit 1`).
+  - Se **não** tem inbound → retornar `403` com payload `{ error, code: "PERSONAL_INSTANCE_COOLDOWN", unlocks_at: <iso>, hours_remaining: <num> }`.
 
-`SECURITY DEFINER`, recebe `_conversation_id uuid`. Lógica:
+### 2. Backend — `supabase/functions/whatsapp-message-sender/index.ts` (cadências)
+Aplicar a mesma trava antes de disparar mensagens da fila pela instância pessoal. Para cada item da queue:
+- Se a conversa/lead vai sair pela pessoal e o corretor está dentro da janela de 24 h **e** não houve inbound da lead ainda → marcar a mensagem como `paused_by_system` com `error_message = 'personal_instance_cooldown'` (consistente com o sistema de pausados existente). Não falha a mensagem; reaparece na revisão pós-janela.
 
-1. Resolver `_caller_broker_id` via `get_my_broker_id()` (se admin sem broker, abortar com erro claro).
-2. Carregar a conversa origem; validar `source_instance='global'`.
-3. Buscar conversa pessoal existente: `broker_id=_caller AND phone_normalized=<phone> AND source_instance='personal'`.
-4. **Caso A — existe pessoal**:
-   - `UPDATE conversation_messages SET conversation_id=<personal_id> WHERE conversation_id=<global_id>`.
-   - `UPDATE whatsapp_message_queue SET conversation_id=<personal_id> WHERE conversation_id=<global_id>` (se a coluna existir; checar e ignorar se não).
-   - Atualizar a conversa pessoal: `lead_id` (se a global tinha e a pessoal não), `attendance_started=true`, `display_name`, `last_message_*` recomputados a partir da última mensagem, `unread_count` recomputado.
-   - Atualizar lead vinculado: `broker_id=_caller`, `corretor_atribuido_id=_caller`, `status_distribuicao='atendimento_iniciado'`, `atendimento_iniciado_em=COALESCE(...,now())`.
-   - `DELETE FROM conversations WHERE id=<global_id>` → libera o telefone do índice global; próxima inbound passa pelo webhook → roleta.
-   - Registrar `lead_interactions` tipo `note` ("Conversa global unificada na pessoal por <broker>").
-5. **Caso B — não existe pessoal**:
-   - `UPDATE conversations SET source_instance='personal', broker_id=_caller, attendance_started=true, updated_at=now() WHERE id=<global_id>`.
-6. Retornar `jsonb { success, conversation_id, merged }`.
+### 3. Frontend — UX no Inbox
+- `src/components/inbox/ConversationThread.tsx` (componente de envio): hook novo `useBrokerPersonalCooldown(brokerId)` que retorna `{ active, unlocksAt, hoursRemaining }` consultando `broker_whatsapp_instances.connected_at`.
+- Quando `source_instance === 'personal'` **e** cooldown ativo **e** a conversa não tem nenhum `inbound` (deriva do `messages` já carregado na thread):
+  - Desabilitar input de envio com tooltip: *"Proteção anti-bloqueio: aguarde X h após conectar para iniciar contatos pelo seu WhatsApp pessoal. Você pode responder normalmente assim que o cliente enviar a primeira mensagem."*
+  - Banner discreto no topo da thread com countdown.
+- Tratar erro `PERSONAL_INSTANCE_COOLDOWN` retornado da edge function exibindo o mesmo aviso (toast).
 
-Tratar tudo dentro do bloco para evitar deadlock com triggers; usar `FOR UPDATE` na conversa global no início.
+### 4. Frontend — "Puxar para meu WhatsApp pessoal"
+Manter a ação habilitada (a conversa pode ser convertida), mas após o pull, se cooldown ativo e sem inbound, a thread permanece com input bloqueado pelo mesmo mecanismo do item 3.
 
-### 2. Frontend: usar a RPC
+### 5. Aviso pós-conexão
+Em `src/components/whatsapp/ConnectionTab.tsx`, ao detectar `status === 'connected'` e `connected_at` < 24 h, mostrar card informativo:
+> *"Para proteger seu número, novos contatos pelo seu WhatsApp pessoal só serão liberados em X h. Respostas a mensagens recebidas continuam liberadas."*
 
-Em `src/pages/BrokerPlantao.tsx` (`handlePullToPersonal`) e `src/pages/AdminPlantao.tsx` (`handlePullToPersonal`):
+## Detalhes técnicos
 
-```ts
-const { data, error } = await supabase.rpc("pull_global_conversation_to_personal", {
-  _conversation_id: selectedConversation.id,
-});
-if (error) throw error;
-const targetId = (data as any)?.conversation_id ?? selectedConversation.id;
-const merged = (data as any)?.merged;
-toast.success(merged
-  ? "Conversa unificada com seu WhatsApp pessoal!"
-  : "Conversa migrada para seu WhatsApp pessoal!");
-navigate(`${basePath}/inbox?conversationId=${targetId}`);
-```
+- **Sem mudança de schema.** Usa `broker_whatsapp_instances.connected_at` (já existe e já é atualizado a cada conexão) e `conversation_messages.direction`.
+- **Definição de "houve inbound":** `select 1 from conversation_messages where conversation_id = $1 and direction = 'inbound' limit 1`. Robusto contra reaberturas e independente de `last_message_direction`.
+- **Constante:** `PERSONAL_COOLDOWN_HOURS = 24` em `supabase/functions/_shared/` (criar `cooldown.ts` exportando a constante e helper `isPersonalCooldownActive(connectedAt)`); reutilizado pelo inbox-send-message e pelo message-sender.
+- **Instância global** (`source_instance = 'global'`): sem alteração, fluxo atual permanece.
+- **Erro estruturado** com `code` permite o frontend mostrar mensagem amigável sem string-matching.
+- **Cadências pausadas** entram no fluxo já existente de "mensagens pausadas para revisão" (`PausedMessagesReviewModal`), exibindo motivo "aguardando liberação do WhatsApp pessoal (24 h)".
+- **Reconectar zera o timer:** comportamento esperado pois o `connected_at` é regravado a cada nova conexão (já implementado no `whatsapp-instance-manager`).
 
-Sem outras mudanças visuais.
-
-### 3. Memória
-
-Adicionar 1 entrada em `mem://features/whatsapp-pull-to-personal` documentando a regra (global=1, personal=N; pull unifica e deleta global) e referência no `mem://index.md`.
-
-## Arquivos afetados
-
-- `supabase/migrations/<novo>.sql` (nova função RPC)
-- `src/pages/BrokerPlantao.tsx` (handlePullToPersonal)
-- `src/pages/AdminPlantao.tsx` (handlePullToPersonal)
-- `mem://features/whatsapp-pull-to-personal` + `mem://index.md`
-
-## Riscos
-
-- Mover `conversation_messages` em massa: rápido (índice por `conversation_id`).
-- Triggers de `update_conversation_on_message` rodam só em INSERT, então `UPDATE conversation_id` não dispara recomputo automático — por isso recomputamos `last_message_*` e `unread_count` manualmente na pessoal.
-- Caso `whatsapp_message_queue` não tenha `conversation_id`, ignorar silenciosamente (verificar schema antes de gerar a migration).
+## Fora do escopo
+- Não altera regras de janela de atendimento, warmup, nem rate limits horários/diários.
+- Não cria nova tabela; tudo derivado de dados já existentes.
