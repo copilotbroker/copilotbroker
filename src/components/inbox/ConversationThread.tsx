@@ -27,6 +27,7 @@ import {
   X,
   Square,
   Wifi,
+  ShieldAlert,
 } from "lucide-react";
 import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
 import { AdReferralCard } from "./AdReferralCard";
