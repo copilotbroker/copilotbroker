@@ -78,7 +78,7 @@ const Admin = () => {
   const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { role, isLoading: isRoleLoading } = useUserRole();
+  const { role, isLoading: isRoleLoading, brokerId: myBrokerId } = useUserRole();
   const queryClient = useQueryClient();
   const activeTab = getAdminTabFromPath(location.pathname) as Exclude<AdminRouteTabId, "inbox" | "copilot">;
 
@@ -493,7 +493,7 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       ) : activeTab === "crm" ? (
-        <KanbanBoard isAdmin={true} brokers={brokers} searchTerm={crmSearchTerm} onSearchChange={setCrmSearchTerm} onAddLead={() => setIsAddLeadOpen(true)} />
+        <KanbanBoard isAdmin={true} brokerId={myBrokerId} brokers={brokers} searchTerm={crmSearchTerm} onSearchChange={setCrmSearchTerm} onAddLead={() => setIsAddLeadOpen(true)} />
       ) : activeTab === "leads" ? (
         <>
           {/* Stats */}

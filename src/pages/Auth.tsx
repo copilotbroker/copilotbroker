@@ -88,20 +88,16 @@ const Auth = () => {
 
       if (error) {
         console.error("Erro ao buscar role:", error);
-        navigate("/admin");
+        navigate("/admin/crm");
         return;
       }
 
       const roles = (rolesData || []).map((r: { role: string }) => r.role);
 
-      // Super-admin "puro" (sem outro papel operacional) tem portal próprio.
-      // Redireciona pra /master/overview se também for super_admin com perfis operacionais,
-      // ou força o uso do portal Master quando for SOMENTE super_admin.
       const hasOperationalRole =
         roles.includes("admin") || roles.includes("broker") || roles.includes("leader");
 
       if (roles.includes("super_admin") && !hasOperationalRole && !hasUsableOrgMembership) {
-        // Super-admin puro (sem papel operacional nem membership de org) usa portal Master
         await supabase.auth.signOut();
         queryClient.clear();
         toast.error("Super-admins devem acessar pelo portal Master.");
@@ -110,15 +106,15 @@ const Auth = () => {
       }
 
       if (roles.includes("admin") || (hasUsableOrgMembership && !roles.includes("broker") && !roles.includes("leader"))) {
-        navigate("/admin");
+        navigate("/admin/crm");
       } else if (roles.includes("broker") || roles.includes("leader")) {
-        navigate("/corretor/admin");
+        navigate("/corretor/crm");
       } else {
-        navigate("/admin");
+        navigate("/admin/crm");
       }
     } catch (error) {
       console.error("Erro ao verificar role:", error);
-      navigate("/admin");
+      navigate("/admin/crm");
     }
   };
 

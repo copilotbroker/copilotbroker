@@ -30,7 +30,7 @@ const AdminOrganizationBranding = () => {
 
   useEffect(() => {
     if (!isLoading && !isOwnerOrAdmin && !isSuperAdmin) {
-      navigate("/corretor/dashboard", { replace: true });
+      navigate("/corretor/crm", { replace: true });
     }
   }, [isLoading, isOwnerOrAdmin, isSuperAdmin, navigate]);
 

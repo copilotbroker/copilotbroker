@@ -29,7 +29,7 @@ const AdminOrganization = () => {
 
   useEffect(() => {
     if (!orgLoading && !isOwnerOrAdmin && !isSuperAdmin) {
-      navigate("/corretor/dashboard", { replace: true });
+      navigate("/corretor/crm", { replace: true });
     }
   }, [orgLoading, isOwnerOrAdmin, isSuperAdmin, navigate]);
 
