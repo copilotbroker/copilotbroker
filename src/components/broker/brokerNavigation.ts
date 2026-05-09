@@ -2,8 +2,8 @@ import { BarChart3, Bot, Building2, CalendarDays, LayoutDashboard, List, RotateC
 import { WhatsAppInboxIcon, WhatsAppPlantaoIcon } from "@/components/icons/WhatsAppIcon";
 
 export const BROKER_ROUTE_TABS = [
-  { id: "dashboard", label: "Dashboard", path: "/corretor/dashboard", icon: BarChart3 },
   { id: "crm", label: "Kanban", path: "/corretor/crm", icon: LayoutDashboard },
+  { id: "dashboard", label: "Dashboard", path: "/corretor/dashboard", icon: BarChart3 },
   { id: "leads", label: "Lista", path: "/corretor/leads", icon: List },
   { id: "inbox", label: "Meu WhatsApp", path: "/corretor/inbox", icon: WhatsAppInboxIcon },
   { id: "plantao", label: "WhatsApp do Plantão", path: "/corretor/plantao", icon: WhatsAppPlantaoIcon },
