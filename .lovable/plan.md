@@ -1,62 +1,87 @@
 ## Objetivo
 
-Impedir que o corretor envie a **primeira mensagem** (contato frio) pela sua **instância pessoal de WhatsApp** durante as primeiras **24 horas** após conectar o QR Code. Resposta a mensagens recebidas continua liberada. A instância **global da imobiliária** continua funcionando normalmente.
+1. Garantir que ao entrar na plataforma a primeira tela seja o **Kanban**, não a Dashboard, para qualquer papel.
+2. Auditar e ajustar a visibilidade dos dados conforme a regra:
+   - **Admin / Gerente (manager)**: vê os próprios dados primeiro, mas tem acesso a todos os corretores da imobiliária.
+   - **Líder**: vê os próprios dados primeiro, e pode alternar para ver o time.
+   - **Corretor**: vê apenas os próprios dados.
 
-## Regra de negócio
+---
 
-Para uma conversa rotear pela instância **pessoal** (`conversations.source_instance = 'personal'`), o envio só é permitido se **alguma** das condições for verdadeira:
+## Parte 1 — Kanban como página inicial
 
-1. Já se passaram **≥ 24 horas** desde `broker_whatsapp_instances.connected_at`; **ou**
-2. A conversa **já recebeu pelo menos uma mensagem inbound** do cliente (cliente "abriu" o canal). Tecnicamente: existe uma `conversation_messages` com `direction = 'inbound'` para essa `conversation_id` cuja origem foi a instância pessoal — ou simplesmente `conversations.last_message_direction` já passou por `inbound` em algum momento (ver detalhes técnicos).
+Hoje as rotas `/admin` e `/corretor/admin` já redirecionam para `/admin/crm` e `/corretor/crm`. O problema percebido vem da ordem na sidebar (Dashboard aparece primeiro) e do fato de o login não forçar o destino para o CRM em todos os caminhos.
 
-Casos cobertos:
+Mudanças:
 
-- **Bloqueia:** corretor recém-conectado tenta mandar a 1ª mensagem para um lead novo pela pessoal.
-- **Bloqueia:** "Puxar para meu WhatsApp pessoal" pode ser feito (conversão para personal liberada), mas o envio fica travado até o cliente responder ou completarem 24 h.
-- **Libera:** cliente já mandou mensagem para o corretor → pode responder mesmo dentro das 24 h.
-- **Libera:** envio pela instância **global** da imobiliária (sempre permitido).
-- **Libera:** após 24 h da conexão, contato frio liberado normalmente.
+1. **Reordenar as sidebars** para listar Kanban antes de Dashboard:
+   - `src/components/admin/adminNavigation.ts`: mover `crm` para o topo de `ADMIN_ROUTE_TABS` (antes de `dashboard`).
+   - `src/components/broker/brokerNavigation.ts`: mover `crm` (Kanban) para o topo, antes de `dashboard`.
+2. **Login (`src/pages/Auth.tsx`)**: garantir que o redirect pós-login do admin vá para `/admin/crm` e do corretor para `/corretor/crm` (hoje vai para `/admin` e `/corretor/admin`, que redirecionam — mantém-se o comportamento mas explicitando o destino).
+3. **Páginas que redirecionam para `/corretor/dashboard`** (`AdminOrganization.tsx`, `AdminOrganizationBranding.tsx`, `AdminOrganizationTeam.tsx`): trocar para `/corretor/crm` quando o usuário não tem permissão de admin-org, para que o fallback caia no Kanban.
 
-Se o corretor desconectar e reconectar, o relógio reinicia (novo `connected_at`).
+---
 
-## Mudanças
+## Parte 2 — Auditoria de visibilidade por papel
 
-### 1. Backend — `supabase/functions/inbox-send-message/index.ts`
-No bloco onde `conv.source_instance !== 'global'` (envio pela pessoal), antes de chamar UAZAPI:
+### 2.1 Kanban (`KanbanBoard` em `src/components/crm/KanbanBoard.tsx`)
 
-- Buscar `connected_at` da `broker_whatsapp_instances` do corretor.
-- Se `connected_at` existe e `now - connected_at < 24h`:
-  - Verificar se essa conversa tem alguma `conversation_messages` com `direction = 'inbound'` (consulta `select id ... limit 1`).
-  - Se **não** tem inbound → retornar `403` com payload `{ error, code: "PERSONAL_INSTANCE_COOLDOWN", unlocks_at: <iso>, hours_remaining: <num> }`.
+Estado atual:
+- Em `BrokerAdmin` (corretor/líder): `isAdmin={isLeader}` + `brokerId` do próprio. Líder cai com `selectedBroker = brokerId` (próprio) por padrão. ✅
+- Em `Admin` (admin/gerente): `isAdmin={true}` **sem `brokerId`**, então `selectedBroker` inicia como `"all"`. ❌ — usuário pediu "vê os próprios dados primeiro".
 
-### 2. Backend — `supabase/functions/whatsapp-message-sender/index.ts` (cadências)
-Aplicar a mesma trava antes de disparar mensagens da fila pela instância pessoal. Para cada item da queue:
-- Se a conversa/lead vai sair pela pessoal e o corretor está dentro da janela de 24 h **e** não houve inbound da lead ainda → marcar a mensagem como `paused_by_system` com `error_message = 'personal_instance_cooldown'` (consistente com o sistema de pausados existente). Não falha a mensagem; reaparece na revisão pós-janela.
+Mudanças:
+- `Admin.tsx`: passar o `brokerId` do próprio admin (via `useUserRole().brokerId`) para `<KanbanBoard>` para que o filtro inicial seja o próprio admin, mantendo a opção de trocar para "Todos" no seletor de corretor.
+- `KanbanBoard`: confirmar que, quando `isAdmin && brokerId`, o seletor "Todos / Enove / lista" continua disponível (já está) e que o `selectedBroker` inicial é o próprio.
 
-### 3. Frontend — UX no Inbox
-- `src/components/inbox/ConversationThread.tsx` (componente de envio): hook novo `useBrokerPersonalCooldown(brokerId)` que retorna `{ active, unlocksAt, hoursRemaining }` consultando `broker_whatsapp_instances.connected_at`.
-- Quando `source_instance === 'personal'` **e** cooldown ativo **e** a conversa não tem nenhum `inbound` (deriva do `messages` já carregado na thread):
-  - Desabilitar input de envio com tooltip: *"Proteção anti-bloqueio: aguarde X h após conectar para iniciar contatos pelo seu WhatsApp pessoal. Você pode responder normalmente assim que o cliente enviar a primeira mensagem."*
-  - Banner discreto no topo da thread com countdown.
-- Tratar erro `PERSONAL_INSTANCE_COOLDOWN` retornado da edge function exibindo o mesmo aviso (toast).
+### 2.2 Dashboard
 
-### 4. Frontend — "Puxar para meu WhatsApp pessoal"
-Manter a ação habilitada (a conversa pode ser convertida), mas após o pull, se cooldown ativo e sem inbound, a thread permanece com input bloqueado pelo mesmo mecanismo do item 3.
+- `BrokerDashboard` (`src/pages/BrokerDashboard.tsx`): hoje sempre mostra `brokerId` próprio. Para **líder**, deveria iniciar com os próprios números e oferecer alternância "Meus / Time".
+- `Admin → DashboardOverview / PerformanceDashboard / IntelligenceDashboard`: hoje agregam todos os corretores. Adicionar seletor "Meus dados / Imobiliária toda" com default = "Meus dados" (próprio admin) quando o admin tem `brokerId` (admins que também são corretores).
 
-### 5. Aviso pós-conexão
-Em `src/components/whatsapp/ConnectionTab.tsx`, ao detectar `status === 'connected'` e `connected_at` < 24 h, mostrar card informativo:
-> *"Para proteger seu número, novos contatos pelo seu WhatsApp pessoal só serão liberados em X h. Respostas a mensagens recebidas continuam liberadas."*
+### 2.3 Inbox
 
-## Detalhes técnicos
+- `BrokerInbox` (`src/pages/BrokerInbox.tsx`): líder já tem seletor `teamMembers` com `selectedBrokerId` default = próprio brokerId. ✅
+- `AdminInbox`: validar que admin/gerente abre primeiro com seu próprio inbox (se tiver `brokerId`) e pode alternar para qualquer corretor. Ajustar o seletor de corretor no header se necessário.
 
-- **Sem mudança de schema.** Usa `broker_whatsapp_instances.connected_at` (já existe e já é atualizado a cada conexão) e `conversation_messages.direction`.
-- **Definição de "houve inbound":** `select 1 from conversation_messages where conversation_id = $1 and direction = 'inbound' limit 1`. Robusto contra reaberturas e independente de `last_message_direction`.
-- **Constante:** `PERSONAL_COOLDOWN_HOURS = 24` em `supabase/functions/_shared/` (criar `cooldown.ts` exportando a constante e helper `isPersonalCooldownActive(connectedAt)`); reutilizado pelo inbox-send-message e pelo message-sender.
-- **Instância global** (`source_instance = 'global'`): sem alteração, fluxo atual permanece.
-- **Erro estruturado** com `code` permite o frontend mostrar mensagem amigável sem string-matching.
-- **Cadências pausadas** entram no fluxo já existente de "mensagens pausadas para revisão" (`PausedMessagesReviewModal`), exibindo motivo "aguardando liberação do WhatsApp pessoal (24 h)".
-- **Reconectar zera o timer:** comportamento esperado pois o `connected_at` é regravado a cada nova conexão (já implementado no `whatsapp-instance-manager`).
+### 2.4 Plantão
 
-## Fora do escopo
-- Não altera regras de janela de atendimento, warmup, nem rate limits horários/diários.
-- Não cria nova tabela; tudo derivado de dados já existentes.
+- `BrokerPlantao`: admin e líder têm `canSelectBroker`. Default já é o próprio (`selectedBrokerId || brokerId`). ✅
+- Confirmar que o admin/gerente também tem default = próprio, não "all".
+
+### 2.5 Agenda
+
+- `BrokerAgenda` / `AdminAgenda`: validar filtros. RLS já permite líder ver eventos do time (`Lideres podem ver eventos da equipe`) e admin ver tudo. UI deve abrir com "Minha agenda" por padrão e oferecer "Time" (líder) ou "Imobiliária" (admin/gerente).
+
+### 2.6 Leads / Lista
+
+- `BrokerAdmin` (modo lista): hoje filtra por `broker_id = brokerId` próprio. Para líder e admin a lista deveria oferecer toggle "Meus / Time / Todos" com default no próprio.
+
+### 2.7 Roletas, Empreendimentos, Copiloto
+
+- Páginas administrativas: continuam visíveis somente para admin/gerente; sem mudança de escopo necessária.
+
+---
+
+## Resumo das alterações de código
+
+| Arquivo | Mudança |
+|---|---|
+| `src/components/admin/adminNavigation.ts` | Mover `crm` para antes de `dashboard` |
+| `src/components/broker/brokerNavigation.ts` | Mover `crm` (Kanban) para antes de `dashboard` |
+| `src/pages/Auth.tsx` | Redirect pós-login → `/admin/crm` e `/corretor/crm` explícitos |
+| `src/pages/admin-org/AdminOrganization.tsx`, `AdminOrganizationBranding.tsx`, `AdminOrganizationTeam.tsx` | Fallback `/corretor/crm` no lugar de `/corretor/dashboard` |
+| `src/pages/Admin.tsx` | Passar `brokerId` próprio ao `<KanbanBoard>` para default = "meus leads" |
+| `src/pages/BrokerDashboard.tsx` | Líder: seletor "Meus / Time", default próprio |
+| `src/components/admin/DashboardOverview.tsx`, `PerformanceDashboard.tsx`, `IntelligenceDashboard.tsx` | Admin/gerente: seletor "Meus / Imobiliária", default próprio quando admin é corretor |
+| `src/pages/AdminInbox.tsx` | Default no próprio brokerId; seletor para todos os corretores |
+| `src/pages/BrokerAgenda.tsx`, `AdminAgenda.tsx` | Default "Minha agenda"; toggle Time / Imobiliária |
+| `src/pages/BrokerAdmin.tsx` (modo lista) | Para líder/admin: toggle Meus / Time / Todos |
+
+---
+
+## Pontos a confirmar antes de implementar
+
+1. **Admin/gerente sem perfil de corretor**: alguns admins podem não ter registro em `brokers` (sem `brokerId`). Nesse caso o default "meus dados" não se aplica — sugiro cair em "Imobiliária toda". Confirmar.
+2. **Gerente (manager)**: hoje `useUserRole` trata `manager` como `admin`. Manter essa equivalência.
+3. **Sidebar**: manter o item "Dashboard" visível (apenas reordenar), ou remover do menu principal? Sugiro **manter visível** e apenas reordenar.
