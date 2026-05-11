@@ -418,9 +418,12 @@ export default function IntelligenceDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Period selector */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-white">Inteligência Comercial</h2>
+      {/* Scope + Period selector */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold text-white">Inteligência Comercial</h2>
+          <AdminScopeToggle scope={scope} onScopeChange={setScope} hasBrokerProfile={!!myBrokerId} />
+        </div>
         <PeriodFilterWithCustom
           period={period}
           onPeriodChange={(v) => setPeriod(v as Period)}
