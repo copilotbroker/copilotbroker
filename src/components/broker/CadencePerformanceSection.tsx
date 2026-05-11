@@ -147,7 +147,7 @@ export function CadencePerformanceSection({
               <TooltipContent side="right" className="max-w-xs text-xs">
                 Cada lead aparece em apenas uma categoria final.
                 "Respondeu na Xª tentativa" significa que o lead respondeu após
-                receber o toque X e antes do toque X+1. "Sem resposta" são leads
+                receber o contato X e antes do contato X+1. "Sem resposta" são leads
                 que receberam todas as 7 tentativas sem responder. Cadências
                 em andamento são contadas separadamente.
               </TooltipContent>

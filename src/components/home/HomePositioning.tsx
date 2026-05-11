@@ -9,7 +9,7 @@ const antes = [
 ];
 
 const agora = [
-  "7 toques automáticos em 10 dias por lead",
+  "7 contatos automáticos em 10 dias por lead",
   "Cadência 10D validada rodando sozinha",
   "Nenhum lead esquecido. Nunca.",
   "Resultado: até 4x mais vendas",
@@ -69,7 +69,7 @@ const HomePositioning = () => {
             </ul>
             <p className="mt-6 pt-5 border-t border-[#1e1e22] text-white/60 text-sm italic">
               <strong className="text-destructive not-italic">87% dos leads "perdidos"</strong> retornam
-              no 6º toque. Você parou no 2º.
+              no 6º contato. Você parou no 2º.
             </p>
           </div>
 

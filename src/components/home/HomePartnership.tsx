@@ -6,7 +6,7 @@ const testimonials = [
     name: "Rafael Mendes",
     role: "Corretor há 8 anos · Porto Alegre",
     initials: "RM",
-    text: "Cara, eu ia desistir desse lead da landing de Canoas. Tinha mandado duas mensagens, ele sumiu. No 5º toque do Copilot ele respondeu \"oi, desculpa, tava em obra\" e marcou visita pra sábado. Fechei R$ 380 mil. Esse lead tava MORTO pra mim.",
+    text: "Cara, eu ia desistir desse lead da landing de Canoas. Tinha mandado duas mensagens, ele sumiu. No 5º contato do Copilot ele respondeu \"oi, desculpa, tava em obra\" e marcou visita pra sábado. Fechei R$ 380 mil. Esse lead tava MORTO pra mim.",
   },
   {
     name: "Camila Borges",
@@ -24,7 +24,7 @@ const testimonials = [
     name: "Juliana Reis",
     role: "Corretora · Gramado",
     initials: "JR",
-    text: "O que mais me ajudou foi a tranquilidade. Antes eu dormia pensando \"ai, esqueci de responder o fulano\". Agora não. O bot dá conta dos toques, eu entro pra fechar. Minha cabeça agradece tanto quanto meu bolso.",
+    text: "O que mais me ajudou foi a tranquilidade. Antes eu dormia pensando \"ai, esqueci de responder o fulano\". Agora não. O bot dá conta dos contatos, eu entro pra fechar. Minha cabeça agradece tanto quanto meu bolso.",
   },
   {
     name: "Marcos Vinícius",
