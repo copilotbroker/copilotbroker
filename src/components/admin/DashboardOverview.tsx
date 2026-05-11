@@ -315,17 +315,20 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Period selector */}
-      <PeriodFilterWithCustom
-        period={period}
-        onPeriodChange={(v) => setPeriod(v as Period)}
-        customRange={customRange}
-        onCustomRangeApply={(start, end) => {
-          setCustomRange({ start, end });
-          setPeriod("custom");
-        }}
-        showAllPeriod
-      />
+      {/* Scope + Period selectors */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <AdminScopeToggle scope={scope} onScopeChange={setScope} hasBrokerProfile={!!myBrokerId} />
+        <PeriodFilterWithCustom
+          period={period}
+          onPeriodChange={(v) => setPeriod(v as Period)}
+          customRange={customRange}
+          onCustomRangeApply={(start, end) => {
+            setCustomRange({ start, end });
+            setPeriod("custom");
+          }}
+          showAllPeriod
+        />
+      </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
