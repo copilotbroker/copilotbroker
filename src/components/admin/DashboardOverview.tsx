@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/use-user-role";
+import { AdminScopeToggle, type AdminScope } from "@/components/admin/AdminScopeToggle";
 import {
   Users, TrendingUp, AlertTriangle, Clock, BarChart3, Globe,
   Eye, Trophy, Timer, ArrowDownRight, UserCheck, UserPlus, Loader2
@@ -35,6 +37,8 @@ const chartTooltipStyle = {
 };
 
 export default function DashboardOverview() {
+  const { brokerId: myBrokerId } = useUserRole();
+  const [scope, setScope] = useState<AdminScope>(myBrokerId ? "mine" : "all");
   const [period, setPeriod] = useState<Period>("30d");
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
   const dateFrom = period === "custom" && customRange ? customRange.start.toISOString() : getDateFrom(period as "today" | "7d" | "30d" | "all");
