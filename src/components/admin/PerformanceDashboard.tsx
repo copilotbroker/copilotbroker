@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/use-user-role";
+import { AdminScopeToggle, type AdminScope } from "@/components/admin/AdminScopeToggle";
 import {
   Users, TrendingUp, AlertTriangle, Clock, BarChart3, Trophy, Timer,
   ArrowDownRight, UserCheck, Loader2, Phone, CalendarCheck, FileText,
@@ -37,6 +39,8 @@ const chartTooltipStyle = {
 };
 
 export default function PerformanceDashboard() {
+  const { brokerId: myBrokerId } = useUserRole();
+  const [scope, setScope] = useState<AdminScope>(myBrokerId ? "mine" : "all");
   const [period, setPeriod] = useState<Period>("30d");
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
@@ -67,7 +71,7 @@ export default function PerformanceDashboard() {
   }, [brokers]);
 
   // Fetch leads
-  const { data: allLeads = [], isLoading } = useQuery({
+  const { data: allLeadsRaw = [], isLoading } = useQuery({
     queryKey: ["perf-leads", period],
     queryFn: async () => {
       let q = supabase.from("leads").select(
@@ -81,7 +85,7 @@ export default function PerformanceDashboard() {
   });
 
   // Fetch interactions
-  const { data: interactions = [] } = useQuery({
+  const { data: interactionsRaw = [] } = useQuery({
     queryKey: ["perf-interactions", period],
     queryFn: async () => {
       let q = supabase.from("lead_interactions").select("id, lead_id, broker_id, interaction_type, channel, created_at, notes");
@@ -93,7 +97,7 @@ export default function PerformanceDashboard() {
   });
 
   // Fetch stale leads
-  const { data: staleLeads = [] } = useQuery({
+  const { data: staleLeadsRaw = [] } = useQuery({
     queryKey: ["perf-stale-leads"],
     queryFn: async () => {
       const cutoff = new Date();
@@ -105,6 +109,19 @@ export default function PerformanceDashboard() {
     },
     staleTime: 60_000,
   });
+
+  const allLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (allLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : allLeadsRaw),
+    [allLeadsRaw, scope, myBrokerId]
+  );
+  const interactions = useMemo(
+    () => (scope === "mine" && myBrokerId ? (interactionsRaw as any[]).filter(i => i.broker_id === myBrokerId) : interactionsRaw),
+    [interactionsRaw, scope, myBrokerId]
+  );
+  const staleLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (staleLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : staleLeadsRaw),
+    [staleLeadsRaw, scope, myBrokerId]
+  );
 
   // Fetch projects
   const { data: projects = [] } = useQuery({
@@ -439,9 +456,12 @@ export default function PerformanceDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Period selector */}
+      {/* Scope + Period selector */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-lg font-bold text-white">Performance Comercial</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold text-white">Performance Comercial</h2>
+          <AdminScopeToggle scope={scope} onScopeChange={setScope} hasBrokerProfile={!!myBrokerId} />
+        </div>
         <PeriodFilterWithCustom
           period={period}
           onPeriodChange={(v) => setPeriod(v as Period)}

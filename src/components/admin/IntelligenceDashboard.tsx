@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/use-user-role";
+import { AdminScopeToggle, type AdminScope } from "@/components/admin/AdminScopeToggle";
 import {
   Users, TrendingUp, AlertTriangle, Clock, BarChart3, Globe,
   Eye, Trophy, Timer, ArrowDownRight, UserCheck, UserPlus, Loader2,
@@ -65,6 +67,8 @@ function VariationBadge({ current, previous }: { current: number; previous: numb
 }
 
 export default function IntelligenceDashboard() {
+  const { brokerId: myBrokerId } = useUserRole();
+  const [scope, setScope] = useState<AdminScope>(myBrokerId ? "mine" : "all");
   const [period, setPeriod] = useState<Period>("30d");
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
   const { from: dateFrom, to: dateTo } = period === "custom" && customRange
@@ -93,7 +97,7 @@ export default function IntelligenceDashboard() {
     return m;
   }, [brokers]);
 
-  const { data: allLeads = [], isLoading } = useQuery({
+  const { data: allLeadsRaw = [], isLoading } = useQuery({
     queryKey: ["intel-leads", period],
     queryFn: async () => {
       let q = supabase.from("leads").select(
@@ -111,7 +115,7 @@ export default function IntelligenceDashboard() {
     staleTime: 30_000,
   });
 
-  const { data: staleLeads = [] } = useQuery({
+  const { data: staleLeadsRaw = [] } = useQuery({
     queryKey: ["intel-stale-leads"],
     queryFn: async () => {
       const cutoff = new Date();
@@ -123,6 +127,15 @@ export default function IntelligenceDashboard() {
     },
     staleTime: 60_000,
   });
+
+  const allLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (allLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : allLeadsRaw),
+    [allLeadsRaw, scope, myBrokerId]
+  );
+  const staleLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (staleLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : staleLeadsRaw),
+    [staleLeadsRaw, scope, myBrokerId]
+  );
 
   const { data: projects = [] } = useQuery({
     queryKey: ["intel-projects"],
@@ -405,9 +418,12 @@ export default function IntelligenceDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Period selector */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-white">Inteligência Comercial</h2>
+      {/* Scope + Period selector */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold text-white">Inteligência Comercial</h2>
+          <AdminScopeToggle scope={scope} onScopeChange={setScope} hasBrokerProfile={!!myBrokerId} />
+        </div>
         <PeriodFilterWithCustom
           period={period}
           onPeriodChange={(v) => setPeriod(v as Period)}

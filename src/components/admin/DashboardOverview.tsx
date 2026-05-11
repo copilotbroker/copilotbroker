@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/use-user-role";
+import { AdminScopeToggle, type AdminScope } from "@/components/admin/AdminScopeToggle";
 import {
   Users, TrendingUp, AlertTriangle, Clock, BarChart3, Globe,
   Eye, Trophy, Timer, ArrowDownRight, UserCheck, UserPlus, Loader2
@@ -35,6 +37,8 @@ const chartTooltipStyle = {
 };
 
 export default function DashboardOverview() {
+  const { brokerId: myBrokerId } = useUserRole();
+  const [scope, setScope] = useState<AdminScope>(myBrokerId ? "mine" : "all");
   const [period, setPeriod] = useState<Period>("30d");
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
   const dateFrom = period === "custom" && customRange ? customRange.start.toISOString() : getDateFrom(period as "today" | "7d" | "30d" | "all");
@@ -59,7 +63,7 @@ export default function DashboardOverview() {
     return m;
   }, [brokers]);
 
-  const { data: leads = [], isLoading } = useQuery({
+  const { data: leadsRaw = [], isLoading } = useQuery({
     queryKey: ["dash-leads", period],
     queryFn: async () => {
       let q = supabase.from("leads").select(
@@ -72,7 +76,7 @@ export default function DashboardOverview() {
     staleTime: 30_000,
   });
 
-  const { data: staleLeads = [] } = useQuery({
+  const { data: staleLeadsRaw = [] } = useQuery({
     queryKey: ["dash-stale-leads"],
     queryFn: async () => {
       const cutoff = new Date();
@@ -84,6 +88,15 @@ export default function DashboardOverview() {
     },
     staleTime: 60_000,
   });
+
+  const leads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (leadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : leadsRaw),
+    [leadsRaw, scope, myBrokerId]
+  );
+  const staleLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (staleLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : staleLeadsRaw),
+    [staleLeadsRaw, scope, myBrokerId]
+  );
 
   const { data: projects = [] } = useQuery({
     queryKey: ["dash-projects"],
@@ -302,17 +315,20 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Period selector */}
-      <PeriodFilterWithCustom
-        period={period}
-        onPeriodChange={(v) => setPeriod(v as Period)}
-        customRange={customRange}
-        onCustomRangeApply={(start, end) => {
-          setCustomRange({ start, end });
-          setPeriod("custom");
-        }}
-        showAllPeriod
-      />
+      {/* Scope + Period selectors */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <AdminScopeToggle scope={scope} onScopeChange={setScope} hasBrokerProfile={!!myBrokerId} />
+        <PeriodFilterWithCustom
+          period={period}
+          onPeriodChange={(v) => setPeriod(v as Period)}
+          customRange={customRange}
+          onCustomRangeApply={(start, end) => {
+            setCustomRange({ start, end });
+            setPeriod("custom");
+          }}
+          showAllPeriod
+        />
+      </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
