@@ -67,6 +67,8 @@ function VariationBadge({ current, previous }: { current: number; previous: numb
 }
 
 export default function IntelligenceDashboard() {
+  const { brokerId: myBrokerId } = useUserRole();
+  const [scope, setScope] = useState<AdminScope>(myBrokerId ? "mine" : "all");
   const [period, setPeriod] = useState<Period>("30d");
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
   const { from: dateFrom, to: dateTo } = period === "custom" && customRange
