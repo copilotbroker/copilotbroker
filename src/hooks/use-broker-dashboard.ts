@@ -240,7 +240,7 @@ export function useBrokerDashboard(filters: BrokerDashboardFilters) {
   const followUp = followUpQuery.data;
   if (followUp) {
     if (followUp.lateResponses > 3) {
-      insights.push({ type: "info", title: "Respostas tardias", description: `${followUp.lateResponses} leads responderam somente após 3+ toques. O follow-up automático está funcionando.` });
+      insights.push({ type: "info", title: "Respostas tardias", description: `${followUp.lateResponses} leads responderam somente após 3+ contatos. O follow-up automático está funcionando.` });
     }
   }
 

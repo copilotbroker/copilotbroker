@@ -14,7 +14,7 @@ const steps = [
   {
     n: "03",
     title: "Follow-up no piloto automático",
-    desc: 'Enquanto você atende seus leads quentes, o seu parceiro Copilot Broker aquece os que você chamava de "curiosos". No 7º toque, eles já estarão prontos para você vender.',
+    desc: 'Enquanto você atende seus leads quentes, o seu parceiro Copilot Broker aquece os que você chamava de "curiosos". No 7º contato, eles já estarão prontos para você vender.',
   },
 ];
 

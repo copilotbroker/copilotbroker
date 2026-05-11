@@ -5,7 +5,7 @@ const cards = [
   {
     icon: Repeat,
     title: "Cadência validada",
-    desc: "7 toques em 10 dias, no timing certo. 100% dos leads ativados.",
+    desc: "7 contatos em 10 dias, no timing certo. 100% dos leads ativados.",
     extra: "O follow-up roda até levantar a primeira oportunidade.",
   },
   {
@@ -62,7 +62,7 @@ const HomeDifferentials = () => {
             Eram os que <strong className="text-white">não paravam de fazer follow-up</strong>.
           </p>
           <p className="text-white/65 text-base sm:text-lg max-w-3xl mx-auto leading-relaxed mt-4">
-            Então criamos um processo interno de <strong className="text-primary">7 toques estratégicos em 10 dias</strong> e
+            Então criamos um processo interno de <strong className="text-primary">7 contatos estratégicos em 10 dias</strong> e
             automatizamos tudo. O resultado? Corretores que antes fechavam 1 venda passaram
             a fechar 3 a 4 no mesmo período.
           </p>
@@ -95,7 +95,7 @@ const HomeDifferentials = () => {
             "Só estou pesquisando"
           </p>
           <p className="text-primary font-bold text-base sm:text-lg mb-4">
-            7 toques depois: <span className="text-white">"Quando posso visitar?"</span>
+            7 contatos depois: <span className="text-white">"Quando posso visitar?"</span>
           </p>
           <p className="text-white/60 text-sm">
             E tudo isso acontece <strong className="text-white">sem você mexer um dedo</strong>.

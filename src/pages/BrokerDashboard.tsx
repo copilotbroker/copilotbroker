@@ -182,14 +182,14 @@ function FollowUpCard({ stats }: { stats: FollowUpStats }) {
             </p>
           </div>
           <div className="bg-[#16161a] rounded-lg p-2.5 border border-[#2a2a2e]">
-            <p className="text-[10px] text-slate-400 truncate">Média de toques p/ resposta</p>
+            <p className="text-[10px] text-slate-400 truncate">Média de contatos p/ resposta</p>
             <p className="text-sm font-bold text-white">{stats.avgTouchesToReply}</p>
           </div>
         </div>
 
         {/* Per-attempt breakdown */}
         <div className="space-y-1.5">
-          <p className="text-[11px] text-slate-400 font-medium">Respostas por toque</p>
+          <p className="text-[11px] text-slate-400 font-medium">Respostas por contato</p>
           {stats.byAttempt.map((a) => (
             <div key={a.attempt} className="flex items-center gap-2">
               <span className="text-[10px] text-slate-500 w-14 shrink-0">Toque {a.attempt}</span>

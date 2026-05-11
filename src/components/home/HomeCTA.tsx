@@ -7,11 +7,11 @@ const WHATSAPP_URL =
 const faqs = [
   {
     q: "O que é o Copilot Broker?",
-    a: "É um sistema completo para corretores: CRM, landing page automática e IA no WhatsApp que executa a cadência 10D — 7 toques de follow-up em 10 dias por lead. Tudo no piloto automático.",
+    a: "É um sistema completo para corretores: CRM, landing page automática e IA no WhatsApp que executa a cadência 10D — 7 contatos de follow-up em 10 dias por lead. Tudo no piloto automático.",
   },
   {
     q: "O que é a cadência 10D?",
-    a: "É a metodologia validada que criamos dentro da nossa imobiliária: 7 toques estratégicos em 10 dias, no timing certo, para reativar leads que parariam de responder no 2º contato.",
+    a: "É a metodologia validada que criamos dentro da nossa imobiliária: 7 contatos estratégicos em 10 dias, no timing certo, para reativar leads que parariam de responder no 2º contato.",
   },
   {
     q: "Preciso ter conhecimento técnico?",
