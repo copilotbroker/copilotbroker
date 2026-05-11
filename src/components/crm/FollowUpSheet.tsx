@@ -76,7 +76,7 @@ export function FollowUpSheet({
     setIsCreating(true);
     try {
       const nowIso = new Date().toISOString();
-      const previousStatus = leadStatus === "awaiting_docs" ? "info_sent" : (leadStatus || "info_sent");
+      const previousStatus = leadStatus && leadStatus !== "new" && leadStatus !== "awaiting_docs" ? leadStatus : "info_sent";
 
       const { data: campaign, error: campErr } = await supabase.from("whatsapp_campaigns").insert({
         broker_id: brokerId, name: `Follow-up - ${leadName}`, status: "running", total_leads: steps.length, lead_id: leadId, lead_previous_status: previousStatus,

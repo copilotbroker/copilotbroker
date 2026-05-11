@@ -83,7 +83,7 @@ export function CadenciaSheet({
       const whEnd = instanceData?.working_hours_end || "21:00";
 
       const { data: campaign, error: campErr } = await (supabase.from("whatsapp_campaigns") as any).insert({
-        broker_id: brokerId, name: `${cadenceName} - ${leadName}`, status: "running", total_leads: steps.length, lead_id: leadId, lead_previous_status: leadStatus || "new",
+        broker_id: brokerId, name: `${cadenceName} - ${leadName}`, status: "running", total_leads: steps.length, lead_id: leadId, lead_previous_status: leadStatus && leadStatus !== "new" && leadStatus !== "awaiting_docs" ? leadStatus : "info_sent",
       }).select().single();
       if (campErr) throw campErr;
 

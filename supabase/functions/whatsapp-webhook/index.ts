@@ -895,7 +895,8 @@ async function processReply(
             .single();
 
           if (lead && (lead as { status: string }).status === "awaiting_docs") {
-            const restoreStatus = (campaignData as any).lead_previous_status || "info_sent";
+            let restoreStatus = (campaignData as any).lead_previous_status || "info_sent";
+            if (restoreStatus === "new") restoreStatus = "info_sent";
             const restoreLabel = restoreStatus === "info_sent" ? "Atendimento" : restoreStatus;
 
             await supabase
