@@ -83,7 +83,7 @@ export function CadenciaSheet({
       const whEnd = instanceData?.working_hours_end || "21:00";
 
       const { data: campaign, error: campErr } = await (supabase.from("whatsapp_campaigns") as any).insert({
-        broker_id: brokerId, name: `${cadenceName} - ${leadName}`, status: "running", total_leads: steps.length, lead_id: leadId, lead_previous_status: leadStatus || "new",
+        broker_id: brokerId, name: `${cadenceName} - ${leadName}`, status: "running", total_leads: steps.length, lead_id: leadId, lead_previous_status: leadStatus && leadStatus !== "new" && leadStatus !== "awaiting_docs" ? leadStatus : "info_sent",
       }).select().single();
       if (campErr) throw campErr;
 
@@ -117,6 +117,7 @@ export function CadenciaSheet({
 
       const now = new Date().toISOString();
       await supabase.from("leads").update({ status: "awaiting_docs" as any, atendimento_iniciado_em: now, status_distribuicao: "atendimento_iniciado" as any, reserva_expira_em: null, updated_at: now }).eq("id", leadId);
+      await supabase.from("conversations").update({ attendance_started: true, reserva_expira_em: null, updated_at: now }).eq("lead_id", leadId).eq("attendance_started", false);
 
       const cadUser = (await supabase.auth.getUser()).data.user;
       const { data: cadBroker } = await supabase.from("brokers").select("id, name").eq("user_id", cadUser?.id ?? "").single();

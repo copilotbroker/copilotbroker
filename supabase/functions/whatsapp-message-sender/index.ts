@@ -1040,23 +1040,27 @@ app.post("/process", async (c) => {
 
         await restoreLeadStatusAfterScheduledMessage(supabase, queueMsg, instance.broker_id);
 
-        // Move lead to "Atendimento" if still in "new" status (step 1 of campaign)
+        // Move lead to "Atendimento" if not yet attended (step 1 of campaign)
         if (queueMsg.lead_id && queueMsg.campaign_id && (!queueMsg.step_number || queueMsg.step_number === 1)) {
           const { data: currentLead } = await supabase
             .from("leads")
-            .select("status")
+            .select("status, atendimento_iniciado_em")
             .eq("id", queueMsg.lead_id)
             .single();
 
-          if (currentLead && (currentLead as { status: string }).status === "new") {
+          if (currentLead && !(currentLead as any).atendimento_iniciado_em) {
+            const oldStatus = (currentLead as any).status;
+            const newStatus = oldStatus === "new" ? "info_sent" : oldStatus;
+            const nowIso = new Date().toISOString();
+
             await supabase
               .from("leads")
               .update({
-                status: "info_sent",
+                status: newStatus,
                 status_distribuicao: "atendimento_iniciado",
-                atendimento_iniciado_em: new Date().toISOString(),
+                atendimento_iniciado_em: nowIso,
                 reserva_expira_em: null,
-                updated_at: new Date().toISOString(),
+                updated_at: nowIso,
               })
               .eq("id", queueMsg.lead_id);
 
@@ -1066,12 +1070,19 @@ app.post("/process", async (c) => {
                 lead_id: queueMsg.lead_id,
                 broker_id: instance.broker_id,
                 interaction_type: "status_change",
-                old_status: "new",
-                new_status: "info_sent",
+                old_status: oldStatus,
+                new_status: newStatus,
                 notes: "Lead movido para Atendimento automaticamente após envio da 1ª mensagem da campanha",
               });
 
-            console.log(`Lead ${queueMsg.lead_id} moved to info_sent (Atendimento) after campaign step 1`);
+            // Mark all open conversations of this lead as attendance started
+            await supabase
+              .from("conversations")
+              .update({ attendance_started: true, reserva_expira_em: null, updated_at: nowIso })
+              .eq("lead_id", queueMsg.lead_id)
+              .eq("attendance_started", false);
+
+            console.log(`Lead ${queueMsg.lead_id} marked as atendimento_iniciado after campaign step 1 (status: ${oldStatus} → ${newStatus})`);
           }
         }
 

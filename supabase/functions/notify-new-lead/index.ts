@@ -107,6 +107,56 @@ Deno.serve(async (req) => {
     
     console.log("📥 Notificação recebida:", { leadId, leadName, leadWhatsapp: maskPhone(leadWhatsapp || ""), brokerId, source });
 
+    // BUG-1 FIX: skip notification if lead is (or will be) handled by roleta-distribuir
+    if (leadId && !leadId.startsWith("test-")) {
+      const { data: leadRow } = await supabase
+        .from("leads")
+        .select("roleta_id, project_id")
+        .eq("id", leadId)
+        .maybeSingle();
+
+      if (leadRow?.roleta_id) {
+        console.log(`⏭️ Skipped — lead ${leadId} already in roleta (${leadRow.roleta_id}); roleta-distribuir handles notification`);
+        return new Response(
+          JSON.stringify({ success: true, skipped: "roleta_assigned" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Race window: lead row exists but trigger may not have set roleta_id yet.
+      // Replicate roleta_distribuir matching: active roleta linked to project OR with broad scope.
+      const projectId = leadRow?.project_id ?? null;
+
+      // Broad-scope active roletas (always cover all landing pages, with/without plantão)
+      const { data: broadRoletas } = await supabase
+        .from("roletas")
+        .select("id")
+        .eq("ativa", true)
+        .in("escopo_empreendimentos", ["todas_landing_pages", "todas_landing_pages_e_plantao"])
+        .limit(1);
+
+      let willEnterRoleta = !!(broadRoletas && broadRoletas.length > 0);
+
+      if (!willEnterRoleta && projectId) {
+        const { data: linkedRoletas } = await supabase
+          .from("roletas_empreendimentos")
+          .select("roleta_id, ativo, roletas:roleta_id(ativa)")
+          .eq("empreendimento_id", projectId)
+          .eq("ativo", true)
+          .limit(5);
+        willEnterRoleta = !!linkedRoletas?.some((r: any) => r.roletas?.ativa);
+      }
+
+      if (willEnterRoleta) {
+        console.log(`⏭️ Skipped — lead ${leadId} matches active roleta scope; roleta-distribuir will notify`);
+        return new Response(
+          JSON.stringify({ success: true, skipped: "roleta_pending" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+
     // Determine recipient
     let recipientPhone = fallbackPhone;
 

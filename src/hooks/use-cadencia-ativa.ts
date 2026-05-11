@@ -93,7 +93,8 @@ export function useCadenciaAtiva(leadId: string | undefined): CadenciaAtiva {
         .eq("id", data.campaignId)
         .maybeSingle();
 
-      const restoreStatus = campaignInfo?.lead_previous_status || "info_sent";
+      let restoreStatus = campaignInfo?.lead_previous_status || "info_sent";
+      if (restoreStatus === "new") restoreStatus = "info_sent";
 
       // Cancel campaign
       const { error: campError } = await supabase
@@ -166,7 +167,8 @@ export async function cancelCadenciaForLead(leadId: string): Promise<void> {
       .maybeSingle(),
   ]);
 
-  const restoreStatus = campaigns?.find((campaign) => campaign.lead_previous_status && campaign.lead_previous_status !== "awaiting_docs")?.lead_previous_status || "info_sent";
+  let restoreStatus = campaigns?.find((campaign) => campaign.lead_previous_status && campaign.lead_previous_status !== "awaiting_docs" && campaign.lead_previous_status !== "new")?.lead_previous_status || "info_sent";
+  if (restoreStatus === "new") restoreStatus = "info_sent";
 
   if (campaigns && campaigns.length > 0) {
     await Promise.all(campaigns.map((campaign) => (

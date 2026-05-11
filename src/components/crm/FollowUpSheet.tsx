@@ -76,7 +76,7 @@ export function FollowUpSheet({
     setIsCreating(true);
     try {
       const nowIso = new Date().toISOString();
-      const previousStatus = leadStatus === "awaiting_docs" ? "info_sent" : (leadStatus || "info_sent");
+      const previousStatus = leadStatus && leadStatus !== "new" && leadStatus !== "awaiting_docs" ? leadStatus : "info_sent";
 
       const { data: campaign, error: campErr } = await supabase.from("whatsapp_campaigns").insert({
         broker_id: brokerId, name: `Follow-up - ${leadName}`, status: "running", total_leads: steps.length, lead_id: leadId, lead_previous_status: previousStatus,
@@ -134,6 +134,7 @@ export function FollowUpSheet({
       if (qErr) throw qErr;
 
       await supabase.from("leads").update({ status: "awaiting_docs" as any, atendimento_iniciado_em: nowIso, status_distribuicao: "atendimento_iniciado" as any, reserva_expira_em: null, updated_at: nowIso }).eq("id", leadId);
+      await supabase.from("conversations").update({ attendance_started: true, reserva_expira_em: null, updated_at: nowIso }).eq("lead_id", leadId).eq("attendance_started", false);
 
       const currentUser = (await supabase.auth.getUser()).data.user;
       await supabase.from("lead_interactions").insert([
