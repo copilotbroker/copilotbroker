@@ -456,9 +456,12 @@ export default function PerformanceDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Period selector */}
+      {/* Scope + Period selector */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-lg font-bold text-white">Performance Comercial</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold text-white">Performance Comercial</h2>
+          <AdminScopeToggle scope={scope} onScopeChange={setScope} hasBrokerProfile={!!myBrokerId} />
+        </div>
         <PeriodFilterWithCustom
           period={period}
           onPeriodChange={(v) => setPeriod(v as Period)}
