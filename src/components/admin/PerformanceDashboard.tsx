@@ -71,7 +71,7 @@ export default function PerformanceDashboard() {
   }, [brokers]);
 
   // Fetch leads
-  const { data: allLeads = [], isLoading } = useQuery({
+  const { data: allLeadsRaw = [], isLoading } = useQuery({
     queryKey: ["perf-leads", period],
     queryFn: async () => {
       let q = supabase.from("leads").select(
@@ -85,7 +85,7 @@ export default function PerformanceDashboard() {
   });
 
   // Fetch interactions
-  const { data: interactions = [] } = useQuery({
+  const { data: interactionsRaw = [] } = useQuery({
     queryKey: ["perf-interactions", period],
     queryFn: async () => {
       let q = supabase.from("lead_interactions").select("id, lead_id, broker_id, interaction_type, channel, created_at, notes");
@@ -97,7 +97,7 @@ export default function PerformanceDashboard() {
   });
 
   // Fetch stale leads
-  const { data: staleLeads = [] } = useQuery({
+  const { data: staleLeadsRaw = [] } = useQuery({
     queryKey: ["perf-stale-leads"],
     queryFn: async () => {
       const cutoff = new Date();
@@ -109,6 +109,19 @@ export default function PerformanceDashboard() {
     },
     staleTime: 60_000,
   });
+
+  const allLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (allLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : allLeadsRaw),
+    [allLeadsRaw, scope, myBrokerId]
+  );
+  const interactions = useMemo(
+    () => (scope === "mine" && myBrokerId ? (interactionsRaw as any[]).filter(i => i.broker_id === myBrokerId) : interactionsRaw),
+    [interactionsRaw, scope, myBrokerId]
+  );
+  const staleLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (staleLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : staleLeadsRaw),
+    [staleLeadsRaw, scope, myBrokerId]
+  );
 
   // Fetch projects
   const { data: projects = [] } = useQuery({
