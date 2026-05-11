@@ -39,6 +39,8 @@ const chartTooltipStyle = {
 };
 
 export default function PerformanceDashboard() {
+  const { brokerId: myBrokerId } = useUserRole();
+  const [scope, setScope] = useState<AdminScope>(myBrokerId ? "mine" : "all");
   const [period, setPeriod] = useState<Period>("30d");
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
