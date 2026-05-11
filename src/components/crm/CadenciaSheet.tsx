@@ -117,6 +117,7 @@ export function CadenciaSheet({
 
       const now = new Date().toISOString();
       await supabase.from("leads").update({ status: "awaiting_docs" as any, atendimento_iniciado_em: now, status_distribuicao: "atendimento_iniciado" as any, reserva_expira_em: null, updated_at: now }).eq("id", leadId);
+      await supabase.from("conversations").update({ attendance_started: true, reserva_expira_em: null, updated_at: now }).eq("lead_id", leadId).eq("attendance_started", false);
 
       const cadUser = (await supabase.auth.getUser()).data.user;
       const { data: cadBroker } = await supabase.from("brokers").select("id, name").eq("user_id", cadUser?.id ?? "").single();
