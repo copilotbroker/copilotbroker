@@ -97,7 +97,7 @@ export default function IntelligenceDashboard() {
     return m;
   }, [brokers]);
 
-  const { data: allLeads = [], isLoading } = useQuery({
+  const { data: allLeadsRaw = [], isLoading } = useQuery({
     queryKey: ["intel-leads", period],
     queryFn: async () => {
       let q = supabase.from("leads").select(
@@ -115,7 +115,7 @@ export default function IntelligenceDashboard() {
     staleTime: 30_000,
   });
 
-  const { data: staleLeads = [] } = useQuery({
+  const { data: staleLeadsRaw = [] } = useQuery({
     queryKey: ["intel-stale-leads"],
     queryFn: async () => {
       const cutoff = new Date();
@@ -127,6 +127,15 @@ export default function IntelligenceDashboard() {
     },
     staleTime: 60_000,
   });
+
+  const allLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (allLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : allLeadsRaw),
+    [allLeadsRaw, scope, myBrokerId]
+  );
+  const staleLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (staleLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : staleLeadsRaw),
+    [staleLeadsRaw, scope, myBrokerId]
+  );
 
   const { data: projects = [] } = useQuery({
     queryKey: ["intel-projects"],
