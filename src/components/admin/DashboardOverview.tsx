@@ -63,7 +63,7 @@ export default function DashboardOverview() {
     return m;
   }, [brokers]);
 
-  const { data: leads = [], isLoading } = useQuery({
+  const { data: leadsRaw = [], isLoading } = useQuery({
     queryKey: ["dash-leads", period],
     queryFn: async () => {
       let q = supabase.from("leads").select(
@@ -76,7 +76,7 @@ export default function DashboardOverview() {
     staleTime: 30_000,
   });
 
-  const { data: staleLeads = [] } = useQuery({
+  const { data: staleLeadsRaw = [] } = useQuery({
     queryKey: ["dash-stale-leads"],
     queryFn: async () => {
       const cutoff = new Date();
@@ -88,6 +88,15 @@ export default function DashboardOverview() {
     },
     staleTime: 60_000,
   });
+
+  const leads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (leadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : leadsRaw),
+    [leadsRaw, scope, myBrokerId]
+  );
+  const staleLeads = useMemo(
+    () => (scope === "mine" && myBrokerId ? (staleLeadsRaw as any[]).filter(l => l.broker_id === myBrokerId) : staleLeadsRaw),
+    [staleLeadsRaw, scope, myBrokerId]
+  );
 
   const { data: projects = [] } = useQuery({
     queryKey: ["dash-projects"],
