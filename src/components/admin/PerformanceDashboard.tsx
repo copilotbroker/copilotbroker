@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/use-user-role";
+import { AdminScopeToggle, type AdminScope } from "@/components/admin/AdminScopeToggle";
 import {
   Users, TrendingUp, AlertTriangle, Clock, BarChart3, Trophy, Timer,
   ArrowDownRight, UserCheck, Loader2, Phone, CalendarCheck, FileText,
