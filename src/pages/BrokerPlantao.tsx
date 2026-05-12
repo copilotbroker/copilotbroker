@@ -388,7 +388,7 @@ export default function BrokerPlantao() {
       onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
       onLogout={handleLogout}
     >
-      <div className="flex h-[calc(100vh-64px)] lg:h-[calc(100vh-72px)] overflow-hidden -m-3 lg:-m-6">
+      <div className="flex h-full overflow-hidden -m-3 lg:-m-6">
         {showList && (
           <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0 flex flex-col`}>
             {canSelectBroker && (inboxTab === "novos" || inboxTab === "meus") && (

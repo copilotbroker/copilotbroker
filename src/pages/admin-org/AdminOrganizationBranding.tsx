@@ -95,7 +95,7 @@ const AdminOrganizationBranding = () => {
   if (!activeOrg) return <div className="p-6 text-muted-foreground">Sem organização ativa.</div>;
 
   return (
-    <div className="space-y-6 p-6 max-w-3xl mx-auto">
+    <div className="space-y-6 p-6 pt-safe max-w-3xl mx-auto">
       <Button
         variant="ghost"
         size="sm"

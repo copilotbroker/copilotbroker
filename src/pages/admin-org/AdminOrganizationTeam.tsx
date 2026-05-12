@@ -184,7 +184,7 @@ const AdminOrganizationTeam = () => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 max-w-7xl mx-auto w-full min-w-0 overflow-x-hidden">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 pt-safe max-w-7xl mx-auto w-full min-w-0 overflow-x-hidden">
       <Button
         variant="ghost"
         size="sm"

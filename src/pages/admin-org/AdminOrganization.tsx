@@ -58,7 +58,7 @@ const AdminOrganization = () => {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-5xl mx-auto">
+    <div className="space-y-6 p-6 pt-safe max-w-5xl mx-auto">
       <Button
         variant="ghost"
         size="sm"
