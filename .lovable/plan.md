@@ -1,22 +1,34 @@
-## Problema
+## Objetivo
 
-Após corrigir o scroll com `h-[100dvh] overflow-hidden`, removi o `pt-safe` do wrapper externo nos modos com conversa aberta no mobile. Resultado: o header da conversa fica embaixo do notch do iPhone.
+Tornar os gestos de navegação mais permissivos no mobile:
+- **Arrastar para a direita** (em qualquer ponto da tela) → voltar (`history.back()`)
+- **Arrastar para a esquerda** (em qualquer ponto da tela) → avançar (`history.forward()`)
 
-## Solução
+Hoje o gesto só dispara se começar nos primeiros 24px da borda esquerda, e só existe o "voltar".
 
-Reativar `pt-safe` no wrapper externo (mantendo `h-[100dvh] overflow-hidden`), aproveitando que o `box-sizing: border-box` padrão do Tailwind faz o padding ser descontado da altura. Para isso o filho interno precisa usar `h-full` (não `h-[100dvh]`) para herdar a altura já reduzida pelo safe-area-top.
+## Arquivo afetado
+
+`src/hooks/use-swipe-back-gesture.ts` (único hook responsável pelos gestos, registrado globalmente em `App.tsx`).
 
 ## Mudanças
 
-1. **`src/components/broker/BrokerLayout.tsx`**
-   - Wrapper externo (l.63): `h-[100dvh] overflow-hidden pt-safe` quando `hideMobileNav`.
-   - Wrapper interno (l.103): trocar `h-[100dvh]` → `h-full`.
+1. **Remover restrição de borda** — tirar a checagem `t.clientX > EDGE_PX` no `touchstart`. Qualquer ponto inicial vale.
+2. **Detectar direção no `touchend`**:
+   - `dx > +MIN_DX` → `navigate(-1)` (voltar)
+   - `dx < -MIN_DX` → `navigate(1)` (avançar)
+3. **Manter salvaguardas existentes** para evitar falsos positivos:
+   - Desktop (≥1024px) continua desativado.
+   - Opt-out via `[data-no-swipe-back]`, inputs, textareas, sliders, carrosséis (`.embla`, `.swiper`), `[data-radix-scroll-area-viewport]`, e `contenteditable`.
+   - Limite de tempo (`MAX_MS = 600ms`) e razão `dy/|dx| < 0.6` para garantir intenção horizontal.
+4. **Aumentar levemente o `MIN_DX`** de 80 para ~90px, já que o gesto agora pode começar em qualquer lugar (reduz conflitos com toques curtos / scroll horizontal acidental).
+5. **Renomear o hook?** Não — manter `use-swipe-back-gesture.ts` para não mexer no import em `App.tsx`. Apenas atualizar o comentário JSDoc no topo descrevendo o novo comportamento (voltar + avançar, sem borda).
 
-2. **`src/pages/AdminInbox.tsx`**
-   - Wrapper externo (l.312): `h-[100dvh] overflow-hidden pt-safe` quando `hideMobileNav`.
-   - Container interno (l.316): quando `hideMobileNav`, usar `h-full` (em vez de `h-[100dvh]`).
+## Observações técnicas
 
-3. **`src/pages/AdminPlantao.tsx`**
-   - Mesmas mudanças do AdminInbox.
+- `navigate(1)` em React Router só avança se houver entrada futura no histórico (igual ao botão "avançar" do navegador). Caso contrário é no-op — comportamento esperado.
+- O Safari iOS continuará tendo seu próprio gesto de borda nativo; nosso handler complementa, não conflita (ambos chamam `history.back()`).
+- Nenhuma mudança em `App.tsx`, layouts ou páginas.
 
-Sem alterações de lógica — apenas redistribuição do safe-area com `box-border`.
+## Riscos
+
+- Conflito com componentes que usam swipe horizontal interno (carrosséis, sliders de range, scroll horizontal). Mitigado pelas exclusões já presentes; se aparecer caso novo, basta marcar o container com `data-no-swipe-back`.
