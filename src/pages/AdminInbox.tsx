@@ -398,7 +398,7 @@ export default function AdminInbox() {
         </div>
       </div>
 
-      <MobileBottomNav activeTab="inbox" />
+      {!hideMobileNav && <MobileBottomNav activeTab="inbox" />}
 
       {selectedConversation && myBrokerId && (
         <CreateLeadFromChatModal
