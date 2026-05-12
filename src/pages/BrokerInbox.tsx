@@ -33,6 +33,8 @@ export default function BrokerInbox() {
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
+  const [closingConv, setClosingConv] = useState(false);
+  const [closingLead, setClosingLead] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
