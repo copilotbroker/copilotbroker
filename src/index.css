@@ -557,3 +557,13 @@ body:not(:has(.admin-scrollbar))::-webkit-scrollbar-thumb:hover {
   --gradient-gold: linear-gradient(135deg, hsl(34, 55%, 42%) 0%, hsl(38, 45%, 52%) 50%, hsl(34, 55%, 42%) 100%);
   --shadow-gold: 0 0 40px hsl(34 55% 42% / 0.12);
 }
+
+/* iOS-style page push/pop transitions for mobile master-detail views */
+@keyframes ios-push-in   { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes ios-push-out  { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@keyframes ios-pop-in    { from { transform: translateX(-30%); opacity: .55; } to { transform: translateX(0); opacity: 1; } }
+@keyframes ios-pop-out   { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-30%); opacity: .55; } }
+.ios-push-in  { animation: ios-push-in  280ms cubic-bezier(.32,.72,0,1) both; will-change: transform; }
+.ios-push-out { animation: ios-push-out 260ms cubic-bezier(.32,.72,0,1) both; will-change: transform; }
+.ios-pop-in   { animation: ios-pop-in   280ms cubic-bezier(.32,.72,0,1) both; will-change: transform, opacity; }
+.ios-pop-out  { animation: ios-pop-out  260ms cubic-bezier(.32,.72,0,1) both; will-change: transform, opacity; }

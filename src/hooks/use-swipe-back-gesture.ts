@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { runTopBackHandler } from "@/hooks/use-back-handler";
 
 /**
  * Mobile horizontal swipe navigation.
@@ -58,8 +59,10 @@ export function useSwipeBackGesture() {
       if (dy / Math.max(absDx, 1) > MAX_DY_RATIO) return;
 
       if (dx > 0) {
-        // Swipe right → back
-        if (window.history.length > 1) navigate(-1);
+        // Swipe right → back (handler interno tem prioridade sobre histórico)
+        if (!runTopBackHandler()) {
+          if (window.history.length > 1) navigate(-1);
+        }
       } else {
         // Swipe left → forward
         navigate(1);

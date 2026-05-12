@@ -1,34 +1,115 @@
-## Objetivo
+## Problema
 
-Tornar os gestos de navegação mais permissivos no mobile:
-- **Arrastar para a direita** (em qualquer ponto da tela) → voltar (`history.back()`)
-- **Arrastar para a esquerda** (em qualquer ponto da tela) → avançar (`history.forward()`)
+1. Dentro de uma conversa (Inbox/Plantão), o "voltar" deveria fechar a conversa e mostrar a lista. Mas como a seleção é estado interno (não rota), `navigate(-1)` pula para a página anterior do histórico (ex.: home).
+2. A transição entre lista ↔ conversa é "seca", sem o deslizamento estilo iOS.
 
-Hoje o gesto só dispara se começar nos primeiros 24px da borda esquerda, e só existe o "voltar".
+## Plano
 
-## Arquivo afetado
+### 1. Tornar o swipe-back consciente do contexto da página
 
-`src/hooks/use-swipe-back-gesture.ts` (único hook responsável pelos gestos, registrado globalmente em `App.tsx`).
+Criar um pequeno registry global de "back handlers" que páginas podem registrar. O hook de gesto consulta esse registry antes de cair no `navigate(-1)`.
 
-## Mudanças
+**Novo arquivo: `src/hooks/use-back-handler.ts`**
+- Stack de handlers (array de funções com prioridade LIFO).
+- `useBackHandler(handler, enabled)` registra/desregistra automaticamente.
+- Exporta `runTopBackHandler(): boolean` — executa o último handler registrado e retorna `true`; `false` se vazio.
 
-1. **Remover restrição de borda** — tirar a checagem `t.clientX > EDGE_PX` no `touchstart`. Qualquer ponto inicial vale.
-2. **Detectar direção no `touchend`**:
-   - `dx > +MIN_DX` → `navigate(-1)` (voltar)
-   - `dx < -MIN_DX` → `navigate(1)` (avançar)
-3. **Manter salvaguardas existentes** para evitar falsos positivos:
-   - Desktop (≥1024px) continua desativado.
-   - Opt-out via `[data-no-swipe-back]`, inputs, textareas, sliders, carrosséis (`.embla`, `.swiper`), `[data-radix-scroll-area-viewport]`, e `contenteditable`.
-   - Limite de tempo (`MAX_MS = 600ms`) e razão `dy/|dx| < 0.6` para garantir intenção horizontal.
-4. **Aumentar levemente o `MIN_DX`** de 80 para ~90px, já que o gesto agora pode começar em qualquer lugar (reduz conflitos com toques curtos / scroll horizontal acidental).
-5. **Renomear o hook?** Não — manter `use-swipe-back-gesture.ts` para não mexer no import em `App.tsx`. Apenas atualizar o comentário JSDoc no topo descrevendo o novo comportamento (voltar + avançar, sem borda).
+**Atualizar `src/hooks/use-swipe-back-gesture.ts`**
+- No swipe direita: chamar `runTopBackHandler()`. Se retornar `false`, manter o `navigate(-1)` atual.
+- Swipe esquerda: continua `navigate(1)`.
 
-## Observações técnicas
+**Registrar handlers nas páginas com seleção interna:**
+- `AdminInbox`, `BrokerInbox`, `AdminPlantao`, `BrokerPlantao`:
+  - Quando `viewingLeadId` ativo → handler chama `handleBackFromLead`.
+  - Senão quando `selectedConversation` ativa → handler chama `handleBack`.
+  - Senão não registra (deixa cair no histórico).
 
-- `navigate(1)` em React Router só avança se houver entrada futura no histórico (igual ao botão "avançar" do navegador). Caso contrário é no-op — comportamento esperado.
-- O Safari iOS continuará tendo seu próprio gesto de borda nativo; nosso handler complementa, não conflita (ambos chamam `history.back()`).
-- Nenhuma mudança em `App.tsx`, layouts ou páginas.
+### 2. Transição estilo iOS (push/pop horizontal)
 
-## Riscos
+Substituir o atual `animate-in slide-in-from-right-5 duration-200` por animação de "page push" mais coesa, aplicada na coluna da conversa e na lista, no mobile.
 
-- Conflito com componentes que usam swipe horizontal interno (carrosséis, sliders de range, scroll horizontal). Mitigado pelas exclusões já presentes; se aparecer caso novo, basta marcar o container com `data-no-swipe-back`.
+Adicionar utilitários em `tailwind.config.ts` (keyframes) e/ou classes em `src/index.css`:
+- `slide-in-from-right` (entrada da conversa, ~280ms, ease-out cubic-bezier(0.32, 0.72, 0, 1) — curva usada pelo iOS).
+- `slide-out-to-right` (saída ao voltar).
+- `slide-in-from-left-soft` / `slide-out-to-left-soft` para a lista (parallax sutil de ~30% para imitar o iOS, com leve fade).
+
+Aplicar nas colunas (mobile only) de:
+- `src/pages/AdminInbox.tsx`
+- `src/pages/BrokerInbox.tsx`
+- `src/pages/AdminPlantao.tsx`
+- `src/pages/BrokerPlantao.tsx`
+
+Como a coluna de conversa só monta quando há `selectedConversation`, o "exit" precisa de um pequeno wrapper que mantenha o nó por ~280ms ao desmontar. Opções:
+- (Preferida, leve) Usar um state `isClosing` controlado por `handleBack`: marca `isClosing=true`, aplica classe `slide-out-to-right`, em `onAnimationEnd` limpa `selectedConversation` e `isClosing`.
+- Mesma técnica para a lista quando entra a conversa (entrada) — só precisa de classe de entrada, sem desmontar.
+
+### Detalhes técnicos
+
+```ts
+// use-back-handler.ts
+const stack: Array<() => boolean | void> = [];
+export function runTopBackHandler() {
+  const fn = stack[stack.length - 1];
+  if (!fn) return false;
+  const r = fn();
+  return r !== false;
+}
+export function useBackHandler(handler: () => boolean | void, enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return;
+    stack.push(handler);
+    return () => { stack.splice(stack.indexOf(handler), 1); };
+  }, [enabled, handler]);
+}
+```
+
+```ts
+// use-swipe-back-gesture.ts (trecho do touchend)
+if (dx > 0) {
+  if (!runTopBackHandler()) {
+    if (window.history.length > 1) navigate(-1);
+  }
+} else {
+  navigate(1);
+}
+```
+
+```css
+/* index.css */
+@keyframes ios-push-in   { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes ios-push-out  { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@keyframes ios-pop-in    { from { transform: translateX(-30%); opacity:.6 } to { transform: translateX(0); opacity:1 } }
+@keyframes ios-pop-out   { from { transform: translateX(0); opacity:1 } to { transform: translateX(-30%); opacity:.6 } }
+.ios-push-in  { animation: ios-push-in  280ms cubic-bezier(.32,.72,0,1) both; }
+.ios-push-out { animation: ios-push-out 260ms cubic-bezier(.32,.72,0,1) both; }
+.ios-pop-in   { animation: ios-pop-in   280ms cubic-bezier(.32,.72,0,1) both; }
+.ios-pop-out  { animation: ios-pop-out  260ms cubic-bezier(.32,.72,0,1) both; }
+```
+
+```tsx
+// nas páginas (mobile)
+const [closingConv, setClosingConv] = useState(false);
+const handleBack = useCallback(() => {
+  if (!isMobile) { setSelectedConversation(null); return; }
+  setClosingConv(true);
+}, [isMobile]);
+
+useBackHandler(() => { handleBack(); }, isMobile && !!selectedConversation && !viewingLeadId);
+useBackHandler(() => { handleBackFromLead(); }, isMobile && !!viewingLeadId);
+
+// na coluna da conversa:
+<div
+  className={`... ${isMobile ? (closingConv ? "ios-push-out" : "ios-push-in") : ""}`}
+  onAnimationEnd={() => { if (closingConv) { setClosingConv(false); setSelectedConversation(null); } }}
+>
+```
+
+### Arquivos a alterar
+- `src/hooks/use-back-handler.ts` (novo)
+- `src/hooks/use-swipe-back-gesture.ts`
+- `src/index.css` (keyframes iOS)
+- `src/pages/AdminInbox.tsx`, `BrokerInbox.tsx`, `AdminPlantao.tsx`, `BrokerPlantao.tsx` (registrar handler + classes de animação + fluxo de fechamento animado)
+
+### Fora do escopo
+- Não mudar o swipe esquerda (avançar) — segue como hoje.
+- Não mexer em rotas ou navegação desktop.

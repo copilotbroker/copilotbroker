@@ -15,6 +15,7 @@ import { useLogout } from "@/hooks/use-logout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
+import { useBackHandler } from "@/hooks/use-back-handler";
 import {
   Select,
   SelectContent,
@@ -36,6 +37,8 @@ export default function AdminPlantao() {
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
+  const [closingConv, setClosingConv] = useState(false);
+  const [closingLead, setClosingLead] = useState(false);
   const [myBrokerId, setMyBrokerId] = useState<string | null>(null);
   const [inboxTab, setInboxTab] = useState<InboxTab>("novos");
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
@@ -165,13 +168,20 @@ export default function AdminPlantao() {
   }, [isMobile]);
 
   const handleBack = useCallback(() => {
+    if (isMobile) { setClosingConv(true); return; }
     setSelectedConversation(null);
     setShowLeadPanel(false);
     setViewingLeadId(null);
-  }, []);
+  }, [isMobile]);
 
   const handleOpenLead = useCallback((leadId: string) => setViewingLeadId(leadId), []);
-  const handleBackFromLead = useCallback(() => setViewingLeadId(null), []);
+  const handleBackFromLead = useCallback(() => {
+    if (isMobile) { setClosingLead(true); return; }
+    setViewingLeadId(null);
+  }, [isMobile]);
+
+  useBackHandler(() => { handleBackFromLead(); }, isMobile && !!viewingLeadId);
+  useBackHandler(() => { handleBack(); }, isMobile && !!selectedConversation && !viewingLeadId);
 
   const handleTabChange = useCallback((tab: InboxTab) => {
     setInboxTab(tab);
@@ -404,11 +414,31 @@ export default function AdminPlantao() {
           )}
 
           {showThread && (
-            <div className={`flex-1 min-w-0 ${isMobile ? "animate-in slide-in-from-right-5 duration-200" : ""}`}>
+            <div
+              className={`flex-1 min-w-0 ${isMobile ? (closingConv ? "ios-push-out" : "ios-push-in") : ""}`}
+              onAnimationEnd={(e) => {
+                if (e.animationName === "ios-push-out" && closingConv) {
+                  setClosingConv(false);
+                  setSelectedConversation(null);
+                  setShowLeadPanel(false);
+                  setViewingLeadId(null);
+                }
+              }}
+            >
               {viewingLeadId ? (
-                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
-                  <LeadPage embeddedLeadId={viewingLeadId} onBack={handleBackFromLead} />
-                </Suspense>
+                <div
+                  className={isMobile ? (closingLead ? "ios-push-out" : "ios-push-in") : ""}
+                  onAnimationEnd={(e) => {
+                    if (e.animationName === "ios-push-out" && closingLead) {
+                      setClosingLead(false);
+                      setViewingLeadId(null);
+                    }
+                  }}
+                >
+                  <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+                    <LeadPage embeddedLeadId={viewingLeadId} onBack={handleBackFromLead} />
+                  </Suspense>
+                </div>
               ) : (
                 <ConversationThread
                   conversation={selectedConversation!}

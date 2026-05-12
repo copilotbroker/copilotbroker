@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Lock, Loader2 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";
+import { useBackHandler } from "@/hooks/use-back-handler";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
@@ -32,6 +33,8 @@ export default function BrokerInbox() {
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
+  const [closingConv, setClosingConv] = useState(false);
+  const [closingLead, setClosingLead] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
@@ -168,13 +171,20 @@ export default function BrokerInbox() {
   }, [isMobile]);
 
   const handleBack = useCallback(() => {
+    if (isMobile) { setClosingConv(true); return; }
     setSelectedConversation(null);
     setShowLeadPanel(false);
     setViewingLeadId(null);
-  }, []);
+  }, [isMobile]);
 
   const handleOpenLead = useCallback((leadId: string) => setViewingLeadId(leadId), []);
-  const handleBackFromLead = useCallback(() => setViewingLeadId(null), []);
+  const handleBackFromLead = useCallback(() => {
+    if (isMobile) { setClosingLead(true); return; }
+    setViewingLeadId(null);
+  }, [isMobile]);
+
+  useBackHandler(() => { handleBackFromLead(); }, isMobile && !!viewingLeadId);
+  useBackHandler(() => { handleBack(); }, isMobile && !!selectedConversation && !viewingLeadId);
 
   const handleTabChange = useCallback((tab: BrokerInboxTab) => {
     setActiveTab(tab);
@@ -391,11 +401,31 @@ export default function BrokerInbox() {
         )}
 
         {showThread && (
-          <div className={`flex-1 min-w-0 ${isMobile ? "animate-in slide-in-from-right-5 duration-200" : ""}`}>
+          <div
+            className={`flex-1 min-w-0 ${isMobile ? (closingConv ? "ios-push-out" : "ios-push-in") : ""}`}
+            onAnimationEnd={(e) => {
+              if (e.animationName === "ios-push-out" && closingConv) {
+                setClosingConv(false);
+                setSelectedConversation(null);
+                setShowLeadPanel(false);
+                setViewingLeadId(null);
+              }
+            }}
+          >
             {viewingLeadId ? (
-              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
-                <LeadPage embeddedLeadId={viewingLeadId} onBack={handleBackFromLead} />
-              </Suspense>
+              <div
+                className={isMobile ? (closingLead ? "ios-push-out" : "ios-push-in") : ""}
+                onAnimationEnd={(e) => {
+                  if (e.animationName === "ios-push-out" && closingLead) {
+                    setClosingLead(false);
+                    setViewingLeadId(null);
+                  }
+                }}
+              >
+                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+                  <LeadPage embeddedLeadId={viewingLeadId} onBack={handleBackFromLead} />
+                </Suspense>
+              </div>
             ) : (
               <ConversationThread
                 conversation={selectedConversation!}
