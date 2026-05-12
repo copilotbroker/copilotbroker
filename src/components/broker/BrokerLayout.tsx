@@ -31,6 +31,8 @@ interface BrokerLayoutProps {
   copilotEnabled?: boolean;
   collapsibleContent?: ReactNode;
   brokerId?: string;
+  /** Quando true, oculta o bottom nav mobile (ex.: dentro de uma conversa) */
+  hideMobileNav?: boolean;
 }
 
 
@@ -51,6 +53,7 @@ export function BrokerLayout({
   copilotEnabled,
   collapsibleContent,
   brokerId,
+  hideMobileNav = false,
 }: BrokerLayoutProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   // Rastrear sessão de login
@@ -72,17 +75,18 @@ export function BrokerLayout({
       />
 
       {/* Mobile Bottom Navigation */}
-      <BrokerBottomNav
-        viewMode={viewMode}
-        onViewChange={onViewChange}
-        onCopyLink={onCopyLink}
-        onAddLead={onAddLead}
-        onNotificationsClick={() => setIsNotificationsOpen(true)}
-        isLeader={isLeader}
-        inboxEnabled={inboxEnabled}
-        copilotEnabled={copilotEnabled}
-      />
-
+      {!hideMobileNav && (
+        <BrokerBottomNav
+          viewMode={viewMode}
+          onViewChange={onViewChange}
+          onCopyLink={onCopyLink}
+          onAddLead={onAddLead}
+          onNotificationsClick={() => setIsNotificationsOpen(true)}
+          isLeader={isLeader}
+          inboxEnabled={inboxEnabled}
+          copilotEnabled={copilotEnabled}
+        />
+      )}
       {/* Mobile Notifications Sheet - uses NotificationPanel inline */}
       <Sheet open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>
         <SheetContent side="bottom" className="bg-[#1e1e22] border-[#2a2a2e] h-[80vh] rounded-t-2xl">
@@ -96,7 +100,7 @@ export function BrokerLayout({
       </Sheet>
 
       {/* Main content - offset by sidebar width on desktop */}
-      <div className={cn("lg:ml-16 h-screen flex flex-col overflow-hidden", viewMode === "kanban" && "pb-20 lg:pb-0")}>
+      <div className={cn("lg:ml-16 h-screen flex flex-col overflow-hidden", viewMode === "kanban" && !hideMobileNav && "pb-20 lg:pb-0")}>
         <BrokerHeader
           brokerName={brokerName}
           searchTerm={searchTerm}

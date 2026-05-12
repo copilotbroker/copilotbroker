@@ -356,6 +356,7 @@ export default function BrokerInbox() {
       onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
       onLogout={handleLogout}
       inboxEnabled={inboxEnabled}
+      hideMobileNav={isMobile && !!selectedConversation && !viewingLeadId}
     >
       <div className="flex h-full overflow-hidden -m-3 lg:-m-6">
         {showList && (
