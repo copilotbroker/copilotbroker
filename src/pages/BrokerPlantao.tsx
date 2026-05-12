@@ -15,6 +15,7 @@ import { useLogout } from "@/hooks/use-logout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Loader2 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";
+import { useBackHandler } from "@/hooks/use-back-handler";
 import {
   Select,
   SelectContent,
