@@ -451,11 +451,31 @@ export default function BrokerPlantao() {
         )}
 
         {showThread && (
-          <div className={`flex-1 min-w-0 ${isMobile ? "animate-in slide-in-from-right-5 duration-200" : ""}`}>
+          <div
+            className={`flex-1 min-w-0 ${isMobile ? (closingConv ? "ios-push-out" : "ios-push-in") : ""}`}
+            onAnimationEnd={(e) => {
+              if (e.animationName === "ios-push-out" && closingConv) {
+                setClosingConv(false);
+                setSelectedConversation(null);
+                setShowLeadPanel(false);
+                setViewingLeadId(null);
+              }
+            }}
+          >
             {viewingLeadId ? (
-              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
-                <LeadPage embeddedLeadId={viewingLeadId} onBack={handleBackFromLead} />
-              </Suspense>
+              <div
+                className={isMobile ? (closingLead ? "ios-push-out" : "ios-push-in") : ""}
+                onAnimationEnd={(e) => {
+                  if (e.animationName === "ios-push-out" && closingLead) {
+                    setClosingLead(false);
+                    setViewingLeadId(null);
+                  }
+                }}
+              >
+                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+                  <LeadPage embeddedLeadId={viewingLeadId} onBack={handleBackFromLead} />
+                </Suspense>
+              </div>
             ) : (
               <ConversationThread
                 conversation={selectedConversation!}
