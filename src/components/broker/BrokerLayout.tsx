@@ -100,7 +100,7 @@ export function BrokerLayout({
       </Sheet>
 
       {/* Main content - offset by sidebar width on desktop */}
-      <div className={cn("lg:ml-16 h-screen flex flex-col overflow-hidden", viewMode === "kanban" && "pb-20 lg:pb-0")}>
+      <div className={cn("lg:ml-16 h-screen flex flex-col overflow-hidden", viewMode === "kanban" && !hideMobileNav && "pb-20 lg:pb-0")}>
         <BrokerHeader
           brokerName={brokerName}
           searchTerm={searchTerm}
