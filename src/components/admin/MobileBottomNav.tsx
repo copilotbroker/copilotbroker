@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  LayoutDashboard, Users, Plus, Bell, LogOut,
+  LayoutDashboard, Plus, LogOut,
   MoreHorizontal, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,27 +16,28 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { SettingsPanel } from "./SettingsPanel";
+import { WhatsAppInboxIcon, WhatsAppPlantaoIcon } from "@/components/icons/WhatsAppIcon";
 import { ADMIN_ROUTE_TABS, type AdminRouteTabId, getAdminPathByTab } from "./adminNavigation";
 
 interface MobileBottomNavProps {
   activeTab: AdminRouteTabId;
   onAddLead?: () => void;
-  onNotificationsClick?: () => void;
 }
 
 interface BottomNavItem {
-  id: "notifications" | "crm" | "add" | "leads" | "more";
-  icon: typeof LayoutDashboard;
+  id: string;
+  icon: React.ComponentType<{ className?: string }>;
   badge?: number;
   isFab?: boolean;
 }
 
-const DRAWER_ITEMS_STATIC = ADMIN_ROUTE_TABS.filter((item) => !["crm", "leads"].includes(item.id));
+const DRAWER_ITEMS_STATIC = ADMIN_ROUTE_TABS.filter(
+  (item) => !["crm", "inbox", "plantao"].includes(item.id)
+);
 
 export function MobileBottomNav({
   activeTab,
   onAddLead,
-  onNotificationsClick
 }: MobileBottomNavProps) {
   const { unreadCount } = useNotifications();
   const { unreadCount: inboxUnread } = useInboxUnread();
@@ -44,16 +45,28 @@ export function MobileBottomNav({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const drawerItems = DRAWER_ITEMS_STATIC.map(item =>
-    item.id === "inbox" ? { ...item, badge: inboxUnread } : item
-  );
+  const drawerItems = [
+    ...DRAWER_ITEMS_STATIC.map((item) =>
+      item.id === "inbox" ? { ...item, badge: inboxUnread } : item
+    ),
+    {
+      id: "notifications",
+      label: "Notificações",
+      icon: Settings,
+      badge: unreadCount,
+    },
+  ];
+
+  const crmTab = ADMIN_ROUTE_TABS.find((item) => item.id === "crm");
+  const inboxTab = ADMIN_ROUTE_TABS.find((item) => item.id === "inbox");
+  const plantaoTab = ADMIN_ROUTE_TABS.find((item) => item.id === "plantao");
 
   const navItems: BottomNavItem[] = [
-    { id: "notifications", icon: Bell, badge: unreadCount },
-    { id: "crm", icon: LayoutDashboard },
+    { id: "crm", icon: crmTab!.icon, badge: 0 },
+    { id: "inbox", icon: inboxTab!.icon, badge: inboxUnread },
     { id: "add", icon: Plus, isFab: true },
-    { id: "leads", icon: Users },
-    { id: "more", icon: MoreHorizontal },
+    { id: "plantao", icon: plantaoTab!.icon, badge: 0 },
+    { id: "more", icon: MoreHorizontal, badge: 0 },
   ];
 
   const handleLogout = async () => {
@@ -63,9 +76,7 @@ export function MobileBottomNav({
   };
 
   const handleClick = (id: string) => {
-    if (id === "notifications" && onNotificationsClick) {
-      onNotificationsClick();
-    } else if (id === "add") {
+    if (id === "add") {
       onAddLead?.();
     } else if (id === "more") {
       setIsMoreOpen(true);
@@ -80,7 +91,19 @@ export function MobileBottomNav({
       setIsSettingsOpen(true);
       return;
     }
+    if (id === "notifications") {
+      navigate("/admin/notificacoes");
+      return;
+    }
     navigate(getAdminPathByTab(id as AdminRouteTabId));
+  };
+
+  const getItemColor = (id: string) => {
+    const isActive = activeTab === id;
+    if (id === "inbox") return isActive ? "text-[hsl(145,80%,55%)]" : "text-[hsl(145,80%,55%)]/70";
+    if (id === "plantao") return isActive ? "text-purple-400" : "text-purple-400/70";
+    if (isActive) return "text-[#FFFF00]";
+    return "text-slate-500 active:text-slate-300";
   };
 
   return (
@@ -118,9 +141,7 @@ export function MobileBottomNav({
                 className={cn(
                   "flex items-center justify-center p-3 min-w-[48px]",
                   "transition-colors duration-200 relative",
-                  isActive
-                    ? "text-[#FFFF00]"
-                    : "text-slate-500 active:text-slate-300"
+                  getItemColor(item.id)
                 )}
               >
                 <div className="relative">
@@ -132,7 +153,10 @@ export function MobileBottomNav({
                   )}
                 </div>
                 {isActive && (
-                  <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#FFFF00]" />
+                  <div className={cn(
+                    "absolute bottom-1.5 w-1 h-1 rounded-full",
+                    item.id === "inbox" ? "bg-[hsl(145,80%,55%)]" : item.id === "plantao" ? "bg-purple-400" : "bg-[#FFFF00]"
+                  )} />
                 )}
               </button>
             );
@@ -149,6 +173,8 @@ export function MobileBottomNav({
             {drawerItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const isInbox = item.id === "inbox";
+              const isPlantao = item.id === "plantao";
               return (
                 <button
                   key={item.id}
@@ -156,12 +182,12 @@ export function MobileBottomNav({
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors",
                     isActive
-                      ? item.id === "inbox" ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_12px_hsl(145,80%,42%,0.3)]"
-                        : item.id === "plantao" ? "bg-purple-500/20 text-purple-400"
+                      ? isInbox ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_12px_hsl(145,80%,42%,0.3)]"
+                        : isPlantao ? "bg-purple-500/20 text-purple-400"
                         : "bg-primary/20 text-primary"
-                      : item.id === "inbox"
+                      : isInbox
                         ? "text-emerald-400/80 active:bg-emerald-500/10"
-                        : item.id === "plantao"
+                        : isPlantao
                           ? "text-purple-400/80 active:bg-purple-500/10"
                           : "text-muted-foreground active:bg-card"
                   )}

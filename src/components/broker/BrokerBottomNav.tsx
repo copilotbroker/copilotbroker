@@ -41,9 +41,9 @@ export function BrokerBottomNav({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const activeTab = getBrokerTabFromPath(location.pathname);
 
+  const crmTab = BROKER_ROUTE_TABS.find((item) => item.id === "crm");
   const inboxTab = BROKER_ROUTE_TABS.find((item) => item.id === "inbox");
   const plantaoTab = BROKER_ROUTE_TABS.find((item) => item.id === "plantao");
-  const crmTab = BROKER_ROUTE_TABS.find((item) => item.id === "crm");
 
   const navItems: Array<{
     id: string;
@@ -51,10 +51,10 @@ export function BrokerBottomNav({
     isFab?: boolean;
     badge?: number;
   }> = [
+    { id: "crm", icon: crmTab!.icon },
     ...(inboxEnabled && inboxTab ? [{ id: "inbox", icon: inboxTab.icon, badge: inboxUnread }] : []),
-    { id: "plantao", icon: plantaoTab!.icon },
     { id: "add", icon: Plus, isFab: true },
-    { id: viewMode === "list" ? "leads" : "crm", icon: crmTab!.icon },
+    { id: "plantao", icon: plantaoTab!.icon },
     { id: "more", icon: MoreHorizontal },
   ];
 
@@ -65,14 +65,14 @@ export function BrokerBottomNav({
   };
 
   const handleClick = (id: string) => {
-    if (id === "crm" || id === "leads") {
-      onViewChange(id === "leads" ? "list" : "kanban");
-    } else if (id === "add") {
+    if (id === "add") {
       onAddLead?.();
-    } else if (id === "inbox" || id === "agenda" || id === "copilot" || id === "plantao" || id === "dashboard") {
-      navigate(getBrokerPathByTab(id));
     } else if (id === "more") {
       setIsMoreOpen(true);
+    } else if (id === "crm" || id === "leads") {
+      navigate(getBrokerPathByTab("crm"));
+    } else if (id === "inbox" || id === "agenda" || id === "copilot" || id === "plantao" || id === "dashboard") {
+      navigate(getBrokerPathByTab(id));
     }
   };
 
@@ -80,32 +80,33 @@ export function BrokerBottomNav({
     setIsMoreOpen(false);
     if (action === "leads") {
       onViewChange("list");
-    } else if (action === "inbox" || action === "projects" || action === "roletas" || action === "copilot" || action === "profile" || action === "dashboard") {
-      navigate(getBrokerPathByTab(action as any));
-    } else if (action === "notifications") {
-      onNotificationsClick?.();
-    } else if (action === "logout") {
-      handleLogout();
+      return;
     }
+    if (action === "notifications") {
+      onNotificationsClick?.();
+      return;
+    }
+    if (action === "logout") {
+      handleLogout();
+      return;
+    }
+    navigate(getBrokerPathByTab(action as any));
   };
 
   const getItemColor = (id: string) => {
     const isActive = getActiveIndicator(id);
-    // Plantão always orange
     if (id === "plantao") return isActive ? "text-purple-400" : "text-purple-400/70";
-    // Inbox always green
     if (id === "inbox") return isActive ? "text-[hsl(145,80%,55%)]" : "text-[hsl(145,80%,55%)]/70";
-    // Copilot always blue
     if (id === "copilot") return isActive ? "text-blue-400" : "text-blue-400/70";
-    // Default primary
     if (isActive) return "text-[#FFFF00]";
     return "text-slate-500 active:text-slate-300";
   };
 
   const getActiveIndicator = (id: string) => {
-    if ((id === "crm" && activeTab === "crm") || (id === "leads" && activeTab === "leads")) return true;
+    if (id === "crm" && (activeTab === "crm" || activeTab === "leads")) return true;
     if (id === "copilot" && activeTab === "copilot") return true;
     if (id === "plantao" && activeTab === "plantao") return true;
+    if (id === "inbox" && activeTab === "inbox") return true;
     if (id === "agenda" && activeTab === "agenda") return true;
     if (id === "dashboard" && activeTab === "dashboard") return true;
     return false;
@@ -172,7 +173,7 @@ export function BrokerBottomNav({
                 {getActiveIndicator(item.id) && (
                   <div className={cn(
                     "absolute bottom-1.5 w-1 h-1 rounded-full",
-                    item.id === "copilot" ? "bg-blue-400" : item.id === "plantao" ? "bg-purple-400" : "bg-[#FFFF00]"
+                    item.id === "inbox" ? "bg-[hsl(145,80%,55%)]" : item.id === "plantao" ? "bg-purple-400" : "bg-[#FFFF00]"
                   )} />
                 )}
               </button>

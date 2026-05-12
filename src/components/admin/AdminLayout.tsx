@@ -38,7 +38,6 @@ export function AdminLayout({
       <MobileBottomNav
         activeTab={activeTab}
         onAddLead={onAddLead}
-        onNotificationsClick={() => setIsNotificationsOpen(true)}
       />
 
       <Sheet open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>
