@@ -358,7 +358,7 @@ export default function AdminPlantao() {
       <AdminSidebar activeTab="plantao" onLogout={handleLogout} />
 
       <div className="md:pl-16">
-        <div className="flex h-[calc(100vh-64px)] md:h-screen overflow-hidden">
+        <div className="flex h-[calc(100dvh-80px)] md:h-screen overflow-hidden">
           {showList && (
             <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0 flex flex-col`}>
               {showBrokerSelector && (
