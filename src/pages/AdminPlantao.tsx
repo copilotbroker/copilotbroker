@@ -356,11 +356,11 @@ export default function AdminPlantao() {
   const hideMobileNav = isMobile && !!selectedConversation && !viewingLeadId;
 
   return (
-    <div className={`bg-[#141417] ${hideMobileNav ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh] pt-safe"}`}>
+    <div className={`bg-[#141417] ${hideMobileNav ? "h-[100dvh] overflow-hidden pt-safe" : "min-h-[100dvh] pt-safe"}`}>
       <AdminSidebar activeTab="plantao" onLogout={handleLogout} />
 
-      <div className="md:pl-16">
-        <div className={`flex ${hideMobileNav ? "h-[100dvh]" : "h-[calc(100dvh-80px)]"} md:h-screen overflow-hidden`}>
+      <div className="md:pl-16 h-full">
+        <div className={`flex ${hideMobileNav ? "h-full" : "h-[calc(100dvh-80px)]"} md:h-screen overflow-hidden`}>
           {showList && (
             <div className={`${isMobile ? "w-full" : "w-80 border-r border-[#2a2a2e]"} flex-shrink-0 flex flex-col`}>
               {showBrokerSelector && (

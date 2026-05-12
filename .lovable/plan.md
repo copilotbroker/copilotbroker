@@ -1,33 +1,22 @@
 ## Problema
 
-Ao abrir uma conversa no mobile, a página inteira fica com scroll vertical e o campo de digitação aparece "abaixo" da tela — é preciso rolar para encontrá-lo.
+Após corrigir o scroll com `h-[100dvh] overflow-hidden`, removi o `pt-safe` do wrapper externo nos modos com conversa aberta no mobile. Resultado: o header da conversa fica embaixo do notch do iPhone.
 
-## Causa
+## Solução
 
-Os layouts misturam `min-h-screen` (no wrapper externo) com `h-screen`/`h-[100dvh]` (no wrapper interno) e ainda aplicam `pt-safe` no externo. No iOS:
+Reativar `pt-safe` no wrapper externo (mantendo `h-[100dvh] overflow-hidden`), aproveitando que o `box-sizing: border-box` padrão do Tailwind faz o padding ser descontado da altura. Para isso o filho interno precisa usar `h-full` (não `h-[100dvh]`) para herdar a altura já reduzida pelo safe-area-top.
 
-- `100vh` > viewport visível (inclui barras do navegador), enquanto `100dvh` é o real.
-- `min-h-screen + pt-safe` faz o documento ficar maior que a viewport, gerando o scroll vertical e empurrando o composer (rodapé do `ConversationThread`) para fora da área visível.
+## Mudanças
 
-Locais afetados:
-- `src/components/broker/BrokerLayout.tsx` — wrapper externo `min-h-screen`, interno `h-screen`.
-- `src/pages/AdminInbox.tsx` — wrapper externo `min-h-screen ... pt-safe`.
-- `src/pages/AdminPlantao.tsx` — mesmo padrão do AdminInbox.
+1. **`src/components/broker/BrokerLayout.tsx`**
+   - Wrapper externo (l.63): `h-[100dvh] overflow-hidden pt-safe` quando `hideMobileNav`.
+   - Wrapper interno (l.103): trocar `h-[100dvh]` → `h-full`.
 
-## Plano
+2. **`src/pages/AdminInbox.tsx`**
+   - Wrapper externo (l.312): `h-[100dvh] overflow-hidden pt-safe` quando `hideMobileNav`.
+   - Container interno (l.316): quando `hideMobileNav`, usar `h-full` (em vez de `h-[100dvh]`).
 
-1. **`BrokerLayout.tsx`**
-   - Trocar wrapper externo `min-h-screen` → `h-[100dvh] overflow-hidden` quando `hideMobileNav` (e usar `min-h-[100dvh]` no caso geral para não regredir o kanban).
-   - Trocar wrapper interno `h-screen` → `h-[100dvh]` (ou `h-full`) para alinhar com o externo.
-   - Aplicar `pt-safe` no `BrokerHeader` (ou no próprio wrapper interno) em vez do externo, evitando somar safe-area + 100dvh.
+3. **`src/pages/AdminPlantao.tsx`**
+   - Mesmas mudanças do AdminInbox.
 
-2. **`AdminInbox.tsx` e `AdminPlantao.tsx`**
-   - Trocar `min-h-screen ... pt-safe` por `h-[100dvh] overflow-hidden` no wrapper externo quando `hideMobileNav`. Caso contrário, manter `min-h-[100dvh]`.
-   - Mover o `pt-safe` para dentro (no header/topo da lista), para que o safe-area não estenda o documento além de `100dvh`.
-   - Manter o cálculo já existente: quando `hideMobileNav` o container interno usa `h-[100dvh]`; quando visível, `h-[calc(100dvh-80px)]` (mais o safe-area do bottom nav).
-
-3. **Verificação**
-   - Testar no preview mobile (iPhone) abrindo uma conversa em: Broker WhatsApp pessoal, Broker Plantão, Admin Inbox e Admin Plantão.
-   - Confirmar: sem scroll na página, composer visível na base, header e bottom nav (quando aplicável) sem sobreposição.
-
-Sem mudanças de lógica/dados — apenas ajustes de layout/altura.
+Sem alterações de lógica — apenas redistribuição do safe-area com `box-border`.
