@@ -79,6 +79,7 @@ const App = () => (
               <AppHead />
               <WhiteLabelProvider />
               <SaasNavLauncher />
+              <MobileGestures />
               <Routes>
             <Route path="/" element={<Home />} />
             
