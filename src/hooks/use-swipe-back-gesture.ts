@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { runTopBackHandler } from "@/hooks/use-back-handler";
 
 /**
  * Mobile horizontal swipe navigation.
