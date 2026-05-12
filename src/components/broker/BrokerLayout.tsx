@@ -60,7 +60,7 @@ export function BrokerLayout({
   useBrokerSessionTracker();
 
   return (
-    <div className={cn("bg-[#0f0f12] admin-scrollbar", hideMobileNav ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh]")}>
+    <div className={cn("bg-[#0f0f12] admin-scrollbar", hideMobileNav ? "h-[100dvh] overflow-hidden pt-safe" : "min-h-[100dvh]")}>
       {/* Sidebar - fixed left, hidden on mobile */}
       <BrokerSidebar
         viewMode={viewMode}
@@ -100,7 +100,7 @@ export function BrokerLayout({
       </Sheet>
 
       {/* Main content - offset by sidebar width on desktop */}
-      <div className={cn("lg:ml-16 h-[100dvh] flex flex-col overflow-hidden", viewMode === "kanban" && !hideMobileNav && "pb-20 lg:pb-0")}>
+      <div className={cn("lg:ml-16 h-full flex flex-col overflow-hidden", viewMode === "kanban" && !hideMobileNav && "pb-20 lg:pb-0")}>
         <BrokerHeader
           brokerName={brokerName}
           searchTerm={searchTerm}
