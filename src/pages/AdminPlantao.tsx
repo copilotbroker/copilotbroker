@@ -168,13 +168,20 @@ export default function AdminPlantao() {
   }, [isMobile]);
 
   const handleBack = useCallback(() => {
+    if (isMobile) { setClosingConv(true); return; }
     setSelectedConversation(null);
     setShowLeadPanel(false);
     setViewingLeadId(null);
-  }, []);
+  }, [isMobile]);
 
   const handleOpenLead = useCallback((leadId: string) => setViewingLeadId(leadId), []);
-  const handleBackFromLead = useCallback(() => setViewingLeadId(null), []);
+  const handleBackFromLead = useCallback(() => {
+    if (isMobile) { setClosingLead(true); return; }
+    setViewingLeadId(null);
+  }, [isMobile]);
+
+  useBackHandler(() => { handleBackFromLead(); }, isMobile && !!viewingLeadId);
+  useBackHandler(() => { handleBack(); }, isMobile && !!selectedConversation && !viewingLeadId);
 
   const handleTabChange = useCallback((tab: InboxTab) => {
     setInboxTab(tab);
