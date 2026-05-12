@@ -15,6 +15,7 @@ import { useLogout } from "@/hooks/use-logout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
+import { useBackHandler } from "@/hooks/use-back-handler";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
