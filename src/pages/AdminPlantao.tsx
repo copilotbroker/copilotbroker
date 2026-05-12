@@ -37,6 +37,8 @@ export default function AdminPlantao() {
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [brokers, setBrokers] = useState<{ id: string; name: string }[]>([]);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
+  const [closingConv, setClosingConv] = useState(false);
+  const [closingLead, setClosingLead] = useState(false);
   const [myBrokerId, setMyBrokerId] = useState<string | null>(null);
   const [inboxTab, setInboxTab] = useState<InboxTab>("novos");
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
