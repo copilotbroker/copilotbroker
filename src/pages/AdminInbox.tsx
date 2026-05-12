@@ -37,6 +37,8 @@ export default function AdminInbox() {
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
   const [isReturningToGlobal, setIsReturningToGlobal] = useState(false);
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
+  const [closingConv, setClosingConv] = useState(false);
+  const [closingLead, setClosingLead] = useState(false);
 
   useEffect(() => {
     const init = async () => {
