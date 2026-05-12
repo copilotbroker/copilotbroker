@@ -28,7 +28,7 @@ const roleLabels: Record<typeof roles[number], string> = {
 const AdminOrganizationPermissions = () => {
   const navigate = useNavigate();
   return (
-    <div className="space-y-4 p-6 max-w-5xl mx-auto">
+    <div className="space-y-4 p-6 pt-safe max-w-5xl mx-auto">
       <Button
         variant="ghost"
         size="sm"
