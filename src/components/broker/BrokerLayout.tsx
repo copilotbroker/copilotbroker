@@ -31,6 +31,8 @@ interface BrokerLayoutProps {
   copilotEnabled?: boolean;
   collapsibleContent?: ReactNode;
   brokerId?: string;
+  /** Quando true, oculta o bottom nav mobile (ex.: dentro de uma conversa) */
+  hideMobileNav?: boolean;
 }
 
 
@@ -51,6 +53,7 @@ export function BrokerLayout({
   copilotEnabled,
   collapsibleContent,
   brokerId,
+  hideMobileNav = false,
 }: BrokerLayoutProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   // Rastrear sessão de login
