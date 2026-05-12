@@ -309,7 +309,7 @@ export default function AdminInbox() {
   const hideMobileNav = isMobile && !!selectedConversation && !viewingLeadId;
 
   return (
-    <div className="min-h-screen bg-[#141417] pt-safe">
+    <div className={`bg-[#141417] ${hideMobileNav ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh] pt-safe"}`}>
       <AdminSidebar activeTab="inbox" onLogout={handleLogout} />
 
       <div className="md:pl-16">
