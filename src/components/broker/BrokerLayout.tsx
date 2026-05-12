@@ -75,17 +75,18 @@ export function BrokerLayout({
       />
 
       {/* Mobile Bottom Navigation */}
-      <BrokerBottomNav
-        viewMode={viewMode}
-        onViewChange={onViewChange}
-        onCopyLink={onCopyLink}
-        onAddLead={onAddLead}
-        onNotificationsClick={() => setIsNotificationsOpen(true)}
-        isLeader={isLeader}
-        inboxEnabled={inboxEnabled}
-        copilotEnabled={copilotEnabled}
-      />
-
+      {!hideMobileNav && (
+        <BrokerBottomNav
+          viewMode={viewMode}
+          onViewChange={onViewChange}
+          onCopyLink={onCopyLink}
+          onAddLead={onAddLead}
+          onNotificationsClick={() => setIsNotificationsOpen(true)}
+          isLeader={isLeader}
+          inboxEnabled={inboxEnabled}
+          copilotEnabled={copilotEnabled}
+        />
+      )}
       {/* Mobile Notifications Sheet - uses NotificationPanel inline */}
       <Sheet open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>
         <SheetContent side="bottom" className="bg-[#1e1e22] border-[#2a2a2e] h-[80vh] rounded-t-2xl">
