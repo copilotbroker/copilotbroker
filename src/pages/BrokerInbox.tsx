@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Lock, Loader2 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";
+import { useBackHandler } from "@/hooks/use-back-handler";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
