@@ -36,6 +36,8 @@ export default function BrokerPlantao() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showLeadPanel, setShowLeadPanel] = useState(false);
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
+  const [closingConv, setClosingConv] = useState(false);
+  const [closingLead, setClosingLead] = useState(false);
   const [inboxTab, setInboxTab] = useState<InboxTab>("novos");
   const [isStartingAttendance, setIsStartingAttendance] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
