@@ -10,6 +10,12 @@ import AppHead from "@/components/AppHead";
 import { SaasNavLauncher } from "@/components/SaasNavLauncher";
 import { WhiteLabelProvider } from "@/components/WhiteLabelProvider";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
+import { useSwipeBackGesture } from "@/hooks/use-swipe-back-gesture";
+
+const MobileGestures = () => {
+  useSwipeBackGesture();
+  return null;
+};
 import Home from "./pages/Home";
 import { LandingRoutes } from "@/components/LandingRoutes";
 import Auth from "./pages/Auth";
