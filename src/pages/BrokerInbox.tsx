@@ -11,11 +11,9 @@ import { useAutoCreateLead } from "@/hooks/use-auto-create-lead";
 import { useCopilotSuggestion } from "@/hooks/use-copilot";
 import { useLeadActions } from "@/hooks/use-lead-actions";
 import { useLogout } from "@/hooks/use-logout";
-import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { useUserRole } from "@/hooks/use-user-role";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Lock, Loader2 } from "lucide-react";
 import { BrokerLayout } from "@/components/broker";
 import { useBackHandler } from "@/hooks/use-back-handler";
 
@@ -43,7 +41,6 @@ export default function BrokerInbox() {
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null);
 
   const { isLeader } = useUserRole();
-  const { inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
   useEffect(() => {
     const getBrokerId = async () => {
@@ -327,34 +324,6 @@ export default function BrokerInbox() {
 
   const handleLogout = useLogout({ silent: true });
 
-  if (featuresLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!inboxEnabled) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">Inbox não liberado</h2>
-          <p className="text-sm text-muted-foreground">
-            Esta funcionalidade não está habilitada para sua conta. Solicite ao administrador para liberar o acesso.
-          </p>
-          <button onClick={() => navigate("/corretor/crm")}
-            className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all">
-            Voltar ao CRM
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const isNewConversation = activeTab === "novos" && !!selectedConversation && !selectedConversation.lead_id;
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
@@ -365,7 +334,6 @@ export default function BrokerInbox() {
       viewMode="kanban"
       onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
       onLogout={handleLogout}
-      inboxEnabled={inboxEnabled}
       hideMobileNav={isMobile && !!selectedConversation && !viewingLeadId}
     >
       <div className="flex h-full overflow-hidden -m-3 lg:-m-6">

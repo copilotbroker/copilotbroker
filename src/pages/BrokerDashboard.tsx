@@ -267,7 +267,7 @@ function InsightsCard({ insights }: { insights: DashboardInsight[] }) {
 const BrokerDashboard = () => {
   const navigate = useNavigate();
   const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
-  const { inboxEnabled, copilotEnabled } = useBrokerFeatures(brokerId);
+  const { copilotEnabled } = useBrokerFeatures(brokerId);
   const handleLogout = useLogout();
 
   const [period, setPeriod] = useState<Period>("30d");
@@ -325,7 +325,6 @@ const BrokerDashboard = () => {
         onViewChange={handleViewChange}
         onLogout={handleLogout}
         isLeader={isLeader}
-        inboxEnabled={inboxEnabled}
         copilotEnabled={copilotEnabled}
         brokerId={brokerId || undefined}
       >
