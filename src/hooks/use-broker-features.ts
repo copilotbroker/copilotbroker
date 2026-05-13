@@ -8,12 +8,11 @@ export function useBrokerFeatures(brokerId: string | null) {
     queryFn: async () => {
       const { data } = await supabase
         .from("brokers")
-        .select("inbox_enabled, copilot_enabled")
+        .select("copilot_enabled")
         .eq("id", brokerId!)
         .single();
 
       return {
-        inboxEnabled: (data as any)?.inbox_enabled ?? false,
         copilotEnabled: (data as any)?.copilot_enabled ?? false,
       };
     },
@@ -22,7 +21,6 @@ export function useBrokerFeatures(brokerId: string | null) {
   });
 
   return {
-    inboxEnabled: data?.inboxEnabled ?? false,
     copilotEnabled: data?.copilotEnabled ?? false,
     isLoading,
   };

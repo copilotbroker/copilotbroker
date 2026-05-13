@@ -27,7 +27,6 @@ interface BrokerLayoutProps {
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
   isLeader?: boolean;
-  inboxEnabled?: boolean;
   copilotEnabled?: boolean;
   collapsibleContent?: ReactNode;
   brokerId?: string;
@@ -49,7 +48,6 @@ export function BrokerLayout({
   searchTerm,
   onSearchChange,
   isLeader = false,
-  inboxEnabled,
   copilotEnabled,
   collapsibleContent,
   brokerId,
@@ -70,7 +68,6 @@ export function BrokerLayout({
         onAddLead={onAddLead}
         brokerInitial={brokerInitial}
         isLeader={isLeader}
-        inboxEnabled={inboxEnabled}
         copilotEnabled={copilotEnabled}
       />
 
@@ -83,7 +80,6 @@ export function BrokerLayout({
           onAddLead={onAddLead}
           onNotificationsClick={() => setIsNotificationsOpen(true)}
           isLeader={isLeader}
-          inboxEnabled={inboxEnabled}
           copilotEnabled={copilotEnabled}
         />
       )}

@@ -21,7 +21,6 @@ interface BrokerBottomNavProps {
   onAddLead?: () => void;
   onNotificationsClick?: () => void;
   isLeader?: boolean;
-  inboxEnabled?: boolean;
   copilotEnabled?: boolean;
 }
 
@@ -31,7 +30,6 @@ export function BrokerBottomNav({
   onAddLead,
   onNotificationsClick,
   isLeader = false,
-  inboxEnabled = true,
   copilotEnabled = true,
 }: BrokerBottomNavProps) {
   const { unreadCount } = useNotifications();
@@ -52,7 +50,7 @@ export function BrokerBottomNav({
     badge?: number;
   }> = [
     { id: "crm", icon: crmTab!.icon },
-    ...(inboxEnabled && inboxTab ? [{ id: "inbox", icon: inboxTab.icon, badge: inboxUnread }] : []),
+    ...(inboxTab ? [{ id: "inbox", icon: inboxTab.icon, badge: inboxUnread }] : []),
     { id: "add", icon: Plus, isFab: true },
     { id: "plantao", icon: plantaoTab!.icon },
     { id: "more", icon: MoreHorizontal },
@@ -114,7 +112,7 @@ export function BrokerBottomNav({
 
   const moreMenuItems = [
     { id: "dashboard", label: "Dashboard", description: "Performance e funil" },
-    ...(inboxEnabled ? [{ id: "inbox", label: "Meu WhatsApp", description: "Conversas pessoais", badge: inboxUnread }] : []),
+    { id: "inbox", label: "Meu WhatsApp", description: "Conversas pessoais", badge: inboxUnread },
     ...(copilotEnabled ? [{ id: "copilot", label: "Copiloto", description: "Assistente e automações" }] : []),
     { id: "leads", label: "Modo Lista", description: "Abrir visão em lista" },
     { id: "notifications", label: "Notificações", description: "Ver notificações", badge: unreadCount },

@@ -44,7 +44,7 @@ const BrokerAdmin = () => {
   const location = useLocation();
   const viewMode = getBrokerViewModeFromPath(location.pathname);
   const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
-  const { inboxEnabled, copilotEnabled } = useBrokerFeatures(brokerId);
+  const { copilotEnabled } = useBrokerFeatures(brokerId);
 
   useEffect(() => {
     if (isRoleLoading) return;
@@ -175,7 +175,6 @@ const BrokerAdmin = () => {
         searchTerm={viewMode === "list" ? searchTerm : undefined}
         onSearchChange={viewMode === "list" ? setSearchTerm : undefined}
         isLeader={isLeader}
-        inboxEnabled={inboxEnabled}
         copilotEnabled={copilotEnabled}
         brokerId={brokerId || undefined}
           collapsibleContent={

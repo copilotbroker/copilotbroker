@@ -19,7 +19,7 @@ export default function BrokerCopilotConfig() {
   const { role, isLoading: roleLoading, brokerId, isLeader } = useUserRole();
   const [brokerName, setBrokerName] = useState("");
   const [activeTab, setActiveTab] = useState("connection");
-  const { copilotEnabled, inboxEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
+  const { copilotEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
 
   useEffect(() => {
     if (!roleLoading && role !== "broker" && role !== "admin") {
@@ -80,7 +80,6 @@ export default function BrokerCopilotConfig() {
       onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
       onLogout={handleLogout}
       isLeader={isLeader}
-      inboxEnabled={inboxEnabled}
       copilotEnabled={copilotEnabled}
     >
       <div className="max-w-6xl mx-auto w-full">

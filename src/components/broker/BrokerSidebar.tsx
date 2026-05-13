@@ -18,7 +18,6 @@ interface BrokerSidebarProps {
   onAddLead?: () => void;
   brokerInitial?: string;
   isLeader?: boolean;
-  inboxEnabled?: boolean;
   copilotEnabled?: boolean;
 }
 
@@ -30,7 +29,6 @@ export function BrokerSidebar({
   onAddLead,
   brokerInitial: brokerInitialProp,
   isLeader = false,
-  inboxEnabled = true,
   copilotEnabled = true,
 }: BrokerSidebarProps) {
   const navigate = useNavigate();
@@ -58,7 +56,7 @@ export function BrokerSidebar({
 
   const navigationItems = BROKER_ROUTE_TABS.filter((item) => {
     if (item.id === "roletas") return isLeader;
-    if (item.id === "inbox") return inboxEnabled;
+    if (item.id === "inbox") return true;
     if (item.id === "plantao") return true;
     if (item.id === "copilot") return copilotEnabled;
     if (item.id === "profile") return false; // Shown separately in the bottom section
