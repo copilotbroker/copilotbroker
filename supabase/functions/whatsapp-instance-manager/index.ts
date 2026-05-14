@@ -321,34 +321,46 @@ const getBrokerId = async (supabase: SupabaseClient<any, any, any>, userId: stri
 const configureInstanceWebhook = async (
   token: string,
   isAdminMode: boolean,
+  instanceName?: string,
 ): Promise<{ success: boolean; webhookUrl: string; details?: string }> => {
-  const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
+  const webhookSecret = Deno.env.get("UAZAPI_WEBHOOK_SECRET") || "";
+  const webhookUrl = webhookSecret
+    ? `${SUPABASE_URL}/functions/v1/whatsapp-webhook/${webhookSecret}`
+    : `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
   
   try {
-    const webhookResponse = await uazapiFetchWithAuthFallback(
-      `${UAZAPI_BASE_URL}/webhook`,
-      {
-        method: "POST",
-        includeJson: true,
-        bodyString: JSON.stringify({
-          url: webhookUrl,
-          enabled: true,
-          events: ["messages", "connection", "messages_update"],
-          excludeMessages: ["wasSentByApi"],
-        }),
-      },
-      token,
-      isAdminMode,
-    );
+    const resolvedBase = await resolveUazapiBase();
+    const baseVariants = Array.from(new Set([resolvedBase, ...getUazapiBaseVariants()].filter(Boolean)));
+    let lastDetails = "";
 
-    if (webhookResponse.ok) {
-      console.log(`[WEBHOOK] Configured successfully: ${webhookUrl}`);
-      return { success: true, webhookUrl };
+    for (const base of baseVariants) {
+      const webhookResponse = await uazapiFetchWithAuthFallback(
+        `${base}/webhook`,
+        {
+          method: "POST",
+          includeJson: true,
+          bodyString: JSON.stringify({
+            url: webhookUrl,
+            enabled: true,
+            events: ["messages", "connection", "messages_update"],
+            excludeMessages: ["wasSentByApi"],
+          }),
+        },
+        token,
+        isAdminMode,
+        token !== UAZAPI_DEFAULT_TOKEN ? [UAZAPI_DEFAULT_TOKEN] : [],
+      );
+
+      if (webhookResponse.ok) {
+        console.log(`[WEBHOOK] Configured successfully for ${instanceName || "broker instance"}: ${webhookUrl.replace(webhookSecret, "***")}`);
+        return { success: true, webhookUrl };
+      }
+
+      lastDetails = await webhookResponse.text().catch(() => "");
+      console.error(`[WEBHOOK] Failed at ${base}: ${webhookResponse.status} - ${lastDetails.substring(0, 200)}`);
     }
 
-    const errorText = await webhookResponse.text().catch(() => "");
-    console.error(`[WEBHOOK] Failed to configure: ${webhookResponse.status} - ${errorText.substring(0, 200)}`);
-    return { success: false, webhookUrl, details: errorText.substring(0, 200) };
+    return { success: false, webhookUrl, details: lastDetails.substring(0, 200) };
   } catch (err) {
     const error = err as Error;
     console.error(`[WEBHOOK] Error: ${error.message}`);
@@ -470,35 +482,11 @@ app.post("/init", async (c) => {
 
     console.log(`[UAZAPI] Real instance name: ${realInstanceName}, Token found: ${!!instanceToken}`);
 
-    // Configure webhook (admin endpoint)
-    const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
-    try {
-      // Use instance token if available for webhook config
-      const webhookResponse = await uazapiFetchWithAuthFallback(
-        `${UAZAPI_BASE_URL}/webhook`,
-        {
-          method: "POST",
-          includeJson: true,
-          bodyString: JSON.stringify({
-            url: webhookUrl,
-            enabled: true,
-            events: ["messages", "connection", "messages_update"],
-            excludeMessages: ["wasSentByApi"],
-          }),
-        },
-        instanceToken || UAZAPI_DEFAULT_TOKEN,
-        !instanceToken, // Use admin mode only if no instance token
-      );
-      
-      if (webhookResponse.ok) {
-        console.log(`Webhook configured for ${realInstanceName}: ${webhookUrl}`);
-      } else {
-        console.error("Failed to configure webhook:", await webhookResponse.text());
-      }
-    } catch (webhookErr) {
-      console.error("Webhook configuration error:", webhookErr);
-      // Continue anyway - webhook can be configured manually
-    }
+    const webhookConfig = await configureInstanceWebhook(
+      instanceToken || UAZAPI_DEFAULT_TOKEN,
+      !instanceToken,
+      realInstanceName,
+    );
 
     // Upsert broker instance record with real data from UAZAPI
     const { data: instance, error: dbError } = await supabase
@@ -522,7 +510,8 @@ app.post("/init", async (c) => {
       success: true,
       instance,
       uazapi: uazData,
-      webhookConfigured: webhookUrl,
+      webhookConfigured: webhookConfig.success,
+      webhookUrl: webhookConfig.webhookUrl,
     }, 200, corsHeaders);
 
   } catch (err) {
@@ -1254,6 +1243,7 @@ app.post("/restart", async (c) => {
     const webhookConfigResult = await configureInstanceWebhook(
       instance.instance_token || UAZAPI_DEFAULT_TOKEN,
       !instance.instance_token,
+      instance.instance_name,
     );
     console.log(`[RESTART] Webhook reconfigured: ${webhookConfigResult.success}`);
 
@@ -1312,6 +1302,7 @@ app.post("/configure-webhook", async (c) => {
     const result = await configureInstanceWebhook(
       instance.instance_token || UAZAPI_DEFAULT_TOKEN,
       !instance.instance_token,
+      instance.instance_name,
     );
 
     return c.json({

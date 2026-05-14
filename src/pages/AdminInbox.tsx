@@ -19,6 +19,11 @@ import { useBackHandler } from "@/hooks/use-back-handler";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
+const isWaitingPersonalAttendance = (conversation: Conversation) => {
+  const leadStatus = (conversation.lead as any)?.status;
+  return !conversation.lead_id || (leadStatus === "new" && conversation.attendance_started !== true);
+};
+
 export default function AdminInbox() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -75,11 +80,11 @@ export default function AdminInbox() {
   });
 
   const isViewingOtherBroker = !!myBrokerId && !!selectedBrokerId && selectedBrokerId !== myBrokerId;
-  // "Novos" (conversas pessoais não vinculadas a lead) é privado: apenas o próprio corretor pode ver.
+  // "Novos" é privado: conversas pessoais ainda sem atendimento, com ou sem lead já vinculado.
   const novosConversations = isViewingOtherBroker
     ? []
-    : allPersonalConversations.filter(c => !c.lead_id);
-  const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
+    : allPersonalConversations.filter(isWaitingPersonalAttendance);
+  const atendimentoConversations = allPersonalConversations.filter(c => !isWaitingPersonalAttendance(c));
 
   const activeConversations = activeTab === "novos"
     ? novosConversations
@@ -183,26 +188,41 @@ export default function AdminInbox() {
     setIsStartingAttendance(true);
     try {
       const displayName = selectedConversation.display_name || selectedConversation.phone;
+      let finalLeadId = selectedConversation.lead_id;
 
-      const { data: newLead, error: leadError } = await supabase
-        .from("leads").insert({
-          name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
-          broker_id: myBrokerId, status: "info_sent" as any,
-          source: "whatsapp", lead_origin: "whatsapp_direto",
+      if (finalLeadId) {
+        await supabase.from("leads").update({
+          status: "info_sent" as any,
           atendimento_iniciado_em: new Date().toISOString(),
           status_distribuicao: "atendimento_iniciado" as any,
-        } as any).select("id").single();
+          broker_id: myBrokerId,
+        } as any).eq("id", finalLeadId);
+      } else {
+        const { data: newLead, error: leadError } = await supabase
+          .from("leads").insert({
+            name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
+            broker_id: myBrokerId, status: "info_sent" as any,
+            source: "whatsapp", lead_origin: "whatsapp_direto",
+            atendimento_iniciado_em: new Date().toISOString(),
+            status_distribuicao: "atendimento_iniciado" as any,
+          } as any).select("id").single();
 
-      if (leadError || !newLead) {
-        toast.error("Erro ao criar card no Kanban");
+        if (leadError || !newLead) {
+          toast.error("Erro ao criar card no Kanban");
+          return;
+        }
+
+        const leadId = (newLead as any).id;
+        const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
+        finalLeadId = unifiedId || leadId;
+      }
+
+      if (!finalLeadId) {
+        toast.error("Erro ao iniciar atendimento");
         return;
       }
 
-      const leadId = (newLead as any).id;
-      const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
-      const finalLeadId = unifiedId || leadId;
-
-      await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
+      await supabase.from("conversations").update({ lead_id: finalLeadId, attendance_started: true } as any).eq("id", selectedConversation.id);
       await supabase.from("lead_interactions").insert({
         lead_id: finalLeadId, interaction_type: "atendimento_iniciado" as any,
         notes: "Atendimento iniciado via Inbox pessoal (Admin)",
@@ -211,11 +231,11 @@ export default function AdminInbox() {
 
       setActiveTab("atendimento");
       setSelectedConversation({
-        ...selectedConversation, lead_id: finalLeadId,
+        ...selectedConversation, lead_id: finalLeadId, attendance_started: true,
         lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_direto" },
       });
 
-      toast.success("Atendimento iniciado! Card criado no Kanban.");
+      toast.success("Atendimento iniciado!");
       fetchConversations();
     } catch (error) {
       console.error("Erro ao iniciar atendimento:", error);
@@ -311,7 +331,7 @@ export default function AdminInbox() {
 
   const handleLogout = useLogout({ silent: true });
 
-  const isNewConversation = activeTab === "novos" && !!selectedConversation && !selectedConversation.lead_id;
+  const isNewConversation = activeTab === "novos" && !!selectedConversation && isWaitingPersonalAttendance(selectedConversation);
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
   const showContext = showLeadPanel && !isMobile;
