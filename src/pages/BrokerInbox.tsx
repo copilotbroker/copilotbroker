@@ -209,26 +209,36 @@ export default function BrokerInbox() {
     setIsStartingAttendance(true);
     try {
       const displayName = selectedConversation.display_name || selectedConversation.phone;
+      let finalLeadId = selectedConversation.lead_id;
 
-      const { data: newLead, error: leadError } = await supabase
-        .from("leads").insert({
-          name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
-          broker_id: brokerId, status: "info_sent" as any,
-          source: "whatsapp", lead_origin: "whatsapp_direto",
+      if (finalLeadId) {
+        await supabase.from("leads").update({
+          status: "info_sent" as any,
           atendimento_iniciado_em: new Date().toISOString(),
           status_distribuicao: "atendimento_iniciado" as any,
-        } as any).select("id").single();
+          broker_id: brokerId,
+        } as any).eq("id", finalLeadId);
+      } else {
+        const { data: newLead, error: leadError } = await supabase
+          .from("leads").insert({
+            name: displayName, whatsapp: selectedConversation.phone.replace(/^\+/, ''),
+            broker_id: brokerId, status: "info_sent" as any,
+            source: "whatsapp", lead_origin: "whatsapp_direto",
+            atendimento_iniciado_em: new Date().toISOString(),
+            status_distribuicao: "atendimento_iniciado" as any,
+          } as any).select("id").single();
 
-      if (leadError || !newLead) {
-        toast.error("Erro ao criar card no Kanban");
-        return;
+        if (leadError || !newLead) {
+          toast.error("Erro ao criar card no Kanban");
+          return;
+        }
+
+        const leadId = (newLead as any).id;
+        const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
+        finalLeadId = unifiedId || leadId;
       }
 
-      const leadId = (newLead as any).id;
-      const { data: unifiedId } = await supabase.rpc("unify_lead", { _new_lead_id: leadId });
-      const finalLeadId = unifiedId || leadId;
-
-      await supabase.from("conversations").update({ lead_id: finalLeadId } as any).eq("id", selectedConversation.id);
+      await supabase.from("conversations").update({ lead_id: finalLeadId, attendance_started: true } as any).eq("id", selectedConversation.id);
       await supabase.from("lead_interactions").insert({
         lead_id: finalLeadId, interaction_type: "atendimento_iniciado" as any,
         notes: "Atendimento iniciado via Inbox pessoal",
@@ -237,11 +247,11 @@ export default function BrokerInbox() {
 
       setActiveTab("atendimento");
       setSelectedConversation({
-        ...selectedConversation, lead_id: finalLeadId,
+        ...selectedConversation, lead_id: finalLeadId, attendance_started: true,
         lead: { id: finalLeadId, name: displayName, status: "info_sent", project_id: null, notes: null, lead_origin: "whatsapp_direto" },
       });
 
-      toast.success("Atendimento iniciado! Card criado no Kanban.");
+      toast.success("Atendimento iniciado!");
       fetchConversations();
     } catch (error) {
       console.error("Erro ao iniciar atendimento:", error);
