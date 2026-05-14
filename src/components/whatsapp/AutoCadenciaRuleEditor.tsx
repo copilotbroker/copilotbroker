@@ -187,20 +187,21 @@ export function AutoCadenciaRuleEditor({
     } else {
       setRuleName("");
       setProjectId("all");
-      setWizardType("manual");
+      setWizardType(initialWizardType ?? "manual");
       setTriggerLeadSource("landing_page");
-      setWizardStep(1);
+      setWizardStep(initialWizardType ? 2 : 1);
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
       setSelectedStatuses([]);
       setCampaignProjectId("");
       setSelectedOrigins([]);
+      setSelectedLabelIds([]);
       setBrokerFilterId("");
       setSearchQuery("");
       setFetchedLeads([]);
       setExcludedLeadIds(new Set());
       setFiltersOpen(true);
     }
-  }, [editingRule, isOpen]);
+  }, [editingRule, isOpen, initialWizardType]);
 
   // Fetch leads for campaign when filters change
   useEffect(() => {
@@ -213,7 +214,8 @@ export function AutoCadenciaRuleEditor({
           selectedStatuses,
           campaignProjectId || undefined,
           selectedOrigins.length > 0 ? selectedOrigins : undefined,
-          brokerFilterId || undefined
+          brokerFilterId || undefined,
+          selectedLabelIds.length > 0 ? selectedLabelIds : undefined
         );
         setFetchedLeads(leads);
         setExcludedLeadIds(new Set());
@@ -221,7 +223,7 @@ export function AutoCadenciaRuleEditor({
       setIsLoadingLeads(false);
     };
     fetchLeads();
-  }, [selectedStatuses, campaignProjectId, selectedOrigins, brokerFilterId, wizardType, wizardStep, fetchLeadsByStatus]);
+  }, [selectedStatuses, campaignProjectId, selectedOrigins, brokerFilterId, selectedLabelIds, wizardType, wizardStep, fetchLeadsByStatus]);
 
   const displayedLeads = useMemo(() => {
     if (!searchQuery.trim()) return fetchedLeads;
