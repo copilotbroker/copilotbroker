@@ -91,6 +91,7 @@ export function AutoCadenciaRuleEditor({
   const [selectedStatuses, setSelectedStatuses] = useState<LeadStatus[]>([]);
   const [campaignProjectId, setCampaignProjectId] = useState<string>("");
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
+  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const [brokerFilterId, setBrokerFilterId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(true);
