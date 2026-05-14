@@ -516,7 +516,7 @@ export function AutoCadenciaRuleEditor({
           )}
 
           {/* Label (Etiqueta) Filter */}
-          {(role !== "admin" || brokerFilterId) ? (
+          {effectiveBrokerId ? (
             <div className="space-y-1.5">
               <Label className="text-xs text-slate-400 flex items-center gap-1.5">
                 <Tag className="w-3 h-3" />
