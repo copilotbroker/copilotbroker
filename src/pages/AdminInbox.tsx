@@ -331,7 +331,7 @@ export default function AdminInbox() {
 
   const handleLogout = useLogout({ silent: true });
 
-  const isNewConversation = activeTab === "novos" && !!selectedConversation && !selectedConversation.lead_id;
+  const isNewConversation = activeTab === "novos" && !!selectedConversation && isWaitingPersonalAttendance(selectedConversation);
   const showList = !selectedConversation || !isMobile;
   const showThread = !!selectedConversation;
   const showContext = showLeadPanel && !isMobile;
