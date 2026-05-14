@@ -127,6 +127,7 @@ export function NewCampaignSheet({ open, onOpenChange, preselectedStatus, duplic
       }
       setProjectId("");
       setSelectedOrigins([]);
+      setSelectedLabelIds([]);
       setBrokerFilterId("");
       setSearchQuery("");
       setFetchedLeads([]);
@@ -134,6 +135,29 @@ export function NewCampaignSheet({ open, onOpenChange, preselectedStatus, duplic
       setFiltersOpen(true);
     }
   }, [open, preselectedStatus, duplicateData]);
+
+  // Effective broker for label scope: admin uses brokerFilterId, broker uses own
+  const effectiveBrokerId = role === "admin" ? brokerFilterId : broker?.id;
+
+  // Fetch labels for the effective broker
+  const { data: brokerLabels = [] } = useQuery({
+    queryKey: ["whatsapp-labels-campaign", effectiveBrokerId],
+    enabled: !!effectiveBrokerId && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("whatsapp_labels")
+        .select("id, name, color")
+        .eq("broker_id", effectiveBrokerId as string)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Reset selected labels when broker scope changes
+  useEffect(() => {
+    setSelectedLabelIds([]);
+  }, [effectiveBrokerId]);
 
   // Fetch leads when filters change
   useEffect(() => {
