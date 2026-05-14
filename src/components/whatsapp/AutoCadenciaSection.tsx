@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useAutoCadenciaRules, type BrokerAutoCadenciaRule } from "@/hooks/use-auto-cadencia-rules";
 import { useWhatsAppCampaigns } from "@/hooks/use-whatsapp-campaigns";
 import { AutoCadenciaRuleEditor } from "./AutoCadenciaRuleEditor";
+import { NewFollowUpWizard, type FollowUpType } from "./NewFollowUpWizard";
 import { CampaignCard } from "./CampaignCard";
 import { CampaignDetailSheet, type CampaignStepRow } from "./CampaignDetailSheet";
 import { WhatsAppCampaign } from "@/types/whatsapp";
