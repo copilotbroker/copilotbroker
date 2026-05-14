@@ -720,7 +720,7 @@ export function AutoCadenciaRuleEditor({
             {wizardStep > 1 && (
               <div className="border-t border-[#2a2a2e] bg-[#1a1a1d] px-6 py-4 flex gap-3 mt-auto">
                 <Button variant="outline" onClick={() => {
-                  if (wizardStep === 2 && !editingRule) setWizardStep(1);
+                  if (wizardStep === 2 && !editingRule && !initialWizardType) setWizardStep(1);
                   else if (wizardStep === 3) setWizardStep(2);
                   else onClose();
                 }} disabled={isBusy} className="flex-1 border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e] min-h-[44px] sm:min-h-0">
