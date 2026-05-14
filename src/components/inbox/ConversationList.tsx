@@ -619,7 +619,7 @@ export function ConversationList({
                   </button>
 
                   {(onMarkAsRead || onArchive) && (
-                    <div className="absolute right-2 top-2 hidden items-center gap-0.5 group-hover:flex">
+                    <div className="absolute right-2 top-2 hidden items-center gap-0.5 lg:group-hover:flex">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
