@@ -116,6 +116,27 @@ export function AutoCadenciaRuleEditor({
     return [...predefined, ...custom, { key: "__sem_origem__", label: "Sem origem" }];
   }, [customOrigins]);
 
+  // Effective broker for label scope (admin: brokerFilterId, broker: own)
+  const effectiveBrokerId = role === "admin" ? brokerFilterId : broker?.id;
+
+  const { data: brokerLabels = [] } = useQuery({
+    queryKey: ["whatsapp-labels-cadencia", effectiveBrokerId],
+    enabled: !!effectiveBrokerId && isOpen && wizardType === "campaign",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("whatsapp_labels")
+        .select("id, name, color")
+        .eq("broker_id", effectiveBrokerId as string)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    setSelectedLabelIds([]);
+  }, [effectiveBrokerId]);
+
   // Fetch broker projects
   useEffect(() => {
     const fetchProjects = async () => {
