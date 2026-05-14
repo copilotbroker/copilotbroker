@@ -1,27 +1,42 @@
-## Problema
+## Problema 1 — Necessidade de dois toques no mobile
 
-A corretora Bibiana viu a tela "Copiloto não liberado" ao clicar em Copiloto. A funcionalidade de bloqueio por `copilot_enabled` foi descontinuada — todos os corretores devem ter acesso. Mesmo com a flag `true` no banco, o gate ainda existe no código e pode bloquear em casos de cache/edge (ex.: `brokerId` ainda não resolvido, query retornando vazio, etc.), além de ser código morto que confunde.
+No `ConversationList`, cada item da conversa renderiza um botão de ação (ícone "⋮" — Marcar como lida / Arquivar) sobreposto ao card via:
 
-## Mudanças (somente frontend)
+```tsx
+<div className="absolute right-2 top-2 hidden items-center gap-0.5 group-hover:flex">
+```
 
-1. **`src/pages/BrokerCopilotConfig.tsx`** — remover totalmente o bloco `if (!copilotEnabled) { ... tela "Copiloto não liberado" ... }`, remover o uso de `useBrokerFeatures`, e parar de passar `copilotEnabled` para o `BrokerLayout` (vira sempre `true` por default).
+Como esse menu só aparece em `:hover` do grupo, em dispositivos touch o **primeiro toque** ativa o estado hover (revelando o menu sobre o botão) e o **segundo toque** finalmente dispara o `onClick` da conversa. É o clássico "sticky hover" do iOS/Android.
 
-2. **`src/pages/BrokerDashboard.tsx`** e **`src/pages/BrokerAdmin.tsx`** — remover `useBrokerFeatures` e o prop `copilotEnabled` passado ao `BrokerLayout` (o default já é `true` em `BrokerSidebar`/`BrokerBottomNav`).
+### Correção
+- Esconder o menu suspenso em mobile e só revelá-lo via hover em telas com ponteiro fino (desktop): trocar `hidden ... group-hover:flex` por `hidden lg:group-hover:flex` (ou `md:` se preferir manter em tablet). Em mobile, esses controles já estão acessíveis via swipe / outras ações; ocultar evita totalmente o conflito de hover/click.
+- Como reforço, manter o `<button onClick={...}>` puro, sem mudar a semântica.
 
-3. **`src/components/broker/BrokerSidebar.tsx`** — sempre exibir o item "copilot" (remover o filtro `if (item.id === "copilot") return copilotEnabled`).
+Resultado: no mobile o card responde no primeiro toque.
 
-4. **`src/components/broker/BrokerBottomNav.tsx`** — sempre incluir o item Copiloto no menu mobile (remover o `...(copilotEnabled ? [...] : [])`).
+## Problema 2 — Animação de slide ao voltar para a lista
 
-5. **`src/components/broker/BrokerLayout.tsx`** — manter o prop `copilotEnabled?: boolean` por compatibilidade, mas ele deixa de ter efeito (sempre tratado como liberado).
+Hoje, no `BrokerInbox`, ao voltar:
+- O thread tem animação `ios-push-out` (desliza para a direita) — já existe.
+- A lista simplesmente reaparece, sem nenhum efeito de "vinda da esquerda".
 
-6. **`src/hooks/use-broker-features.ts`** — manter o arquivo para evitar quebrar imports residuais, mas os consumidores acima deixam de chamá-lo.
+### Melhoria
+- Em mobile, quando a lista é re-exibida após sair de uma conversa, aplicar uma animação `ios-pop-in` (entrada deslizando da esquerda).
+- Adicionar os keyframes em `src/index.css`:
 
-## Não mexer
+```css
+@keyframes ios-pop-in  { from { transform: translateX(-25%); opacity: .6; } to { transform: translateX(0); opacity: 1; } }
+.ios-pop-in { animation: ios-pop-in 280ms cubic-bezier(.32,.72,0,1) both; will-change: transform; }
+```
 
-- Coluna `copilot_enabled` no banco e o toggle em `BrokerManagement.tsx` ficam como estão (não foi pedido para remover schema; apenas o gate de UX foi extinto).
-- Nenhuma alteração de lógica de negócio do Copiloto em si.
+- No `BrokerInbox.tsx`, manter um flag (`justClosedConv`) que é setado quando `closingConv` termina, aplicar a classe `ios-pop-in` ao container da lista em mobile, e limpar via `onAnimationEnd`.
 
-## Verificação
+Assim a transição visual fica simétrica: thread sai pela direita ↔ lista entra pela esquerda.
 
-- Confirmar que `/corretor/copiloto` abre direto nas abas (Conexão, Copiloto, Segurança, Follow-up, Fila) para qualquer corretor, sem a tela de bloqueio.
-- Item "Copiloto" sempre visível na sidebar desktop e no bottom nav mobile.
+## Arquivos a alterar
+
+1. `src/components/inbox/ConversationList.tsx` — esconder o menu de ação em mobile (`hidden lg:group-hover:flex`).
+2. `src/index.css` — adicionar keyframes/classe `ios-pop-in`.
+3. `src/pages/BrokerInbox.tsx` — adicionar estado `justClosedConv` e classe `ios-pop-in` no container `showList` quando em mobile.
+
+Sem mudanças de lógica de negócio — apenas UI/UX mobile.
