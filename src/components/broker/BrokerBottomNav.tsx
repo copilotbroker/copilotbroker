@@ -113,7 +113,7 @@ export function BrokerBottomNav({
   const moreMenuItems = [
     { id: "dashboard", label: "Dashboard", description: "Performance e funil" },
     { id: "inbox", label: "Meu WhatsApp", description: "Conversas pessoais", badge: inboxUnread },
-    ...(copilotEnabled ? [{ id: "copilot", label: "Copiloto", description: "Assistente e automações" }] : []),
+    { id: "copilot", label: "Copiloto", description: "Assistente e automações" },
     { id: "leads", label: "Modo Lista", description: "Abrir visão em lista" },
     { id: "notifications", label: "Notificações", description: "Ver notificações", badge: unreadCount },
     ...(isLeader ? [{ id: "roletas", label: "Roletas", description: "Gerenciar roletas da equipe" }] : []),

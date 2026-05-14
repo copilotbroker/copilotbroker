@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useLogout } from "@/hooks/use-logout";
 import { useUserRole } from "@/hooks/use-user-role";
-import { useBrokerFeatures } from "@/hooks/use-broker-features";
+
 import { BrokerLayout } from "@/components/broker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
@@ -267,7 +267,7 @@ function InsightsCard({ insights }: { insights: DashboardInsight[] }) {
 const BrokerDashboard = () => {
   const navigate = useNavigate();
   const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
-  const { copilotEnabled } = useBrokerFeatures(brokerId);
+  
   const handleLogout = useLogout();
 
   const [period, setPeriod] = useState<Period>("30d");
@@ -325,7 +325,7 @@ const BrokerDashboard = () => {
         onViewChange={handleViewChange}
         onLogout={handleLogout}
         isLeader={isLeader}
-        copilotEnabled={copilotEnabled}
+        
         brokerId={brokerId || undefined}
       >
         <div className="space-y-6 pb-20 lg:pb-0">

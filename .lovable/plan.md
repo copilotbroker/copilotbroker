@@ -1,37 +1,27 @@
-# Plano: Melhorar Navegação do Wizard do Copiloto no Mobile
-
 ## Problema
-Na versão mobile, os corretores não conseguem encontrar os botões para avançar no wizard de configuração do Copiloto. A barra de navegação do wizard (`fixed bottom-0` em `CopilotConfigPage`) está competindo com o `BrokerBottomNav` do app (também `fixed bottom-0` com `z-50`), causando confusão visual e dificultando o uso.
 
-## Solução
+A corretora Bibiana viu a tela "Copiloto não liberado" ao clicar em Copiloto. A funcionalidade de bloqueio por `copilot_enabled` foi descontinuada — todos os corretores devem ter acesso. Mesmo com a flag `true` no banco, o gate ainda existe no código e pode bloquear em casos de cache/edge (ex.: `brokerId` ainda não resolvido, query retornando vazio, etc.), além de ser código morto que confunde.
 
-### 1. Reposicionar o Footer de Navegação do Wizard no Mobile
-- Mover a barra de navegação do wizard de `bottom-0` para `bottom-[72px]` (acima do `BrokerBottomNav`, que tem ~64-72px de altura)
-- Garantir `z-index` maior que o conteúdo mas menor que modais (`z-40`)
-- Manter comportamento desktop intacto (`lg:static`)
+## Mudanças (somente frontend)
 
-### 2. Melhorar a Visibilidade dos Botões no Mobile
-- Aumentar altura mínima dos botões para `h-12` (touch target acessível)
-- Adicionar sombra sutil (`shadow-lg`) na barra de navegação para destacar do fundo
-- Aumentar contraste: botão "Próximo" com fundo sólido primário e texto branco em negrito
-- Botão "Voltar" com borda visível e fundo escuro
+1. **`src/pages/BrokerCopilotConfig.tsx`** — remover totalmente o bloco `if (!copilotEnabled) { ... tela "Copiloto não liberado" ... }`, remover o uso de `useBrokerFeatures`, e parar de passar `copilotEnabled` para o `BrokerLayout` (vira sempre `true` por default).
 
-### 3. Melhorar os Indicadores de Progresso
-- Aumentar tamanho dos pontos do stepper no mobile
-- Destacar o step atual com número em vez de apenas ponto
-- Adicionar label "Passo X de Y" mais visível
+2. **`src/pages/BrokerDashboard.tsx`** e **`src/pages/BrokerAdmin.tsx`** — remover `useBrokerFeatures` e o prop `copilotEnabled` passado ao `BrokerLayout` (o default já é `true` em `BrokerSidebar`/`BrokerBottomNav`).
 
-### 4. Considerar Ocultar Bottom Nav Durante Edição do Wizard
-- Passar `hideMobileNav={true}` no `BrokerLayout` quando `isEditing=true` no `BrokerCopilotConfig`
-- Isso elimina a competição visual completamente durante o fluxo do wizard
-- O usuário ainda pode sair via "Cancelar" no próprio wizard
+3. **`src/components/broker/BrokerSidebar.tsx`** — sempre exibir o item "copilot" (remover o filtro `if (item.id === "copilot") return copilotEnabled`).
 
-## Arquivos a Alterar
-1. `src/components/inbox/CopilotConfigPage.tsx` — Reposicionar e estilizar footer de navegação do wizard
-2. `src/pages/BrokerCopilotConfig.tsx` — Passar `hideMobileNav` durante edição do copiloto
+4. **`src/components/broker/BrokerBottomNav.tsx`** — sempre incluir o item Copiloto no menu mobile (remover o `...(copilotEnabled ? [...] : [])`).
 
-## Critérios de Sucesso
-- Botões "Voltar" / "Próximo" ficam claramente visíveis acima do bottom nav no mobile
-- Touch target mínimo de 48px para todos os botões
-- Progresso do wizard é legível sem zoom
-- Comportamento desktop permanece inalterado
+5. **`src/components/broker/BrokerLayout.tsx`** — manter o prop `copilotEnabled?: boolean` por compatibilidade, mas ele deixa de ter efeito (sempre tratado como liberado).
+
+6. **`src/hooks/use-broker-features.ts`** — manter o arquivo para evitar quebrar imports residuais, mas os consumidores acima deixam de chamá-lo.
+
+## Não mexer
+
+- Coluna `copilot_enabled` no banco e o toggle em `BrokerManagement.tsx` ficam como estão (não foi pedido para remover schema; apenas o gate de UX foi extinto).
+- Nenhuma alteração de lógica de negócio do Copiloto em si.
+
+## Verificação
+
+- Confirmar que `/corretor/copiloto` abre direto nas abas (Conexão, Copiloto, Segurança, Follow-up, Fila) para qualquer corretor, sem a tela de bloqueio.
+- Item "Copiloto" sempre visível na sidebar desktop e no bottom nav mobile.
