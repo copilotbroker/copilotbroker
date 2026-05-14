@@ -216,6 +216,14 @@ export function NewCampaignSheet({ open, onOpenChange, preselectedStatus, duplic
     );
   };
 
+  const toggleLabel = (labelId: string) => {
+    setSelectedLabelIds(prev =>
+      prev.includes(labelId)
+        ? prev.filter(l => l !== labelId)
+        : [...prev, labelId]
+    );
+  };
+
   const toggleLeadExclusion = (leadId: string) => {
     setExcludedLeadIds(prev => {
       const next = new Set(prev);
