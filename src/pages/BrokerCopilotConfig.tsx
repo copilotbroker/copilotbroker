@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useLogout } from "@/hooks/use-logout";
-import { useBrokerFeatures } from "@/hooks/use-broker-features";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Wifi, Send, Shield, Megaphone, Bot, Sparkles, Lock } from "lucide-react";
+import { Loader2, Wifi, Send, Shield, Bot, Sparkles } from "lucide-react";
 import { ConnectionTab } from "@/components/whatsapp/ConnectionTab";
 
 import { QueueTab } from "@/components/whatsapp/QueueTab";
@@ -19,7 +18,7 @@ export default function BrokerCopilotConfig() {
   const { role, isLoading: roleLoading, brokerId, isLeader } = useUserRole();
   const [brokerName, setBrokerName] = useState("");
   const [activeTab, setActiveTab] = useState("connection");
-  const { copilotEnabled, isLoading: featuresLoading } = useBrokerFeatures(brokerId);
+  
 
   useEffect(() => {
     if (!roleLoading && role !== "broker" && role !== "admin") {
