@@ -7,7 +7,7 @@ import { Search, RefreshCw, FileSpreadsheet } from "lucide-react";
 import { useLogout } from "@/hooks/use-logout";
 import { Input } from "@/components/ui/input";
 import { useUserRole } from "@/hooks/use-user-role";
-import { useBrokerFeatures } from "@/hooks/use-broker-features";
+
 import LeadsTable from "@/components/admin/LeadsTable";
 import { AddLeadModal } from "@/components/admin/AddLeadModal";
 import { CsvImportModal } from "@/components/admin/CsvImportModal";
@@ -44,7 +44,7 @@ const BrokerAdmin = () => {
   const location = useLocation();
   const viewMode = getBrokerViewModeFromPath(location.pathname);
   const { role, brokerId, isLoading: isRoleLoading, isLeader } = useUserRole();
-  const { copilotEnabled } = useBrokerFeatures(brokerId);
+  
 
   useEffect(() => {
     if (isRoleLoading) return;
@@ -175,7 +175,7 @@ const BrokerAdmin = () => {
         searchTerm={viewMode === "list" ? searchTerm : undefined}
         onSearchChange={viewMode === "list" ? setSearchTerm : undefined}
         isLeader={isLeader}
-        copilotEnabled={copilotEnabled}
+        
         brokerId={brokerId || undefined}
           collapsibleContent={
           viewMode === "kanban" && brokerId ? (

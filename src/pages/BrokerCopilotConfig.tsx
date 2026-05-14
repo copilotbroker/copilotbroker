@@ -41,32 +41,10 @@ export default function BrokerCopilotConfig() {
 
   const handleLogout = useLogout({ silent: true });
 
-  if (roleLoading || featuresLoading) {
+  if (roleLoading) {
     return (
       <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!copilotEnabled) {
-    return (
-      <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center p-6">
-        <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">Copiloto não liberado</h2>
-          <p className="text-sm text-muted-foreground">
-            Esta funcionalidade não está habilitada para sua conta. Solicite ao administrador para liberar o acesso.
-          </p>
-          <button
-            onClick={() => navigate("/corretor/crm")}
-            className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all"
-          >
-            Voltar ao CRM
-          </button>
-        </div>
       </div>
     );
   }
@@ -79,7 +57,6 @@ export default function BrokerCopilotConfig() {
       onViewChange={(mode) => navigate(mode === "list" ? "/corretor/leads" : "/corretor/crm")}
       onLogout={handleLogout}
       isLeader={isLeader}
-      copilotEnabled={copilotEnabled}
     >
       <div className="max-w-6xl mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

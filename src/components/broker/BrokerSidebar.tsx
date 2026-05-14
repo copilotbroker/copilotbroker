@@ -58,7 +58,7 @@ export function BrokerSidebar({
     if (item.id === "roletas") return isLeader;
     if (item.id === "inbox") return true;
     if (item.id === "plantao") return true;
-    if (item.id === "copilot") return copilotEnabled;
+    if (item.id === "copilot") return true;
     if (item.id === "profile") return false; // Shown separately in the bottom section
     return item.id !== "projects" || true;
   });
