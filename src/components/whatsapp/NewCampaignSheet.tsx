@@ -313,6 +313,7 @@ export function NewCampaignSheet({ open, onOpenChange, preselectedStatus, duplic
         projectId: projectId || undefined,
         origins: selectedOrigins.length > 0 ? selectedOrigins : undefined,
         brokerFilterId: brokerFilterId || undefined,
+        labelIds: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
         excludedLeadIds: excludedLeadIds.size > 0 ? Array.from(excludedLeadIds) : undefined,
         steps: campaignSteps,
       });
