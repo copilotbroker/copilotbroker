@@ -452,6 +452,63 @@ export function NewCampaignSheet({ open, onOpenChange, preselectedStatus, duplic
                     </Select>
                   </div>
                 )}
+
+                {/* Label (Etiqueta) Filter */}
+                {(role !== "admin" || brokerFilterId) ? (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-400 flex items-center gap-1.5">
+                      <Tag className="w-3 h-3" />
+                      Etiqueta
+                    </Label>
+                    {brokerLabels.length === 0 ? (
+                      <p className="text-[11px] text-slate-500 px-2 py-1.5 rounded bg-[#1a1a1d] border border-[#2a2a2e]">
+                        Nenhuma etiqueta disponível para este corretor.
+                      </p>
+                    ) : (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-between bg-[#1a1a1d] border-[#2a2a2e] text-white h-9 text-sm hover:bg-[#2a2a2e]"
+                          >
+                            {selectedLabelIds.length === 0
+                              ? "Todas as etiquetas"
+                              : `${selectedLabelIds.length} selecionada(s)`}
+                            <ChevronDown className="w-3.5 h-3.5 ml-2 text-slate-400" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-2 bg-[#1e1e22] border-[#2a2a2e]" align="start">
+                          <ScrollArea className="max-h-[192px]">
+                            <div className="space-y-0.5">
+                              {brokerLabels.map((lbl: any) => (
+                                <label
+                                  key={lbl.id}
+                                  className="flex items-center gap-2 p-1.5 rounded cursor-pointer hover:bg-[#2a2a2e] transition-colors"
+                                >
+                                  <Checkbox
+                                    checked={selectedLabelIds.includes(lbl.id)}
+                                    onCheckedChange={() => toggleLabel(lbl.id)}
+                                  />
+                                  {lbl.color && (
+                                    <span
+                                      className="w-2 h-2 rounded-full shrink-0"
+                                      style={{ backgroundColor: lbl.color }}
+                                    />
+                                  )}
+                                  <span className="text-xs text-slate-200 truncate">{lbl.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500 px-2 py-1.5 rounded bg-[#1a1a1d] border border-[#2a2a2e]">
+                    Selecione um corretor para filtrar por etiqueta.
+                  </p>
+                )}
               </CollapsibleContent>
             </Collapsible>
 
