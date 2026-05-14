@@ -167,7 +167,7 @@ export function useWhatsAppCampaigns(adminBrokerFilterId?: string) {
       }
       
       // Fetch leads for the campaign
-      const leads = await fetchLeadsByStatus(data.targetStatus, data.projectId, data.origins, data.brokerFilterId);
+      const leads = await fetchLeadsByStatus(data.targetStatus, data.projectId, data.origins, data.brokerFilterId, data.labelIds);
       
       // Filter out excluded leads
       const includedLeads = data.excludedLeadIds && data.excludedLeadIds.length > 0
