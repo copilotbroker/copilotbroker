@@ -306,6 +306,12 @@ export function AutoCadenciaSection() {
       )}
 
       {/* Editor */}
+      <NewFollowUpWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSelect={handleWizardSelect}
+      />
+
       <AutoCadenciaRuleEditor
         isOpen={isEditorOpen}
         onClose={handleCloseEditor}
@@ -316,6 +322,7 @@ export function AutoCadenciaSection() {
         rules={rules}
         onCreated={handleCreated}
         onCampaignCreated={fetchRules}
+        initialWizardType={pendingType}
       />
 
       {/* Campaign Detail Sheet */}
