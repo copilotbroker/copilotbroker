@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Loader2, AlertTriangle, Zap, Plus, Trash2, GripVertical,
   ArrowLeft, ArrowRight, Megaphone, ClipboardList, Search,
-  ChevronDown, ChevronUp, Filter, CheckSquare, Square,
+  ChevronDown, ChevronUp, Filter, CheckSquare, Square, Tag,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/use-user-role";
