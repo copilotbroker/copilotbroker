@@ -20,6 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { STATUS_CONFIG, LEAD_ORIGINS, getOriginDisplayLabel, LeadStatus } from "@/types/crm";
 import { replaceTemplateVariables } from "@/types/whatsapp";
 import type { CRMLead } from "@/types/crm";
+import { Tag } from "lucide-react";
 
 interface DuplicateData {
   name: string;
