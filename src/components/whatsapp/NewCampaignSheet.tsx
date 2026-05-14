@@ -72,6 +72,7 @@ export function NewCampaignSheet({ open, onOpenChange, preselectedStatus, duplic
   );
   const [projectId, setProjectId] = useState<string>("");
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
+  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const [brokerFilterId, setBrokerFilterId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(true);
