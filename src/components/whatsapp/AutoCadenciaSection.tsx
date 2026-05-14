@@ -26,13 +26,21 @@ export function AutoCadenciaSection() {
   const [editingRule, setEditingRule] = useState<BrokerAutoCadenciaRule | null>(null);
   const [showAutoActivateDialog, setShowAutoActivateDialog] = useState(false);
   const [lastCreatedRuleId, setLastCreatedRuleId] = useState<string | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [pendingType, setPendingType] = useState<FollowUpType | undefined>(undefined);
 
   const [detailCampaign, setDetailCampaign] = useState<WhatsAppCampaign | null>(null);
   const [showArchived, setShowArchived] = useState(false);
 
-  const handleCreateNew = () => { setEditingRule(null); setIsEditorOpen(true); };
-  const handleEdit = (rule: BrokerAutoCadenciaRule) => { setEditingRule(rule); setIsEditorOpen(true); };
-  const handleCloseEditor = () => { setIsEditorOpen(false); setEditingRule(null); };
+  const handleCreateNew = () => { setEditingRule(null); setPendingType(undefined); setWizardOpen(true); };
+  const handleWizardSelect = (type: FollowUpType) => {
+    setWizardOpen(false);
+    setPendingType(type);
+    setEditingRule(null);
+    setIsEditorOpen(true);
+  };
+  const handleEdit = (rule: BrokerAutoCadenciaRule) => { setPendingType(undefined); setEditingRule(rule); setIsEditorOpen(true); };
+  const handleCloseEditor = () => { setIsEditorOpen(false); setEditingRule(null); setPendingType(undefined); };
 
   const handleCreated = (ruleId: string) => {
     setLastCreatedRuleId(ruleId);
