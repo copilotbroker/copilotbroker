@@ -321,34 +321,46 @@ const getBrokerId = async (supabase: SupabaseClient<any, any, any>, userId: stri
 const configureInstanceWebhook = async (
   token: string,
   isAdminMode: boolean,
+  instanceName?: string,
 ): Promise<{ success: boolean; webhookUrl: string; details?: string }> => {
-  const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
+  const webhookSecret = Deno.env.get("UAZAPI_WEBHOOK_SECRET") || "";
+  const webhookUrl = webhookSecret
+    ? `${SUPABASE_URL}/functions/v1/whatsapp-webhook/${webhookSecret}`
+    : `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
   
   try {
-    const webhookResponse = await uazapiFetchWithAuthFallback(
-      `${UAZAPI_BASE_URL}/webhook`,
-      {
-        method: "POST",
-        includeJson: true,
-        bodyString: JSON.stringify({
-          url: webhookUrl,
-          enabled: true,
-          events: ["messages", "connection", "messages_update"],
-          excludeMessages: ["wasSentByApi"],
-        }),
-      },
-      token,
-      isAdminMode,
-    );
+    const resolvedBase = await resolveUazapiBase();
+    const baseVariants = Array.from(new Set([resolvedBase, ...getUazapiBaseVariants()].filter(Boolean)));
+    let lastDetails = "";
 
-    if (webhookResponse.ok) {
-      console.log(`[WEBHOOK] Configured successfully: ${webhookUrl}`);
-      return { success: true, webhookUrl };
+    for (const base of baseVariants) {
+      const webhookResponse = await uazapiFetchWithAuthFallback(
+        `${base}/webhook`,
+        {
+          method: "POST",
+          includeJson: true,
+          bodyString: JSON.stringify({
+            url: webhookUrl,
+            enabled: true,
+            events: ["messages", "connection", "messages_update"],
+            excludeMessages: ["wasSentByApi"],
+          }),
+        },
+        token,
+        isAdminMode,
+        token !== UAZAPI_DEFAULT_TOKEN ? [UAZAPI_DEFAULT_TOKEN] : [],
+      );
+
+      if (webhookResponse.ok) {
+        console.log(`[WEBHOOK] Configured successfully for ${instanceName || "broker instance"}: ${webhookUrl.replace(webhookSecret, "***")}`);
+        return { success: true, webhookUrl };
+      }
+
+      lastDetails = await webhookResponse.text().catch(() => "");
+      console.error(`[WEBHOOK] Failed at ${base}: ${webhookResponse.status} - ${lastDetails.substring(0, 200)}`);
     }
 
-    const errorText = await webhookResponse.text().catch(() => "");
-    console.error(`[WEBHOOK] Failed to configure: ${webhookResponse.status} - ${errorText.substring(0, 200)}`);
-    return { success: false, webhookUrl, details: errorText.substring(0, 200) };
+    return { success: false, webhookUrl, details: lastDetails.substring(0, 200) };
   } catch (err) {
     const error = err as Error;
     console.error(`[WEBHOOK] Error: ${error.message}`);
