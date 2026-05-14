@@ -238,6 +238,11 @@ export default function BrokerInbox() {
         finalLeadId = unifiedId || leadId;
       }
 
+      if (!finalLeadId) {
+        toast.error("Erro ao iniciar atendimento");
+        return;
+      }
+
       await supabase.from("conversations").update({ lead_id: finalLeadId, attendance_started: true } as any).eq("id", selectedConversation.id);
       await supabase.from("lead_interactions").insert({
         lead_id: finalLeadId, interaction_type: "atendimento_iniciado" as any,
