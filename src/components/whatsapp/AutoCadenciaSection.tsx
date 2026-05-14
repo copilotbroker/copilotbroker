@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Zap, Plus, Pencil, Trash2, Loader2, Megaphone, Archive } from "lucide-react";
+import { Zap, Plus, Pencil, Trash2, Loader2, Megaphone, Archive, ClipboardList, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -8,6 +8,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAutoCadenciaRules, type BrokerAutoCadenciaRule } from "@/hooks/use-auto-cadencia-rules";
 import { useWhatsAppCampaigns } from "@/hooks/use-whatsapp-campaigns";
 import { AutoCadenciaRuleEditor } from "./AutoCadenciaRuleEditor";
