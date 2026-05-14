@@ -85,7 +85,8 @@ export function useWhatsAppCampaigns(adminBrokerFilterId?: string) {
     targetStatus: LeadStatus[],
     projectId?: string,
     origins?: string[],
-    brokerFilterId?: string
+    brokerFilterId?: string,
+    labelIds?: string[]
   ): Promise<CRMLead[]> => {
     if (role !== "admin" && !broker?.id) return [];
     
@@ -123,6 +124,18 @@ export function useWhatsAppCampaigns(adminBrokerFilterId?: string) {
       } else {
         query = query.in("lead_origin", realOrigins);
       }
+    }
+
+    // Label filter (OR — lead must have at least one of the selected labels)
+    if (labelIds && labelIds.length > 0) {
+      const { data: links, error: labelErr } = await supabase
+        .from("lead_whatsapp_labels")
+        .select("lead_id")
+        .in("label_id", labelIds);
+      if (labelErr) throw labelErr;
+      const leadIds = Array.from(new Set((links || []).map((l: any) => l.lead_id)));
+      if (leadIds.length === 0) return [];
+      query = query.in("id", leadIds);
     }
     
     const { data, error } = await query;
