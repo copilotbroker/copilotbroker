@@ -281,6 +281,7 @@ export function AutoCadenciaRuleEditor({
           projectId: campaignProjectId || undefined,
           origins: selectedOrigins.length > 0 ? selectedOrigins : undefined,
           brokerFilterId: brokerFilterId || undefined,
+          labelIds: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
           excludedLeadIds: excludedLeadIds.size > 0 ? Array.from(excludedLeadIds) : undefined,
           steps: campaignSteps,
         });
