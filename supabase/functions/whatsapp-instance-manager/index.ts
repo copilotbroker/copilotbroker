@@ -1266,6 +1266,7 @@ app.post("/restart", async (c) => {
     const webhookConfigResult = await configureInstanceWebhook(
       instance.instance_token || UAZAPI_DEFAULT_TOKEN,
       !instance.instance_token,
+      instance.instance_name,
     );
     console.log(`[RESTART] Webhook reconfigured: ${webhookConfigResult.success}`);
 
@@ -1324,6 +1325,7 @@ app.post("/configure-webhook", async (c) => {
     const result = await configureInstanceWebhook(
       instance.instance_token || UAZAPI_DEFAULT_TOKEN,
       !instance.instance_token,
+      instance.instance_name,
     );
 
     return c.json({
