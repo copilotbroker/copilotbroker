@@ -746,28 +746,38 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
         </div>
       </div>
 
-      {/* Step Content */}
-      <div className="min-h-[340px]">
+      {/* Step Content (extra bottom padding on mobile so the sticky footer doesn't cover content) */}
+      <div className="min-h-[340px] pb-32 lg:pb-0">
         {stepContent[step]}
       </div>
 
-      {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-[#0d0d0f]/95 backdrop-blur border-t border-[#1e1e22] lg:static lg:bg-transparent lg:border-0 lg:p-0 lg:mt-6">
-        <div className="flex gap-3">
+      {/* Navigation — sticky no mobile (acima do BrokerBottomNav), inline no desktop */}
+      <div
+        className={cn(
+          "fixed left-0 right-0 z-40 px-3 py-3 bg-[#0d0d0f]/98 backdrop-blur-md border-t border-primary/20 shadow-[0_-8px_24px_rgba(0,0,0,0.5)]",
+          "lg:static lg:bg-transparent lg:border-0 lg:p-0 lg:mt-6 lg:shadow-none lg:z-auto"
+        )}
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 72px)" }}
+      >
+        {/* Hint visual no mobile */}
+        <p className="text-center text-[10px] text-muted-foreground mb-2 lg:hidden">
+          Passo {step + 1} de {totalSteps} — toque em <span className="text-primary font-semibold">{step < totalSteps - 1 ? "Próximo" : "Decolar"}</span> para continuar
+        </p>
+        <div className="flex gap-2 max-w-2xl mx-auto">
           {step > 0 ? (
             <Button
               onClick={() => setStep(step - 1)}
               variant="outline"
-              className="border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="h-12 px-4 border-border bg-[#1a1a1d] text-foreground hover:bg-muted"
             >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Voltar
+              <ChevronLeft className="w-5 h-5" />
+              <span className="ml-1 hidden sm:inline">Voltar</span>
             </Button>
           ) : !isFirstTime ? (
             <Button
               onClick={() => { setIsEditing(false); setStep(0); }}
               variant="outline"
-              className="border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="h-12 px-4 border-border bg-[#1a1a1d] text-foreground hover:bg-muted"
             >
               Cancelar
             </Button>
@@ -776,19 +786,19 @@ export function CopilotConfigPage({ brokerId }: CopilotConfigPageProps) {
           {step < totalSteps - 1 ? (
             <Button
               onClick={() => setStep(step + 1)}
-              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
+              className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base shadow-lg shadow-primary/20"
             >
               Próximo
-              <ChevronRight className="w-4 h-4 ml-1" />
+              <ChevronRight className="w-5 h-5 ml-1" />
             </Button>
           ) : (
             <Button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
+              className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base shadow-lg shadow-primary/20"
             >
-              <Plane className="w-4 h-4 mr-2" />
-              {isSaving ? "Decolando..." : "Decolar"}
+              <Plane className="w-5 h-5 mr-2" />
+              {isSaving ? "Decolando..." : "Decolar Copiloto"}
             </Button>
           )}
         </div>
