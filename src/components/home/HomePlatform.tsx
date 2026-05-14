@@ -89,12 +89,7 @@ const HomePlatform = () => {
             Copilot Broker
           </h3>
 
-          <div className="my-8">
-            <p className="font-serif text-5xl sm:text-6xl font-bold text-primary">R$ 97</p>
-            <p className="text-white/70 text-sm sm:text-base mt-2">pagamento único</p>
-          </div>
-
-          <ul className="space-y-3 max-w-md mx-auto text-left mb-10" role="list">
+          <ul className="space-y-3 max-w-md mx-auto text-left mb-10 mt-8" role="list">
             {included.map((item) => (
               <li key={item} className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
