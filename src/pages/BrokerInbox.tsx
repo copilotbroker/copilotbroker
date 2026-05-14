@@ -19,6 +19,11 @@ import { useBackHandler } from "@/hooks/use-back-handler";
 
 const LeadPage = lazy(() => import("@/pages/LeadPage"));
 
+const isWaitingPersonalAttendance = (conversation: Conversation) => {
+  const leadStatus = (conversation.lead as any)?.status;
+  return !conversation.lead_id || (leadStatus === "new" && conversation.attendance_started !== true);
+};
+
 export default function BrokerInbox() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -100,11 +105,11 @@ export default function BrokerInbox() {
   });
 
   const isViewingOtherBroker = isLeader && !!brokerId && !!selectedBrokerId && selectedBrokerId !== brokerId;
-  // "Novos" (conversas pessoais não vinculadas a lead) é privado: apenas o próprio corretor pode ver.
+  // "Novos" é privado: conversas pessoais ainda sem atendimento, com ou sem lead já vinculado.
   const novosConversations = isViewingOtherBroker
     ? []
-    : allPersonalConversations.filter(c => !c.lead_id);
-  const atendimentoConversations = allPersonalConversations.filter(c => !!c.lead_id);
+    : allPersonalConversations.filter(isWaitingPersonalAttendance);
+  const atendimentoConversations = allPersonalConversations.filter(c => !isWaitingPersonalAttendance(c));
 
   const activeConversations = activeTab === "novos"
     ? novosConversations
