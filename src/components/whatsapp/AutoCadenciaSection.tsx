@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Zap, Plus, Pencil, Trash2, Loader2, Megaphone, Archive } from "lucide-react";
+import { Zap, Plus, Pencil, Trash2, Loader2, Megaphone, Archive, ClipboardList, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -8,6 +8,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAutoCadenciaRules, type BrokerAutoCadenciaRule } from "@/hooks/use-auto-cadencia-rules";
 import { useWhatsAppCampaigns } from "@/hooks/use-whatsapp-campaigns";
 import { AutoCadenciaRuleEditor } from "./AutoCadenciaRuleEditor";
@@ -162,17 +163,46 @@ export function AutoCadenciaSection() {
     </div>
   );
 
-  const SectionHeader = ({
+  const SectionAccordion = ({
+    value,
     icon: Icon,
     title,
+    subtitle,
     count,
     accent,
-  }: { icon: typeof Zap; title: string; count: number; accent: string }) => (
-    <div className="flex items-center gap-2 mt-2 mb-2">
-      <Icon className={cn("w-4 h-4", accent)} />
-      <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">{title}</span>
-      <span className="text-xs text-slate-500">({count})</span>
-    </div>
+    badgeBg,
+    children,
+  }: {
+    value: string;
+    icon: typeof Zap;
+    title: string;
+    subtitle: string;
+    count: number;
+    accent: string;
+    badgeBg: string;
+    children: React.ReactNode;
+  }) => (
+    <AccordionItem value={value} className="border border-[#1e1e22] rounded-xl bg-[#0f0f12] overflow-hidden data-[state=open]:bg-[#111114]">
+      <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-[#15151a] [&[data-state=open]>svg]:rotate-180">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className={cn("p-2 rounded-lg shrink-0", badgeBg)}>
+            <Icon className={cn("w-4 h-4", accent)} />
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-white truncate">{title}</span>
+              <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0", badgeBg, accent)}>
+                {count}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5 truncate">{subtitle}</p>
+          </div>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="px-4 pb-4 pt-1">
+        {children}
+      </AccordionContent>
+    </AccordionItem>
   );
 
   const EmptyHint = ({ text }: { text: string }) => (
@@ -223,86 +253,109 @@ export function AutoCadenciaSection() {
       )}
 
       {hasContent && (
-        <>
-          {/* 1. Cadências Automáticas */}
-          <div>
-            <SectionHeader icon={Zap} title="Cadências Automáticas" count={automaticRules.length} accent="text-amber-400" />
+        <Accordion type="multiple" className="space-y-3">
+          {/* 1. Automáticas */}
+          <SectionAccordion
+            value="automatic"
+            icon={Zap}
+            title="Follow-up Automático"
+            subtitle="Disparam sozinhos quando um novo lead chega"
+            count={automaticRules.length}
+            accent="text-amber-400"
+            badgeBg="bg-amber-500/10"
+          >
             {automaticRules.length > 0 ? (
               <div className="space-y-2">{automaticRules.map((r) => renderRuleCard(r, true))}</div>
             ) : (
               <EmptyHint text="Nenhuma cadência automática. Crie uma para disparar follow-ups quando um novo lead for atribuído." />
             )}
-          </div>
+          </SectionAccordion>
 
-          {/* 2. Cadências Cadastradas (manuais) */}
-          <div>
-            <SectionHeader icon={Pencil} title="Cadências Cadastradas" count={manualRules.length} accent="text-blue-400" />
+          {/* 2. Manuais */}
+          <SectionAccordion
+            value="manual"
+            icon={ClipboardList}
+            title="Follow-up Manual"
+            subtitle="Templates aplicados pela página do lead"
+            count={manualRules.length}
+            accent="text-blue-400"
+            badgeBg="bg-blue-500/10"
+          >
             {manualRules.length > 0 ? (
               <div className="space-y-2">{manualRules.map((r) => renderRuleCard(r, false))}</div>
             ) : (
               <EmptyHint text="Cadências aplicadas manualmente nos leads (pela página do lead) aparecem aqui." />
             )}
-          </div>
+          </SectionAccordion>
 
-          {/* 3. Campanhas (ativas + histórico) */}
-          <div>
-            <SectionHeader icon={Megaphone} title="Campanhas" count={bulkCampaigns.length} accent="text-purple-400" />
-
-            {/* Ativas */}
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                  Ativas ({activeCampaigns.length})
-                </span>
-              </div>
-              {activeCampaigns.length > 0 ? (
-                <div className="space-y-2">
-                  {activeCampaigns.map((campaign) => (
-                    <CampaignCard
-                      key={campaign.id}
-                      campaign={campaign}
-                      onPause={(id) => pauseCampaign(id)}
-                      onResume={(id) => resumeCampaign(id)}
-                      onCancel={(id) => cancelCampaign(id)}
-                      onViewDetail={(c) => handleCampaignDetail(c)}
-                      onDuplicate={() => {}}
-                      onDelete={(id) => deleteCampaign(id)}
-                    />
-                  ))}
+          {/* 3. Campanhas */}
+          <SectionAccordion
+            value="campaigns"
+            icon={Megaphone}
+            title="Campanhas"
+            subtitle="Disparos em massa para leads filtrados"
+            count={bulkCampaigns.length}
+            accent="text-purple-400"
+            badgeBg="bg-purple-500/10"
+          >
+            <div className="space-y-3">
+              {/* Ativas */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                    Ativas ({activeCampaigns.length})
+                  </span>
                 </div>
-              ) : (
-                <EmptyHint text="Nenhuma campanha em andamento." />
+                {activeCampaigns.length > 0 ? (
+                  <div className="space-y-2">
+                    {activeCampaigns.map((campaign) => (
+                      <CampaignCard
+                        key={campaign.id}
+                        campaign={campaign}
+                        onPause={(id) => pauseCampaign(id)}
+                        onResume={(id) => resumeCampaign(id)}
+                        onCancel={(id) => cancelCampaign(id)}
+                        onViewDetail={(c) => handleCampaignDetail(c)}
+                        onDuplicate={() => {}}
+                        onDelete={(id) => deleteCampaign(id)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyHint text="Nenhuma campanha em andamento." />
+                )}
+              </div>
+
+              {/* Histórico */}
+              {archivedCampaigns.length > 0 && (
+                <Collapsible open={showArchived} onOpenChange={setShowArchived}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#15151a]">
+                      <Archive className="w-4 h-4" />
+                      Histórico ({archivedCampaigns.length})
+                      <ChevronDown className={cn("w-4 h-4 ml-auto transition-transform", showArchived && "rotate-180")} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-2 mt-2">
+                    {archivedCampaigns.map((campaign) => (
+                      <CampaignCard
+                        key={campaign.id}
+                        campaign={campaign}
+                        onPause={(id) => pauseCampaign(id)}
+                        onResume={(id) => resumeCampaign(id)}
+                        onCancel={(id) => cancelCampaign(id)}
+                        onViewDetail={(c) => handleCampaignDetail(c)}
+                        onDuplicate={() => {}}
+                        onDelete={(id) => deleteCampaign(id)}
+                      />
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
               )}
             </div>
-
-            {/* Histórico (inativas) */}
-            {archivedCampaigns.length > 0 && (
-              <Collapsible open={showArchived} onOpenChange={setShowArchived}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-[#111114]">
-                    <Archive className="w-4 h-4" />
-                    Histórico ({archivedCampaigns.length})
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-2 mt-2">
-                  {archivedCampaigns.map((campaign) => (
-                    <CampaignCard
-                      key={campaign.id}
-                      campaign={campaign}
-                      onPause={(id) => pauseCampaign(id)}
-                      onResume={(id) => resumeCampaign(id)}
-                      onCancel={(id) => cancelCampaign(id)}
-                      onViewDetail={(c) => handleCampaignDetail(c)}
-                      onDuplicate={() => {}}
-                      onDelete={(id) => deleteCampaign(id)}
-                    />
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-          </div>
-        </>
+          </SectionAccordion>
+        </Accordion>
       )}
 
       {/* Editor */}
