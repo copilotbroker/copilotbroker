@@ -38,6 +38,7 @@ export default function BrokerInbox() {
   const [viewingLeadId, setViewingLeadId] = useState<string | null>(null);
   const [closingConv, setClosingConv] = useState(false);
   const [closingLead, setClosingLead] = useState(false);
+  const [listAnimating, setListAnimating] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [allBrokers, setAllBrokers] = useState<{ id: string; name: string }[]>([]);
   const [activeRoletas, setActiveRoletas] = useState<{ id: string; nome: string }[]>([]);
@@ -358,7 +359,12 @@ export default function BrokerInbox() {
     >
       <div className="flex h-full overflow-hidden -m-3 lg:-m-6">
         {showList && (
-          <div className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0`}>
+          <div
+            className={`${isMobile ? "w-full" : "w-80 border-r border-border"} flex-shrink-0 ${isMobile && listAnimating ? "ios-pop-in" : ""}`}
+            onAnimationEnd={(e) => {
+              if (e.animationName === "ios-pop-in") setListAnimating(false);
+            }}
+          >
             <ConversationList
               conversations={activeConversations}
               selectedId={selectedConversation?.id || null}
@@ -397,6 +403,7 @@ export default function BrokerInbox() {
                 setSelectedConversation(null);
                 setShowLeadPanel(false);
                 setViewingLeadId(null);
+                if (isMobile) setListAnimating(true);
               }
             }}
           >
