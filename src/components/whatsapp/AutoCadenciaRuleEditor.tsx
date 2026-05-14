@@ -117,7 +117,7 @@ export function AutoCadenciaRuleEditor({
   }, [customOrigins]);
 
   // Effective broker for label scope (admin: brokerFilterId, broker: own)
-  const effectiveBrokerId = role === "admin" ? brokerFilterId : broker?.id;
+  const effectiveBrokerId = role === "admin" ? (brokerFilterId && brokerFilterId !== "all" ? brokerFilterId : "") : broker?.id;
 
   const { data: brokerLabels = [] } = useQuery({
     queryKey: ["whatsapp-labels-cadencia", effectiveBrokerId],
