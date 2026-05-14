@@ -1,41 +1,80 @@
 ## Objetivo
-Remover o gating de Inbox (instância pessoal do WhatsApp) por corretor, liberando a funcionalidade para todos. O Copiloto continua restrito por `copilot_enabled`.
 
-## Escopo de mudanças
+1. Permitir filtrar leads por **Etiqueta do WhatsApp** ao criar uma Campanha.
+2. Transformar o ponto de entrada da aba "Follow-up" num **Wizard** claro com 3 caminhos: Follow-up Automático, Follow-up Manual e Campanha.
 
-### 1. `src/pages/BrokerInbox.tsx`
-- Remover importação de `useBrokerFeatures`.
-- Remover a chamada `useBrokerFeatures(brokerId)` e as variáveis `inboxEnabled`, `featuresLoading`.
-- Remover o bloco condicional `if (!inboxEnabled)` que renderiza a tela "Inbox não liberado" (linhas 338-356).
-- Remover a prop `inboxEnabled={inboxEnabled}` do `<BrokerLayout>`.
+---
 
-### 2. `src/components/broker/BrokerSidebar.tsx`
-- Remover a prop `inboxEnabled` da interface e dos parâmetros.
-- Remover o filtro `if (item.id === "inbox") return inboxEnabled;` em `navigationItems` (o item "inbox" sempre aparece).
+## Parte 1 — Filtro por Etiqueta nas Campanhas
 
-### 3. `src/components/broker/BrokerBottomNav.tsx`
-- Remover a prop `inboxEnabled` da interface e dos parâmetros.
-- No `navItems`, remover o condicional `...(inboxEnabled && inboxTab ? [...] : [])` — o item inbox sempre entra.
-- No `moreMenuItems`, remover o condicional `...(inboxEnabled ? [...] : [])` — o item "Meu WhatsApp" sempre entra.
+Hoje, ao criar Campanha, o usuário só pode filtrar leads por Status, Empreendimento, Origem e Corretor (admin). Vamos adicionar **Etiqueta** como filtro adicional, com a mesma UX dos outros (multi-select via Popover + ScrollArea).
 
-### 4. `src/components/broker/BrokerLayout.tsx`
-- Remover a prop `inboxEnabled` da interface e dos parâmetros.
-- Deixar de repassar `inboxEnabled` para `<BrokerSidebar>` e `<BrokerBottomNav>`.
+### Onde aparece
+- `src/components/whatsapp/NewCampaignSheet.tsx` — seção "Filtros de leads".
+- `src/components/whatsapp/AutoCadenciaRuleEditor.tsx` (`renderCampaignFilters`) — seção "Filtros de leads".
 
-### 5. Páginas que repassam `inboxEnabled` para `BrokerLayout`
-- **`src/pages/BrokerAdmin.tsx`**: remover `inboxEnabled` do destructuring de `useBrokerFeatures` e da prop `inboxEnabled` no `<BrokerLayout>`.
-- **`src/pages/BrokerDashboard.tsx`**: idem.
-- **`src/pages/BrokerCopilotConfig.tsx`**: idem (aqui `inboxEnabled` é desestruturado de `useBrokerFeatures` mas só usado para repassar; manter `copilotEnabled`).
+### Comportamento
+- Multi-seleção. Se nenhuma etiqueta marcada → não filtra.
+- Se 1+ marcadas → o lead deve ter **pelo menos uma** das etiquetas selecionadas (OR).
+- Etiquetas listadas: as do corretor logado (`whatsapp_labels` por `broker_id`); para admin com filtro de corretor ativo, etiquetas do corretor selecionado; sem filtro → admin não vê o filtro de etiqueta (ou exibe vazio com aviso "selecione um corretor").
 
-### 6. `src/hooks/use-broker-features.ts`
-- Remover `inboxEnabled` do objeto retornado. Manter `copilotEnabled` e `isLoading`.
-- Manter a query buscando `inbox_enabled` no banco se necessário para compatibilidade interna, ou removê-lo do `select` e do retorno.
+### Backend (sem migration)
+Em `src/hooks/use-whatsapp-campaigns.ts` → `fetchLeadsByStatus`, aceitar novo parâmetro `labelIds?: string[]`. Quando informado:
+- buscar `lead_whatsapp_labels` (`select lead_id`) onde `label_id in (labelIds)`,
+- restringir o `query` por `.in('id', leadIdsComEtiqueta)`.
 
-## Não alterar
-- Coluna `inbox_enabled` no banco (campo legado, sem efeito na UI).
-- Nenhuma política de RLS ou backend.
-- Gating do Copiloto (`copilot_enabled`).
-- Sidebar desktop (fora do escopo da prop).
+Propagar `labelIds` em `createCampaign` (passando para `fetchLeadsByStatus` na hora de montar a fila). Não precisa persistir na campanha (mesma lógica que `origins`, que já não persiste).
 
-## Resultado esperado
-Todos os corretores passam a ver e acessar `/corretor/inbox` normalmente. O item "Meu WhatsApp" aparece sempre na bottom-nav mobile e na sidebar desktop. O Copiloto continua restrito como antes.
+---
+
+## Parte 2 — Wizard de criação de Follow-up
+
+Hoje a aba mostra direto a lista (Automáticas / Manuais / Campanhas) e o botão "Nova Cadência" abre um Sheet que internamente tem o seletor de 3 tipos. Vamos elevar essa escolha para um **passo dedicado** com layout de cards grandes — padrão já usado em `WizardMethodSelector`.
+
+### Mudanças
+
+**`AutoCadenciaSection.tsx`**
+- Botão "Nova Cadência" passa a abrir um novo modal/sheet `NewFollowUpWizard` (ver abaixo) — não mais o editor diretamente.
+- Mantém a listagem das três seções (Automáticas, Manuais, Campanhas) intacta.
+
+**Novo componente `src/components/whatsapp/NewFollowUpWizard.tsx`**
+- Sheet com 3 cards estilo "method selector":
+  - ⚡ **Follow-up Automático** — dispara sozinho ao receber novo lead. Cor âmbar.
+  - 📋 **Follow-up Manual** — template salvo, aplicado sob demanda na página do lead. Cor azul.
+  - 📣 **Campanha** — disparo em massa para leads filtrados (status, empreendimento, origem, **etiqueta**). Cor roxa.
+- Ao clicar num card: fecha o wizard e abre `AutoCadenciaRuleEditor` já no passo 2, com `wizardType` pré-definido (passar via prop `initialWizardType`).
+
+**`AutoCadenciaRuleEditor.tsx`**
+- Aceitar prop `initialWizardType?: WizardType`. Quando presente, pular o `renderStep1TypeSelector` e iniciar direto no passo 2.
+- Manter o passo 1 disponível como fallback (caso seja aberto sem `initialWizardType`, comportamento atual).
+
+### UX detalhada do Wizard
+- Header: "Como deseja criar seu follow-up?" + subtítulo "Escolha o tipo abaixo para começar."
+- Cards exibem: ícone, título, 1 frase de descrição, e um exemplo curto ("Ex.: dispara mensagem 5 min após o lead entrar").
+- Em mobile (1 coluna) e desktop (1 coluna larga, mesmo layout do Sheet atual lateral).
+
+---
+
+## Resumo técnico
+
+```text
+NewFollowUpWizard (novo)
+   │  escolha do tipo
+   ▼
+AutoCadenciaRuleEditor (com initialWizardType)
+   │  passo 2: nome + (config Auto OU filtros de Campanha incl. Etiqueta)
+   │  passo 3: etapas/mensagens
+   ▼
+useWhatsAppCampaigns.createCampaign({ ..., labelIds })
+   │
+   ▼
+fetchLeadsByStatus → JOIN com lead_whatsapp_labels quando labelIds presente
+```
+
+Sem migrations. Sem mudanças em RLS. Apenas frontend + leitura adicional em `lead_whatsapp_labels` (já tem RLS).
+
+---
+
+## Fora de escopo
+- Salvar a etiqueta como filtro persistente na campanha (não é necessário; a fila já é materializada na criação).
+- Re-design das listas existentes (Automáticas / Manuais / Campanhas) — permanecem como estão.

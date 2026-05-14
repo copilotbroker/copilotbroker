@@ -8,6 +8,7 @@ export { CampaignsTab } from "./CampaignsTab";
 export { QueueTab } from "./QueueTab";
 export { SecurityTab } from "./SecurityTab";
 export { NewCampaignSheet } from "./NewCampaignSheet";
+export { NewFollowUpWizard } from "./NewFollowUpWizard";
 export { CampaignCard } from "./CampaignCard";
 
 export { OptoutsList } from "./OptoutsList";

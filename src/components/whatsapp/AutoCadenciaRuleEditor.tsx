@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Loader2, AlertTriangle, Zap, Plus, Trash2, GripVertical,
   ArrowLeft, ArrowRight, Megaphone, ClipboardList, Search,
-  ChevronDown, ChevronUp, Filter, CheckSquare, Square,
+  ChevronDown, ChevronUp, Filter, CheckSquare, Square, Tag,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/use-user-role";
@@ -40,6 +40,7 @@ interface AutoCadenciaRuleEditorProps {
   rules: BrokerAutoCadenciaRule[];
   onCreated?: (ruleId: string) => void;
   onCampaignCreated?: () => void;
+  initialWizardType?: WizardType;
 }
 
 interface Project { id: string; name: string; }
@@ -64,7 +65,7 @@ function replaceVarsPreview(text: string) {
 }
 
 export function AutoCadenciaRuleEditor({
-  isOpen, onClose, editingRule, createRule, updateRule, isSaving, rules, onCreated, onCampaignCreated,
+  isOpen, onClose, editingRule, createRule, updateRule, isSaving, rules, onCreated, onCampaignCreated, initialWizardType,
 }: AutoCadenciaRuleEditorProps) {
   const { brokerId, role } = useUserRole();
   const { projects: allProjects } = useProjects();
@@ -90,6 +91,7 @@ export function AutoCadenciaRuleEditor({
   const [selectedStatuses, setSelectedStatuses] = useState<LeadStatus[]>([]);
   const [campaignProjectId, setCampaignProjectId] = useState<string>("");
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
+  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const [brokerFilterId, setBrokerFilterId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(true);
@@ -113,6 +115,27 @@ export function AutoCadenciaRuleEditor({
     const custom = customOrigins.map(o => ({ key: o, label: o }));
     return [...predefined, ...custom, { key: "__sem_origem__", label: "Sem origem" }];
   }, [customOrigins]);
+
+  // Effective broker for label scope (admin: brokerFilterId, broker: own)
+  const effectiveBrokerId = role === "admin" ? (brokerFilterId && brokerFilterId !== "all" ? brokerFilterId : "") : broker?.id;
+
+  const { data: brokerLabels = [] } = useQuery({
+    queryKey: ["whatsapp-labels-cadencia", effectiveBrokerId],
+    enabled: !!effectiveBrokerId && isOpen && wizardType === "campaign",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("whatsapp_labels")
+        .select("id, name, color")
+        .eq("broker_id", effectiveBrokerId as string)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    setSelectedLabelIds([]);
+  }, [effectiveBrokerId]);
 
   // Fetch broker projects
   useEffect(() => {
@@ -164,20 +187,21 @@ export function AutoCadenciaRuleEditor({
     } else {
       setRuleName("");
       setProjectId("all");
-      setWizardType("manual");
+      setWizardType(initialWizardType ?? "manual");
       setTriggerLeadSource("landing_page");
-      setWizardStep(1);
+      setWizardStep(initialWizardType ? 2 : 1);
       setSteps(DEFAULT_AUTO_CADENCIA_STEPS.map(s => ({ ...s })));
       setSelectedStatuses([]);
       setCampaignProjectId("");
       setSelectedOrigins([]);
+      setSelectedLabelIds([]);
       setBrokerFilterId("");
       setSearchQuery("");
       setFetchedLeads([]);
       setExcludedLeadIds(new Set());
       setFiltersOpen(true);
     }
-  }, [editingRule, isOpen]);
+  }, [editingRule, isOpen, initialWizardType]);
 
   // Fetch leads for campaign when filters change
   useEffect(() => {
@@ -190,7 +214,8 @@ export function AutoCadenciaRuleEditor({
           selectedStatuses,
           campaignProjectId || undefined,
           selectedOrigins.length > 0 ? selectedOrigins : undefined,
-          brokerFilterId || undefined
+          brokerFilterId || undefined,
+          selectedLabelIds.length > 0 ? selectedLabelIds : undefined
         );
         setFetchedLeads(leads);
         setExcludedLeadIds(new Set());
@@ -198,7 +223,7 @@ export function AutoCadenciaRuleEditor({
       setIsLoadingLeads(false);
     };
     fetchLeads();
-  }, [selectedStatuses, campaignProjectId, selectedOrigins, brokerFilterId, wizardType, wizardStep, fetchLeadsByStatus]);
+  }, [selectedStatuses, campaignProjectId, selectedOrigins, brokerFilterId, selectedLabelIds, wizardType, wizardStep, fetchLeadsByStatus]);
 
   const displayedLeads = useMemo(() => {
     if (!searchQuery.trim()) return fetchedLeads;
@@ -256,6 +281,7 @@ export function AutoCadenciaRuleEditor({
           projectId: campaignProjectId || undefined,
           origins: selectedOrigins.length > 0 ? selectedOrigins : undefined,
           brokerFilterId: brokerFilterId || undefined,
+          labelIds: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
           excludedLeadIds: excludedLeadIds.size > 0 ? Array.from(excludedLeadIds) : undefined,
           steps: campaignSteps,
         });
@@ -488,6 +514,50 @@ export function AutoCadenciaRuleEditor({
               </Select>
             </div>
           )}
+
+          {/* Label (Etiqueta) Filter */}
+          {effectiveBrokerId ? (
+            <div className="space-y-1.5">
+              <Label className="text-xs text-slate-400 flex items-center gap-1.5">
+                <Tag className="w-3 h-3" />
+                Etiqueta
+              </Label>
+              {brokerLabels.length === 0 ? (
+                <p className="text-[11px] text-slate-500 px-2 py-1.5 rounded bg-[#1a1a1d] border border-[#2a2a2e]">
+                  Nenhuma etiqueta disponível para este corretor.
+                </p>
+              ) : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between bg-[#1a1a1d] border-[#2a2a2e] text-white h-9 text-sm hover:bg-[#2a2a2e]">
+                      {selectedLabelIds.length === 0 ? "Todas as etiquetas" : `${selectedLabelIds.length} selecionada(s)`}
+                      <ChevronDown className="w-3.5 h-3.5 ml-2 text-slate-400" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-2 bg-[#1e1e22] border-[#2a2a2e]" align="start">
+                    <ScrollArea className="max-h-[192px]">
+                      <div className="space-y-0.5">
+                        {brokerLabels.map((lbl: any) => (
+                          <label key={lbl.id} className="flex items-center gap-2 p-1.5 rounded cursor-pointer hover:bg-[#2a2a2e]">
+                            <Checkbox
+                              checked={selectedLabelIds.includes(lbl.id)}
+                              onCheckedChange={() => setSelectedLabelIds(prev => prev.includes(lbl.id) ? prev.filter(x => x !== lbl.id) : [...prev, lbl.id])}
+                            />
+                            {lbl.color && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: lbl.color }} />}
+                            <span className="text-xs text-slate-200 truncate">{lbl.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+          ) : (
+            <p className="text-[11px] text-slate-500 px-2 py-1.5 rounded bg-[#1a1a1d] border border-[#2a2a2e]">
+              Selecione um corretor para filtrar por etiqueta.
+            </p>
+          )}
         </CollapsibleContent>
       </Collapsible>
 
@@ -694,7 +764,7 @@ export function AutoCadenciaRuleEditor({
             {wizardStep > 1 && (
               <div className="border-t border-[#2a2a2e] bg-[#1a1a1d] px-6 py-4 flex gap-3 mt-auto">
                 <Button variant="outline" onClick={() => {
-                  if (wizardStep === 2 && !editingRule) setWizardStep(1);
+                  if (wizardStep === 2 && !editingRule && !initialWizardType) setWizardStep(1);
                   else if (wizardStep === 3) setWizardStep(2);
                   else onClose();
                 }} disabled={isBusy} className="flex-1 border-[#2a2a2e] text-slate-300 hover:bg-[#2a2a2e] min-h-[44px] sm:min-h-0">
