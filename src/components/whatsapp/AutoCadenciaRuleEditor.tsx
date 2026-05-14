@@ -40,6 +40,7 @@ interface AutoCadenciaRuleEditorProps {
   rules: BrokerAutoCadenciaRule[];
   onCreated?: (ruleId: string) => void;
   onCampaignCreated?: () => void;
+  initialWizardType?: WizardType;
 }
 
 interface Project { id: string; name: string; }
