@@ -20,6 +20,7 @@ interface CreateCampaignData {
   projectId?: string;
   origins?: string[];
   brokerFilterId?: string;
+  labelIds?: string[];
   excludedLeadIds?: string[];
   // Legacy single-message fields (backward compat)
   templateId?: string;
