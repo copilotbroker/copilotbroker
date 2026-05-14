@@ -173,7 +173,8 @@ export function NewCampaignSheet({ open, onOpenChange, preselectedStatus, duplic
           selectedStatuses, 
           projectId || undefined,
           selectedOrigins.length > 0 ? selectedOrigins : undefined,
-          brokerFilterId || undefined
+          brokerFilterId || undefined,
+          selectedLabelIds.length > 0 ? selectedLabelIds : undefined
         );
         setFetchedLeads(leads);
         // Reset exclusions when filters change
@@ -185,7 +186,7 @@ export function NewCampaignSheet({ open, onOpenChange, preselectedStatus, duplic
     };
     
     fetchLeads();
-  }, [selectedStatuses, projectId, selectedOrigins, brokerFilterId, fetchLeadsByStatus]);
+  }, [selectedStatuses, projectId, selectedOrigins, brokerFilterId, selectedLabelIds, fetchLeadsByStatus]);
 
   // Filtered leads by search
   const displayedLeads = useMemo(() => {
