@@ -137,7 +137,7 @@ export function NewCampaignSheet({ open, onOpenChange, preselectedStatus, duplic
   }, [open, preselectedStatus, duplicateData]);
 
   // Effective broker for label scope: admin uses brokerFilterId, broker uses own
-  const effectiveBrokerId = role === "admin" ? brokerFilterId : broker?.id;
+  const effectiveBrokerId = role === "admin" ? (brokerFilterId && brokerFilterId !== "all" ? brokerFilterId : "") : broker?.id;
 
   // Fetch labels for the effective broker
   const { data: brokerLabels = [] } = useQuery({
