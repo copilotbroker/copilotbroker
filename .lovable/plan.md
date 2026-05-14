@@ -1,80 +1,37 @@
-## Objetivo
+## Diagnóstico
 
-1. Permitir filtrar leads por **Etiqueta do WhatsApp** ao criar uma Campanha.
-2. Transformar o ponto de entrada da aba "Follow-up" num **Wizard** claro com 3 caminhos: Follow-up Automático, Follow-up Manual e Campanha.
+A aba **Novos** do Meu WhatsApp pessoal está zerada porque hoje ela considera “Novo” apenas conversa pessoal **sem `lead_id`**.
 
----
+Para a Bibiana, a instância pessoal está conectada, mas as conversas que deveriam aparecer como novas já possuem um lead vinculado com status `new`. Por isso o frontend joga tudo para **Atendimento** ou não destaca como “Novo”, mesmo ainda sem atendimento real.
 
-## Parte 1 — Filtro por Etiqueta nas Campanhas
+Também encontrei outro ponto de risco: as conversas pessoais recentes não estão chegando no banco desde 08/05, apesar da instância constar conectada. Isso indica provável webhook da instância pessoal não disparando/arquivando mensagens novas, mas a correção principal da aba é no critério de classificação.
 
-Hoje, ao criar Campanha, o usuário só pode filtrar leads por Status, Empreendimento, Origem e Corretor (admin). Vamos adicionar **Etiqueta** como filtro adicional, com a mesma UX dos outros (multi-select via Popover + ScrollArea).
+## Plano de correção
 
-### Onde aparece
-- `src/components/whatsapp/NewCampaignSheet.tsx` — seção "Filtros de leads".
-- `src/components/whatsapp/AutoCadenciaRuleEditor.tsx` (`renderCampaignFilters`) — seção "Filtros de leads".
+1. **Ajustar a regra da aba Novos no Meu WhatsApp pessoal**
+   - Em `BrokerInbox.tsx`, classificar como **Novos** as conversas pessoais ativas que:
+     - não têm `lead_id`; ou
+     - têm lead vinculado com status `new` e ainda não foram assumidas como atendimento.
+   - Manter em **Atendimento** as conversas com lead em andamento ou já atendidas.
 
-### Comportamento
-- Multi-seleção. Se nenhuma etiqueta marcada → não filtra.
-- Se 1+ marcadas → o lead deve ter **pelo menos uma** das etiquetas selecionadas (OR).
-- Etiquetas listadas: as do corretor logado (`whatsapp_labels` por `broker_id`); para admin com filtro de corretor ativo, etiquetas do corretor selecionado; sem filtro → admin não vê o filtro de etiqueta (ou exibe vazio com aviso "selecione um corretor").
+2. **Evitar duplicidade entre Novos e Atendimento**
+   - A aba **Atendimento** passa a excluir as conversas classificadas como **Novos**.
+   - Assim a contagem e a lista ficam consistentes.
 
-### Backend (sem migration)
-Em `src/hooks/use-whatsapp-campaigns.ts` → `fetchLeadsByStatus`, aceitar novo parâmetro `labelIds?: string[]`. Quando informado:
-- buscar `lead_whatsapp_labels` (`select lead_id`) onde `label_id in (labelIds)`,
-- restringir o `query` por `.in('id', leadIdsComEtiqueta)`.
+3. **Preservar o fluxo de iniciar atendimento**
+   - Quando o usuário abrir uma conversa em **Novos**, o botão/estado de “Iniciar atendimento” deve continuar aparecendo.
+   - Para conversas que já têm `lead_id`, iniciar atendimento não deve criar outro lead; deve apenas marcar o lead/conversa como atendimento iniciado e mover para **Atendimento**.
 
-Propagar `labelIds` em `createCampaign` (passando para `fetchLeadsByStatus` na hora de montar a fila). Não precisa persistir na campanha (mesma lógica que `origins`, que já não persiste).
+4. **Aplicar o mesmo critério na visão administrativa equivalente**
+   - `AdminInbox.tsx` usa a mesma separação e deve receber a mesma regra para não ficar divergente.
 
----
+5. **Investigar e reforçar o webhook da instância pessoal**
+   - Conferir no `whatsapp-instance-manager` se a ação de “configurar webhook” está usando o token/base corretos da instância.
+   - Se necessário, ajustar o endpoint de configuração para garantir que a instância pessoal envie eventos para `whatsapp-webhook`.
+   - Isso trata a parte “ela tem dezenas de conversas novas na instância pessoal, mas elas não chegam no Meu WhatsApp”.
 
-## Parte 2 — Wizard de criação de Follow-up
+## Resultado esperado
 
-Hoje a aba mostra direto a lista (Automáticas / Manuais / Campanhas) e o botão "Nova Cadência" abre um Sheet que internamente tem o seletor de 3 tipos. Vamos elevar essa escolha para um **passo dedicado** com layout de cards grandes — padrão já usado em `WizardMethodSelector`.
-
-### Mudanças
-
-**`AutoCadenciaSection.tsx`**
-- Botão "Nova Cadência" passa a abrir um novo modal/sheet `NewFollowUpWizard` (ver abaixo) — não mais o editor diretamente.
-- Mantém a listagem das três seções (Automáticas, Manuais, Campanhas) intacta.
-
-**Novo componente `src/components/whatsapp/NewFollowUpWizard.tsx`**
-- Sheet com 3 cards estilo "method selector":
-  - ⚡ **Follow-up Automático** — dispara sozinho ao receber novo lead. Cor âmbar.
-  - 📋 **Follow-up Manual** — template salvo, aplicado sob demanda na página do lead. Cor azul.
-  - 📣 **Campanha** — disparo em massa para leads filtrados (status, empreendimento, origem, **etiqueta**). Cor roxa.
-- Ao clicar num card: fecha o wizard e abre `AutoCadenciaRuleEditor` já no passo 2, com `wizardType` pré-definido (passar via prop `initialWizardType`).
-
-**`AutoCadenciaRuleEditor.tsx`**
-- Aceitar prop `initialWizardType?: WizardType`. Quando presente, pular o `renderStep1TypeSelector` e iniciar direto no passo 2.
-- Manter o passo 1 disponível como fallback (caso seja aberto sem `initialWizardType`, comportamento atual).
-
-### UX detalhada do Wizard
-- Header: "Como deseja criar seu follow-up?" + subtítulo "Escolha o tipo abaixo para começar."
-- Cards exibem: ícone, título, 1 frase de descrição, e um exemplo curto ("Ex.: dispara mensagem 5 min após o lead entrar").
-- Em mobile (1 coluna) e desktop (1 coluna larga, mesmo layout do Sheet atual lateral).
-
----
-
-## Resumo técnico
-
-```text
-NewFollowUpWizard (novo)
-   │  escolha do tipo
-   ▼
-AutoCadenciaRuleEditor (com initialWizardType)
-   │  passo 2: nome + (config Auto OU filtros de Campanha incl. Etiqueta)
-   │  passo 3: etapas/mensagens
-   ▼
-useWhatsAppCampaigns.createCampaign({ ..., labelIds })
-   │
-   ▼
-fetchLeadsByStatus → JOIN com lead_whatsapp_labels quando labelIds presente
-```
-
-Sem migrations. Sem mudanças em RLS. Apenas frontend + leitura adicional em `lead_whatsapp_labels` (já tem RLS).
-
----
-
-## Fora de escopo
-- Salvar a etiqueta como filtro persistente na campanha (não é necessário; a fila já é materializada na criação).
-- Re-design das listas existentes (Automáticas / Manuais / Campanhas) — permanecem como estão.
+- Leads/conversas pessoais com status `new` aparecem na aba **Novos**.
+- Ao iniciar atendimento, a conversa sai de **Novos** e entra em **Atendimento** sem criar lead duplicado.
+- A instância pessoal conectada continua com o webhook configurável para que novas mensagens entrem no sistema.
