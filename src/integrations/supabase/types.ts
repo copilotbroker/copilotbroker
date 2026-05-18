@@ -1082,36 +1082,240 @@ export type Database = {
           },
         ]
       }
+      lead_cadastro_completo: {
+        Row: {
+          ai_filled_fields: string[]
+          ai_raw_responses: Json
+          conjuge_cpf: string | null
+          conjuge_data_nascimento: string | null
+          conjuge_email: string | null
+          conjuge_nacionalidade: string | null
+          conjuge_nome_completo: string | null
+          conjuge_nome_mae: string | null
+          conjuge_nome_pai: string | null
+          conjuge_observacoes: string | null
+          conjuge_orgao_expedidor: string | null
+          conjuge_profissao: string | null
+          conjuge_rg: string | null
+          conjuge_telefone: string | null
+          cpf: string | null
+          created_at: string
+          data_casamento_ou_uniao: string | null
+          data_nascimento: string | null
+          email: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_complemento: string | null
+          endereco_estado: string | null
+          endereco_logradouro: string | null
+          endereco_numero: string | null
+          endereco_titular: string | null
+          estado_civil: string | null
+          id: string
+          lead_id: string
+          nacionalidade: string | null
+          nome_completo: string | null
+          nome_mae: string | null
+          nome_pai: string | null
+          observacoes: string | null
+          organization_id: string | null
+          orgao_expedidor: string | null
+          pj_ativo: boolean
+          pj_cnpj: string | null
+          pj_email: string | null
+          pj_endereco_sede: string | null
+          pj_inscricao_estadual: string | null
+          pj_nome_fantasia: string | null
+          pj_observacoes: string | null
+          pj_razao_social: string | null
+          pj_representante_cargo: string | null
+          pj_representante_cpf: string | null
+          pj_representante_nome: string | null
+          pj_representante_rg: string | null
+          pj_telefone: string | null
+          pj_tem_consolidacao: boolean | null
+          profissao: string | null
+          regime_bens: string | null
+          rg: string | null
+          telefone: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ai_filled_fields?: string[]
+          ai_raw_responses?: Json
+          conjuge_cpf?: string | null
+          conjuge_data_nascimento?: string | null
+          conjuge_email?: string | null
+          conjuge_nacionalidade?: string | null
+          conjuge_nome_completo?: string | null
+          conjuge_nome_mae?: string | null
+          conjuge_nome_pai?: string | null
+          conjuge_observacoes?: string | null
+          conjuge_orgao_expedidor?: string | null
+          conjuge_profissao?: string | null
+          conjuge_rg?: string | null
+          conjuge_telefone?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_casamento_ou_uniao?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_complemento?: string | null
+          endereco_estado?: string | null
+          endereco_logradouro?: string | null
+          endereco_numero?: string | null
+          endereco_titular?: string | null
+          estado_civil?: string | null
+          id?: string
+          lead_id: string
+          nacionalidade?: string | null
+          nome_completo?: string | null
+          nome_mae?: string | null
+          nome_pai?: string | null
+          observacoes?: string | null
+          organization_id?: string | null
+          orgao_expedidor?: string | null
+          pj_ativo?: boolean
+          pj_cnpj?: string | null
+          pj_email?: string | null
+          pj_endereco_sede?: string | null
+          pj_inscricao_estadual?: string | null
+          pj_nome_fantasia?: string | null
+          pj_observacoes?: string | null
+          pj_razao_social?: string | null
+          pj_representante_cargo?: string | null
+          pj_representante_cpf?: string | null
+          pj_representante_nome?: string | null
+          pj_representante_rg?: string | null
+          pj_telefone?: string | null
+          pj_tem_consolidacao?: boolean | null
+          profissao?: string | null
+          regime_bens?: string | null
+          rg?: string | null
+          telefone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ai_filled_fields?: string[]
+          ai_raw_responses?: Json
+          conjuge_cpf?: string | null
+          conjuge_data_nascimento?: string | null
+          conjuge_email?: string | null
+          conjuge_nacionalidade?: string | null
+          conjuge_nome_completo?: string | null
+          conjuge_nome_mae?: string | null
+          conjuge_nome_pai?: string | null
+          conjuge_observacoes?: string | null
+          conjuge_orgao_expedidor?: string | null
+          conjuge_profissao?: string | null
+          conjuge_rg?: string | null
+          conjuge_telefone?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_casamento_ou_uniao?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_complemento?: string | null
+          endereco_estado?: string | null
+          endereco_logradouro?: string | null
+          endereco_numero?: string | null
+          endereco_titular?: string | null
+          estado_civil?: string | null
+          id?: string
+          lead_id?: string
+          nacionalidade?: string | null
+          nome_completo?: string | null
+          nome_mae?: string | null
+          nome_pai?: string | null
+          observacoes?: string | null
+          organization_id?: string | null
+          orgao_expedidor?: string | null
+          pj_ativo?: boolean
+          pj_cnpj?: string | null
+          pj_email?: string | null
+          pj_endereco_sede?: string | null
+          pj_inscricao_estadual?: string | null
+          pj_nome_fantasia?: string | null
+          pj_observacoes?: string | null
+          pj_razao_social?: string | null
+          pj_representante_cargo?: string | null
+          pj_representante_cpf?: string | null
+          pj_representante_nome?: string | null
+          pj_representante_rg?: string | null
+          pj_telefone?: string | null
+          pj_tem_consolidacao?: boolean | null
+          profissao?: string | null
+          regime_bens?: string | null
+          rg?: string | null
+          telefone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       lead_documents: {
         Row: {
+          ai_extracted: Json | null
           created_at: string
           document_type: string
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
           id: string
+          is_active: boolean
           is_received: boolean
           lead_id: string
+          mime_type: string | null
           organization_id: string | null
           received_at: string | null
           received_by: string | null
+          updated_at: string
+          uploaded_by: string | null
         }
         Insert: {
+          ai_extracted?: Json | null
           created_at?: string
           document_type: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
+          is_active?: boolean
           is_received?: boolean
           lead_id: string
+          mime_type?: string | null
           organization_id?: string | null
           received_at?: string | null
           received_by?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
         }
         Update: {
+          ai_extracted?: Json | null
           created_at?: string
           document_type?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
+          is_active?: boolean
           is_received?: boolean
           lead_id?: string
+          mime_type?: string | null
           organization_id?: string | null
           received_at?: string | null
           received_by?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {
