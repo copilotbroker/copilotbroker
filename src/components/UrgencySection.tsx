@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Zap, Clock, Users, TrendingUp } from "lucide-react";
 
 const urgencyPoints = [
-  { icon: Zap, text: "Os melhores preços são os de pré-lançamento" },
-  { icon: Users, text: "As unidades mais desejadas saem primeiro" },
-  { icon: Clock, text: "Quem espera, paga mais e escolhe menos" },
+  { icon: Zap, text: "Vendem rápido" },
+  { icon: Users, text: "Criam fila de espera" },
+  { icon: Clock, text: "Geram arrependimento em quem deixou para depois" },
 ];
 
 const UrgencySection = () => {
@@ -40,12 +40,11 @@ const UrgencySection = () => {
       <div className="container relative z-10 px-4">
         <div className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <h2 id="urgency-title" className="section-title mb-6 sm:mb-8 text-2xl sm:text-3xl md:text-4xl">
-            No Mercado Imobiliário,{" "}
-            <span className="text-primary">Quem Chega Primeiro Escolhe Melhor</span>
+            Esse Não Será Um <span className="text-primary">Lançamento Comum</span>
           </h2>
           
           <p className="text-base sm:text-lg text-foreground/80 mb-8 sm:mb-12">
-            O mercado de Estância Velha está em franca valorização. E isso significa uma coisa:
+            Este será um daqueles projetos que:
           </p>
 
           <ul className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12" role="list">
@@ -63,22 +62,22 @@ const UrgencySection = () => {
 
           <div className={`space-y-4 sm:space-y-6 transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <p className="text-xl sm:text-2xl md:text-3xl font-serif font-semibold text-primary">
-              "Quem entra antes, escolhe melhor."
+              Quem piscar, perde.
             </p>
             
             <p className="text-base sm:text-lg text-foreground/80">
-              O cadastro não custa nada. Mas deixar para depois pode custar caro.
+              E quem entende de mercado imobiliário sabe:
             </p>
             
             <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-primary/10 border border-primary/30 rounded-lg">
               <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" aria-hidden="true" />
               <p className="text-sm sm:text-base text-foreground font-medium text-left">
-                Os melhores negócios imobiliários nunca chegam ao mercado aberto.
+                Os melhores lotes nunca chegam ao público geral.
               </p>
             </div>
             
             <p className="text-lg sm:text-xl text-foreground/90 font-medium">
-              Eles ficam com quem está na lista de acesso antecipado.
+              Eles ficam com quem chega primeiro.
             </p>
           </div>
         </div>

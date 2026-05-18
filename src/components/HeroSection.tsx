@@ -41,7 +41,7 @@ const HeroSection = () => {
         }`}
         style={{ backgroundImage: `url(${heroBg})` }}
         role="img"
-        aria-label="Vista panorâmica de Estância Velha"
+        aria-label="Vista panorâmica do terreno do empreendimento em Estância Velha"
       />
       
       {/* Gradient Overlay */}
@@ -60,7 +60,7 @@ const HeroSection = () => {
           >
             <span className="w-2 h-2 bg-primary rounded-full animate-pulse" aria-hidden="true" />
             <span className="text-primary text-xs sm:text-sm font-medium uppercase tracking-wider">
-              Pré-Lançamento Exclusivo
+              Pré-Lançamento
             </span>
           </div>
 
@@ -70,8 +70,8 @@ const HeroSection = () => {
             className={`font-serif text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-tight max-w-5xl mx-auto ${isVisible ? 'animate-slide-up' : 'opacity-0'}`} 
             style={{ animationDelay: '300ms' }}
           >
-            Acesso Antecipado aos Próximos{" "}
-            <span className="text-primary">Lançamentos de Estância Velha</span>
+            O Novo Condomínio de{" "}
+            <span className="text-primary">Estância Velha</span>
           </h1>
 
           {/* Subtitle */}
@@ -79,13 +79,13 @@ const HeroSection = () => {
             className={`font-serif text-lg sm:text-xl md:text-2xl text-foreground/80 italic max-w-2xl mx-auto ${isVisible ? 'animate-fade-up' : 'opacity-0'}`} 
             style={{ animationDelay: '500ms' }}
           >
-            Empreendimentos de alto padrão, condições especiais de pré-lançamento e oportunidades selecionadas antes da divulgação oficial ao mercado.
+            350 Lotes a partir de 500m² — Terrenos de Alto Padrão
           </p>
           <p 
             className={`text-sm sm:text-base text-muted-foreground max-w-xl mx-auto ${isVisible ? 'animate-fade-up' : 'opacity-0'}`} 
             style={{ animationDelay: '600ms' }}
           >
-            Cadastre-se para receber informações em primeira mão e tenha prioridade na escolha das melhores unidades.
+            Poucas pessoas terão acesso primeiro. A maioria vai descobrir quando já for tarde.
           </p>
 
           {/* CTA Button */}
@@ -93,9 +93,9 @@ const HeroSection = () => {
             <button 
               onClick={scrollToForm} 
               className="btn-primary animate-glow min-h-[48px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              aria-label="Cadastrar para acesso antecipado aos lançamentos"
+              aria-label="Cadastrar para acesso antecipado ao lançamento"
             >
-              Quero Acesso Antecipado
+              Quero Mais Informações
             </button>
           </div>
         </header>
@@ -105,7 +105,7 @@ const HeroSection = () => {
       <button 
         onClick={scrollToContent}
         className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 text-foreground/50 hover:text-primary transition-colors cursor-pointer p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
-        aria-label="Rolar para ver mais informações sobre os lançamentos"
+        aria-label="Rolar para ver mais informações sobre o empreendimento"
       >
         <ChevronDown className="w-6 h-6 sm:w-8 sm:h-8 animate-bounce" aria-hidden="true" />
       </button>

@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Mountain, Leaf, Shield, Star, Building } from "lucide-react";
+import aerialView from "@/assets/aerial-view.png";
 
 const features = [
-  { icon: Building, label: "Alto Padrão" },
-  { icon: Leaf, label: "Localização Privilegiada" },
-  { icon: Shield, label: "Exclusividade" },
-  { icon: Star, label: "Valorização" },
-  { icon: Mountain, label: "Qualidade de Vida" },
+  { icon: Building, label: "Modernidade" },
+  { icon: Leaf, label: "Natureza" },
+  { icon: Shield, label: "Privacidade" },
+  { icon: Star, label: "Qualidade de vida" },
+  { icon: Mountain, label: "Alto padrão construtivo" },
 ];
 
 const AboutSection = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageInView, setImageInView] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+  const imageRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -29,6 +33,34 @@ const AboutSection = () => {
 
     return () => observer.disconnect();
   }, []);
+
+  // Lazy load aerial view image
+  useEffect(() => {
+    const imageObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setImageInView(true);
+          imageObserver.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" }
+    );
+
+    if (imageRef.current) {
+      imageObserver.observe(imageRef.current);
+    }
+
+    return () => imageObserver.disconnect();
+  }, []);
+
+  // Load image when in view
+  useEffect(() => {
+    if (!imageInView) return;
+    
+    const img = new Image();
+    img.onload = () => setImageLoaded(true);
+    img.src = aerialView;
+  }, [imageInView]);
 
   const scrollToForm = () => {
     document.getElementById("cadastro")?.scrollIntoView({ behavior: "smooth" });
@@ -49,39 +81,69 @@ const AboutSection = () => {
         {/* Intro Text */}
         <div className={`max-w-4xl mx-auto text-center mb-12 sm:mb-16 ${isVisible ? 'animate-fade-up' : 'opacity-0'}`}>
           <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 leading-relaxed">
-            Estância Velha está se tornando um dos destinos mais desejados para quem busca empreendimentos de alto padrão no Vale dos Sinos. 
-            A combinação de natureza preservada, infraestrutura em crescimento e localização estratégica torna cada lançamento uma oportunidade única.
+            Em breve, a cidade de Estância Velha vai receber o condomínio fechado de terrenos mais aguardado da região.
+            Um projeto assinado pela <strong className="text-primary font-semibold">Ábaco</strong>, a incorporadora responsável pelo Horizon Clube Residencial — referência absoluta em condomínios de alto padrão.
           </p>
           
           <div className={`divider-gold mx-auto mb-6 sm:mb-8 ${isVisible ? 'animate-scale-in' : 'opacity-0'}`} style={{ animationDelay: '200ms' }} aria-hidden="true" />
           
           <p className={`text-base sm:text-lg text-foreground/80 italic font-serif ${isVisible ? 'animate-blur' : 'opacity-0'}`} style={{ animationDelay: '300ms' }}>
-            O mercado não espera. E as melhores unidades, menos ainda.
+            Ainda não revelamos tudo.
           </p>
           <p className={`text-sm sm:text-base text-muted-foreground mt-2 ${isVisible ? 'animate-blur' : 'opacity-0'}`} style={{ animationDelay: '400ms' }}>
-            Cadastre-se agora e tenha acesso privilegiado aos próximos lançamentos antes que se tornem públicos.
+            Porque alguns lugares não precisam ser explicados. Eles precisam ser vividos.
           </p>
         </div>
 
         {/* Main Section Title */}
         <header className={`text-center mb-12 sm:mb-16 ${isVisible ? 'animate-slide-up' : 'opacity-0'}`} style={{ animationDelay: '300ms' }}>
           <h2 id="about-title" className="section-title mb-4 text-2xl sm:text-3xl md:text-4xl">
-            Por que Estância Velha?{" "}
-            <span className="text-primary">O Melhor está Por Vir.</span>
+            Um Novo Jeito de Morar.{" "}
+            <span className="text-primary">No Ponto Mais Alto da Cidade.</span>
           </h2>
         </header>
 
         {/* Description */}
         <div className={`max-w-3xl mx-auto text-center mb-12 sm:mb-16 ${isVisible ? 'animate-fade-up' : 'opacity-0'}`} style={{ animationDelay: '400ms' }}>
           <p className="text-base sm:text-lg text-foreground/90 leading-relaxed mb-4 sm:mb-6">
-            A região de Estância Velha combina o charme do interior com a conveniência da proximidade à capital. 
-            Com novos empreendimentos sendo planejados por incorporadoras renomadas, a cidade se consolida como referência em qualidade de vida e potencial de valorização no Rio Grande do Sul.
+            Imagine viver no topo do morro, no Bairro Floresta. Onde a paisagem se abre. Onde o horizonte é mais amplo. Onde o silêncio, o verde e a vista criam uma conexão rara entre o ser humano e a imensidão da terra.
           </p>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Quem conhece o mercado imobiliário sabe: os melhores negócios acontecem antes do anúncio oficial. 
-            Nosso cadastro de pré-lançamento garante que você seja informado primeiro.
+            Um endereço pensado para quem quer se afastar da loucura dos grandes centros, sem abrir mão da mobilidade, do acesso rápido e da conveniência urbana.
           </p>
         </div>
+
+        {/* Aerial View Image with Lazy Loading */}
+        <figure 
+          ref={imageRef}
+          className={`relative mb-12 sm:mb-16 ${isVisible ? 'animate-scale-in' : 'opacity-0'}`} 
+          style={{ animationDelay: '500ms' }}
+        >
+          <div className="relative rounded-xl overflow-hidden shadow-2xl border border-border/30 hover:shadow-[0_0_60px_hsl(var(--primary)/0.15)] transition-shadow duration-700">
+            {/* Placeholder skeleton */}
+            <div 
+              className={`aspect-video bg-secondary animate-pulse ${imageLoaded ? 'hidden' : 'block'}`}
+              aria-hidden="true"
+            />
+            {/* Actual image */}
+            {imageInView && (
+              <img 
+                src={aerialView} 
+                alt="Vista aérea ilustrativa do condomínio mostrando a distribuição dos 350 lotes em Estância Velha" 
+                className={`w-full h-auto transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
+                width="1200"
+                height="675"
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setImageLoaded(true)}
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" aria-hidden="true" />
+          </div>
+          <figcaption className="text-center text-xs sm:text-sm text-muted-foreground mt-3 sm:mt-4 italic">
+            *Imagem meramente ilustrativa
+          </figcaption>
+        </figure>
 
         {/* CTA Button */}
         <div className={`text-center mb-16 sm:mb-20 ${isVisible ? 'animate-scale-in' : 'opacity-0'}`} style={{ animationDelay: '700ms' }}>
@@ -90,14 +152,14 @@ const AboutSection = () => {
             className="btn-primary min-h-[48px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label="Cadastrar para acesso antecipado"
           >
-            Quero Acesso Antecipado
+            Quero Mais Informações
           </button>
         </div>
 
         {/* Features Grid */}
         <aside className={`${isVisible ? 'animate-fade-up' : 'opacity-0'}`} style={{ animationDelay: '800ms' }}>
           <p className="text-center text-sm sm:text-base text-foreground/80 mb-8 sm:mb-10">
-            Cada lançamento é selecionado com base em critérios rigorosos de:
+            Aqui, cada detalhe nasce do equilíbrio perfeito entre:
           </p>
           
           <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 md:gap-6" role="list">

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Gem, MapPin, Ruler, ShieldCheck, TrendingUp, Eye } from "lucide-react";
+import { MapPin, Ruler, Cable, Waves, Home, Eye } from "lucide-react";
 
 const features = [
-  { icon: Gem, title: "Empreendimentos de alto padrão" },
-  { icon: MapPin, title: "Localizações estratégicas e privilegiadas" },
-  { icon: Ruler, title: "Unidades com metragens diferenciadas" },
-  { icon: ShieldCheck, title: "Condições exclusivas de pré-lançamento" },
-  { icon: TrendingUp, title: "Alto potencial de valorização" },
-  { icon: Eye, title: "Acesso antes da divulgação oficial" },
+  { icon: Home, title: "Condomínio fechado de terrenos" },
+  { icon: MapPin, title: "350 lotes exclusivos" },
+  { icon: Ruler, title: "Terrenos amplos, a partir de 500m²" },
+  { icon: Cable, title: "Fiação subterrânea" },
+  { icon: Waves, title: "Piscina aquecida" },
+  { icon: Eye, title: "Vista simplesmente deslumbrante" },
 ];
 
 const FeaturesSection = () => {
@@ -43,11 +43,10 @@ const FeaturesSection = () => {
       <div className="container relative z-10 px-4">
         <header className={`text-center mb-12 sm:mb-16 ${isVisible ? 'animate-fade-up' : 'opacity-0'}`}>
           <h2 id="features-title" className="section-title mb-4 text-2xl sm:text-3xl md:text-4xl">
-            O Que Você Recebe ao{" "}
-            <span className="text-primary">Se Cadastrar</span>
+            O Que Já Podemos <span className="text-primary">Antecipar</span>
           </h2>
           <p className="section-subtitle max-w-2xl mx-auto text-sm sm:text-base">
-            Nosso compromisso é conectar você às melhores oportunidades do mercado imobiliário de Estância Velha:
+            Algumas informações já são certas — e suficientes para entender a grandiosidade do projeto:
           </p>
         </header>
 
@@ -72,10 +71,10 @@ const FeaturesSection = () => {
             <span className="text-xl sm:text-2xl" role="img" aria-label="Cadeado indicando exclusividade">🔒</span>
           </div>
           <p className="text-lg sm:text-xl text-foreground/90 font-medium mb-2">
-            Informações restritas e privilegiadas
+            Infraestrutura de altíssimo padrão
           </p>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Os detalhes de cada lançamento são compartilhados primeiro com quem está cadastrado. Depois, com todo mundo.
+            O restante? Será revelado apenas para quem estiver na lista.
           </p>
         </aside>
       </div>

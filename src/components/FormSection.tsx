@@ -238,7 +238,7 @@ const FormSection = ({
 
   return (
     <section 
-      id="cadastro"
+      id="formulario"
       ref={sectionRef} 
       className="py-10 sm:py-12 md:py-16 bg-background relative overflow-hidden"
       aria-labelledby="form-title"
@@ -254,7 +254,7 @@ const FormSection = ({
               <span className="text-primary">Um Passo à Frente</span>
             </h2>
             <p className="section-subtitle text-sm sm:text-base">
-              Receba em primeira mão os lançamentos imobiliários mais esperados de Estância Velha.
+              Garanta seu acesso antecipado ao lançamento mais esperado do Vale dos Sinos.
             </p>
           </header>
 
@@ -399,7 +399,7 @@ const FormSection = ({
                   <span>Enviando...</span>
                 </span>
               ) : (
-                "Quero Acesso Antecipado"
+                "Quero Mais Informações"
               )}
             </button>
 
