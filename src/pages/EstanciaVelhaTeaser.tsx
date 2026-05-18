@@ -126,7 +126,7 @@ const EstanciaVelhaTeaser = () => {
             {/* Supporting line */}
             <div className={itemClass(4)}>
               <p className="text-sm sm:text-base text-muted-foreground/80 max-w-xl mx-auto leading-relaxed">
-                Cadastre-se para receber informações em primeira mão e tenha prioridade na escolha das melhores unidades.
+                Cadastre-se para receber informações sobre os próximos lançamentos e ser atendido com prioridade pelos nossos especialistas.
               </p>
             </div>
 
