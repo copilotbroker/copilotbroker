@@ -45,6 +45,11 @@ function getRandomIntervalMs(): number {
   return (base + jitter) * 1000;
 }
 
+function chunk<T>(arr: T[], size = 100): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+
 function getUserClient(authHeader: string | null): SupabaseClient {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     global: { headers: authHeader ? { Authorization: authHeader } : {} },
