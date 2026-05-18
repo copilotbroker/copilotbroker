@@ -126,6 +126,8 @@ const App = () => (
             <Route path="/admin/perfil" element={<UserProfile />} />
             <Route path="/corretor/lead/:leadId" element={<LeadPage />} />
             <Route path="/corretor/lead/:leadId/cadastro" element={<LeadCadastroPage />} />
+            <Route path="/corretor/lead/:leadId/ficha" element={<LeadFichaPrint />} />
+            <Route path="/corretor/lead/:leadId/declaracao" element={<LeadDeclaracaoPrint />} />
             <Route path="/corretor/:citySlug/:projectSlug" element={<BrokerProjectLanding />} />
             {/* /:brokerSlug/:citySlug/:projectSlug is registered inside LandingRoutes (broker-first dynamic) */}
             <Route path="/caminhadaonovocondominioev" element={<CaminhadaEV />} />
