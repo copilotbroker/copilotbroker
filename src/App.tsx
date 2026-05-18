@@ -44,6 +44,8 @@ import Termos from "./pages/Termos";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import LeadPage from "./pages/LeadPage";
 import LeadCadastroPage from "./pages/LeadCadastroPage";
+import LeadFichaPrint from "./pages/LeadFichaPrint";
+import LeadDeclaracaoPrint from "./pages/LeadDeclaracaoPrint";
 import CaminhadaEV from "./pages/CaminhadaEV";
 import GoogleCalendarCallback from "./pages/GoogleCalendarCallback";
 import NotFound from "./pages/NotFound";
