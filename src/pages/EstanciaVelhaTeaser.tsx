@@ -9,7 +9,7 @@ const benefits = [
   "Condições exclusivas de lançamento",
   "Atendimento prioritário com especialistas Enove",
   "Empreendimentos selecionados com alto potencial de valorização",
-  "Acesso antecipado antes do mercado aberto",
+  "Informações oficiais sobre os próximos lançamentos",
 ];
 
 const EstanciaVelhaTeaser = () => {
