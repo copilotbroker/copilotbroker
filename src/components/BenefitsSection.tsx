@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Crown } from "lucide-react";
 
 const benefits = [
-  "Prioridade no recebimento dos detalhes oficiais",
-  "Maior velocidade no acesso ao espelho de vendas e tabela de preços",
-  "Chance real de escolher os melhores lotes",
+  "Condições exclusivas de lançamento",
+  "Atendimento prioritário com especialistas Enove",
+  "Empreendimentos selecionados com alto potencial de valorização",
+  "Acesso antecipado antes do mercado aberto",
 ];
 
 const BenefitsSection = () => {
