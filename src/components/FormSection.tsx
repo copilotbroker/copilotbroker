@@ -238,7 +238,7 @@ const FormSection = ({
 
   return (
     <section 
-      id="formulario"
+      id="cadastro"
       ref={sectionRef} 
       className="py-10 sm:py-12 md:py-16 bg-background relative overflow-hidden"
       aria-labelledby="form-title"
@@ -254,14 +254,14 @@ const FormSection = ({
               <span className="text-primary">Um Passo à Frente</span>
             </h2>
             <p className="section-subtitle text-sm sm:text-base">
-              Garanta seu acesso antecipado ao lançamento mais esperado do Vale dos Sinos.
+              Receba em primeira mão os lançamentos imobiliários mais esperados de Estância Velha.
             </p>
           </header>
 
           <form 
             onSubmit={handleSubmit} 
             className="card-luxury p-6 sm:p-8 md:p-10 space-y-5 sm:space-y-6"
-            aria-label="Formulário de cadastro para acesso antecipado"
+            aria-label="Formulário de cadastro para acesso antecipado aos lançamentos"
           >
             <div>
               <label htmlFor="name-landing" className="block text-sm font-medium text-foreground/80 mb-2">
@@ -399,7 +399,7 @@ const FormSection = ({
                   <span>Enviando...</span>
                 </span>
               ) : (
-                "Quero Mais Informações"
+                "Quero Acesso Antecipado"
               )}
             </button>
 
