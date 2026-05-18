@@ -565,12 +565,16 @@ Deno.serve(async (req) => {
               .from("brokers").select("user_id, whatsapp").eq("id", newBrokerId).single();
 
             if (brokerData?.user_id) {
-              await supabase.from("notifications").insert({
-                user_id: brokerData.user_id,
-                type: "roleta_timeout",
-                title: "Conversa reassinada (timeout)",
-                message: `Conversa do Plantão (${conv.display_name || conv.phone}) foi reassinada por timeout.`,
-              });
+              try {
+                await supabase.from("notifications").insert({
+                  user_id: brokerData.user_id,
+                  type: "roleta_timeout",
+                  title: "Conversa reassinada (timeout)",
+                  message: `Conversa do Plantão (${conv.display_name || conv.phone}) foi reassinada por timeout.`,
+                });
+              } catch (notifErr) {
+                console.error("in-app conv timeout notification failed (non-critical):", notifErr);
+              }
             }
 
             if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
