@@ -194,7 +194,11 @@ export function PausedMessagesReviewModal({ open, onOpenChange, brokerId }: Prop
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-[#2a2a2e]">
               <div className="text-xs text-slate-500">
-                Reagendamento respeita seu horário comercial e aplica intervalos anti-spam.
+                {isMutating
+                  ? (discard.isPending
+                      ? `Descartando ${selected.size || messages.length} mensagem(ns)…`
+                      : `Reagendando ${selected.size} mensagem(ns)…`)
+                  : "Reagendamento respeita seu horário comercial e aplica intervalos anti-spam."}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Popover>
