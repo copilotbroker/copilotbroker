@@ -91,7 +91,9 @@ export function LandingRoutes({ prefix = "" }: { prefix?: string }) {
       <Route path={`${p}/estanciavelha/sentower/obrigado`} element={<SentowerLandingPage />} />
       <Route path={`${p}/estanciavelha/bairrodasrosas`} element={<BairrodasRosas />} />
       <Route path={`${p}/canela`} element={<Canela />} />
-      <Route path={`${p}/estanciavelha/:brokerSlug`} element={<EstanciaVelhaBrokerTeaser />} />
+      {prefix
+        ? <Route path={`${p}/estanciavelha/:brokerSlug`} element={<EstanciaVelhaBrokerTeaser />} />
+        : <Route path="/estanciavelha/:brokerSlug" element={<Navigate to="/enoveimobiliaria/estanciavelha" replace />} />}
 
       {/* Prontos */}
       <Route path={`${p}/prontos`} element={<Prontos />} />
