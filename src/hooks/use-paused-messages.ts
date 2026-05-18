@@ -60,10 +60,11 @@ export function useReschedulePausedMessages() {
 export function useDiscardPausedMessages() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (messageIds: string[]) => {
+    mutationFn: async (input: string[] | { all: true }) => {
+      const body = Array.isArray(input) ? { messageIds: input } : { all: true };
       const { data, error } = await supabase.functions.invoke(
         "whatsapp-paused-messages/discard",
-        { method: "POST", body: { messageIds } },
+        { method: "POST", body },
       );
       if (error) throw error;
       return data;

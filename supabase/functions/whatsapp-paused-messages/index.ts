@@ -45,6 +45,13 @@ function getRandomIntervalMs(): number {
   return (base + jitter) * 1000;
 }
 
+function chunk<T>(arr: T[], size = 100): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+
 function getUserClient(authHeader: string | null): SupabaseClient {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     global: { headers: authHeader ? { Authorization: authHeader } : {} },
@@ -116,6 +123,7 @@ Deno.serve(async (req) => {
 
     // ───────── POST /reschedule ─────────
     if (path === "reschedule" && req.method === "POST") {
+      const startedAt = Date.now();
       const body = await req.json().catch(() => null) as
         | { messageIds?: string[]; strategy?: "now" | "spread" | "datetime"; datetime?: string }
         | null;
@@ -127,6 +135,8 @@ Deno.serve(async (req) => {
         });
       }
 
+      console.log(`[reschedule] received ${body.messageIds.length} ids, strategy=${body.strategy}`);
+
       // Fetch instance working hours
       const { data: instance } = await adminClient
         .from("broker_whatsapp_instances")
@@ -137,17 +147,21 @@ Deno.serve(async (req) => {
       const whStart = (instance as { working_hours_start?: string } | null)?.working_hours_start || "09:00";
       const whEnd = (instance as { working_hours_end?: string } | null)?.working_hours_end || "21:00";
 
-      // Validate ownership
-      const { data: messages } = await adminClient
-        .from("whatsapp_message_queue")
-        .select("id, lead_id")
-        .in("id", body.messageIds)
-        .eq("broker_id", broker.brokerId)
-        .eq("status", "paused_by_system")
-        .eq("pause_reason", "whatsapp_disconnected");
+      // Validate ownership in chunks of 200
+      const idChunks = chunk(body.messageIds, 200);
+      const ownedAll: Array<{ id: string; lead_id: string | null }> = [];
+      for (const ids of idChunks) {
+        const { data } = await adminClient
+          .from("whatsapp_message_queue")
+          .select("id, lead_id")
+          .in("id", ids)
+          .eq("broker_id", broker.brokerId)
+          .eq("status", "paused_by_system")
+          .eq("pause_reason", "whatsapp_disconnected");
+        if (data) ownedAll.push(...(data as Array<{ id: string; lead_id: string | null }>));
+      }
 
-      const owned = (messages || []) as Array<{ id: string; lead_id: string | null }>;
-      if (!owned.length) {
+      if (!ownedAll.length) {
         return new Response(JSON.stringify({ error: "No valid paused messages found" }), {
           status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -161,10 +175,9 @@ Deno.serve(async (req) => {
         : now;
 
       const updates: Array<{ id: string; scheduled_at: string }> = [];
-      for (let i = 0; i < owned.length; i++) {
+      for (let i = 0; i < ownedAll.length; i++) {
         let target: Date;
         if (body.strategy === "now") {
-          // 30s + i*45s small spacing — anti-spam minimal
           target = new Date(now.getTime() + 30 * 1000 + i * 45 * 1000);
         } else if (body.strategy === "spread") {
           if (i === 0) {
@@ -175,7 +188,6 @@ Deno.serve(async (req) => {
             target = cursor;
           }
         } else {
-          // datetime: schedule first at provided datetime, others spread after
           if (i === 0) {
             target = cursor;
           } else {
@@ -185,24 +197,27 @@ Deno.serve(async (req) => {
         }
 
         const { adjusted } = adjustToWorkingHours(target, whStart, whEnd);
-        updates.push({ id: owned[i].id, scheduled_at: adjusted.toISOString() });
+        updates.push({ id: ownedAll[i].id, scheduled_at: adjusted.toISOString() });
       }
 
-      // Apply updates one by one (small batches)
-      for (const u of updates) {
-        await adminClient
-          .from("whatsapp_message_queue")
-          .update({
-            status: "scheduled",
-            pause_reason: null,
-            scheduled_at: u.scheduled_at,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", u.id);
+      // Apply updates in parallel chunks of 50 (preserves individual scheduled_at)
+      const updateChunks = chunk(updates, 50);
+      for (const group of updateChunks) {
+        await Promise.all(group.map((u) =>
+          adminClient
+            .from("whatsapp_message_queue")
+            .update({
+              status: "scheduled",
+              pause_reason: null,
+              scheduled_at: u.scheduled_at,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", u.id)
+        ));
       }
 
-      // Log per-lead interaction
-      const leadIds = Array.from(new Set(owned.map((m) => m.lead_id).filter(Boolean) as string[]));
+      // Log per-lead interaction (batches of 500)
+      const leadIds = Array.from(new Set(ownedAll.map((m) => m.lead_id).filter(Boolean) as string[]));
       if (leadIds.length) {
         const interactions = leadIds.map((leadId) => ({
           lead_id: leadId,
@@ -211,9 +226,12 @@ Deno.serve(async (req) => {
           notes: "🔄 Cadência reativada manualmente após reconexão do WhatsApp",
           created_by: broker.userId,
         }));
-        await adminClient.from("lead_interactions").insert(interactions);
+        for (const batch of chunk(interactions, 500)) {
+          await adminClient.from("lead_interactions").insert(batch);
+        }
       }
 
+      console.log(`[reschedule] done ${updates.length} updates in ${Date.now() - startedAt}ms`);
       return new Response(JSON.stringify({ success: true, rescheduled: updates.length }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -221,41 +239,106 @@ Deno.serve(async (req) => {
 
     // ───────── POST /discard ─────────
     if (path === "discard" && req.method === "POST") {
-      const body = await req.json().catch(() => null) as { messageIds?: string[] } | null;
-      if (!body?.messageIds?.length) {
-        return new Response(JSON.stringify({ error: "messageIds required" }), {
+      const startedAt = Date.now();
+      const body = await req.json().catch(() => null) as
+        | { messageIds?: string[]; all?: boolean }
+        | null;
+
+      if (!body || (!body.all && !body.messageIds?.length)) {
+        return new Response(JSON.stringify({ error: "messageIds or all required" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      const { data: messages } = await adminClient
-        .from("whatsapp_message_queue")
-        .select("id, lead_id")
-        .in("id", body.messageIds)
-        .eq("broker_id", broker.brokerId)
-        .eq("status", "paused_by_system")
-        .eq("pause_reason", "whatsapp_disconnected");
+      // ── Fast path: discard ALL paused messages for this broker ──
+      if (body.all) {
+        console.log(`[discard] fast path: all=true for broker ${broker.brokerId}`);
 
-      const owned = (messages || []) as Array<{ id: string; lead_id: string | null }>;
-      if (!owned.length) {
+        const { data: affected } = await adminClient
+          .from("whatsapp_message_queue")
+          .select("lead_id")
+          .eq("broker_id", broker.brokerId)
+          .eq("status", "paused_by_system")
+          .eq("pause_reason", "whatsapp_disconnected");
+
+        const { error: updateError } = await adminClient
+          .from("whatsapp_message_queue")
+          .update({
+            status: "cancelled",
+            pause_reason: "discarded_after_disconnect",
+            error_message: "Descartada pelo corretor após reconexão",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("broker_id", broker.brokerId)
+          .eq("status", "paused_by_system")
+          .eq("pause_reason", "whatsapp_disconnected");
+
+        if (updateError) {
+          return new Response(JSON.stringify({ error: updateError.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const leadIds = Array.from(
+          new Set((affected || []).map((r) => (r as { lead_id: string | null }).lead_id).filter(Boolean) as string[]),
+        );
+        if (leadIds.length) {
+          const interactions = leadIds.map((leadId) => ({
+            lead_id: leadId,
+            broker_id: broker.brokerId,
+            interaction_type: "note_added" as const,
+            notes: "🗑️ Mensagem(ns) descartada(s) pelo corretor após desconexão do WhatsApp",
+            created_by: broker.userId,
+          }));
+          for (const batch of chunk(interactions, 500)) {
+            await adminClient.from("lead_interactions").insert(batch);
+          }
+        }
+
+        console.log(`[discard] all done in ${Date.now() - startedAt}ms, affected ${affected?.length ?? 0}`);
+        return new Response(JSON.stringify({ success: true, discarded: affected?.length ?? 0 }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // ── Standard path: discard provided IDs (chunked) ──
+      console.log(`[discard] received ${body.messageIds!.length} ids`);
+      const idChunks = chunk(body.messageIds!, 200);
+      const ownedAll: Array<{ id: string; lead_id: string | null }> = [];
+      for (const ids of idChunks) {
+        const { data } = await adminClient
+          .from("whatsapp_message_queue")
+          .select("id, lead_id")
+          .in("id", ids)
+          .eq("broker_id", broker.brokerId)
+          .eq("status", "paused_by_system")
+          .eq("pause_reason", "whatsapp_disconnected");
+        if (data) ownedAll.push(...(data as Array<{ id: string; lead_id: string | null }>));
+      }
+
+      if (!ownedAll.length) {
         return new Response(JSON.stringify({ error: "No valid paused messages found" }), {
           status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      await adminClient
-        .from("whatsapp_message_queue")
-        .update({
-          status: "cancelled",
-          pause_reason: "discarded_after_disconnect",
-          error_message: "Descartada pelo corretor após reconexão",
-          updated_at: new Date().toISOString(),
-        })
-        .in("id", owned.map((m) => m.id));
+      const ownedIds = ownedAll.map((m) => m.id);
+      for (const ids of chunk(ownedIds, 200)) {
+        await adminClient
+          .from("whatsapp_message_queue")
+          .update({
+            status: "cancelled",
+            pause_reason: "discarded_after_disconnect",
+            error_message: "Descartada pelo corretor após reconexão",
+            updated_at: new Date().toISOString(),
+          })
+          .in("id", ids);
+      }
 
-      const leadIds = Array.from(new Set(owned.map((m) => m.lead_id).filter(Boolean) as string[]));
+      const leadIds = Array.from(new Set(ownedAll.map((m) => m.lead_id).filter(Boolean) as string[]));
       if (leadIds.length) {
         const interactions = leadIds.map((leadId) => ({
           lead_id: leadId,
@@ -264,10 +347,13 @@ Deno.serve(async (req) => {
           notes: "🗑️ Mensagem(ns) descartada(s) pelo corretor após desconexão do WhatsApp",
           created_by: broker.userId,
         }));
-        await adminClient.from("lead_interactions").insert(interactions);
+        for (const batch of chunk(interactions, 500)) {
+          await adminClient.from("lead_interactions").insert(batch);
+        }
       }
 
-      return new Response(JSON.stringify({ success: true, discarded: owned.length }), {
+      console.log(`[discard] done ${ownedAll.length} in ${Date.now() - startedAt}ms`);
+      return new Response(JSON.stringify({ success: true, discarded: ownedAll.length }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

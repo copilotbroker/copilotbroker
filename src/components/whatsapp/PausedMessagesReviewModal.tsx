@@ -79,14 +79,19 @@ export function PausedMessagesReviewModal({ open, onOpenChange, brokerId }: Prop
   };
 
   const handleDiscard = async (ids?: string[]) => {
+    // Fast path: all selected and a large set → use server "all" mode
+    const isAllSelected = !ids && selected.size === messages.length && messages.length > 0;
+    const useAllPath = isAllSelected && messages.length > 200;
+
     const messageIds = ids ?? Array.from(selected);
-    if (!messageIds.length) {
+    if (!useAllPath && !messageIds.length) {
       toast.error("Selecione ao menos uma mensagem");
       return;
     }
     try {
-      await discard.mutateAsync(messageIds);
-      toast.success(`${messageIds.length} mensagem(ns) descartada(s)`);
+      const result = await discard.mutateAsync(useAllPath ? { all: true } : messageIds);
+      const count = (result as { discarded?: number } | undefined)?.discarded ?? messageIds.length;
+      toast.success(`${count} mensagem(ns) descartada(s)`);
       setSelected(new Set());
     } catch (e) {
       toast.error("Erro ao descartar: " + (e as Error).message);
@@ -189,7 +194,11 @@ export function PausedMessagesReviewModal({ open, onOpenChange, brokerId }: Prop
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-[#2a2a2e]">
               <div className="text-xs text-slate-500">
-                Reagendamento respeita seu horário comercial e aplica intervalos anti-spam.
+                {isMutating
+                  ? (discard.isPending
+                      ? `Descartando ${selected.size || messages.length} mensagem(ns)…`
+                      : `Reagendando ${selected.size} mensagem(ns)…`)
+                  : "Reagendamento respeita seu horário comercial e aplica intervalos anti-spam."}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Popover>
