@@ -11,8 +11,8 @@ const DisclaimerSection = () => {
           <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" aria-hidden="true" />
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
             <strong className="font-semibold text-foreground/80">Observação importante:</strong>{" "}
-            O masterplan apresentado é meramente ilustrativo e não representa o projeto oficial, 
-            que será divulgado exclusivamente aos cadastrados no momento oportuno.
+            As informações sobre empreendimentos futuros são preliminares e sujeitas a alterações. 
+            Os detalhes oficiais de cada lançamento serão divulgados exclusivamente aos cadastrados no momento oportuno.
           </p>
         </div>
       </div>
