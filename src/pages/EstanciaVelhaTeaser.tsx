@@ -87,12 +87,12 @@ const EstanciaVelhaTeaser = () => {
           <div ref={heroRef} className="max-w-3xl mx-auto text-center space-y-7">
             {/* Badge */}
             <div className={itemClass(0)}>
-              <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm">
-                <span className="relative flex h-2 w-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm">
+                <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
                 </span>
-                <span className="text-xs font-medium text-primary uppercase tracking-[0.25em]">
+                <span className="text-[10px] sm:text-xs font-medium text-primary uppercase tracking-[0.2em] sm:tracking-[0.25em]">
                   Pré-Lançamentos Exclusivos
                 </span>
               </div>
@@ -100,7 +100,7 @@ const EstanciaVelhaTeaser = () => {
 
             {/* Title */}
             <div className={itemClass(1)}>
-              <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl leading-[1.1] text-foreground/95 tracking-tight">
+              <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl leading-[1.05] text-foreground/95 tracking-tight">
                 Acesso antecipado aos próximos{" "}
                 <span className="text-primary">lançamentos imobiliários</span>{" "}
                 de Estância Velha
