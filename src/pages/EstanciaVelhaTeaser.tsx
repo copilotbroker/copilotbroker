@@ -119,7 +119,7 @@ const EstanciaVelhaTeaser = () => {
             {/* Subtitle */}
             <div className={itemClass(3)}>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light tracking-wide">
-                Empreendimentos de alto padrão, condições especiais de pré-lançamento e oportunidades selecionadas antes da divulgação oficial ao mercado.
+                Empreendimentos de alto padrão, condições especiais de pré-lançamento e oportunidades selecionadas para nossos clientes cadastrados.
               </p>
             </div>
 
