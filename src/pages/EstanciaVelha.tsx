@@ -38,43 +38,33 @@ const EstanciaVelha = () => {
   const canonicalUrl = "https://onovocondominio.com.br/estanciavelha";
   const ogImageUrl = "https://onovocondominio.com.br/og-image.jpg";
 
-  // Rich Residence Schema
-  const residenceSchema = {
+  // Service Schema (more appropriate for a landing page about upcoming launches)
+  const serviceSchema = {
     "@context": "https://schema.org",
-    "@type": "Residence",
-    "@id": `${canonicalUrl}#residence`,
-    "name": "Condomínio Alto Padrão Estância Velha",
-    "description": "Condomínio fechado de terrenos em Estância Velha com 350 lotes a partir de 500m². Vista deslumbrante, piscina aquecida e infraestrutura de alto padrão.",
+    "@type": "Service",
+    "@id": `${canonicalUrl}#service`,
+    "name": "Acesso Antecipado a Lançamentos Imobiliários em Estância Velha",
+    "description": "Cadastre-se para receber informações em primeira mão sobre lançamentos imobiliários de alto padrão em Estância Velha. Condições exclusivas de pré-lançamento e atendimento prioritário.",
     "url": canonicalUrl,
     "image": ogImageUrl,
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": "Estância Velha",
-      "addressRegion": "RS",
-      "addressCountry": "BR",
-      "postalCode": "93600-000"
+    "provider": {
+      "@type": "RealEstateAgent",
+      "name": "Enove Imobiliária",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Estância Velha",
+        "addressRegion": "RS",
+        "addressCountry": "BR"
+      }
     },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": "-29.6544",
-      "longitude": "-51.1789"
-    },
-    "amenityFeature": [
-      { "@type": "LocationFeatureSpecification", "name": "Vista panorâmica", "value": true },
-      { "@type": "LocationFeatureSpecification", "name": "Piscina aquecida", "value": true },
-      { "@type": "LocationFeatureSpecification", "name": "Segurança 24h", "value": true },
-      { "@type": "LocationFeatureSpecification", "name": "Clube", "value": true },
-      { "@type": "LocationFeatureSpecification", "name": "Quadras esportivas", "value": true },
-      { "@type": "LocationFeatureSpecification", "name": "Trilhas", "value": true }
-    ],
-    "floorSize": {
-      "@type": "QuantitativeValue",
-      "minValue": 500,
-      "unitCode": "MTK"
-    },
-    "numberOfRooms": "350 lotes a partir de 500m²",
-    "petsAllowed": true,
-    "tourBookingPage": `${canonicalUrl}#cadastro`
+    "areaServed": {
+      "@type": "City",
+      "name": "Estância Velha",
+      "containedInPlace": {
+        "@type": "State",
+        "name": "Rio Grande do Sul"
+      }
+    }
   };
 
   // FAQ Schema for Rich Snippets
@@ -84,34 +74,34 @@ const EstanciaVelha = () => {
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "Qual o tamanho mínimo dos lotes em Estância Velha?",
+        "name": "O que é o acesso antecipado a lançamentos imobiliários?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Os lotes têm tamanho mínimo de 500m², ideais para construir a casa dos seus sonhos com amplo espaço."
+          "text": "O acesso antecipado permite que você receba informações exclusivas sobre novos empreendimentos em Estância Velha antes da divulgação oficial ao mercado, garantindo prioridade na escolha das melhores unidades e condições especiais de pré-lançamento."
         }
       },
       {
         "@type": "Question",
-        "name": "Quantos lotes estão disponíveis no condomínio?",
+        "name": "Por que investir em lançamentos em Estância Velha?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "São 350 lotes exclusivos disponíveis neste empreendimento de alto padrão em Estância Velha."
+          "text": "Estância Velha combina natureza preservada, infraestrutura em crescimento e localização estratégica no Vale dos Sinos, tornando-se um dos destinos mais desejados para empreendimentos de alto padrão com alto potencial de valorização."
         }
       },
       {
         "@type": "Question",
-        "name": "O condomínio possui piscina aquecida?",
+        "name": "O cadastro tem algum custo?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Sim, o condomínio conta com piscina aquecida além de clube completo, quadras esportivas e trilhas ecológicas."
+          "text": "Não, o cadastro é totalmente gratuito e sem compromisso. Você receberá informações prioritárias sobre lançamentos selecionados e poderá escolher se deseja prosseguir com algum deles."
         }
       },
       {
         "@type": "Question",
-        "name": "Quem é a incorporadora do empreendimento?",
+        "name": "Quais vantagens tenho ao me cadastrar?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "O empreendimento é uma realização da Ábaco Incorporadora com comercialização exclusiva da Enove Imobiliária."
+          "text": "Condições exclusivas de lançamento, atendimento prioritário com especialistas Enove, acesso a empreendimentos selecionados com alto potencial de valorização e informações antes do mercado aberto."
         }
       }
     ]
@@ -130,10 +120,10 @@ const EstanciaVelha = () => {
   return (
     <>
       <Helmet>
-        <title>Condomínio Alto Padrão Estância Velha | 350 Lotes a partir de 500m²</title>
-        <meta name="title" content="Condomínio Alto Padrão Estância Velha | 350 Lotes a partir de 500m²" />
-        <meta name="description" content="Pré-lançamento exclusivo: condomínio fechado de terrenos em Estância Velha com 350 lotes a partir de 500m². Vista deslumbrante, piscina aquecida e infraestrutura de alto padrão." />
-        <meta name="keywords" content="condomínio fechado Estância Velha, terrenos Vale dos Sinos, lotes alto padrão RS, Ábaco Incorporadora, Enove Imobiliária, lançamento imobiliário 2026, lotes 500m², condomínio piscina aquecida, condomínio Estância Velha" />
+        <title>Lançamentos Imobiliários Estância Velha | Acesso Antecipado Exclusivo</title>
+        <meta name="title" content="Lançamentos Imobiliários Estância Velha | Acesso Antecipado Exclusivo" />
+        <meta name="description" content="Cadastre-se para acesso antecipado aos próximos lançamentos imobiliários de Estância Velha. Empreendimentos de alto padrão, condições exclusivas de pré-lançamento e atendimento prioritário Enove." />
+        <meta name="keywords" content="lançamentos imobiliários Estância Velha, pré-lançamento terrenos RS, empreendimentos alto padrão Vale dos Sinos, Enove Imobiliária, acesso antecipado imóveis, condomínios Estância Velha, investimento imobiliário RS" />
         <meta name="robots" content="index, follow, max-image-preview:large" />
         <link rel="canonical" href={canonicalUrl} />
 
@@ -141,24 +131,24 @@ const EstanciaVelha = () => {
         <meta property="og:type" content="website" />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:site_name" content="Enove Imobiliária" />
-        <meta property="og:title" content="Condomínio Alto Padrão Estância Velha | 350 Lotes a partir de 500m²" />
-        <meta property="og:description" content="Pré-lançamento exclusivo: condomínio fechado de terrenos em Estância Velha com 350 lotes a partir de 500m². Vista deslumbrante, piscina aquecida e infraestrutura de alto padrão." />
+        <meta property="og:title" content="Lançamentos Imobiliários Estância Velha | Acesso Antecipado Exclusivo" />
+        <meta property="og:description" content="Cadastre-se para acesso antecipado aos próximos lançamentos imobiliários de Estância Velha. Empreendimentos de alto padrão e condições exclusivas de pré-lançamento." />
         <meta property="og:locale" content="pt_BR" />
         <meta property="og:image" content={ogImageUrl} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="Condomínio de alto padrão em Estância Velha - Vista aérea" />
+        <meta property="og:image:alt" content="Lançamentos imobiliários exclusivos em Estância Velha" />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content={canonicalUrl} />
-        <meta name="twitter:title" content="Condomínio Alto Padrão Estância Velha | 350 Lotes a partir de 500m²" />
-        <meta name="twitter:description" content="Pré-lançamento exclusivo: condomínio fechado em Estância Velha com 350 lotes a partir de 500m². Vista deslumbrante e infraestrutura de alto padrão." />
+        <meta name="twitter:title" content="Lançamentos Imobiliários Estância Velha | Acesso Antecipado Exclusivo" />
+        <meta name="twitter:description" content="Cadastre-se para acesso antecipado aos próximos lançamentos imobiliários de Estância Velha. Empreendimentos de alto padrão e condições exclusivas." />
         <meta name="twitter:image" content={ogImageUrl} />
 
         {/* JSON-LD Schemas */}
         <script type="application/ld+json">
-          {JSON.stringify(residenceSchema)}
+          {JSON.stringify(serviceSchema)}
         </script>
         <script type="application/ld+json">
           {JSON.stringify(faqSchema)}
