@@ -289,13 +289,17 @@ Deno.serve(async (req) => {
           .single();
 
         if (brokerData?.user_id) {
-          await supabase.from("notifications").insert({
-            user_id: brokerData.user_id,
-            type: "roleta_timeout",
-            title: "Lead Reassinado (Timeout)",
-            message: `Lead ${lead.name} foi reassinado a você por timeout.`,
-            lead_id: lead.id,
-          });
+          try {
+            await supabase.from("notifications").insert({
+              user_id: brokerData.user_id,
+              type: "roleta_timeout",
+              title: "Lead Reassinado (Timeout)",
+              message: `Lead ${lead.name} foi reassinado a você por timeout.`,
+              lead_id: lead.id,
+            });
+          } catch (notifErr) {
+            console.error("in-app timeout notification failed (non-critical):", notifErr);
+          }
         }
 
         if (globalConfig?.instance_token && brokerData?.whatsapp && baseUrl) {
