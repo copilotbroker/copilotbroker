@@ -24,7 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, Phone, Mail, Building2, Clock, Calendar, DollarSign, Trophy,
   UserX, Play, FileText, Users, ChevronRight, ChevronLeft, AlertTriangle, Zap, Eye,
-  TrendingUp, Timer, MessageCircle, Send, ExternalLink, ArrowRightLeft, Pencil, Check, X, RotateCw, Square
+  TrendingUp, Timer, MessageCircle, Send, ExternalLink, ArrowRightLeft, Pencil, Check, X, RotateCw, Square, ClipboardList
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -702,8 +702,16 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
 
             {/* Lead Data - Editable */}
             <section className="bg-[#111114] rounded-2xl border border-[#1e1e22] overflow-hidden">
-              <div className="px-5 py-3 border-b border-[#1e1e22]">
+              <div className="px-5 py-3 border-b border-[#1e1e22] flex items-center justify-between gap-2 flex-wrap">
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Dados do Lead</h2>
+                <Button
+                  size="sm"
+                  onClick={() => navigate(`/corretor/lead/${leadId}/cadastro`)}
+                  className="h-8 px-3 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg gap-1.5"
+                >
+                  <ClipboardList className="h-3.5 w-3.5" />
+                  Completar Cadastro
+                </Button>
               </div>
               <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <EditableField
