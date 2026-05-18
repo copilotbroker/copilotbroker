@@ -1,63 +1,56 @@
-# Corrigir conversa global órfã após reassinatura por timeout
+## Objetivo
 
-## Causa raiz
+Trazer para este projeto o recurso **Completar Cadastro** que existe no CRM - O Novo Condomínio: um botão na seção "Dados do Lead" (em `/corretor/lead/:leadId`) que abre um wizard multi-etapas para coletar todos os dados do comprador (PF e PJ), com upload de documentos e extração automática por IA.
 
-Quando `roleta-timeout` reassina um lead pelo caminho **lead-based**, ele atualiza `leads.broker_id` mas **não** atualiza a `conversation` global vinculada. Resultado: a conversa fica presa ao corretor anterior e o novo corretor não a vê em "Plantão > Meus" (filtro `broker_id = current`). A cadência migra normalmente porque o trigger `migrate_queue_on_broker_change` cuida da fila de mensagens — só a conversa fica órfã.
+## O que será replicado
 
-Comparativo:
-- `transfer_lead` (transferência manual) já migra a conversa corretamente.
-- `roleta-timeout` no caminho **conversation-based** (linha ~487) também migra.
-- `roleta-timeout` no caminho **lead-based** (linhas 210-256) **não migra** — esse é o bug.
+1. **Página wizard** `/corretor/lead/:leadId/cadastro` com 6 etapas:
+   - Comprador (dados pessoais + documento)
+   - Estado civil
+   - Cônjuge (condicional)
+   - Residência (endereço + comprovante)
+   - Pessoa Jurídica (opcional)
+   - Revisão (com download em ZIP de todos os documentos)
+2. **Botão "Completar Cadastro"** na seção *Dados do Lead* da página do lead.
+3. **Upload de documentos** com extração automática via IA (CNH/RG → preenche nome, CPF, data nasc; comprovante de residência → preenche endereço; CNPJ → preenche dados PJ; etc.). Campos preenchidos pela IA recebem badge "IA · revisar".
+4. **Auto-save** ao trocar de etapa + aviso ao sair com alterações pendentes.
+5. **Barras de progresso** (campos preenchidos % + documentos enviados %).
 
-## Mudanças
+## Mudanças técnicas
 
-### 1. Edge `supabase/functions/roleta-timeout/index.ts` — caminho lead-based
+### Backend (migração SQL)
+- Criar tabela `public.lead_cadastro_completo` (1 linha por lead, ~50 colunas: PF + cônjuge + endereço + PJ + `ai_filled_fields`, `ai_raw_responses`).
+- Adicionar colunas em `lead_documents`: `file_path`, `file_name`, `mime_type`, `file_size`, `uploaded_by`, `ai_extracted` (jsonb), `is_active`, `updated_at`.
+- Criar bucket de Storage privado `lead-documents` com policies por broker/líder/admin.
+- RLS na nova tabela: admin (full), corretor (próprios leads), líder (leads da equipe via `brokers.lider_id`).
+- Trigger `updated_at`.
+- Trigger `BEFORE INSERT` para preencher `organization_id` automaticamente (padrão multi-tenant deste projeto), já que `lead_documents` aqui tem essa coluna e a tabela nova também deve respeitar isso.
 
-Logo após o `UPDATE leads` (≈ linha 221), localizar a conversa global vinculada e migrá-la para o novo broker:
+### Edge Function
+- Copiar `lead-document-extract` (usa Lovable AI Gateway / Gemini vision para OCR estruturado do documento). Sem segredo adicional necessário (LOVABLE_API_KEY já provisionado).
 
-```ts
-// Migrar conversa global vinculada para o novo broker
-const phoneNorm = lead.whatsapp
-  ? (() => {
-      const digits = String(lead.whatsapp).replace(/\D/g, "");
-      return digits.length <= 11 ? `55${digits}` : digits;
-    })()
-  : null;
+### Frontend
+- `src/pages/LeadCadastroPage.tsx` (página wizard ~900 linhas).
+- `src/hooks/use-lead-cadastro.ts` (CRUD + upload + extração).
+- `src/components/crm/CadastroUploadField.tsx` (campo de upload com IA).
+- `src/components/crm/CadastroProgressCharts.tsx` (cálculo de completude).
+- `src/lib/br-validators.ts` (CPF, CNPJ, CEP, e-mail, telefone).
+- Reuso de `PhoneField.tsx` (já existe neste projeto).
+- Adicionar rota em `src/App.tsx`: `/corretor/lead/:leadId/cadastro` → `LeadCadastroPage`.
+- Em `src/pages/LeadPage.tsx`, no header da seção *Dados do Lead* (linha ~706), inserir o botão amarelo/azul "Completar Cadastro" que navega para a nova rota.
 
-await supabase
-  .from("conversations")
-  .update({
-    broker_id: newBrokerId,
-    reserva_expira_em: statusDistribuicao === "fallback_lider" ? null : newExpira.toISOString(),
-    updated_at: new Date().toISOString(),
-  })
-  .eq("source_instance", "global")
-  .or(`lead_id.eq.${lead.id}${phoneNorm ? `,phone_normalized.eq.${phoneNorm}` : ""}`);
-```
+### Dependências
+- Adicionar `jszip` (para download em lote dos documentos na etapa Revisão).
+- `react-helmet-async` — verificar se já está instalado; se não, adicionar.
 
-### 2. Backfill (migration única)
+## Pontos de atenção
 
-Corrigir conversas globais já órfãs:
+- Estética idêntica ao original (tema dark `#0a0a0f` / acento `#FFFF00`), alinhada ao Dark Professional Theme já em uso aqui.
+- Mobile-first (stepper compacto no header em telas pequenas).
+- O wizard só atualiza `leads.name` se o usuário editar nome no cadastro completo — não toca em outros campos de `leads`.
+- Líderes herdam acesso aos cadastros da equipe (consistente com regras de visibilidade já estabelecidas).
 
-```sql
-UPDATE conversations c
-SET broker_id = l.broker_id, updated_at = now()
-FROM leads l
-WHERE c.lead_id = l.id
-  AND c.source_instance = 'global'
-  AND l.broker_id IS NOT NULL
-  AND c.broker_id IS DISTINCT FROM l.broker_id;
-```
+## Fora do escopo
 
-## Fora de escopo (agora)
-
-- Não alterar `transfer_lead` (já correto).
-- Não mexer no trigger de migração da fila de cadência.
-- Não criar conversa pessoal automática — a global migrada já permite atendimento via Plantão.
-- UX de "Novo até abrir" (coluna `first_opened_at` + reclassificação no BrokerInbox/Plantão) fica para depois, após validar a correção com o caso do Davi.
-
-## Validação
-
-1. Deploy da edge `roleta-timeout`.
-2. Rodar o backfill.
-3. Confirmar que a conversa do Davi (e demais reassinaturas recentes) aparece em "Plantão > Meus" do corretor atual.
+- Geração de PDF do cadastro consolidado (apenas ZIP dos uploads).
+- Sincronização do cadastro com `lead_documents` checklist legado — continuam coexistindo (a checklist atual marca recebimento; o wizard armazena os arquivos reais).
