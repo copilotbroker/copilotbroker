@@ -9,7 +9,7 @@ const benefits = [
   "Condições exclusivas de lançamento",
   "Atendimento prioritário com especialistas Enove",
   "Empreendimentos selecionados com alto potencial de valorização",
-  "Acesso antecipado antes do mercado aberto",
+  "Informações oficiais sobre os próximos lançamentos",
 ];
 
 const EstanciaVelhaTeaser = () => {
@@ -119,14 +119,14 @@ const EstanciaVelhaTeaser = () => {
             {/* Subtitle */}
             <div className={itemClass(3)}>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light tracking-wide">
-                Empreendimentos de alto padrão, condições especiais de pré-lançamento e oportunidades selecionadas antes da divulgação oficial ao mercado.
+                Empreendimentos de alto padrão, condições especiais de pré-lançamento e oportunidades selecionadas para nossos clientes cadastrados.
               </p>
             </div>
 
             {/* Supporting line */}
             <div className={itemClass(4)}>
               <p className="text-sm sm:text-base text-muted-foreground/80 max-w-xl mx-auto leading-relaxed">
-                Cadastre-se para receber informações em primeira mão e tenha prioridade na escolha das melhores unidades.
+                Cadastre-se para receber informações sobre os próximos lançamentos e ser atendido com prioridade pelos nossos especialistas.
               </p>
             </div>
 
