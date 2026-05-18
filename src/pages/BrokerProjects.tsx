@@ -265,7 +265,7 @@ const BrokerProjects = () => {
             )}
           </div>
           <p className="text-[11px] text-muted-foreground/70 truncate">
-            {window.location.origin}{bp.url}
+            {getPublicOrigin()}{bp.url}
           </p>
         </div>
 
