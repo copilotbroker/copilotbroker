@@ -220,6 +220,31 @@ Deno.serve(async (req) => {
         })
         .eq("id", lead.id);
 
+      // Migrar conversa global vinculada para o novo broker (corrige órfão)
+      if (newBrokerId) {
+        const phoneNorm = lead.whatsapp
+          ? (() => {
+              const digits = String(lead.whatsapp).replace(/\D/g, "");
+              return digits.length <= 11 ? `55${digits}` : digits;
+            })()
+          : null;
+
+        const orFilter = phoneNorm
+          ? `lead_id.eq.${lead.id},phone_normalized.eq.${phoneNorm}`
+          : `lead_id.eq.${lead.id}`;
+
+        await supabase
+          .from("conversations")
+          .update({
+            broker_id: newBrokerId,
+            reserva_expira_em: isFallback ? null : newExpira.toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("source_instance", "global")
+          .or(orFilter);
+      }
+
+
       // Update roleta pointer
       await supabase
         .from("roletas")
