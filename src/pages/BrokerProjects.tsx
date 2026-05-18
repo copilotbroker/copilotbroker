@@ -60,8 +60,21 @@ const BrokerProjects = () => {
 
   const handleLogout = useLogout();
 
+  // Canonical institutional domain — broker landings devem usar copilotbroker.com.br
+  // mesmo quando o usuário está navegando pelo preview do Lovable.
+  const getPublicOrigin = () => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      // Em domínio próprio (copilotbroker.com.br) ou onovocondominio mantém o origin atual
+      if (host.endsWith("copilotbroker.com.br") || host.endsWith("onovocondominio.com.br")) {
+        return window.location.origin;
+      }
+    }
+    return "https://copilotbroker.com.br";
+  };
+
   const copyUrl = async (url: string) => {
-    const fullUrl = `${window.location.origin}${url}`;
+    const fullUrl = `${getPublicOrigin()}${url}`;
     await navigator.clipboard.writeText(fullUrl);
     setCopiedUrl(url);
     toast.success("Link copiado!");
@@ -69,15 +82,16 @@ const BrokerProjects = () => {
   };
 
   const copyAllUrls = async () => {
+    const origin = getPublicOrigin();
     const allUrls = [...brokerProjects, ...myCreatedProjects]
-      .map((bp) => `${bp.project.name}: ${window.location.origin}${bp.url}`)
+      .map((bp) => `${bp.project.name}: ${origin}${bp.url}`)
       .join("\n");
     await navigator.clipboard.writeText(allUrls);
     toast.success("Todos os links copiados!");
   };
 
   const openLanding = (url: string) => {
-    const fullUrl = `${window.location.origin}${url}`;
+    const fullUrl = `${getPublicOrigin()}${url}`;
     const a = document.createElement("a");
     a.href = fullUrl;
     a.target = "_blank";
