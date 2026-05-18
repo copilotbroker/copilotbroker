@@ -1,0 +1,1 @@
+UPDATE public.projects SET city_slug='portao' WHERE id='0a9d09f3-99bc-4a37-bee2-d6fe8043e1ad';
