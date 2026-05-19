@@ -194,11 +194,19 @@ export default function BrokerPlantao() {
 
   useEffect(() => {
     const convId = searchParams.get("conversationId");
-    if (convId && activeConversations.length > 0 && !selectedConversation) {
-      const target = activeConversations.find((c) => c.id === convId);
-      if (target) { setSelectedConversation(target); setSearchParams({}, { replace: true }); }
+    if (!convId) return;
+    const inNovos = novosConversations.find((c) => c.id === convId);
+    const inOthers = conversations.find((c) => c.id === convId);
+    const target = inNovos || inOthers;
+    if (!target) return;
+    const desiredTab: InboxTab = inNovos ? "novos" : "meus";
+    if (desiredTab !== inboxTab) {
+      setInboxTab(desiredTab);
+      return;
     }
-  }, [activeConversations, searchParams, selectedConversation, setSearchParams]);
+    setSelectedConversation(target);
+    setSearchParams({}, { replace: true });
+  }, [novosConversations, conversations, inboxTab, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!selectedConversation) return;
