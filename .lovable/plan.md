@@ -1,62 +1,66 @@
 ## Problema
 
-No Kanban (corretor e admin), o botão **Iniciar Atendimento** no card do lead hoje:
+Quando o botão **Chat** na página do lead navega para `/admin/plantao?conversationId=<id>` (ou a versão `/corretor/plantao`), a aba padrão é `"novos"` e a conversa só é selecionada se for encontrada na lista atualmente visível. O segundo `useConversations` que deveria carregar a aba "meus" está gated em `inboxTab === "novos" ? "novos" : inboxTab` — ou seja, enquanto a aba ativa é "novos", **ambos** os hooks buscam apenas conversas novas. Resultado: se a conversa já tem `attendance_started=true` (caso da Kely com o Maicon), ela não aparece em nenhuma das duas listas, o `useEffect` que selecionaria/trocava a aba sai sem fazer nada, a URL permanece e o usuário continua vendo a aba "Novos" vazia/genérica em vez da conversa pedida.
 
-1. Move o lead para `info_sent` (via `iniciarAtendimento`).
-2. Loga uma interação no timeline.
-3. Abre `https://wa.me/55<numero>` em uma nova aba.
+Mesma situação inversa também ocorre: conversa "novos" chegando enquanto o usuário já está em "meus".
 
-O usuário quer que, em vez de abrir o WhatsApp Web externo, o corretor seja **levado direto para a conversa do lead dentro do sistema** — mesmo comportamento já implementado para o botão Chat na página do lead.
+As páginas de Inbox (`AdminInbox`, `BrokerInbox`) já funcionam porque usam uma única lista `allPersonalConversations` que cobre todas as abas.
 
 ## Solução
 
-Alterar apenas `handleIniciarAtendimento` em `src/components/crm/KanbanBoard.tsx` para, após `iniciarAtendimento(leadId)` retornar sucesso:
+Em `AdminPlantao.tsx` e `BrokerPlantao.tsx`, quando há `conversationId` na URL e o alvo **não** está em nenhuma das listas carregadas e ambas as listas já terminaram o load inicial, fazer um `select` direto na tabela `conversations` para descobrir o `attendance_started` da conversa e trocar de aba conforme:
 
-1. Garantir que existe uma conversa para o lead usando a função `ensureConversationForLead(leadId)` já presente no arquivo (mesma que `handleSendWhatsAppNow` usa).
-2. Buscar o `source_instance` dessa conversa (`global` vs `personal`) para decidir a rota:
-   - `global` → `plantao`
-   - `personal` (ou null/default) → `inbox`
-3. Determinar o prefixo conforme `isAdmin`: `"/admin"` para admin, `"/corretor"` para corretor (mesmo padrão já usado em `plantaoBase` e em `LeadPage`).
-4. Navegar internamente via `navigate(`${prefix}/${route}?conversationId=${conversationId}`)` em vez de `window.open("https://wa.me/...")`.
-5. Manter o `toast.success("Atendimento iniciado!")` e o `lead_interactions.insert` que já existem.
-6. Em caso de falha ao garantir/buscar a conversa, exibir um toast de erro e não navegar (não deve quebrar o fluxo se algo der errado).
+- `attendance_started === false` → `setInboxTab("novos")`
+- caso contrário → `setInboxTab("meus")`
 
-As páginas `BrokerInbox`, `AdminInbox`, `BrokerPlantao` e `AdminPlantao` já sabem ler `?conversationId=` e abrir a aba correta (conforme o ajuste anterior do botão Chat), então nenhuma alteração nessas páginas é necessária.
+Sem limpar a URL nesse momento; quando a aba certa for ativada, o hook correspondente vai buscar a conversa, o `useEffect` existente roda de novo, encontra o alvo, seleciona e finalmente limpa `searchParams`.
+
+Para evitar fetches repetidos, guardar o último `convId` resolvido em um `useRef` e só refazer a query quando o `convId` mudar.
 
 ## Detalhes técnicos
 
-Arquivo único a editar: **`src/components/crm/KanbanBoard.tsx`**, função `handleIniciarAtendimento` (linhas ~328-345).
+Arquivos a editar:
 
-Pseudocódigo do novo handler:
+- `src/pages/AdminPlantao.tsx`
+- `src/pages/BrokerPlantao.tsx`
+
+Adicionar um segundo `useEffect` (ou estender o existente) com algo equivalente a:
 
 ```text
-const handleIniciarAtendimento = async (leadId) => {
-  const lead = allLeadsRef.current.get(leadId);
-  const result = await iniciarAtendimento(leadId);
-  if (!result.success) return;
+const resolvedConvIdRef = useRef<string | null>(null);
 
-  toast.success("Atendimento iniciado!");
-  supabase.from("lead_interactions").insert({ ... }); // mantém como hoje
+useEffect(() => {
+  const convId = searchParams.get("conversationId");
+  if (!convId) return;
+  // já tratado pelo effect existente
+  if (novosConversations.some(c => c.id === convId)) return;
+  if (conversations.some(c => c.id === convId)) return;
+  // ainda carregando alguma lista → esperar
+  if (novosLoading || isLoading) return;
+  // evitar refetch infinito do mesmo id
+  if (resolvedConvIdRef.current === convId) return;
+  resolvedConvIdRef.current = convId;
 
-  try {
-    const conversationId = await ensureConversationForLead(leadId);
-    const { data: conv } = await supabase
-      .from("conversations")
-      .select("source_instance")
-      .eq("id", conversationId)
-      .maybeSingle();
-    const route = conv?.source_instance === "global" ? "plantao" : "inbox";
-    const prefix = isAdmin ? "/admin" : "/corretor";
-    navigate(`${prefix}/${route}?conversationId=${conversationId}`);
-  } catch (err) {
-    console.error("Falha ao abrir conversa do lead:", err);
-    toast.error("Não foi possível abrir a conversa do lead");
-  }
-};
+  supabase
+    .from("conversations")
+    .select("attendance_started, source_instance")
+    .eq("id", convId)
+    .maybeSingle()
+    .then(({ data }) => {
+      if (!data) return;
+      const desired: InboxTab = data.attendance_started === false ? "novos" : "meus";
+      if (desired !== inboxTab) setInboxTab(desired);
+    });
+}, [searchParams, novosConversations, conversations, novosLoading, isLoading, inboxTab]);
 ```
+
+O `useEffect` já existente que faz `setSelectedConversation(target)` continua igual e cuida da seleção + limpeza da URL quando a lista correta passar a conter a conversa.
+
+Opcional/secundário: se a conversa for de outra organização/corretor que o filtro `selectedBrokerId` exclui, ainda assim o alvo nunca aparecerá. Para cobrir esse caso, quando o supabase devolver `broker_id` diferente do filtro atual, também resetar `setSelectedBrokerId("all")`. Isso é só uma melhoria — fora do escopo desta correção, a menos que se confirme que afeta o caso reportado.
 
 ## Fora de escopo
 
-- Nada de RLS, edge functions, hooks de dados, migrações.
-- Sem alteração visual.
-- Sem mudanças em `LeadPage`, Inbox, Plantão, ou no fluxo de `iniciarAtendimento`/`useKanbanLeads`/`useLeadActions`.
+- Sem mudanças no hook `useConversations`, edge functions, RLS ou migrações.
+- Sem alterações visuais.
+- Sem mexer em `AdminInbox`/`BrokerInbox` (já funcionam).
+- Sem alterar o botão Chat em `LeadPage.tsx`.

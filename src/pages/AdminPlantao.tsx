@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ConversationList } from "@/components/inbox/ConversationList";
@@ -154,13 +154,33 @@ export default function AdminPlantao() {
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
 
+  const resolvedConvIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     const convId = searchParams.get("conversationId");
     if (!convId) return;
     const inNovos = novosConversations.find((c) => c.id === convId);
     const inOthers = conversations.find((c) => c.id === convId);
     const target = inNovos || inOthers;
-    if (!target) return;
+    if (!target) {
+      // Conversation not in any currently-loaded list: probe its attendance_started
+      // to switch to the correct tab. Wait until both lists finished loading to avoid
+      // a premature probe before the right list fetched.
+      if (novosLoading || isLoading) return;
+      if (resolvedConvIdRef.current === convId) return;
+      resolvedConvIdRef.current = convId;
+      supabase
+        .from("conversations")
+        .select("attendance_started")
+        .eq("id", convId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!data) return;
+          const desired: InboxTab = (data as any).attendance_started === false ? "novos" : "meus";
+          if (desired !== inboxTab) setInboxTab(desired);
+        });
+      return;
+    }
     const desiredTab: InboxTab = inNovos ? "novos" : "meus";
     if (desiredTab !== inboxTab) {
       setInboxTab(desiredTab);
@@ -168,7 +188,7 @@ export default function AdminPlantao() {
     }
     setSelectedConversation(target);
     setSearchParams({}, { replace: true });
-  }, [novosConversations, conversations, inboxTab, searchParams, setSearchParams]);
+  }, [novosConversations, conversations, novosLoading, isLoading, inboxTab, searchParams, setSearchParams]);
 
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelectedConversation(conv);
