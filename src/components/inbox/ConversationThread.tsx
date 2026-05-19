@@ -189,12 +189,14 @@ export function ConversationThread({
       if (!conversation.lead_id) return null;
       const { data } = await supabase
         .from("lead_attribution")
-        .select("utm_source, utm_medium, utm_campaign, utm_content, utm_term, landing_page, created_at")
+        .select("utm_source, utm_medium, utm_campaign, utm_content, utm_term, landing_page, ad_referral, created_at")
         .eq("lead_id", conversation.lead_id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (!data || (!data.utm_source && !data.utm_campaign && !data.utm_medium && !data.landing_page)) return null;
+      if (!data) return null;
+      const hasAdRef = !!data.ad_referral;
+      if (!hasAdRef && !data.utm_source && !data.utm_campaign && !data.utm_medium && !data.landing_page) return null;
       return data;
     },
     enabled: !!conversation.lead_id,
@@ -566,18 +568,24 @@ export function ConversationThread({
         ) : (
           <div className="space-y-3">
             {/* Lead attribution card from CRM data */}
-            {leadAttribution && (
-              <AdReferralCard
-                referral={{
-                  source: leadAttribution.utm_source || undefined,
-                  campaign: leadAttribution.utm_campaign || undefined,
-                  headline: leadAttribution.utm_content || undefined,
-                  medium: leadAttribution.utm_medium || undefined,
-                  source_url: leadAttribution.landing_page || undefined,
-                }}
-                timestamp={leadAttribution.created_at}
-              />
-            )}
+            {leadAttribution && (() => {
+              const ar = (leadAttribution as any).ad_referral as Record<string, string> | null | undefined;
+              return (
+                <AdReferralCard
+                  referral={{
+                    source: ar?.source ?? leadAttribution.utm_source ?? undefined,
+                    campaign: ar?.campaign ?? leadAttribution.utm_campaign ?? undefined,
+                    headline: ar?.headline ?? leadAttribution.utm_content ?? undefined,
+                    medium: ar?.medium ?? leadAttribution.utm_medium ?? undefined,
+                    source_url: ar?.source_url ?? leadAttribution.landing_page ?? undefined,
+                    source_id: ar?.source_id ?? undefined,
+                    source_type: ar?.source_type ?? undefined,
+                    thumbnail_url: ar?.thumbnail_url ?? undefined,
+                  }}
+                  timestamp={leadAttribution.created_at}
+                />
+              );
+            })()}
             {messages.map((msg, index) => {
               const isOutbound = msg.direction === "outbound";
               const isAi = msg.sent_by === "ai";
