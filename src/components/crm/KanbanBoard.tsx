@@ -300,9 +300,38 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   }, []);
 
 
+  // Embedded lead detail (overlay over Kanban to preserve scroll/state)
+  const [embeddedLeadId, setEmbeddedLeadId] = useState<string | null>(null);
+  const previousPathRef = useRef<string>("/corretor/crm");
+
   const handleCardClick = (lead: CRMLead) => {
-    navigate(`/corretor/lead/${lead.id}`);
+    previousPathRef.current = window.location.pathname + window.location.search;
+    setEmbeddedLeadId(lead.id);
+    window.history.pushState({ embeddedLead: lead.id }, "", `/corretor/lead/${lead.id}`);
   };
+
+  const handleEmbeddedBack = useCallback(() => {
+    if (window.history.state && (window.history.state as any).embeddedLead) {
+      window.history.back();
+    } else {
+      setEmbeddedLeadId(null);
+      window.history.replaceState({}, "", previousPathRef.current);
+    }
+  }, []);
+
+  // Sync overlay state with browser back/forward
+  useEffect(() => {
+    const onPop = () => {
+      const st = window.history.state as any;
+      if (st && st.embeddedLead) {
+        setEmbeddedLeadId(st.embeddedLead);
+      } else {
+        setEmbeddedLeadId(null);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   const handleLeadUpdate = async (leadId: string, updates: Partial<CRMLead>) => {
     const success = await updateLead(leadId, updates);
