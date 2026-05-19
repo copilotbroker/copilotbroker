@@ -1,38 +1,62 @@
-# Abrir conversa do lead ao clicar em "Chat"
-
 ## Problema
 
-Na página do Lead (`LeadPage.tsx`), o botão **Chat** navega para `/corretor/inbox` (ou `/plantao`, e equivalentes admin) passando `?conversationId=<id>`. As páginas de Inbox/Plantão até tentam pré‑selecionar essa conversa, mas só procuram dentro da **aba ativa** (`activeConversations`). Se a conversa pertencer a outra aba (ex.: lead já em "Atendimento" enquanto a aba padrão é "Novos", ou conversa arquivada), o `find` falha, a URL é limpa e o usuário fica vendo apenas a lista — exatamente o comportamento reportado.
+No Kanban (corretor e admin), o botão **Iniciar Atendimento** no card do lead hoje:
+
+1. Move o lead para `info_sent` (via `iniciarAtendimento`).
+2. Loga uma interação no timeline.
+3. Abre `https://wa.me/55<numero>` em uma nova aba.
+
+O usuário quer que, em vez de abrir o WhatsApp Web externo, o corretor seja **levado direto para a conversa do lead dentro do sistema** — mesmo comportamento já implementado para o botão Chat na página do lead.
 
 ## Solução
 
-Ao detectar o `conversationId` na URL, procurar a conversa em **todas as listas disponíveis**, identificar a aba correta, trocar de aba se necessário e então selecionar a conversa. Vale para corretor e admin, tanto em Inbox (instância pessoal) quanto em Plantão (instância global).
+Alterar apenas `handleIniciarAtendimento` em `src/components/crm/KanbanBoard.tsx` para, após `iniciarAtendimento(leadId)` retornar sucesso:
 
-## Mudanças
+1. Garantir que existe uma conversa para o lead usando a função `ensureConversationForLead(leadId)` já presente no arquivo (mesma que `handleSendWhatsAppNow` usa).
+2. Buscar o `source_instance` dessa conversa (`global` vs `personal`) para decidir a rota:
+   - `global` → `plantao`
+   - `personal` (ou null/default) → `inbox`
+3. Determinar o prefixo conforme `isAdmin`: `"/admin"` para admin, `"/corretor"` para corretor (mesmo padrão já usado em `plantaoBase` e em `LeadPage`).
+4. Navegar internamente via `navigate(`${prefix}/${route}?conversationId=${conversationId}`)` em vez de `window.open("https://wa.me/...")`.
+5. Manter o `toast.success("Atendimento iniciado!")` e o `lead_interactions.insert` que já existem.
+6. Em caso de falha ao garantir/buscar a conversa, exibir um toast de erro e não navegar (não deve quebrar o fluxo se algo der errado).
 
-Somente frontend, no `useEffect` que lê `conversationId` em cada página:
+As páginas `BrokerInbox`, `AdminInbox`, `BrokerPlantao` e `AdminPlantao` já sabem ler `?conversationId=` e abrir a aba correta (conforme o ajuste anterior do botão Chat), então nenhuma alteração nessas páginas é necessária.
 
-1. **`src/pages/BrokerInbox.tsx`** e **`src/pages/AdminInbox.tsx`**
-   - Buscar o alvo em `allPersonalConversations` (lista completa, já inclui arquivados quando `isArchived`).
-   - Determinar a aba pelo status da conversa:
-     - `isWaitingPersonalAttendance(target)` → `"novos"`
-     - `target.status === "archived"` → `"arquivados"`
-     - caso contrário → `"atendimento"`
-   - Se a aba detectada ≠ `activeTab`, chamar `setActiveTab(...)` e aguardar próximo render (não limpar a URL ainda). Quando `activeConversations` já contiver o alvo, selecionar e limpar `searchParams`.
-   - Se a conversa não estiver carregada por estar arquivada (lista de arquivados só carrega quando a aba está ativa), trocar para `"arquivados"` primeiro; o próprio refetch da aba traz a conversa e o effect dispara de novo para selecionar.
+## Detalhes técnicos
 
-2. **`src/pages/BrokerPlantao.tsx`** e **`src/pages/AdminPlantao.tsx`**
-   - Procurar o alvo em `novosConversations` **e** em `conversations`.
-   - Se estiver em `novosConversations`, setar `inboxTab = "novos"`; senão setar para a aba "atendimento" equivalente (mesmo valor já usado quando não é "novos").
-   - Selecionar e limpar a URL após a aba estar correta e o alvo presente em `activeConversations`.
+Arquivo único a editar: **`src/components/crm/KanbanBoard.tsx`**, função `handleIniciarAtendimento` (linhas ~328-345).
 
-3. **Robustez do effect**
-   - Remover a condição `!selectedConversation` para o caso especial de chegada via URL (apenas no primeiro disparo com `convId`), evitando que uma seleção residual impeça a troca para o lead recém‑aberto.
-   - Manter o `setSearchParams({}, { replace: true })` apenas após selecionar com sucesso, para que trocas de aba assíncronas não percam o parâmetro.
+Pseudocódigo do novo handler:
 
-4. **Botão Chat (`LeadPage.tsx`)** — sem alteração de rota necessária; o parâmetro `conversationId` já é suficiente assim que as páginas de destino passarem a respeitar abas diferentes.
+```text
+const handleIniciarAtendimento = async (leadId) => {
+  const lead = allLeadsRef.current.get(leadId);
+  const result = await iniciarAtendimento(leadId);
+  if (!result.success) return;
+
+  toast.success("Atendimento iniciado!");
+  supabase.from("lead_interactions").insert({ ... }); // mantém como hoje
+
+  try {
+    const conversationId = await ensureConversationForLead(leadId);
+    const { data: conv } = await supabase
+      .from("conversations")
+      .select("source_instance")
+      .eq("id", conversationId)
+      .maybeSingle();
+    const route = conv?.source_instance === "global" ? "plantao" : "inbox";
+    const prefix = isAdmin ? "/admin" : "/corretor";
+    navigate(`${prefix}/${route}?conversationId=${conversationId}`);
+  } catch (err) {
+    console.error("Falha ao abrir conversa do lead:", err);
+    toast.error("Não foi possível abrir a conversa do lead");
+  }
+};
+```
 
 ## Fora de escopo
 
-- Nenhuma mudança em RLS, edge functions, hooks de dados ou rotas.
-- Sem alteração visual nas páginas de Inbox/Plantão.
+- Nada de RLS, edge functions, hooks de dados, migrações.
+- Sem alteração visual.
+- Sem mudanças em `LeadPage`, Inbox, Plantão, ou no fluxo de `iniciarAtendimento`/`useKanbanLeads`/`useLeadActions`.

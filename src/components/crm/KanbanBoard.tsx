@@ -326,7 +326,6 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   };
 
   const handleIniciarAtendimento = async (leadId: string) => {
-    const lead = allLeadsRef.current.get(leadId);
     const result = await iniciarAtendimento(leadId);
     if (result.success) {
       toast.success("Atendimento iniciado!");
@@ -334,13 +333,23 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
       supabase.from("lead_interactions").insert({
         lead_id: leadId,
         interaction_type: "whatsapp_manual" as any,
-        notes: "Atendimento iniciado — redirecionado para WhatsApp",
+        notes: "Atendimento iniciado — redirecionado para conversa interna",
         channel: "whatsapp",
         created_by: userId,
       });
-      if (lead) {
-        const cleanPhone = lead.whatsapp.replace(/\D/g, "");
-        window.open(`https://wa.me/55${cleanPhone}`, "_blank");
+      try {
+        const conversationId = await ensureConversationForLead(leadId);
+        const { data: conv } = await supabase
+          .from("conversations")
+          .select("source_instance")
+          .eq("id", conversationId)
+          .maybeSingle();
+        const route = (conv as any)?.source_instance === "global" ? "plantao" : "inbox";
+        const prefix = isAdmin ? "/admin" : "/corretor";
+        navigate(`${prefix}/${route}?conversationId=${conversationId}`);
+      } catch (err) {
+        console.error("Falha ao abrir conversa do lead:", err);
+        toast.error("Não foi possível abrir a conversa do lead");
       }
     }
   };
