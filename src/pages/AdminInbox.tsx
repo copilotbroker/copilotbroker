@@ -404,6 +404,7 @@ export default function AdminInbox() {
                   scheduledMessages={scheduledMessages}
                   isLoading={messagesLoading}
                   onSendMessage={sendMessage}
+                  onResendMessage={resendMessage}
                   onScheduleMessage={scheduleMessage}
                   onCancelScheduledMessage={cancelScheduledMessage}
                   onBack={handleBack}
