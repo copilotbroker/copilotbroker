@@ -152,11 +152,27 @@ export default function BrokerInbox() {
 
   useEffect(() => {
     const convId = searchParams.get("conversationId");
-    if (convId && activeConversations.length > 0 && !selectedConversation) {
-      const target = activeConversations.find((c) => c.id === convId);
-      if (target) { setSelectedConversation(target); setSearchParams({}, { replace: true }); }
+    if (!convId) return;
+    const target = allPersonalConversations.find((c) => c.id === convId);
+    if (target) {
+      const desiredTab: BrokerInboxTab = target.status === "archived"
+        ? "arquivados"
+        : isWaitingPersonalAttendance(target)
+        ? "novos"
+        : "atendimento";
+      if (desiredTab !== activeTab) {
+        setActiveTab(desiredTab);
+        return;
+      }
+      setSelectedConversation(target);
+      setSearchParams({}, { replace: true });
+      return;
     }
-  }, [activeConversations, searchParams, selectedConversation, setSearchParams]);
+    // Not in current list: if not yet looking at archived, switch to load archived data
+    if (activeTab !== "arquivados" && !isLoading) {
+      setActiveTab("arquivados");
+    }
+  }, [allPersonalConversations, activeTab, searchParams, setSearchParams, isLoading]);
 
   useEffect(() => {
     if (!selectedConversation) return;
