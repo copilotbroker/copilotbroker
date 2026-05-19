@@ -2152,6 +2152,44 @@ async function handleIncomingMessage(
     );
   }
 
+  // Persist ad_referral at the lead level so any broker that owns/receives this lead
+  // (initial assignment, timeout reassignment, loop breaker, manual transfer) sees the
+  // tracking card regardless of which conversation row they look at.
+  if (adReferral && !msg.fromMe && archiveResult.conversationId) {
+    try {
+      const { data: convRow } = await supabase
+        .from("conversations")
+        .select("lead_id")
+        .eq("id", archiveResult.conversationId)
+        .maybeSingle();
+      const leadId = convRow?.lead_id as string | undefined;
+      if (leadId) {
+        const { data: existingAttr } = await supabase
+          .from("lead_attribution")
+          .select("id, ad_referral")
+          .eq("lead_id", leadId)
+          .maybeSingle();
+        const attrPayload = {
+          ad_referral: adReferral,
+          utm_source: "whatsapp",
+          utm_medium: "plantao",
+          utm_campaign: (adReferral as any).campaign ?? null,
+          utm_content: (adReferral as any).headline ?? null,
+          landing_page: (adReferral as any).source_url ?? null,
+        };
+        if (!existingAttr) {
+          await supabase.from("lead_attribution").insert({ lead_id: leadId, ...attrPayload });
+          console.log(`📢 ad_referral persisted to lead_attribution (new) for lead ${leadId}`);
+        } else if (!existingAttr.ad_referral) {
+          await supabase.from("lead_attribution").update(attrPayload).eq("id", existingAttr.id);
+          console.log(`📢 ad_referral persisted to lead_attribution (updated) for lead ${leadId}`);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to persist ad_referral to lead_attribution:", e);
+    }
+  }
+
   // Skip further processing for outbound messages
   if (msg.fromMe) {
     return new Response(JSON.stringify({ success: true, event: "messages", archived: "outbound" }), {
