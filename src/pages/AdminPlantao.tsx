@@ -137,7 +137,7 @@ export default function AdminPlantao() {
     onLeadCreated: handleAutoLeadCreated,
   });
 
-  const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, scheduleMessage, cancelScheduledMessage } =
+  const { messages, scheduledMessages, isLoading: messagesLoading, sendMessage, resendMessage, scheduleMessage, cancelScheduledMessage } =
     useConversationMessages(selectedConversation, (update) => {
       if (!selectedConversation) return;
       updateConversationState(selectedConversation.id, (current) => ({
