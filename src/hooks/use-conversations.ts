@@ -1092,5 +1092,5 @@ export function useConversationMessages(
     toast.success("Mensagem programada cancelada");
   }, [conversation, scheduledMessages]);
 
-  return { messages, scheduledMessages, isLoading, fetchMessages, sendMessage, scheduleMessage, cancelScheduledMessage };
+  return { messages, scheduledMessages, isLoading, fetchMessages, sendMessage, resendMessage, scheduleMessage, cancelScheduledMessage };
 }
