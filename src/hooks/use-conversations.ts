@@ -93,11 +93,36 @@ const sortMessagesAsc = (items: ConversationMessage[]) => (
 );
 
 const getMessageClientId = (message: ConversationMessage) => {
+  // Prefer dedicated column if present (Supabase row), fall back to metadata.client_id (optimistic / legacy)
+  const direct = (message as unknown as { client_message_id?: string | null }).client_message_id;
+  if (typeof direct === "string" && direct) return direct;
   const metadata = (message.metadata || {}) as Record<string, unknown>;
   return typeof metadata.client_id === "string" ? metadata.client_id : null;
 };
 
 const getMessageMergeKey = (message: ConversationMessage) => getMessageClientId(message) || message.id;
+
+// Status precedence — never let an older/lower status overwrite a newer one
+const STATUS_RANK: Record<string, number> = {
+  queued: 0,
+  pending: 0,
+  sending: 1,
+  sent: 2,
+  delivered: 3,
+  read: 4,
+  failed: 5, // terminal; do not move forward unless explicitly resent
+};
+
+const pickHigherStatus = (current: string | undefined, incoming: string | undefined) => {
+  if (!current) return incoming || "sent";
+  if (!incoming) return current;
+  // 'failed' is terminal but a deliberate resend resets to 'queued' — let any non-failed status
+  // beat 'failed' so reconciliation after a successful retry works.
+  if (current === "failed" && incoming !== "failed") return incoming;
+  const a = STATUS_RANK[current] ?? 0;
+  const b = STATUS_RANK[incoming] ?? 0;
+  return b > a ? incoming : current;
+};
 
 const mergeMessages = (current: ConversationMessage[], incoming: ConversationMessage[]) => {
   const byKey = new Map(current.map((message) => [getMessageMergeKey(message), message]));
@@ -105,11 +130,26 @@ const mergeMessages = (current: ConversationMessage[], incoming: ConversationMes
   for (const message of incoming) {
     const key = getMessageMergeKey(message);
     const existing = byKey.get(key);
-    byKey.set(key, existing ? { ...existing, ...message } : message);
+    if (existing) {
+      const mergedStatus = pickHigherStatus(existing.status, message.status);
+      // Prefer real DB id over `temp:` placeholder
+      const mergedId = existing.id.startsWith("temp:") ? message.id : (message.id.startsWith("temp:") ? existing.id : message.id);
+      byKey.set(key, {
+        ...existing,
+        ...message,
+        id: mergedId,
+        status: mergedStatus,
+        // Preserve local preview URL if incoming row hasn't materialized media yet
+        metadata: { ...(existing.metadata || {}), ...(message.metadata || {}) },
+      });
+    } else {
+      byKey.set(key, message);
+    }
   }
 
   return sortMessagesAsc([...byKey.values()]);
 };
+
 
 export function useConversations(options: UseConversationsOptions = {}) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
