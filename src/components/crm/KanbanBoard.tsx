@@ -981,6 +981,12 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
           }}
         />
       )}
+
+      {embeddedLeadId && (
+        <div className="fixed inset-0 z-50 bg-[#0a0a0f] overflow-y-auto">
+          <LeadPage embeddedLeadId={embeddedLeadId} onBack={handleEmbeddedBack} />
+        </div>
+      )}
     </div>
   );
 }
