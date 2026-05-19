@@ -1020,6 +1020,7 @@ export type Database = {
       }
       lead_attribution: {
         Row: {
+          ad_referral: Json | null
           created_at: string
           id: string
           landing_page: string | null
@@ -1034,6 +1035,7 @@ export type Database = {
           utm_term: string | null
         }
         Insert: {
+          ad_referral?: Json | null
           created_at?: string
           id?: string
           landing_page?: string | null
@@ -1048,6 +1050,7 @@ export type Database = {
           utm_term?: string | null
         }
         Update: {
+          ad_referral?: Json | null
           created_at?: string
           id?: string
           landing_page?: string | null
