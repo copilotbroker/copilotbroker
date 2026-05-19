@@ -28,7 +28,10 @@ import {
   Square,
   Wifi,
   ShieldAlert,
+  AlertCircle,
+  RotateCw,
 } from "lucide-react";
+
 import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
 import { AdReferralCard } from "./AdReferralCard";
 import { MessageMedia } from "./MessageMedia";
