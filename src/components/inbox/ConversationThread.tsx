@@ -56,6 +56,8 @@ interface ConversationThreadProps {
   scheduledMessages: ScheduledConversationMessage[];
   isLoading: boolean;
   onSendMessage: (payload: string | OutboundMessagePayload, sentBy?: string) => Promise<unknown>;
+  onResendMessage?: (clientMessageId: string) => Promise<unknown>;
+
   onScheduleMessage: (content: string, scheduledAt: string) => Promise<unknown>;
   onCancelScheduledMessage: (queueId: string) => Promise<unknown>;
   onBack: () => void;
