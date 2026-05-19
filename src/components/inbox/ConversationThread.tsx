@@ -94,17 +94,21 @@ interface ConversationThreadProps {
 const getMessageStatusIcon = (status?: string) => {
   switch (status) {
     case "read":
-      return <CheckCheck className="h-3 w-3 text-primary" />;
+      return <CheckCheck className="h-3 w-3 text-sky-400" />;
     case "delivered":
       return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
     case "sent":
       return <Check className="h-3 w-3 text-muted-foreground" />;
     case "failed":
-      return <Clock3 className="h-3 w-3 text-destructive" />;
+      return <AlertCircle className="h-3 w-3 text-destructive" />;
+    case "queued":
+    case "sending":
+    case "pending":
     default:
-      return <Clock3 className="h-3 w-3 text-muted-foreground" />;
+      return <Check className="h-3 w-3 text-muted-foreground/50" />;
   }
 };
+
 
 const formatMessageDay = (date: string) => format(new Date(date), "d 'de' MMMM", { locale: ptBR });
 const formatScheduledAt = (date: string) => format(new Date(date), "dd/MM 'às' HH:mm", { locale: ptBR });
