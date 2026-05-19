@@ -47,9 +47,11 @@ export interface ConversationMessage {
   sent_by: string;
   status: string;
   uazapi_message_id: string | null;
+  client_message_id?: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
 }
+
 
 export interface ScheduledConversationMessage {
   id: string;
@@ -93,11 +95,36 @@ const sortMessagesAsc = (items: ConversationMessage[]) => (
 );
 
 const getMessageClientId = (message: ConversationMessage) => {
+  // Prefer dedicated column if present (Supabase row), fall back to metadata.client_id (optimistic / legacy)
+  const direct = (message as unknown as { client_message_id?: string | null }).client_message_id;
+  if (typeof direct === "string" && direct) return direct;
   const metadata = (message.metadata || {}) as Record<string, unknown>;
   return typeof metadata.client_id === "string" ? metadata.client_id : null;
 };
 
 const getMessageMergeKey = (message: ConversationMessage) => getMessageClientId(message) || message.id;
+
+// Status precedence — never let an older/lower status overwrite a newer one
+const STATUS_RANK: Record<string, number> = {
+  queued: 0,
+  pending: 0,
+  sending: 1,
+  sent: 2,
+  delivered: 3,
+  read: 4,
+  failed: 5, // terminal; do not move forward unless explicitly resent
+};
+
+const pickHigherStatus = (current: string | undefined, incoming: string | undefined) => {
+  if (!current) return incoming || "sent";
+  if (!incoming) return current;
+  // 'failed' is terminal but a deliberate resend resets to 'queued' — let any non-failed status
+  // beat 'failed' so reconciliation after a successful retry works.
+  if (current === "failed" && incoming !== "failed") return incoming;
+  const a = STATUS_RANK[current] ?? 0;
+  const b = STATUS_RANK[incoming] ?? 0;
+  return b > a ? incoming : current;
+};
 
 const mergeMessages = (current: ConversationMessage[], incoming: ConversationMessage[]) => {
   const byKey = new Map(current.map((message) => [getMessageMergeKey(message), message]));
@@ -105,11 +132,26 @@ const mergeMessages = (current: ConversationMessage[], incoming: ConversationMes
   for (const message of incoming) {
     const key = getMessageMergeKey(message);
     const existing = byKey.get(key);
-    byKey.set(key, existing ? { ...existing, ...message } : message);
+    if (existing) {
+      const mergedStatus = pickHigherStatus(existing.status, message.status);
+      // Prefer real DB id over `temp:` placeholder
+      const mergedId = existing.id.startsWith("temp:") ? message.id : (message.id.startsWith("temp:") ? existing.id : message.id);
+      byKey.set(key, {
+        ...existing,
+        ...message,
+        id: mergedId,
+        status: mergedStatus,
+        // Preserve local preview URL if incoming row hasn't materialized media yet
+        metadata: { ...(existing.metadata || {}), ...(message.metadata || {}) },
+      });
+    } else {
+      byKey.set(key, message);
+    }
   }
 
   return sortMessagesAsc([...byKey.values()]);
 };
+
 
 export function useConversations(options: UseConversationsOptions = {}) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -647,6 +689,37 @@ export function useConversationMessages(
     return () => window.clearInterval(intervalId);
   }, [conversationId, fetchNewMessages, fetchScheduledMessages]);
 
+  // Outbox: payloads kept in-memory so the user can press "Reenviar" on a failed bubble
+  const outboxRef = useRef<Map<string, {
+    conversationId: string;
+    content: string;
+    sentBy: string;
+    messageType: string;
+    metadata: Record<string, unknown>;
+  }>>(new Map());
+
+  const invokeSend = useCallback(async (params: {
+    clientId: string;
+    conversationId: string;
+    content: string;
+    sentBy: string;
+    messageType: string;
+    metadata: Record<string, unknown>;
+  }) => {
+    const { data, error } = await supabase.functions.invoke("inbox-send-message", {
+      body: {
+        conversation_id: params.conversationId,
+        content: params.content,
+        sent_by: params.sentBy,
+        message_type: params.messageType,
+        metadata: params.metadata,
+        client_message_id: params.clientId,
+      },
+    });
+    if (error) throw error;
+    return data as { message_id?: string; status?: string; uazapi_message_id?: string | null };
+  }, []);
+
   const sendMessage = useCallback(async (payload: string | OutboundMessagePayload, sentBy = "human") => {
     if (!conversationId) return null;
 
@@ -662,7 +735,9 @@ export function useConversationMessages(
 
     const fileToUpload = normalizedPayload.file;
     const createdAt = new Date().toISOString();
-    const clientId = `client-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const clientId = (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+      ? crypto.randomUUID()
+      : `client-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
     // Build optimistic preview for the message content
     let optimisticContent = normalizedPayload.content;
@@ -697,12 +772,13 @@ export function useConversationMessages(
       message_type: normalizedPayload.messageType || "text",
       metadata: optimisticMetadata,
       sender_name: null,
-      status: "pending",
+      status: "queued",
       uazapi_message_id: null,
+      client_message_id: clientId,
       created_at: createdAt,
     };
 
-    // Immediately show the optimistic message
+    // Immediately show the optimistic message — never blocks on the network
     setMessages((prev) => mergeMessages(prev, [optimisticMessage]));
     onConversationPreviewUpdate?.({
       preview: normalizedPayload.messageType === "text"
@@ -721,7 +797,6 @@ export function useConversationMessages(
     void (async () => {
       try {
         let finalMetadata = { ...optimisticMetadata };
-        // Remove local-only keys
         delete finalMetadata._local_preview;
 
         // Upload file to storage if present
@@ -742,44 +817,82 @@ export function useConversationMessages(
             storage_path: storagePath,
           };
 
-          // Revoke local blob URL
           if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
         }
 
-        const { data, error } = await supabase.functions.invoke("inbox-send-message", {
-          body: {
-            conversation_id: conversationId,
-            content: normalizedPayload.content || optimisticContent,
-            sent_by: normalizedPayload.sentBy,
-            message_type: normalizedPayload.messageType,
-            metadata: finalMetadata,
-          },
+        // Persist payload in the outbox so a user can press "Reenviar" later
+        outboxRef.current.set(clientId, {
+          conversationId,
+          content: normalizedPayload.content || optimisticContent,
+          sentBy: normalizedPayload.sentBy || "human",
+          messageType: normalizedPayload.messageType || "text",
+          metadata: finalMetadata,
         });
 
-        if (error) throw error;
+        // Transition optimistic bubble to `sending` (1 grey tick) while we hit the edge
+        setMessages((prev) => mergeMessages(prev, [{ ...optimisticMessage, status: "sending", metadata: finalMetadata }]));
 
+        const data = await invokeSend({
+          clientId,
+          conversationId,
+          content: normalizedPayload.content || optimisticContent,
+          sentBy: normalizedPayload.sentBy || "human",
+          messageType: normalizedPayload.messageType || "text",
+          metadata: finalMetadata,
+        });
+
+        // Backend persisted the row as `queued`; real `sent` arrives via realtime UPDATE.
+        // Reconcile id + status NOW so the bubble swaps from temp: to the DB id.
         if (data?.message_id) {
           setMessages((prev) => mergeMessages(prev, [{
             ...optimisticMessage,
-            id: data.message_id,
-            status: "sent",
+            id: data.message_id!,
+            status: data.status || "queued",
             metadata: finalMetadata,
             uazapi_message_id: data.uazapi_message_id || null,
           }]));
-          return;
         }
-
-        setMessages((prev) => mergeMessages(prev, [{ ...optimisticMessage, status: "sent", metadata: finalMetadata }]));
       } catch (err) {
         console.error("Erro ao enviar mensagem:", err);
+        const message = err instanceof Error ? err.message : "Falha ao enviar mensagem";
         setMessages((prev) => mergeMessages(prev, [{ ...optimisticMessage, status: "failed" }]));
-        toast.error("Falha ao enviar mensagem");
+        toast.error(message);
         if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
       }
     })();
 
     return optimisticMessage;
-  }, [conversationId, onConversationPreviewUpdate]);
+  }, [conversationId, conversation, onConversationPreviewUpdate, onAutoCreateLead, invokeSend]);
+
+  const resendMessage = useCallback(async (clientMessageId: string) => {
+    const stored = outboxRef.current.get(clientMessageId);
+    if (!stored) {
+      toast.error("Não foi possível reenviar esta mensagem");
+      return;
+    }
+    // Bring the bubble back to `sending`
+    setMessages((prev) => prev.map((m) => (
+      getMessageClientId(m) === clientMessageId ? { ...m, status: "sending" } : m
+    )));
+    try {
+      const data = await invokeSend({ clientId: clientMessageId, ...stored });
+      if (data?.message_id) {
+        setMessages((prev) => prev.map((m) => (
+          getMessageClientId(m) === clientMessageId
+            ? { ...m, id: data.message_id!, status: data.status || "queued", uazapi_message_id: data.uazapi_message_id || null }
+            : m
+        )));
+      }
+    } catch (err) {
+      console.error("Erro ao reenviar mensagem:", err);
+      setMessages((prev) => prev.map((m) => (
+        getMessageClientId(m) === clientMessageId ? { ...m, status: "failed" } : m
+      )));
+      toast.error(err instanceof Error ? err.message : "Falha ao reenviar");
+    }
+  }, [invokeSend]);
+
+
 
   const scheduleMessage = useCallback(async (content: string, scheduledAt: string) => {
     if (!conversation) return null;
@@ -979,5 +1092,5 @@ export function useConversationMessages(
     toast.success("Mensagem programada cancelada");
   }, [conversation, scheduledMessages]);
 
-  return { messages, scheduledMessages, isLoading, fetchMessages, sendMessage, scheduleMessage, cancelScheduledMessage };
+  return { messages, scheduledMessages, isLoading, fetchMessages, sendMessage, resendMessage, scheduleMessage, cancelScheduledMessage };
 }

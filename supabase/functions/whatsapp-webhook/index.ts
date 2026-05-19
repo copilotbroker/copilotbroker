@@ -2303,6 +2303,33 @@ async function handleConnectionUpdate(
   });
 }
 
+// Map of WhatsApp/UAZAPI status names to our normalized statuses.
+const STATUS_NORMALIZATION: Record<string, "sent" | "delivered" | "read" | "failed"> = {
+  PENDING: "sent",
+  SERVER_ACK: "sent",
+  SENT: "sent",
+  sent: "sent",
+  DELIVERY_ACK: "delivered",
+  DELIVERED: "delivered",
+  delivered: "delivered",
+  READ: "read",
+  PLAYED: "read",
+  read: "read",
+  ERROR: "failed",
+  FAILED: "failed",
+  failed: "failed",
+};
+
+const STATUS_RANK: Record<string, number> = {
+  queued: 0,
+  sending: 1,
+  pending: 1,
+  sent: 2,
+  delivered: 3,
+  read: 4,
+  failed: 5, // terminal — never overwrite read upward
+};
+
 async function handleMessageStatusUpdate(
   supabase: SupabaseClient,
   payload: UAZAPIv2Payload
@@ -2315,49 +2342,56 @@ async function handleMessageStatusUpdate(
   }
 
   const messageId = msg.id;
-  const status = msg.status;
+  const rawStatus = msg.status;
+  const normalized = rawStatus ? STATUS_NORMALIZATION[rawStatus] : undefined;
 
-  if (messageId && status) {
-    // Update whatsapp_message_queue status
-    const { error } = await supabase
+  if (messageId && normalized) {
+    // Update whatsapp_message_queue timestamp (existing behavior)
+    const { error: queueErr } = await supabase
       .from("whatsapp_message_queue")
       .update({ updated_at: new Date().toISOString() })
       .eq("uazapi_message_id", messageId);
-
-    if (error) {
-      await logError(supabase, "messageStatusUpdate", error, { messageId });
+    if (queueErr) {
+      await logError(supabase, "messageStatusUpdate", queueErr, { messageId });
     }
 
-    // Update conversation_messages status
-    await supabase
+    // Read current status to avoid regressions (e.g. read → delivered)
+    const { data: existing } = await supabase
       .from("conversation_messages")
-      .update({ status: status })
-      .eq("uazapi_message_id", messageId);
+      .select("id, status, conversation_id")
+      .eq("uazapi_message_id", messageId)
+      .maybeSingle();
 
-    // When status is "read", reset unread_count on the conversation
-    if (status === "read") {
-      const { data: msgData } = await supabase
-        .from("conversation_messages")
-        .select("conversation_id")
-        .eq("uazapi_message_id", messageId)
-        .maybeSingle();
+    if (existing) {
+      const currentRank = STATUS_RANK[existing.status] ?? 0;
+      const incomingRank = STATUS_RANK[normalized] ?? 0;
+      const shouldUpdate = normalized === "failed"
+        ? existing.status !== "read" && existing.status !== "delivered" && existing.status !== "sent" // only mark failed before delivery confirmation
+        : incomingRank > currentRank;
 
-      if (msgData) {
+      if (shouldUpdate) {
+        await supabase
+          .from("conversation_messages")
+          .update({ status: normalized })
+          .eq("id", existing.id);
+      }
+
+      if (normalized === "read") {
         await supabase
           .from("conversations")
           .update({ unread_count: 0, status: "attending" })
-          .eq("id", (msgData as { conversation_id: string }).conversation_id);
-        console.log(`✅ Conversation ${(msgData as { conversation_id: string }).conversation_id} marked as read (synced from phone)`);
+          .eq("id", existing.conversation_id);
       }
     }
 
-    console.log(`Message ${messageId} status: ${status}`);
+    console.log(`Message ${messageId} status update: ${rawStatus} -> ${normalized}`);
   }
 
   return new Response(JSON.stringify({ success: true, event: "message.update" }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
 
 // ========================= ROUTES =========================
 

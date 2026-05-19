@@ -28,7 +28,10 @@ import {
   Square,
   Wifi,
   ShieldAlert,
+  AlertCircle,
+  RotateCw,
 } from "lucide-react";
+
 import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
 import { AdReferralCard } from "./AdReferralCard";
 import { MessageMedia } from "./MessageMedia";
@@ -53,6 +56,8 @@ interface ConversationThreadProps {
   scheduledMessages: ScheduledConversationMessage[];
   isLoading: boolean;
   onSendMessage: (payload: string | OutboundMessagePayload, sentBy?: string) => Promise<unknown>;
+  onResendMessage?: (clientMessageId: string) => Promise<unknown>;
+
   onScheduleMessage: (content: string, scheduledAt: string) => Promise<unknown>;
   onCancelScheduledMessage: (queueId: string) => Promise<unknown>;
   onBack: () => void;
@@ -89,17 +94,21 @@ interface ConversationThreadProps {
 const getMessageStatusIcon = (status?: string) => {
   switch (status) {
     case "read":
-      return <CheckCheck className="h-3 w-3 text-primary" />;
+      return <CheckCheck className="h-3 w-3 text-sky-400" />;
     case "delivered":
       return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
     case "sent":
       return <Check className="h-3 w-3 text-muted-foreground" />;
     case "failed":
-      return <Clock3 className="h-3 w-3 text-destructive" />;
+      return <AlertCircle className="h-3 w-3 text-destructive" />;
+    case "queued":
+    case "sending":
+    case "pending":
     default:
-      return <Clock3 className="h-3 w-3 text-muted-foreground" />;
+      return <Check className="h-3 w-3 text-muted-foreground/50" />;
   }
 };
+
 
 const formatMessageDay = (date: string) => format(new Date(date), "d 'de' MMMM", { locale: ptBR });
 const formatScheduledAt = (date: string) => format(new Date(date), "dd/MM 'às' HH:mm", { locale: ptBR });
@@ -110,6 +119,8 @@ export function ConversationThread({
   scheduledMessages,
   isLoading,
   onSendMessage,
+  onResendMessage,
+
   onScheduleMessage,
   onCancelScheduledMessage,
   onBack,
@@ -680,11 +691,26 @@ export function ConversationThread({
                         msg.status === "failed" ? "text-destructive" : "text-muted-foreground"
                       )}>
                         {msg.status === "failed" ? "Falhou" : format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                        {isOutbound && msg.status === "failed" && onResendMessage && (() => {
+                          const cid = (msg as any).client_message_id || (msg.metadata as any)?.client_id;
+                          if (!cid) return null;
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => onResendMessage(String(cid))}
+                              className="ml-1 inline-flex items-center gap-0.5 text-destructive underline-offset-2 hover:underline"
+                              title="Reenviar mensagem"
+                            >
+                              <RotateCw className="h-3 w-3" /> Reenviar
+                            </button>
+                          );
+                        })()}
                         {isOutbound && getMessageStatusIcon(msg.status)}
                       </span>
                     </div>
                   </div>
                   )}
+
 
                   {adReferral && !isOutbound && (
                     <AdReferralCard referral={adReferral} timestamp={msg.created_at} />

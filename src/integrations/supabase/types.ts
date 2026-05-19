@@ -656,6 +656,7 @@ export type Database = {
       }
       conversation_messages: {
         Row: {
+          client_message_id: string | null
           content: string
           conversation_id: string
           created_at: string
@@ -669,6 +670,7 @@ export type Database = {
           uazapi_message_id: string | null
         }
         Insert: {
+          client_message_id?: string | null
           content: string
           conversation_id: string
           created_at?: string
@@ -682,6 +684,7 @@ export type Database = {
           uazapi_message_id?: string | null
         }
         Update: {
+          client_message_id?: string | null
           content?: string
           conversation_id?: string
           created_at?: string
