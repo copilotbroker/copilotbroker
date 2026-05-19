@@ -119,6 +119,8 @@ export function ConversationThread({
   scheduledMessages,
   isLoading,
   onSendMessage,
+  onResendMessage,
+
   onScheduleMessage,
   onCancelScheduledMessage,
   onBack,
