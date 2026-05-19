@@ -173,7 +173,7 @@ serve(async (req) => {
       });
     }
 
-    const { conversation_id, content, sent_by, message_type, metadata } = await req.json();
+    const { conversation_id, content, sent_by, message_type, metadata, client_message_id } = await req.json();
     if (!conversation_id || (!content && !metadata?.file_url)) {
       return new Response(JSON.stringify({ error: "conversation_id and content or file are required" }), {
         status: 400,
@@ -204,11 +204,11 @@ serve(async (req) => {
       .eq("id", conv.broker_id)
       .single();
 
-    // 3. Get WhatsApp instance based on source_instance routing
+    // 3. Resolve instance token + cooldown check (before persisting, so we
+    //    return a 4xx and the optimistic bubble can show "failed" / explain).
     let instanceToken: string | null = null;
 
     if (conv.source_instance === "global") {
-      // Route through global instance
       const { data: globalConfig } = await supabase
         .from("global_whatsapp_config")
         .select("instance_token, status")
@@ -223,7 +223,6 @@ serve(async (req) => {
       }
       instanceToken = globalConfig.instance_token;
     } else {
-      // Route through broker's personal instance
       const { data: instance } = await supabase
         .from("broker_whatsapp_instances")
         .select("instance_name, instance_token, status, connected_at")
@@ -237,9 +236,6 @@ serve(async (req) => {
         );
       }
 
-      // Anti-block protection: during the first 24h after connecting, prevent
-      // sending the FIRST outbound message to a contact (cold contact).
-      // Replies are allowed once the lead has sent at least one inbound message.
       const cd = cooldownInfo(instance.connected_at);
       if (cd.active) {
         const { data: inboundMsg } = await supabase
@@ -268,7 +264,7 @@ serve(async (req) => {
 
     const normalizedType = typeof message_type === "string" ? message_type : "text";
 
-    // Prepend broker name for global instance text messages
+    // Final content shown to the recipient (with broker prefix on global)
     let finalContent = content || "";
     if (conv.source_instance === "global" && brokerInfo?.show_name_on_global && normalizedType === "text" && finalContent.trim()) {
       const displayName = brokerInfo.global_display_name || brokerInfo.name;
@@ -277,71 +273,84 @@ serve(async (req) => {
       }
     }
 
-    // 4. Send via UAZAPI
-    const sendResult = await sendViaUAZAPI(
-      instanceToken,
-      conv.phone_normalized || conv.phone,
-      finalContent,
-      normalizedType,
-      metadata
-    );
-
-    if (!sendResult.success) {
-      return new Response(
-        JSON.stringify({ error: `Falha ao enviar: ${sendResult.error}` }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const previewText = normalizedType === "text"
       ? content
       : normalizedType === "audio"
       ? "🎤 Áudio"
       : (typeof metadata?.file_name === "string" ? `📎 ${metadata.file_name}` : "[Mídia]");
 
-    // 5. Save message in conversation_messages
-    const enrichedMetadata = { ...(metadata || {}), source_instance: currentSourceInstance };
+    const enrichedMetadata = {
+      ...(metadata || {}),
+      source_instance: currentSourceInstance,
+      ...(client_message_id ? { client_id: client_message_id } : {}),
+    };
     const senderName = conv.source_instance === "global" && brokerInfo
       ? (brokerInfo.global_display_name || brokerInfo.name)
       : null;
 
-    const { data: msg, error: msgError } = await supabase
-      .from("conversation_messages")
-      .insert({
-        conversation_id,
-        direction: "outbound",
-        content: content || previewText,
-        sent_by: sent_by || "human",
-        sender_name: senderName,
-        message_type: normalizedType,
-        metadata: enrichedMetadata,
-        status: "sent",
-        uazapi_message_id: sendResult.messageId || null,
-      })
-      .select()
-      .single();
+    // 4. OUTBOX: persist message as `queued` IMMEDIATELY (idempotent via client_message_id)
+    let messageRow: { id: string } | null = null;
 
-    if (msgError) {
-      console.error("Erro ao salvar mensagem:", msgError);
-    }
+    if (client_message_id) {
+      // Try existing row first (idempotent retry)
+      const { data: existing } = await supabase
+        .from("conversation_messages")
+        .select("id, status, uazapi_message_id")
+        .eq("conversation_id", conversation_id)
+        .eq("client_message_id", client_message_id)
+        .maybeSingle();
 
-    // 5. Register in lead_interactions for audit
-    if (conv.lead_id) {
-      try {
-        await supabase.from("lead_interactions").insert({
-          lead_id: conv.lead_id,
-          interaction_type: "whatsapp_enviada",
-          broker_id: conv.broker_id,
-          notes: String(previewText || "").substring(0, 200),
-          channel: "whatsapp",
-          created_by: user.id,
-        });
-      } catch (e) {
-        console.error("Erro ao registrar interação:", e);
+      if (existing) {
+        // Already persisted (probably a retry). If terminal, return it as-is.
+        if (existing.status === "sent" || existing.status === "delivered" || existing.status === "read") {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message_id: existing.id,
+              status: existing.status,
+              uazapi_message_id: existing.uazapi_message_id,
+              client_message_id,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // Reset to queued so we retry the send
+        await supabase
+          .from("conversation_messages")
+          .update({ status: "queued" })
+          .eq("id", existing.id);
+        messageRow = { id: existing.id };
       }
     }
 
-    // 6. Update conversation status
+    if (!messageRow) {
+      const { data: inserted, error: insertError } = await supabase
+        .from("conversation_messages")
+        .insert({
+          conversation_id,
+          direction: "outbound",
+          content: content || previewText,
+          sent_by: sent_by || "human",
+          sender_name: senderName,
+          message_type: normalizedType,
+          metadata: enrichedMetadata,
+          status: "queued",
+          client_message_id: client_message_id || null,
+        })
+        .select("id")
+        .single();
+
+      if (insertError || !inserted) {
+        console.error("Erro ao salvar mensagem otimista:", insertError);
+        return new Response(
+          JSON.stringify({ error: "Falha ao registrar mensagem" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      messageRow = inserted;
+    }
+
+    // 5. Update conversation preview eagerly (so list re-renders)
     await supabase
       .from("conversations")
       .update({
@@ -353,11 +362,80 @@ serve(async (req) => {
       })
       .eq("id", conversation_id);
 
+    const messageId = messageRow.id;
+
+    // 6. Background: actually send via UAZAPI and update status (sent/failed)
+    const sendInBackground = async () => {
+      try {
+        const sendResult = await sendViaUAZAPI(
+          instanceToken,
+          conv.phone_normalized || conv.phone,
+          finalContent,
+          normalizedType,
+          metadata
+        );
+
+        if (!sendResult.success) {
+          await supabase
+            .from("conversation_messages")
+            .update({
+              status: "failed",
+              metadata: { ...enrichedMetadata, error: sendResult.error?.substring(0, 500) || "send_failed" },
+            })
+            .eq("id", messageId);
+          return;
+        }
+
+        await supabase
+          .from("conversation_messages")
+          .update({
+            status: "sent",
+            uazapi_message_id: sendResult.messageId || null,
+          })
+          .eq("id", messageId);
+
+        // Audit log
+        if (conv.lead_id) {
+          try {
+            await supabase.from("lead_interactions").insert({
+              lead_id: conv.lead_id,
+              interaction_type: "whatsapp_enviada",
+              broker_id: conv.broker_id,
+              notes: String(previewText || "").substring(0, 200),
+              channel: "whatsapp",
+              created_by: user.id,
+            });
+          } catch (e) {
+            console.error("Erro ao registrar interação:", e);
+          }
+        }
+      } catch (e) {
+        console.error("Erro no envio em background:", e);
+        await supabase
+          .from("conversation_messages")
+          .update({
+            status: "failed",
+            metadata: { ...enrichedMetadata, error: (e as Error).message?.substring(0, 500) || "unknown" },
+          })
+          .eq("id", messageId);
+      }
+    };
+
+    // Use EdgeRuntime.waitUntil if available; otherwise fire-and-forget
+    // deno-lint-ignore no-explicit-any
+    const runtime = (globalThis as any).EdgeRuntime;
+    if (runtime && typeof runtime.waitUntil === "function") {
+      runtime.waitUntil(sendInBackground());
+    } else {
+      void sendInBackground();
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        message_id: msg?.id,
-        uazapi_message_id: sendResult.messageId,
+        message_id: messageId,
+        status: "queued",
+        client_message_id: client_message_id || null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -369,3 +447,4 @@ serve(async (req) => {
     );
   }
 });
+
