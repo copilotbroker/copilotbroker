@@ -446,6 +446,7 @@ export default function AdminPlantao() {
                   scheduledMessages={scheduledMessages}
                   isLoading={messagesLoading}
                   onSendMessage={sendMessage}
+                  onResendMessage={resendMessage}
                   onScheduleMessage={scheduleMessage}
                   onCancelScheduledMessage={cancelScheduledMessage}
                   onBack={handleBack}
