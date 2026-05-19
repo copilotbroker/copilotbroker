@@ -192,13 +192,30 @@ export default function BrokerPlantao() {
 
   const { suggestion, isGenerating, generateSuggestion, setSuggestion } = useCopilotSuggestion();
 
+  const resolvedConvIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     const convId = searchParams.get("conversationId");
     if (!convId) return;
     const inNovos = novosConversations.find((c) => c.id === convId);
     const inOthers = conversations.find((c) => c.id === convId);
     const target = inNovos || inOthers;
-    if (!target) return;
+    if (!target) {
+      if (novosLoading || isLoading) return;
+      if (resolvedConvIdRef.current === convId) return;
+      resolvedConvIdRef.current = convId;
+      supabase
+        .from("conversations")
+        .select("attendance_started")
+        .eq("id", convId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!data) return;
+          const desired: InboxTab = (data as any).attendance_started === false ? "novos" : "meus";
+          if (desired !== inboxTab) setInboxTab(desired);
+        });
+      return;
+    }
     const desiredTab: InboxTab = inNovos ? "novos" : "meus";
     if (desiredTab !== inboxTab) {
       setInboxTab(desiredTab);
@@ -206,7 +223,7 @@ export default function BrokerPlantao() {
     }
     setSelectedConversation(target);
     setSearchParams({}, { replace: true });
-  }, [novosConversations, conversations, inboxTab, searchParams, setSearchParams]);
+  }, [novosConversations, conversations, novosLoading, isLoading, inboxTab, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!selectedConversation) return;
