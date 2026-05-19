@@ -1,47 +1,38 @@
-## Causa-raiz
+# Abrir conversa do lead ao clicar em "Chat"
 
-A RPC `public.transfer_lead` valida a existência do corretor destino pelo valor de `organization_id`:
+## Problema
 
-```sql
-SELECT organization_id INTO _new_broker_org
-FROM public.brokers
-WHERE id = _new_broker_id AND is_active = true;
+Na página do Lead (`LeadPage.tsx`), o botão **Chat** navega para `/corretor/inbox` (ou `/plantao`, e equivalentes admin) passando `?conversationId=<id>`. As páginas de Inbox/Plantão até tentam pré‑selecionar essa conversa, mas só procuram dentro da **aba ativa** (`activeConversations`). Se a conversa pertencer a outra aba (ex.: lead já em "Atendimento" enquanto a aba padrão é "Novos", ou conversa arquivada), o `find` falha, a URL é limpa e o usuário fica vendo apenas a lista — exatamente o comportamento reportado.
 
-IF _new_broker_org IS NULL THEN
-  RAISE EXCEPTION 'Corretor destino nao encontrado ou inativo';
-END IF;
-```
+## Solução
 
-A Kely Monique (`04a17428-6796-45df-8801-5c98bd0910af`) está **ativa**, mas seu `organization_id` está **NULL** (corretora legada, anterior ao multi-tenant). Resultado: `_new_broker_org` vem NULL mesmo o corretor existindo e ativo, e a função aborta com "Corretor destino nao encontrado ou inativo".
+Ao detectar o `conversationId` na URL, procurar a conversa em **todas as listas disponíveis**, identificar a aba correta, trocar de aba se necessário e então selecionar a conversa. Vale para corretor e admin, tanto em Inbox (instância pessoal) quanto em Plantão (instância global).
 
-O mesmo problema afeta qualquer corretor sem organização preenchida (ex.: Maicon Enove também está nessa situação na verdade tem org, mas Kely não).
+## Mudanças
 
-## Correção
+Somente frontend, no `useEffect` que lê `conversationId` em cada página:
 
-Em `supabase/functions` migration (RPC SQL): separar a checagem de existência da leitura da organização.
+1. **`src/pages/BrokerInbox.tsx`** e **`src/pages/AdminInbox.tsx`**
+   - Buscar o alvo em `allPersonalConversations` (lista completa, já inclui arquivados quando `isArchived`).
+   - Determinar a aba pelo status da conversa:
+     - `isWaitingPersonalAttendance(target)` → `"novos"`
+     - `target.status === "archived"` → `"arquivados"`
+     - caso contrário → `"atendimento"`
+   - Se a aba detectada ≠ `activeTab`, chamar `setActiveTab(...)` e aguardar próximo render (não limpar a URL ainda). Quando `activeConversations` já contiver o alvo, selecionar e limpar `searchParams`.
+   - Se a conversa não estiver carregada por estar arquivada (lista de arquivados só carrega quando a aba está ativa), trocar para `"arquivados"` primeiro; o próprio refetch da aba traz a conversa e o effect dispara de novo para selecionar.
 
-```sql
--- 1) Confirma existência/ativo independentemente da org
-IF NOT EXISTS (
-  SELECT 1 FROM public.brokers
-  WHERE id = _new_broker_id AND is_active = true
-) THEN
-  RAISE EXCEPTION 'Corretor destino nao encontrado ou inativo';
-END IF;
+2. **`src/pages/BrokerPlantao.tsx`** e **`src/pages/AdminPlantao.tsx`**
+   - Procurar o alvo em `novosConversations` **e** em `conversations`.
+   - Se estiver em `novosConversations`, setar `inboxTab = "novos"`; senão setar para a aba "atendimento" equivalente (mesmo valor já usado quando não é "novos").
+   - Selecionar e limpar a URL após a aba estar correta e o alvo presente em `activeConversations`.
 
--- 2) Lê a org (pode ser NULL)
-SELECT organization_id INTO _new_broker_org
-FROM public.brokers
-WHERE id = _new_broker_id;
-```
+3. **Robustez do effect**
+   - Remover a condição `!selectedConversation` para o caso especial de chegada via URL (apenas no primeiro disparo com `convId`), evitando que uma seleção residual impeça a troca para o lead recém‑aberto.
+   - Manter o `setSearchParams({}, { replace: true })` apenas após selecionar com sucesso, para que trocas de aba assíncronas não percam o parâmetro.
 
-As verificações posteriores de organização já estão protegidas com `IS NOT NULL` (`_caller_org IS NOT NULL AND _new_broker_org IS NOT NULL ...`), então corretores legados sem org continuarão transferíveis dentro do mesmo escopo.
+4. **Botão Chat (`LeadPage.tsx`)** — sem alteração de rota necessária; o parâmetro `conversationId` já é suficiente assim que as páginas de destino passarem a respeitar abas diferentes.
 
-## Escopo
+## Fora de escopo
 
-- 1 migration SQL recriando `public.transfer_lead(uuid, uuid)` com a checagem corrigida. Nenhuma alteração de frontend.
-
-## Validação
-
-- Logada como Kely, transferir o lead Maicon Enove para ela mesma (ou outro corretor) deve concluir com sucesso.
-- Transferências entre corretores com `organization_id` preenchido continuam funcionando e respeitando o isolamento de organização.
+- Nenhuma mudança em RLS, edge functions, hooks de dados ou rotas.
+- Sem alteração visual nas páginas de Inbox/Plantão.
