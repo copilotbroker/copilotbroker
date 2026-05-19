@@ -691,11 +691,26 @@ export function ConversationThread({
                         msg.status === "failed" ? "text-destructive" : "text-muted-foreground"
                       )}>
                         {msg.status === "failed" ? "Falhou" : format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                        {isOutbound && msg.status === "failed" && onResendMessage && (() => {
+                          const cid = (msg as any).client_message_id || (msg.metadata as any)?.client_id;
+                          if (!cid) return null;
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => onResendMessage(String(cid))}
+                              className="ml-1 inline-flex items-center gap-0.5 text-destructive underline-offset-2 hover:underline"
+                              title="Reenviar mensagem"
+                            >
+                              <RotateCw className="h-3 w-3" /> Reenviar
+                            </button>
+                          );
+                        })()}
                         {isOutbound && getMessageStatusIcon(msg.status)}
                       </span>
                     </div>
                   </div>
                   )}
+
 
                   {adReferral && !isOutbound && (
                     <AdReferralCard referral={adReferral} timestamp={msg.created_at} />
