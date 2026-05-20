@@ -1,45 +1,60 @@
-## Objetivo
+# Por que a campanha do Pedro não dispara
 
-Resolver na raiz o problema de corretores (Jaqueline e outros 5) que não conseguem inativar leads cuja conversa já foi assumida no Plantão mas `leads.broker_id` permaneceu `NULL`. A RLS de UPDATE em `leads` exige `broker_id = brokers.id` do usuário, então qualquer ação (inativar, avançar status, etc.) é silenciosamente bloqueada.
+Investigação no banco confirmou o problema:
 
-## Causa raiz
+- Pedro Rocha (Enove) — instância `enove_pedro_rocha`, broker `2834ab48-…`.
+- A campanha "OPORTUNIDADE ATÉ 300K" está em `status = running` com 68 mensagens em `scheduled`.
+- Na tabela `broker_whatsapp_instances`: `hourly_sent_count = 30` e `hourly_limit = 30` (mesma coisa no diário: `daily_sent_count = 30`, `daily_limit = 150`).
+- Última mensagem efetivamente enviada: **14/05 às 14:36 BRT**. Desde então: zero envios em ~6 dias, apesar do cron `whatsapp-message-sender-process` rodar a cada minuto.
 
-Em algum caminho legado (antes dos RPCs `claim_disputed_lead` / `pull_global_conversation_to_personal`, ou via UPDATE direto na conversa), a conversa foi atribuída ao corretor (`conversations.broker_id` preenchido, `attendance_started=true`) mas `leads.broker_id` nunca foi sincronizado. Hoje existem 29 leads nessa situação, distribuídos entre 6 corretores.
+Olhando o código da `whatsapp-message-sender` (linhas 621–628), o loop pula a instância quando `hourly_sent_count >= hourly_limit`. Esses contadores **só zeram** se forem chamados os endpoints `/reset-hourly` (de hora em hora) e `/reset-daily` (1x por dia).
 
-## Solução
+Conferindo `cron.job`, o **único cron WhatsApp existente é o `process` — não existe cron para `/reset-hourly` nem `/reset-daily`**. Resultado: depois que a instância do Pedro bateu 30 envios na primeira hora do dia 14, o contador nunca mais voltou a zero, e o sender pula a instância em todos os ticks. O "próximo envio" mostrado na UI é só o `scheduled_at` da próxima mensagem da fila, que continua no passado — daí a sensação de "vai e nunca dispara".
 
-Duas mudanças no banco, ambas em uma única migration:
+Isto não afeta só o Pedro: **qualquer corretor** que atingir o limite horário/diário fica travado para sempre na mesma campanha até alguém resetar manualmente no banco.
 
-### 1. Trigger preventivo em `conversations`
+# Plano de correção (mínimo e cirúrgico)
 
-`AFTER UPDATE` em `conversations`: quando `broker_id` for setado ou `attendance_started` virar `true`, e houver `lead_id`, fazer:
+## 1. Criar os 2 crons que faltam (migration SQL)
+
+Agendar via `pg_cron` chamadas autenticadas aos endpoints já existentes da `whatsapp-message-sender`:
+
+- `whatsapp-message-sender-reset-hourly` — `0 * * * *` (todo minuto 0 de cada hora UTC) → `POST /whatsapp-message-sender/reset-hourly`
+- `whatsapp-message-sender-reset-daily` — `0 3 * * *` (03:00 UTC ≈ 00:00 BRT) → `POST /whatsapp-message-sender/reset-daily`
+
+Mesma estrutura/headers do cron `whatsapp-message-sender-process` já existente (mesma anon key, `net.http_post`).
+
+`/reset-daily` já cuida de despausar `whatsapp_message_queue` em `paused_by_system` que tenha `pause_reason` diferente de `whatsapp_disconnected` (linhas 1395–1399), o que é o comportamento desejado.
+
+## 2. Backfill imediato para destravar quem já está preso
+
+Na mesma migration, zerar contadores agora para todas as instâncias (one-shot), para não esperar até as 00:00 BRT:
 
 ```sql
-UPDATE leads
-SET broker_id = NEW.broker_id, updated_at = now()
-WHERE id = NEW.lead_id
-  AND broker_id IS NULL
-  AND NEW.broker_id IS NOT NULL;
+UPDATE public.broker_whatsapp_instances
+   SET hourly_sent_count = 0,
+       daily_sent_count  = 0,
+       updated_at        = now();
 ```
 
-Defesa em profundidade — garante sincronização independente do caminho (RPC, edge function, UPDATE direto, etc.).
+Isso libera a fila do Pedro (e qualquer outro corretor que esteja na mesma situação) no próximo tick do cron `process` (≤ 1 min).
 
-### 2. Backfill dos 29 leads órfãos
+## 3. Não mudar nada além disso
 
-```sql
-UPDATE leads l
-SET broker_id = c.broker_id, updated_at = now()
-FROM conversations c
-WHERE c.lead_id = l.id
-  AND l.broker_id IS NULL
-  AND c.broker_id IS NOT NULL
-  AND c.attendance_started = true;
-```
+- **Não** mudo a lógica de contagem para o modelo "contar `sent` na última hora" (como o canal global faz nas linhas 459–469). Embora seja mais robusto, é uma refatoração maior e fora do escopo desta correção.
+- **Não** mexo no front (`ScheduledMessagesPanel`, `useWhatsAppQueue`): o countdown estranho ("5563:56") é só sintoma — vai se normalizar sozinho assim que os envios voltarem a acontecer.
+- **Não** mexo em `working_hours`, `warmup`, kill switch, instância ou campanha do Pedro.
 
-Os 6 corretores afetados voltam a conseguir inativar/atuar nos leads imediatamente.
+# Arquivos previstos
 
-## Fora de escopo
+- `supabase/migrations/<timestamp>_whatsapp_sender_reset_crons.sql` (novo) — cria os 2 cron jobs com `cron.schedule(...)` (guardado com `cron.unschedule` se já existir, por idempotência) e o `UPDATE` de backfill.
 
-- Nenhuma mudança de UI (`PerdaModal`, `use-lead-actions`, `LeadCard`).
-- Nenhuma alteração nas políticas RLS — a regra "só agir após iniciar atendimento" já é corretamente aplicada por ela.
-- Nenhuma mudança nos RPCs existentes (já sincronizam corretamente).
+# Resultado esperado
+
+- Em ≤ 1 minuto após a migration: a fila do Pedro recomeça a disparar respeitando `hourly_limit = 30` e `working_hours 09:00–21:00`.
+- A cada hora cheia: `hourly_sent_count` zera automaticamente → sem mais travamentos.
+- Todo dia às 00:00 BRT: `daily_sent_count` zera + mensagens `paused_by_system` (que não foram pausadas por desconexão) voltam para `scheduled`.
+
+# Observação fora de escopo (não vou alterar, só registrando)
+
+- A instância do Pedro tem `last_seen_at = 15/05`. Se na hora que destravar ela estiver realmente desconectada na UAZAPI, as mensagens vão falhar e cair no fluxo de `paused_by_system / whatsapp_disconnected` — aí é caso de reconectar o QR pelo painel, não tem mais nada a fazer pelo backend.
