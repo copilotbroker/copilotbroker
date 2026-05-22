@@ -51,7 +51,23 @@ export function useNotifications(): UseNotificationsReturn {
         return;
       }
 
-      setNotifications((data || []) as Notification[]);
+      const notifs = (data || []) as Notification[];
+      const leadIds = Array.from(
+        new Set(notifs.map((n) => n.lead_id).filter((id): id is string => !!id))
+      );
+      if (leadIds.length > 0) {
+        const { data: leads } = await supabase
+          .from("leads")
+          .select("id, broker_id")
+          .in("id", leadIds);
+        const map = new Map<string, string | null>(
+          (leads || []).map((l: any) => [l.id, l.broker_id])
+        );
+        notifs.forEach((n) => {
+          if (n.lead_id) n.lead_broker_id = map.get(n.lead_id) ?? null;
+        });
+      }
+      setNotifications(notifs);
     } catch (error) {
       console.error("Erro ao buscar notificações:", error);
     } finally {
