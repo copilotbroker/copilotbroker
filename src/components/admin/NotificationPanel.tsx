@@ -44,23 +44,45 @@ export function NotificationPanel({
     deleteNotification,
   } = useNotifications();
 
+  const [currentBrokerId, setCurrentBrokerId] = useState<string | null>(null);
+
   // Determine if user is in broker context based on current route
   const isBrokerContext = location.pathname.startsWith("/corretor");
+
+  useEffect(() => {
+    if (!isBrokerContext) return;
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const { data } = await supabase
+        .from("brokers")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!cancelled) setCurrentBrokerId((data as any)?.id ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [isBrokerContext]);
+
+  const isClickableNotification = (n: Notification): boolean => {
+    if (!n.lead_id) return false;
+    if (!isBrokerContext) return true;
+    if (!n.lead_broker_id) return true;
+    return n.lead_broker_id === currentBrokerId;
+  };
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.is_read) {
       await markAsRead(notification.id);
     }
 
-    if (notification.lead_id) {
-      setIsOpen(false);
-      // Navigate to correct context based on current route
-      if (isBrokerContext) {
-        navigate("/corretor");
-      } else {
-        navigate("/admin");
-      }
-    }
+    if (!notification.lead_id) return;
+    if (!isClickableNotification(notification)) return;
+
+    setIsOpen(false);
+    const base = isBrokerContext ? "/corretor/crm" : "/admin/crm";
+    navigate(`${base}?leadId=${notification.lead_id}`);
   };
 
   const Header = () => (
