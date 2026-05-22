@@ -126,15 +126,24 @@ export function NotificationPanel({
           {notifications.map((notification) => {
             const Icon = NOTIFICATION_ICONS[notification.type] || Bell;
             const iconColor = NOTIFICATION_COLORS[notification.type] || "text-slate-400";
+            const clickable = isClickableNotification(notification);
+            const blockedByOwnership =
+              isBrokerContext &&
+              !!notification.lead_id &&
+              !!notification.lead_broker_id &&
+              notification.lead_broker_id !== currentBrokerId;
 
             return (
               <div
                 key={notification.id}
                 className={cn(
-                  "relative px-4 py-3 hover:bg-[#252528] cursor-pointer transition-colors group",
+                  "relative px-4 py-3 transition-colors group",
                   !notification.is_read && "bg-[#252528]/50",
+                  clickable
+                    ? "hover:bg-[#252528] cursor-pointer"
+                    : "cursor-default opacity-70",
                 )}
-                onClick={() => handleNotificationClick(notification)}
+                onClick={() => clickable && handleNotificationClick(notification)}
               >
                 {!notification.is_read && (
                   <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
@@ -147,6 +156,11 @@ export function NotificationPanel({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-200 truncate">{notification.title}</p>
                     <p className="text-xs text-slate-400 line-clamp-2 mt-0.5">{notification.message}</p>
+                    {blockedByOwnership && (
+                      <p className="text-[10px] text-amber-400/80 mt-1 italic">
+                        Atribuído a outro corretor
+                      </p>
+                    )}
                     <p className="text-[10px] text-slate-500 mt-1">
                       {formatDistanceToNow(new Date(notification.created_at), {
                         addSuffix: true,
