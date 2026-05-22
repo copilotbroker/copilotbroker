@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -43,23 +44,45 @@ export function NotificationPanel({
     deleteNotification,
   } = useNotifications();
 
+  const [currentBrokerId, setCurrentBrokerId] = useState<string | null>(null);
+
   // Determine if user is in broker context based on current route
   const isBrokerContext = location.pathname.startsWith("/corretor");
+
+  useEffect(() => {
+    if (!isBrokerContext) return;
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const { data } = await supabase
+        .from("brokers")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!cancelled) setCurrentBrokerId((data as any)?.id ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [isBrokerContext]);
+
+  const isClickableNotification = (n: Notification): boolean => {
+    if (!n.lead_id) return false;
+    if (!isBrokerContext) return true;
+    if (!n.lead_broker_id) return true;
+    return n.lead_broker_id === currentBrokerId;
+  };
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.is_read) {
       await markAsRead(notification.id);
     }
 
-    if (notification.lead_id) {
-      setIsOpen(false);
-      // Navigate to correct context based on current route
-      if (isBrokerContext) {
-        navigate("/corretor");
-      } else {
-        navigate("/admin");
-      }
-    }
+    if (!notification.lead_id) return;
+    if (!isClickableNotification(notification)) return;
+
+    setIsOpen(false);
+    const base = isBrokerContext ? "/corretor/crm" : "/admin/crm";
+    navigate(`${base}?leadId=${notification.lead_id}`);
   };
 
   const Header = () => (
@@ -103,15 +126,24 @@ export function NotificationPanel({
           {notifications.map((notification) => {
             const Icon = NOTIFICATION_ICONS[notification.type] || Bell;
             const iconColor = NOTIFICATION_COLORS[notification.type] || "text-slate-400";
+            const clickable = isClickableNotification(notification);
+            const blockedByOwnership =
+              isBrokerContext &&
+              !!notification.lead_id &&
+              !!notification.lead_broker_id &&
+              notification.lead_broker_id !== currentBrokerId;
 
             return (
               <div
                 key={notification.id}
                 className={cn(
-                  "relative px-4 py-3 hover:bg-[#252528] cursor-pointer transition-colors group",
+                  "relative px-4 py-3 transition-colors group",
                   !notification.is_read && "bg-[#252528]/50",
+                  clickable
+                    ? "hover:bg-[#252528] cursor-pointer"
+                    : "cursor-default opacity-70",
                 )}
-                onClick={() => handleNotificationClick(notification)}
+                onClick={() => clickable && handleNotificationClick(notification)}
               >
                 {!notification.is_read && (
                   <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
@@ -124,6 +156,11 @@ export function NotificationPanel({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-200 truncate">{notification.title}</p>
                     <p className="text-xs text-slate-400 line-clamp-2 mt-0.5">{notification.message}</p>
+                    {blockedByOwnership && (
+                      <p className="text-[10px] text-amber-400/80 mt-1 italic">
+                        Atribuído a outro corretor
+                      </p>
+                    )}
                     <p className="text-[10px] text-slate-500 mt-1">
                       {formatDistanceToNow(new Date(notification.created_at), {
                         addSuffix: true,
