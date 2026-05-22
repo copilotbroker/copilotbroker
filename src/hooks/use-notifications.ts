@@ -92,8 +92,16 @@ export function useNotifications(): UseNotificationsReturn {
           table: "notifications",
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
+        async (payload) => {
           const newNotification = payload.new as Notification;
+          if (newNotification.lead_id) {
+            const { data: lead } = await supabase
+              .from("leads")
+              .select("broker_id")
+              .eq("id", newNotification.lead_id)
+              .maybeSingle();
+            newNotification.lead_broker_id = (lead as any)?.broker_id ?? null;
+          }
           setNotifications((prev) => [newNotification, ...prev]);
         }
       )
