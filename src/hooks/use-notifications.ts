@@ -9,6 +9,7 @@ export interface Notification {
   title: string;
   message: string;
   lead_id: string | null;
+  lead_broker_id?: string | null;
   is_read: boolean;
   created_at: string;
 }
