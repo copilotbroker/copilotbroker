@@ -1780,7 +1780,7 @@ async function insertMessageDirect(
   return { conversationId };
 }
 
-
+async function handleGlobalInstanceMessage(
   supabase: SupabaseClient,
   phone: string,
   messageText: string,
