@@ -1769,12 +1769,17 @@ async function handleGlobalInstanceMessage(
     .maybeSingle();
 
   if (existingConv) {
-    console.log(`📥 Additional msg for pending global conv ${existingConv.id}`);
-    const result = await archiveMessageToConversation(
-      supabase, phone, messageText, direction, undefined, senderName, sentBy,
-      uazapiMessageId, messageType, metadata, existingConv.broker_id as string, "global"
-    );
-    return { brokerId: existingConv.broker_id as string, conversationId: result.conversationId };
+    console.log(`📥 Additional msg for pending global conv ${existingConv.id} (broker ${existingConv.broker_id ?? 'null'})`);
+    if (existingConv.broker_id) {
+      const result = await archiveMessageToConversation(
+        supabase, phone, messageText, direction, undefined, senderName, sentBy,
+        uazapiMessageId, messageType, metadata, existingConv.broker_id as string, "global"
+      );
+      return { brokerId: existingConv.broker_id as string, conversationId: result.conversationId };
+    }
+    // No broker assigned (disputa / empty queue) — insert directly into existing conversation
+    await insertMessageDirect(supabase, existingConv.id as string, phone, messageText, direction, senderName, sentBy, uazapiMessageId, messageType, metadata, "global");
+    return { conversationId: existingConv.id as string };
   }
 
   // Case B2: Any global conversation for this phone (including attended ones)
@@ -1787,12 +1792,16 @@ async function handleGlobalInstanceMessage(
     .maybeSingle();
 
   if (anyGlobalConv) {
-    console.log(`📥 Msg for attended global conv ${anyGlobalConv.id} (broker ${anyGlobalConv.broker_id})`);
-    const result = await archiveMessageToConversation(
-      supabase, phone, messageText, direction, undefined, senderName, sentBy,
-      uazapiMessageId, messageType, metadata, anyGlobalConv.broker_id as string, "global"
-    );
-    return { brokerId: anyGlobalConv.broker_id as string, conversationId: result.conversationId };
+    console.log(`📥 Msg for attended global conv ${anyGlobalConv.id} (broker ${anyGlobalConv.broker_id ?? 'null'})`);
+    if (anyGlobalConv.broker_id) {
+      const result = await archiveMessageToConversation(
+        supabase, phone, messageText, direction, undefined, senderName, sentBy,
+        uazapiMessageId, messageType, metadata, anyGlobalConv.broker_id as string, "global"
+      );
+      return { brokerId: anyGlobalConv.broker_id as string, conversationId: result.conversationId };
+    }
+    await insertMessageDirect(supabase, anyGlobalConv.id as string, phone, messageText, direction, senderName, sentBy, uazapiMessageId, messageType, metadata, "global");
+    return { conversationId: anyGlobalConv.id as string };
   }
 
   // Step 1: Create or reuse lead
