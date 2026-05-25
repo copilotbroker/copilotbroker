@@ -1,60 +1,35 @@
-# Por que a campanha do Pedro não dispara
+## Diagnóstico
 
-Investigação no banco confirmou o problema:
+Verifiquei no banco várias conversas em `source_instance='global'` ainda pendentes (`broker_id = NULL`, `attendance_started=false`) onde o lead claramente mandou mais de uma mensagem (vejo no app), mas só existe **uma única** mensagem em `conversation_messages` por conversa. Exemplos checados (51995199341, 51996769694, 51997357473): todas com 1 mensagem só.
 
-- Pedro Rocha (Enove) — instância `enove_pedro_rocha`, broker `2834ab48-…`.
-- A campanha "OPORTUNIDADE ATÉ 300K" está em `status = running` com 68 mensagens em `scheduled`.
-- Na tabela `broker_whatsapp_instances`: `hourly_sent_count = 30` e `hourly_limit = 30` (mesma coisa no diário: `daily_sent_count = 30`, `daily_limit = 150`).
-- Última mensagem efetivamente enviada: **14/05 às 14:36 BRT**. Desde então: zero envios em ~6 dias, apesar do cron `whatsapp-message-sender-process` rodar a cada minuto.
+A causa está no `supabase/functions/whatsapp-webhook/index.ts`:
 
-Olhando o código da `whatsapp-message-sender` (linhas 621–628), o loop pula a instância quando `hourly_sent_count >= hourly_limit`. Esses contadores **só zeram** se forem chamados os endpoints `/reset-hourly` (de hora em hora) e `/reset-daily` (1x por dia).
+1. Quando o lead manda a 1ª mensagem do plantão, `handleGlobalInstanceMessage` cria a conversa usando o líder como "placeholder" e arquiva a mensagem. Em seguida, `roleta-distribuir` roda; se cai em **disputa** (ou não há ninguém disponível), o `refine` zera `broker_id` da conversa (`update.broker_id = null`).
+2. Na 2ª/3ª mensagem do mesmo lead, o handler encontra `existingConv` (pendente) e chama `archiveMessageToConversation(..., overrideBrokerId = existingConv.broker_id /* = null */, "global")`.
+3. Dentro de `archiveMessageToConversation` o primeiro `if (!instanceName && !overrideBrokerId) return {};` corta tudo. Mesmo se passasse, `getOrCreateCanonicalConversation` filtra `.eq("broker_id", brokerId)` — `.eq("broker_id", null)` não casa com NULL no Postgres, então criaria conversa nova ou ignoraria.
 
-Conferindo `cron.job`, o **único cron WhatsApp existente é o `process` — não existe cron para `/reset-hourly` nem `/reset-daily`**. Resultado: depois que a instância do Pedro bateu 30 envios na primeira hora do dia 14, o contador nunca mais voltou a zero, e o sender pula a instância em todos os ticks. O "próximo envio" mostrado na UI é só o `scheduled_at` da próxima mensagem da fila, que continua no passado — daí a sensação de "vai e nunca dispara".
+Resultado: enquanto a conversa global estiver sem corretor (disputa), todas as mensagens novas do lead são silenciosamente descartadas. Só voltam a aparecer quando algum corretor assume e `broker_id` deixa de ser NULL — por isso a impressão de que "depois de iniciar atendimento" só as mensagens novas aparecem: as antigas nunca foram salvas.
 
-Isto não afeta só o Pedro: **qualquer corretor** que atingir o limite horário/diário fica travado para sempre na mesma campanha até alguém resetar manualmente no banco.
+## Correção (escopo único: webhook)
 
-# Plano de correção (mínimo e cirúrgico)
+Editar `supabase/functions/whatsapp-webhook/index.ts`, na função `handleGlobalInstanceMessage`:
 
-## 1. Criar os 2 crons que faltam (migration SQL)
+- **Quando achar `existingConv` pendente** (Case B1) **e quando achar `anyGlobalConv` atendida** (Case B2) **com `broker_id = NULL`**: não chamar `archiveMessageToConversation` (que exige broker). Em vez disso, fazer insert direto em `conversation_messages` usando `existingConv.id` / `anyGlobalConv.id`, e atualizar manualmente em `conversations` os campos `last_message_at`, `last_message_preview`, `last_message_direction`, `last_message_type`, `updated_at` (mesmo padrão usado em `archiveMessageToConversation`).
+- Quando `broker_id` da conv existente **não** for nulo, manter o fluxo atual (continua passando por `archiveMessageToConversation`, que funciona porque tem broker).
+- Manter a dedupe por `uazapi_message_id` igual ao bloco existente (consultar por `conversation_id + uazapi_message_id` antes de inserir, para o caso de reentrega de webhook).
+- Preservar `enrichedMeta` com `source_instance: 'global'`, `sender_name`, `sent_by`, `status: 'delivered'`, `message_type`, etc., exatamente como hoje.
 
-Agendar via `pg_cron` chamadas autenticadas aos endpoints já existentes da `whatsapp-message-sender`:
+Não é necessário alterar RLS, frontend (`useConversationMessages`), nem `BrokerPlantao`/`AdminPlantao`: a leitura por `conversation_id` já funciona e a policy "Corretores veem mensagens de plantao pendentes" permite ler mensagens pendentes da global.
 
-- `whatsapp-message-sender-reset-hourly` — `0 * * * *` (todo minuto 0 de cada hora UTC) → `POST /whatsapp-message-sender/reset-hourly`
-- `whatsapp-message-sender-reset-daily` — `0 3 * * *` (03:00 UTC ≈ 00:00 BRT) → `POST /whatsapp-message-sender/reset-daily`
+## Backfill / dados antigos
 
-Mesma estrutura/headers do cron `whatsapp-message-sender-process` já existente (mesma anon key, `net.http_post`).
+As mensagens já perdidas (não foram inseridas no banco) **não** podem ser recuperadas do nosso lado — só existem no histórico do WhatsApp. Após o deploy, novas mensagens em conversas globais pendentes passam a ser arquivadas corretamente.
 
-`/reset-daily` já cuida de despausar `whatsapp_message_queue` em `paused_by_system` que tenha `pause_reason` diferente de `whatsapp_disconnected` (linhas 1395–1399), o que é o comportamento desejado.
+## Arquivos afetados
 
-## 2. Backfill imediato para destravar quem já está preso
+- `supabase/functions/whatsapp-webhook/index.ts` (somente `handleGlobalInstanceMessage`, dentro dos blocos B1 e B2).
 
-Na mesma migration, zerar contadores agora para todas as instâncias (one-shot), para não esperar até as 00:00 BRT:
+## Fora de escopo
 
-```sql
-UPDATE public.broker_whatsapp_instances
-   SET hourly_sent_count = 0,
-       daily_sent_count  = 0,
-       updated_at        = now();
-```
-
-Isso libera a fila do Pedro (e qualquer outro corretor que esteja na mesma situação) no próximo tick do cron `process` (≤ 1 min).
-
-## 3. Não mudar nada além disso
-
-- **Não** mudo a lógica de contagem para o modelo "contar `sent` na última hora" (como o canal global faz nas linhas 459–469). Embora seja mais robusto, é uma refatoração maior e fora do escopo desta correção.
-- **Não** mexo no front (`ScheduledMessagesPanel`, `useWhatsAppQueue`): o countdown estranho ("5563:56") é só sintoma — vai se normalizar sozinho assim que os envios voltarem a acontecer.
-- **Não** mexo em `working_hours`, `warmup`, kill switch, instância ou campanha do Pedro.
-
-# Arquivos previstos
-
-- `supabase/migrations/<timestamp>_whatsapp_sender_reset_crons.sql` (novo) — cria os 2 cron jobs com `cron.schedule(...)` (guardado com `cron.unschedule` se já existir, por idempotência) e o `UPDATE` de backfill.
-
-# Resultado esperado
-
-- Em ≤ 1 minuto após a migration: a fila do Pedro recomeça a disparar respeitando `hourly_limit = 30` e `working_hours 09:00–21:00`.
-- A cada hora cheia: `hourly_sent_count` zera automaticamente → sem mais travamentos.
-- Todo dia às 00:00 BRT: `daily_sent_count` zera + mensagens `paused_by_system` (que não foram pausadas por desconexão) voltam para `scheduled`.
-
-# Observação fora de escopo (não vou alterar, só registrando)
-
-- A instância do Pedro tem `last_seen_at = 15/05`. Se na hora que destravar ela estiver realmente desconectada na UAZAPI, as mensagens vão falhar e cair no fluxo de `paused_by_system / whatsapp_disconnected` — aí é caso de reconectar o QR pelo painel, não tem mais nada a fazer pelo backend.
+- Mudar RLS, esquema de tabelas, hooks do frontend, lógica de roleta ou fluxo de "Iniciar atendimento".
+- Migração para reprocessar histórico do WhatsApp.
