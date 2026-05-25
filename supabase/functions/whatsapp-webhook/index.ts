@@ -1719,6 +1719,67 @@ async function isGlobalInstance(supabase: SupabaseClient, instanceName: string):
   return !!data;
 }
 
+// Insert a message into an existing conversation without requiring a broker.
+// Used for global/plantão conversations that are still pending or in disputa (broker_id = NULL).
+// Relies on the `update_conversation_on_message` trigger to refresh last_message_* and unread_count.
+async function insertMessageDirect(
+  supabase: SupabaseClient,
+  conversationId: string,
+  _phone: string,
+  messageText: string,
+  direction: "inbound" | "outbound",
+  senderName?: string,
+  sentBy: string = "lead",
+  uazapiMessageId?: string,
+  messageType: string = "text",
+  metadata?: Record<string, unknown>,
+  sourceInstance?: string | null,
+): Promise<{ conversationId: string }> {
+  try {
+    if (uazapiMessageId) {
+      const { data: existing } = await supabase
+        .from("conversation_messages")
+        .select("id")
+        .eq("conversation_id", conversationId)
+        .eq("uazapi_message_id", uazapiMessageId)
+        .limit(1)
+        .maybeSingle();
+      if (existing) {
+        console.log(`⏭️ Direct insert skipped — duplicate uazapi_id=${uazapiMessageId} on conv ${conversationId}`);
+        return { conversationId };
+      }
+    }
+
+    const enrichedMeta = { ...(metadata || {}), source_instance: sourceInstance || "global" };
+    const fallbackContent = messageText
+      || (messageType === "image" ? "Foto"
+        : messageType === "audio" ? "Áudio"
+        : messageType === "video" ? "Vídeo"
+        : messageType === "document" ? "Documento"
+        : "[Mídia]");
+
+    const { error } = await supabase.from("conversation_messages").insert({
+      conversation_id: conversationId,
+      direction,
+      content: fallbackContent,
+      message_type: messageType,
+      metadata: enrichedMeta,
+      sender_name: senderName,
+      sent_by: sentBy,
+      status: "delivered",
+      uazapi_message_id: uazapiMessageId,
+    });
+    if (error) {
+      console.error("insertMessageDirect insert error:", error);
+    } else {
+      console.log(`📨 Direct archived ${direction} message to brokerless conv ${conversationId}`);
+    }
+  } catch (err) {
+    console.error("insertMessageDirect exception:", err);
+  }
+  return { conversationId };
+}
+
 async function handleGlobalInstanceMessage(
   supabase: SupabaseClient,
   phone: string,
@@ -1769,12 +1830,17 @@ async function handleGlobalInstanceMessage(
     .maybeSingle();
 
   if (existingConv) {
-    console.log(`📥 Additional msg for pending global conv ${existingConv.id}`);
-    const result = await archiveMessageToConversation(
-      supabase, phone, messageText, direction, undefined, senderName, sentBy,
-      uazapiMessageId, messageType, metadata, existingConv.broker_id as string, "global"
-    );
-    return { brokerId: existingConv.broker_id as string, conversationId: result.conversationId };
+    console.log(`📥 Additional msg for pending global conv ${existingConv.id} (broker ${existingConv.broker_id ?? 'null'})`);
+    if (existingConv.broker_id) {
+      const result = await archiveMessageToConversation(
+        supabase, phone, messageText, direction, undefined, senderName, sentBy,
+        uazapiMessageId, messageType, metadata, existingConv.broker_id as string, "global"
+      );
+      return { brokerId: existingConv.broker_id as string, conversationId: result.conversationId };
+    }
+    // No broker assigned (disputa / empty queue) — insert directly into existing conversation
+    await insertMessageDirect(supabase, existingConv.id as string, phone, messageText, direction, senderName, sentBy, uazapiMessageId, messageType, metadata, "global");
+    return { conversationId: existingConv.id as string };
   }
 
   // Case B2: Any global conversation for this phone (including attended ones)
@@ -1787,12 +1853,16 @@ async function handleGlobalInstanceMessage(
     .maybeSingle();
 
   if (anyGlobalConv) {
-    console.log(`📥 Msg for attended global conv ${anyGlobalConv.id} (broker ${anyGlobalConv.broker_id})`);
-    const result = await archiveMessageToConversation(
-      supabase, phone, messageText, direction, undefined, senderName, sentBy,
-      uazapiMessageId, messageType, metadata, anyGlobalConv.broker_id as string, "global"
-    );
-    return { brokerId: anyGlobalConv.broker_id as string, conversationId: result.conversationId };
+    console.log(`📥 Msg for attended global conv ${anyGlobalConv.id} (broker ${anyGlobalConv.broker_id ?? 'null'})`);
+    if (anyGlobalConv.broker_id) {
+      const result = await archiveMessageToConversation(
+        supabase, phone, messageText, direction, undefined, senderName, sentBy,
+        uazapiMessageId, messageType, metadata, anyGlobalConv.broker_id as string, "global"
+      );
+      return { brokerId: anyGlobalConv.broker_id as string, conversationId: result.conversationId };
+    }
+    await insertMessageDirect(supabase, anyGlobalConv.id as string, phone, messageText, direction, senderName, sentBy, uazapiMessageId, messageType, metadata, "global");
+    return { conversationId: anyGlobalConv.id as string };
   }
 
   // Step 1: Create or reuse lead
