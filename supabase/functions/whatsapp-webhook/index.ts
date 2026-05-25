@@ -1719,7 +1719,68 @@ async function isGlobalInstance(supabase: SupabaseClient, instanceName: string):
   return !!data;
 }
 
-async function handleGlobalInstanceMessage(
+// Insert a message into an existing conversation without requiring a broker.
+// Used for global/plantão conversations that are still pending or in disputa (broker_id = NULL).
+// Relies on the `update_conversation_on_message` trigger to refresh last_message_* and unread_count.
+async function insertMessageDirect(
+  supabase: SupabaseClient,
+  conversationId: string,
+  _phone: string,
+  messageText: string,
+  direction: "inbound" | "outbound",
+  senderName?: string,
+  sentBy: string = "lead",
+  uazapiMessageId?: string,
+  messageType: string = "text",
+  metadata?: Record<string, unknown>,
+  sourceInstance?: string | null,
+): Promise<{ conversationId: string }> {
+  try {
+    if (uazapiMessageId) {
+      const { data: existing } = await supabase
+        .from("conversation_messages")
+        .select("id")
+        .eq("conversation_id", conversationId)
+        .eq("uazapi_message_id", uazapiMessageId)
+        .limit(1)
+        .maybeSingle();
+      if (existing) {
+        console.log(`⏭️ Direct insert skipped — duplicate uazapi_id=${uazapiMessageId} on conv ${conversationId}`);
+        return { conversationId };
+      }
+    }
+
+    const enrichedMeta = { ...(metadata || {}), source_instance: sourceInstance || "global" };
+    const fallbackContent = messageText
+      || (messageType === "image" ? "Foto"
+        : messageType === "audio" ? "Áudio"
+        : messageType === "video" ? "Vídeo"
+        : messageType === "document" ? "Documento"
+        : "[Mídia]");
+
+    const { error } = await supabase.from("conversation_messages").insert({
+      conversation_id: conversationId,
+      direction,
+      content: fallbackContent,
+      message_type: messageType,
+      metadata: enrichedMeta,
+      sender_name: senderName,
+      sent_by: sentBy,
+      status: "delivered",
+      uazapi_message_id: uazapiMessageId,
+    });
+    if (error) {
+      console.error("insertMessageDirect insert error:", error);
+    } else {
+      console.log(`📨 Direct archived ${direction} message to brokerless conv ${conversationId}`);
+    }
+  } catch (err) {
+    console.error("insertMessageDirect exception:", err);
+  }
+  return { conversationId };
+}
+
+
   supabase: SupabaseClient,
   phone: string,
   messageText: string,
