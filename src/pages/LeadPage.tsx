@@ -473,6 +473,13 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                 )}>
                   {statusConfig.label}
                 </span>
+                {linkedConversation && (
+                  <InstanceBadge
+                    instance={(linkedConversation as any).source_instance}
+                    size="sm"
+                    verbose
+                  />
+                )}
               </div>
               <div className="flex items-center gap-2 sm:gap-4 mt-1 text-[10px] sm:text-xs text-slate-500 flex-wrap">
                 <span className="flex items-center gap-1"><Timer className="w-3 h-3" />{tempoNoFunil} no funil</span>
@@ -486,8 +493,10 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
                 <button
                   onClick={() => {
                     const prefix = role === "admin" ? "/admin" : "/corretor";
-                    const route = isGlobalInstance ? "plantao" : "inbox";
-                    navigate(`${prefix}/${route}?conversationId=${linkedConversation.id}`);
+                    navigate(buildInboxUrlForConversation(prefix, {
+                      conversationId: linkedConversation.id,
+                      sourceInstance: isGlobalInstance ? "global" : "personal",
+                    }));
                   }}
                   className={cn(
                     "inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-all",
