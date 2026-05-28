@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { replaceTemplateVariables, formatPhoneE164, isValidPhone, getRandomInterval } from "@/types/whatsapp";
 import { DelayIntervalPicker, formatDelayHuman } from "@/components/whatsapp/DelayIntervalPicker";
 import { adjustToWorkingHours, formatBRT } from "@/lib/whatsapp-scheduling";
+import { InstanceBadge } from "@/components/inbox/InstanceBadge";
 
 interface FollowUpSheetProps {
   open: boolean;
