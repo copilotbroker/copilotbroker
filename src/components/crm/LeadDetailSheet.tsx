@@ -221,7 +221,26 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
               {statusConfig.label}
             </span>
           </div>
+          {resolvedConv && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <InstanceBadge instance={resolvedConv.sourceInstance} size="sm" verbose />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs text-slate-300 hover:text-white hover:bg-[#2a2a2e]"
+                onClick={() => {
+                  const prefix = isAdminContext ? "/admin" : "/corretor";
+                  navigate(buildInboxUrlForConversation(prefix, resolvedConv));
+                  onClose();
+                }}
+              >
+                <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                Abrir conversa interna
+              </Button>
+            </div>
+          )}
         </SheetHeader>
+
 
         <div className="space-y-4">
           {/* Contact Info */}
