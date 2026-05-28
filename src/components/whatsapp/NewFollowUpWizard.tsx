@@ -1,6 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Zap, ClipboardList, Megaphone, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { InstanceBadge } from "@/components/inbox/InstanceBadge";
 
 export type FollowUpType = "automatic" | "manual" | "campaign";
 
