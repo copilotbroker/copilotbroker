@@ -11,6 +11,7 @@ import { replaceTemplateVariables, formatPhoneE164, isValidPhone } from "@/types
 import { DelayIntervalPicker, formatDelayHuman } from "@/components/whatsapp/DelayIntervalPicker";
 import { adjustToWorkingHours, formatBRT } from "@/lib/whatsapp-scheduling";
 import type { AutoCadenciaStep } from "@/hooks/use-auto-cadencia-rules";
+import { InstanceBadge } from "@/components/inbox/InstanceBadge";
 
 interface CadenciaSheetProps {
   open: boolean;
