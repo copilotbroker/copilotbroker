@@ -148,6 +148,9 @@ export function CadenciaSheet({
             <SheetDescription className="text-slate-400">
               Sequência automática para <span className="text-slate-200 font-medium">{leadName}</span>
             </SheetDescription>
+            <div className="mt-2">
+              <InstanceBadge instance="personal" brokerName={brokerName} size="sm" verbose />
+            </div>
           </SheetHeader>
         </div>
 
