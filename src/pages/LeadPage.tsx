@@ -31,6 +31,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { buildInboxUrlForConversation } from "@/lib/conversation-resolver";
+import { InstanceBadge } from "@/components/inbox/InstanceBadge";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
