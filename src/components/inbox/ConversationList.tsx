@@ -23,6 +23,7 @@ import { Conversation, InboxTab, BrokerInboxTab } from "@/hooks/use-conversation
 import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { InstanceBadge } from "./InstanceBadge";
 
 interface ConversationListProps {
   conversations: Conversation[];
