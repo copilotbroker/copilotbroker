@@ -79,6 +79,18 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
   }, [lead?.id, initializeDocuments]);
 
   useEffect(() => {
+    let cancelled = false;
+    if (lead?.id) {
+      resolveConversationForLead(lead.id).then((r) => {
+        if (!cancelled) setResolvedConv(r);
+      });
+    } else {
+      setResolvedConv(null);
+    }
+    return () => { cancelled = true; };
+  }, [lead?.id]);
+
+  useEffect(() => {
     if (lead) {
       const isCustomOrigin = lead.lead_origin && !LEAD_ORIGINS.some(o => o.key === lead.lead_origin);
       setEditedLead({
