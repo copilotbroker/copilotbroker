@@ -23,6 +23,7 @@ import { Conversation, InboxTab, BrokerInboxTab } from "@/hooks/use-conversation
 import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { InstanceBadge } from "./InstanceBadge";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -555,6 +556,7 @@ export function ConversationList({
                               <User className="mr-1 h-3 w-3" /> {(conv as any).broker.name}
                             </Badge>
                           )}
+                          <InstanceBadge instance={(conv as any).source_instance} size="xs" />
                           {conv.lead_id ? (
                             <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
                               <LayoutGrid className="mr-1 h-3 w-3" /> Lead vinculado

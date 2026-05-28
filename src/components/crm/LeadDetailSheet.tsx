@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Phone, Mail, User, Calendar, Clock, FileText, MessageSquare, Send, CheckCircle, X, MapPin, Play, RotateCw, ArrowRightLeft, Megaphone } from "lucide-react";
 import { CRMLead, LeadStatus, STATUS_CONFIG, INTERACTION_CHANNELS, LEAD_ORIGINS, getOriginDisplayLabel, getOriginType, ORIGIN_TYPE_COLORS, getSourceDisplayLabel, getSourceChannelType, SOURCE_CHANNEL_COLORS } from "@/types/crm";
 import { useLeadInteractions } from "@/hooks/use-lead-interactions";
 import { useLeadDocuments } from "@/hooks/use-lead-documents";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveConversationForLead, buildInboxUrlForConversation, type ResolvedLeadConversation } from "@/lib/conversation-resolver";
+import { InstanceBadge } from "@/components/inbox/InstanceBadge";
 import {
   Sheet,
   SheetContent,
@@ -48,6 +51,10 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
   const [selectedChannel, setSelectedChannel] = useState<string>("whatsapp");
   const [transferOpen, setTransferOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [resolvedConv, setResolvedConv] = useState<ResolvedLeadConversation | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isAdminContext = location.pathname.startsWith("/admin");
 
   const { interactions, addInteraction, fetchInteractions } = useLeadInteractions(lead?.id || null);
   const { 
@@ -70,6 +77,18 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
       initializeDocuments();
     }
   }, [lead?.id, initializeDocuments]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (lead?.id) {
+      resolveConversationForLead(lead.id).then((r) => {
+        if (!cancelled) setResolvedConv(r);
+      });
+    } else {
+      setResolvedConv(null);
+    }
+    return () => { cancelled = true; };
+  }, [lead?.id]);
 
   useEffect(() => {
     if (lead) {
@@ -202,7 +221,26 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
               {statusConfig.label}
             </span>
           </div>
+          {resolvedConv && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <InstanceBadge instance={resolvedConv.sourceInstance} size="sm" verbose />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs text-slate-300 hover:text-white hover:bg-[#2a2a2e]"
+                onClick={() => {
+                  const prefix = isAdminContext ? "/admin" : "/corretor";
+                  navigate(buildInboxUrlForConversation(prefix, resolvedConv));
+                  onClose();
+                }}
+              >
+                <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                Abrir conversa interna
+              </Button>
+            </div>
+          )}
         </SheetHeader>
+
 
         <div className="space-y-4">
           {/* Contact Info */}

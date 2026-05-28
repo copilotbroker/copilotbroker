@@ -44,6 +44,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Conversation, ConversationMessage, OutboundMessagePayload, ScheduledConversationMessage } from "@/hooks/use-conversations";
 import { cn } from "@/lib/utils";
+import { InstanceBadge } from "./InstanceBadge";
 import { useBrokerPersonalCooldown } from "@/hooks/use-broker-personal-cooldown";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -431,6 +432,12 @@ export function ConversationThread({
                 <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
                   {conversation.lead_id ? "Lead vinculado" : hasResolvedName ? "Nome identificado" : "WhatsApp direto"}
                 </Badge>
+                <InstanceBadge
+                  instance={(conversation as any).source_instance}
+                  brokerName={(conversation as any).broker?.name}
+                  size="xs"
+                  verbose
+                />
                 {(conversation as any).source_instance === "global" && (conversation as any).attendance_started && (conversation as any).broker?.name && (
                   <Badge className="h-4 px-1.5 text-[10px] bg-purple-600/20 text-purple-400 border-purple-500/30 border">
                     Atribuído a: {(conversation as any).broker.name}
