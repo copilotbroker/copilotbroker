@@ -44,6 +44,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Conversation, ConversationMessage, OutboundMessagePayload, ScheduledConversationMessage } from "@/hooks/use-conversations";
 import { cn } from "@/lib/utils";
+import { InstanceBadge } from "./InstanceBadge";
 import { useBrokerPersonalCooldown } from "@/hooks/use-broker-personal-cooldown";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
