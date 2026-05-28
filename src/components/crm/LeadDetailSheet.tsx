@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Phone, Mail, User, Calendar, Clock, FileText, MessageSquare, Send, CheckCircle, X, MapPin, Play, RotateCw, ArrowRightLeft, Megaphone } from "lucide-react";
 import { CRMLead, LeadStatus, STATUS_CONFIG, INTERACTION_CHANNELS, LEAD_ORIGINS, getOriginDisplayLabel, getOriginType, ORIGIN_TYPE_COLORS, getSourceDisplayLabel, getSourceChannelType, SOURCE_CHANNEL_COLORS } from "@/types/crm";
 import { useLeadInteractions } from "@/hooks/use-lead-interactions";
 import { useLeadDocuments } from "@/hooks/use-lead-documents";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveConversationForLead, buildInboxUrlForConversation, type ResolvedLeadConversation } from "@/lib/conversation-resolver";
+import { InstanceBadge } from "@/components/inbox/InstanceBadge";
 import {
   Sheet,
   SheetContent,
