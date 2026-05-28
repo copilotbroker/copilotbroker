@@ -63,6 +63,9 @@ export function NewFollowUpWizard({ open, onOpenChange, onSelect }: NewFollowUpW
             <SheetDescription className="text-slate-400">
               Escolha o tipo abaixo para começar.
             </SheetDescription>
+            <div className="mt-2">
+              <InstanceBadge instance="personal" size="sm" verbose />
+            </div>
           </SheetHeader>
         </div>
 
