@@ -11,6 +11,7 @@ import { replaceTemplateVariables, formatPhoneE164, isValidPhone } from "@/types
 import { DelayIntervalPicker, formatDelayHuman } from "@/components/whatsapp/DelayIntervalPicker";
 import { adjustToWorkingHours, formatBRT } from "@/lib/whatsapp-scheduling";
 import type { AutoCadenciaStep } from "@/hooks/use-auto-cadencia-rules";
+import { InstanceBadge } from "@/components/inbox/InstanceBadge";
 
 interface CadenciaSheetProps {
   open: boolean;
@@ -147,6 +148,9 @@ export function CadenciaSheet({
             <SheetDescription className="text-slate-400">
               Sequência automática para <span className="text-slate-200 font-medium">{leadName}</span>
             </SheetDescription>
+            <div className="mt-2">
+              <InstanceBadge instance="personal" brokerName={brokerName} size="sm" verbose />
+            </div>
           </SheetHeader>
         </div>
 

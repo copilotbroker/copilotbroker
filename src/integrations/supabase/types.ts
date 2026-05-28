@@ -3048,6 +3048,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      mark_lead_attendance_generic: {
+        Args: { _lead_id: string }
+        Returns: undefined
+      }
       pull_global_conversation_to_personal: {
         Args: { _conversation_id: string }
         Returns: Json

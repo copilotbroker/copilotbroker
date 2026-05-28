@@ -1,133 +1,70 @@
-## Visão geral
 
-Hoje `conversations.source_instance` existe (`personal` default, `global` para plantão), mas:
-- O modal "Adicionar Lead" não pergunta a instância → cria lead sem conversa, sumindo da lista.
-- `unify_lead` funde por broker+phone sem considerar instância → pode juntar pessoal com global.
-- Botão "Conversar" não resolve instância — abre lista genérica.
-- Duplicidade não distingue base global (org-wide) de base pessoal (do corretor).
-- Não há badge visual claro de Global/Pessoal em todos os pontos.
+## Objetivo
 
-Vamos formalizar a regra: **toda conversa tem `source_instance` definido; toda criação manual cria conversa placeholder na instância escolhida; duplicidade respeita o escopo da instância**.
+Fechar as 3 lacunas restantes da implementação de clareza de instâncias e validar o caso real Jaqueline/Olvideo.
 
 ---
 
-## 1. Backend (migração)
+## 1. Realtime nas listas de conversa (item 10)
 
-### 1.1 Conversas placeholder
-Permitir conversas sem mensagens listadas como "Novo":
-- Garantir que `conversations.last_message_at` e `last_message_preview` aceitem placeholder ("Lead adicionado manualmente").
-- Já existe `auto_create_conversation_for_lead` para criar conversa pessoal — vamos estender.
+**Problema:** placeholder criado por `create_manual_lead_with_conversation` aparece só após refetch manual.
 
-### 1.2 Nova RPC `create_manual_lead_with_conversation(_name, _whatsapp, _project_id, _instance, _broker_id?, _origin?)`
-SECURITY DEFINER, retorna `{ lead_id, conversation_id, action: 'created' | 'opened_existing' | 'blocked_global' | 'suggest_personal', existing_broker_name? }`.
+**Solução:**
+- Adicionar canal Realtime em `useConversations` (`src/hooks/use-conversations.ts`) escutando `postgres_changes` INSERT/UPDATE em `public.conversations` filtrado por `broker_id` (pessoal) e por `source_instance=eq.global` (plantão).
+- Em cada evento, invalidar as queries de lista (`["conversations", ...]`) e, se aplicável, `["plantao-novos-count"]`.
+- Garantir que a tabela `conversations` está em `supabase_realtime` (migration: `ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;` — idempotente via `DO $$ ... EXCEPTION WHEN duplicate_object ... $$`).
+- Setar `REPLICA IDENTITY FULL` em `conversations` se ainda não estiver, para o payload trazer o registro completo.
 
-Lógica:
-- Normaliza telefone (`55` + dígitos, mesma normalização já usada).
-- **Se `_instance = 'global'`:**
-  - Busca qualquer conversa `source_instance='global'` na mesma organização (via `broker_whatsapp_instances`/global config) com mesmo `phone_normalized`.
-  - Se existe e `broker_id = caller`: abre (retorna `opened_existing`).
-  - Se existe e `broker_id != caller` e `attendance_started=true`: retorna `blocked_global` com nome do corretor — frontend mostra alerta e oferece "usar pessoal".
-  - Se existe pendente (sem broker) ou não existe: cria lead + conversa global placeholder vinculada.
-- **Se `_instance = 'personal'`:**
-  - Busca conversa `source_instance='personal'` com `broker_id = caller` e mesmo `phone_normalized`.
-  - Se existe: abre (`opened_existing`).
-  - Senão: cria lead (broker_id = caller) + conversa pessoal placeholder.
-  - Não bloqueia se existir global ou pessoal de outro corretor.
+## 2. Ampliar trigger de "início de atendimento" (item 4)
 
-### 1.3 Ajustar `unify_lead`
-Adicionar cláusula: só funde se ambos leads tiverem mesmo escopo de instância (mesma conversation `source_instance`). Caso contrário, mantém separados.
+**Hoje cobre:** envio de mensagem (`whatsapp_message_queue`) e outbound em `conversation_messages`.
 
-### 1.4 Trigger de início de atendimento
-Adicionar trigger em `whatsapp_message_queue` (INSERT com status `scheduled/queued` por follow-up manual) e em `lead_interactions` (tipos `follow_up_criado`, `cadencia_criada`) que:
-- Marca `leads.status_distribuicao = 'atendimento_iniciado'` se ainda em pré-atendimento.
-- Marca `leads.atendimento_iniciado_em = now()` se nulo.
-- Marca `conversations.attendance_started = true` na conversa correspondente.
+**Ampliar para também marcar `status='info_sent'` + `atendimento_iniciado_em=now()` quando:**
 
-(A 1ª mensagem outbound já marca via trigger `update_conversation_on_message` — manter.)
+a) **Criar agendamento/tarefa** — trigger `AFTER INSERT ON public.calendar_events` chamando `mark_lead_attendance_on_event()` que faz update no lead vinculado (se `lead_id IS NOT NULL` e status atual em `('new','contacted')`).
 
-### 1.5 Backfill seguro (one-shot)
-- Para `conversations.source_instance IS NULL` → `'personal'` (default já cobre, mas garante).
-- Para `leads` sem conversa: criar conversa placeholder usando `auto_create_conversation_for_lead` (que já existe) — rodar para órfãos.
-- Não tocar em conversas existentes com instância já definida.
+b) **Registrar nota** — trigger `AFTER INSERT ON public.lead_interactions` quando `interaction_type = 'note'` (mesma lógica condicional).
 
----
+c) **Clique em "Conversar"** — adicionar chamada explícita a `iniciarAtendimento(leadId, { silent: true })` no handler do botão "Conversar" / "Abrir conversa interna" em `KanbanCard`, `LeadDetailSheet`, `LeadPage` quando o lead está em `new`/`contacted`. Não usar trigger DB porque é uma ação puramente de UI sem evento persistido.
 
-## 2. Frontend — modal "Adicionar Lead"
+Em todos os casos, registrar `lead_interactions` com `interaction_type='atendimento_iniciado'` para auditoria (já feito pelo helper `iniciarAtendimento`).
 
-`src/components/admin/AddLeadModal.tsx`:
-- Novo campo obrigatório `Atender por`: rádio com 2 opções:
-  - 🟣 **WhatsApp do Plantão (Global)**
-  - 🟢 **Meu WhatsApp Pessoal** (só aparece se há corretor logado/selecionado)
-- Substituir o INSERT direto + `unify_lead` pela RPC nova `create_manual_lead_with_conversation`.
-- Tratar respostas:
-  - `created` / `opened_existing` → toast + `onSuccess(conversation_id)`.
-  - `blocked_global` → AlertDialog: "Este lead já está sendo atendido por [Nome]. Deseja chamar pela sua instância pessoal?" → [Sim, usar pessoal] re-chama RPC com `_instance='personal'`; [Cancelar] fecha.
+## 3. InstanceBadge nos modais de follow-up/cadência (item 5)
 
-## 3. Frontend — botão "Conversar"
+Adicionar `<InstanceBadge verbose instance={...} brokerName={...} />` no cabeçalho (logo abaixo do título) de:
+- `src/components/crm/FollowUpSheet.tsx`
+- `src/components/crm/CadenciaSheet.tsx`
+- `src/components/whatsapp/NewFollowUpWizard.tsx` (no header, indicando por qual instância o broker irá disparar — sempre pessoal nesse contexto, mas deixar explícito)
 
-Criar helper `resolveConversationForLead(leadId)` em `src/hooks/use-conversations.ts`:
-- Busca conversa do lead ordenada por `last_message_at DESC`.
-- Retorna `{ conversationId, sourceInstance }`.
-- Navegação: `/corretor/inbox?conversationId=X` se `personal`, `/corretor/plantao?conversationId=X` se `global` (mesma lógica para admin).
+A instância é resolvida via `resolveConversationForLead(leadId)` ou, no caso de campanhas/cadências sem lead específico, pela instância pessoal do broker logado.
 
-Aplicar em `KanbanCard`, `LeadPage`, `LeadDetailSheet`.
+## 4. Teste manual Jaqueline/Olvideo
 
-## 4. Frontend — badges visuais
-
-Criar `src/components/inbox/InstanceBadge.tsx`:
-- Props: `instance: 'global' | 'personal'`, `brokerName?: string`.
-- Global: roxo, ícone Building, texto "Plantão".
-- Personal: verde, ícone User, texto "Pessoal" ou "WhatsApp de [Nome]".
-
-Usar em:
-- `KanbanCard`
-- `ConversationList` (item já tem indicador parcial — padronizar)
-- `ConversationThread` header
-- `LeadDetailSheet` / `LeadPage`
-- `AddLeadModal` (preview)
-- Composer de mensagem: linha sutil acima do input — "Enviando pelo WhatsApp do Plantão" ou "Enviando pelo WhatsApp pessoal de [Nome]".
-
-## 5. Sincronia realtime
-
-Já há subscriptions em `use-conversations.ts` e `use-kanban-column.ts`. Garantir:
-- Após RPC `create_manual_lead_with_conversation`, invalidar `["kanban-column"]` e `["conversations"]`.
-- Subscription em `conversations` INSERT/UPDATE já dispara refetch da lista correta porque `source_instance` é filtrado na query.
-
-## 6. Listas Plantão vs Pessoal
-
-`use-conversations.ts` já filtra por `source_instance` (linhas 241/260/262). Vamos garantir:
-- `BrokerPlantao` mostra `source_instance='global'`.
-- `BrokerInbox` mostra `source_instance != 'global'` (pessoal).
-- Conversas placeholder (sem mensagens) aparecem com badge "Novo" e preview "Lead adicionado manualmente" — já compatível porque ordenamos por `last_message_at` (que terá `created_at` da conversa).
+Roteiro a executar após o deploy:
+1. Logar como corretor dono do lead.
+2. Criar lead manual com telefone da Jaqueline, selecionar "Atender por: Pessoal".
+3. Confirmar que o card aparece no Kanban com `InstanceBadge` verde (Pessoal).
+4. Confirmar que a conversa-placeholder aparece imediatamente em `/corretor/inbox` (sem F5) — valida item 1.
+5. Clicar em "Conversar" no Kanban → deve abrir o thread correto.
+6. Tentar criar o mesmo telefone como global → deve bloquear e sugerir abrir a conversa pessoal existente.
 
 ---
 
-## Arquivos afetados
+## Detalhes técnicos
 
-**Migration:**
-- nova migration (RPC, ajuste `unify_lead`, trigger de start-attendance, backfill).
+**Arquivos a editar/criar:**
+- `src/hooks/use-conversations.ts` — canal Realtime.
+- `src/components/crm/KanbanCard.tsx`, `LeadDetailSheet.tsx`, `src/pages/LeadPage.tsx` — chamar `iniciarAtendimento` no clique de "Conversar" (quando status em `new`/`contacted`).
+- `src/components/crm/FollowUpSheet.tsx`, `CadenciaSheet.tsx`, `src/components/whatsapp/NewFollowUpWizard.tsx` — inserir `InstanceBadge`.
+- Migration nova:
+  - `ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;` (idempotente)
+  - `ALTER TABLE public.conversations REPLICA IDENTITY FULL;`
+  - Função `mark_lead_attendance_generic(p_lead_id uuid)` reutilizável.
+  - Trigger `AFTER INSERT ON public.calendar_events` → chama a função.
+  - Trigger `AFTER INSERT ON public.lead_interactions WHEN (NEW.interaction_type = 'note')` → chama a função.
 
-**Backend (edge):** nenhum (lógica concentrada em RPC).
-
-**Frontend:**
-- `src/components/admin/AddLeadModal.tsx` — campo instância + RPC + alerta duplicidade.
-- `src/hooks/use-conversations.ts` — helper `resolveConversationForLead`.
-- `src/components/inbox/InstanceBadge.tsx` — novo.
-- `src/components/crm/KanbanCard.tsx` — badge + botão Conversar resolvido.
-- `src/components/crm/LeadDetailSheet.tsx` — badge + Conversar.
-- `src/pages/LeadPage.tsx` — badge + Conversar.
-- `src/components/inbox/ConversationThread.tsx` — badge no header + linha "Enviando por…" no composer.
-- `src/components/inbox/ConversationList.tsx` — padronizar badge.
-
----
-
-## Fora de escopo
-
-- Não mexer em roleta/distribuição (lead criado manual não entra em roleta).
-- Não alterar fluxo de webhook (já corrigido em ciclo anterior).
-- Não migrar conversas históricas com `source_instance` já definido.
-- Não criar coluna `instance_review_needed` — inferência segura conforme aprovado.
-
-## Critérios de aceite
-
-Cobrem todos os cenários listados no pedido: cadastro com seleção de instância, conversa placeholder visível na lista certa, badge em todas as telas, Conversar abre conversa correta, duplicidade global bloqueia + sugere pessoal, duplicidade pessoal só dentro do próprio corretor, follow-up move para Atendimento, realtime sem refresh.
+**Critério de aceite:**
+- Criar lead manual aparece em <2s nas listas sem refresh.
+- Agendar uma visita ou adicionar uma nota em lead `new` move automaticamente para `info_sent`.
+- Modais de follow-up/cadência mostram badge da instância usada.
+- Cenário Jaqueline reproduzido com sucesso.

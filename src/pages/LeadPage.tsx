@@ -491,7 +491,10 @@ export default function LeadPage({ embeddedLeadId, onBack }: LeadPageProps = {})
             <div className="flex items-center gap-2 shrink-0">
               {linkedConversation && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    if (lead.status === "new") {
+                      try { await supabase.rpc("mark_lead_attendance_generic" as any, { _lead_id: lead.id } as any); } catch (e) { console.error(e); }
+                    }
                     const prefix = role === "admin" ? "/admin" : "/corretor";
                     navigate(buildInboxUrlForConversation(prefix, {
                       conversationId: linkedConversation.id,

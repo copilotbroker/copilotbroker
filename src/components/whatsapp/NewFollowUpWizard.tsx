@@ -1,6 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Zap, ClipboardList, Megaphone, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { InstanceBadge } from "@/components/inbox/InstanceBadge";
 
 export type FollowUpType = "automatic" | "manual" | "campaign";
 
@@ -62,6 +63,9 @@ export function NewFollowUpWizard({ open, onOpenChange, onSelect }: NewFollowUpW
             <SheetDescription className="text-slate-400">
               Escolha o tipo abaixo para começar.
             </SheetDescription>
+            <div className="mt-2">
+              <InstanceBadge instance="personal" size="sm" verbose />
+            </div>
           </SheetHeader>
         </div>
 

@@ -228,7 +228,10 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
                 size="sm"
                 variant="ghost"
                 className="h-7 px-2 text-xs text-slate-300 hover:text-white hover:bg-[#2a2a2e]"
-                onClick={() => {
+                onClick={async () => {
+                  if (lead && lead.status === "new") {
+                    try { await supabase.rpc("mark_lead_attendance_generic" as any, { _lead_id: lead.id } as any); } catch (e) { console.error(e); }
+                  }
                   const prefix = isAdminContext ? "/admin" : "/corretor";
                   navigate(buildInboxUrlForConversation(prefix, resolvedConv));
                   onClose();
