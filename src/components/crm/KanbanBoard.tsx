@@ -374,9 +374,12 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
           .select("source_instance")
           .eq("id", conversationId)
           .maybeSingle();
-        const route = (conv as any)?.source_instance === "global" ? "plantao" : "inbox";
+        const resolved = {
+          conversationId,
+          sourceInstance: ((conv as any)?.source_instance === "global" ? "global" : "personal") as "global" | "personal",
+        };
         const prefix = isAdmin ? "/admin" : "/corretor";
-        navigate(`${prefix}/${route}?conversationId=${conversationId}`);
+        navigate(buildInboxUrlForConversation(prefix, resolved));
       } catch (err) {
         console.error("Falha ao abrir conversa do lead:", err);
         toast.error("Não foi possível abrir a conversa do lead");
