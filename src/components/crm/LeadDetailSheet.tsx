@@ -51,6 +51,10 @@ export function LeadDetailSheet({ lead, isOpen, onClose, onUpdate, onStatusChang
   const [selectedChannel, setSelectedChannel] = useState<string>("whatsapp");
   const [transferOpen, setTransferOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [resolvedConv, setResolvedConv] = useState<ResolvedLeadConversation | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isAdminContext = location.pathname.startsWith("/admin");
 
   const { interactions, addInteraction, fetchInteractions } = useLeadInteractions(lead?.id || null);
   const { 
