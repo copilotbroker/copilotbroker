@@ -5,6 +5,7 @@ import { Building2, Users, Search, MapPin, X, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { CRMLead, LeadStatus, STATUS_CONFIG, LEAD_ORIGINS } from "@/types/crm";
+import { buildInboxUrlForConversation } from "@/lib/conversation-resolver";
 import { useCustomOrigins } from "@/hooks/use-custom-origins";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
 import { useActiveFlowLeads } from "@/hooks/use-active-flow-reconciliation";
