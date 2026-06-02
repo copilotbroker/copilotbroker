@@ -714,16 +714,38 @@ export function ConversationThread({
                       <div className="h-px flex-1 bg-border" />
                     </div>
                   ) : (
-                    <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
-                    <div className={cn(
-                      "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
+                    <div
+                      className={cn("group/msg flex items-end gap-1", isOutbound ? "justify-end" : "justify-start")}
+                      onTouchStart={() => handleBubbleTouchStart(msg)}
+                      onTouchEnd={handleBubbleTouchCancel}
+                      onTouchMove={handleBubbleTouchCancel}
+                      onTouchCancel={handleBubbleTouchCancel}
+                    >
+                    {isOutbound && !isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => startReplyTo(msg)}
+                        title="Responder"
+                        className="hidden h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:group-hover/msg:flex"
+                      >
+                        <Reply className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <div
+                      ref={(el) => {
+                        if (el) messageRefs.current.set(msg.id, el);
+                        else messageRefs.current.delete(msg.id);
+                      }}
+                      className={cn(
+                      "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm transition-shadow",
                       isOutbound
                         ? isAi
                           ? "rounded-br-sm border border-border bg-card text-foreground"
                           : isGlobalInstance
                             ? "rounded-br-sm border border-purple-500/30 bg-purple-900/20 text-foreground"
                             : "rounded-br-sm border border-emerald-500/30 bg-emerald-900/20 text-foreground"
-                        : "rounded-bl-sm border border-border bg-card text-card-foreground"
+                        : "rounded-bl-sm border border-border bg-card text-card-foreground",
+                      highlightedMsgId === msg.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                     )}>
                       {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-muted-foreground"><Bot className="h-3 w-3" /> Copiloto</span>}
                       {isOutbound && !isAi && msg.sender_name && isGlobalInstance && (
@@ -745,6 +767,36 @@ export function ConversationThread({
                         </span>
                       )}
                       {!isOutbound && msg.sender_name && <span className="mb-1 block text-[10px] text-muted-foreground">{msg.sender_name}</span>}
+                      {(() => {
+                        const q = (msg.metadata as any)?.quoted as
+                          | { local_message_id?: string | null; sender_name?: string | null; content?: string; message_type?: string }
+                          | undefined;
+                        if (!q) return null;
+                        const qLabel = q.message_type && q.message_type !== "text"
+                          ? (q.message_type === "image" ? "📷 Foto"
+                            : q.message_type === "audio" ? "🎤 Áudio"
+                            : q.message_type === "video" ? "🎬 Vídeo"
+                            : q.message_type === "document" ? "📎 Documento"
+                            : "[Mídia]")
+                          : (q.content || "");
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => q.local_message_id ? scrollToMessage(q.local_message_id) : toast.info("Mensagem original não disponível")}
+                            className={cn(
+                              "mb-1.5 w-full max-w-full text-left rounded-md border-l-4 px-2 py-1.5 text-[11px] leading-snug",
+                              isOutbound
+                                ? "border-l-emerald-400 bg-emerald-500/10 text-emerald-100"
+                                : "border-l-sky-400 bg-sky-500/10 text-sky-100"
+                            )}
+                          >
+                            <span className="block font-semibold opacity-90">
+                              {q.sender_name || (isOutbound ? leadName : "Você")}
+                            </span>
+                            <span className="block truncate opacity-80">{qLabel || "Mensagem"}</span>
+                          </button>
+                        );
+                      })()}
                       {msg.message_type === "text" ? (
                         msg.content?.startsWith("[Undecryptable]") ? (
                           <p className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[12px] text-amber-300">
@@ -755,7 +807,7 @@ export function ConversationThread({
                             </span>
                           </p>
                         ) : (
-                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                          <p className="whitespace-pre-wrap break-words">{renderTextWithLinks(msg.content)}</p>
                         )
                       ) : <MessageMedia msg={msg} />}
                       <span className={cn(
@@ -780,8 +832,19 @@ export function ConversationThread({
                         {isOutbound && getMessageStatusIcon(msg.status)}
                       </span>
                     </div>
+                    {!isOutbound && !isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => startReplyTo(msg)}
+                        title="Responder"
+                        className="hidden h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:group-hover/msg:flex"
+                      >
+                        <Reply className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                   )}
+
 
 
                   {adReferral && !isOutbound && (
