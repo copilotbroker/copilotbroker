@@ -2180,6 +2180,14 @@ async function handleIncomingMessage(
     console.log(`📢 Ad referral detected: source=${adReferral.source}, headline="${(adReferral.headline || "").substring(0, 60)}"`);
   }
 
+  // Extract quoted/reply context (WhatsApp contextInfo.quotedMessage)
+  const quoted = extractQuotedContext(payload);
+  if (quoted) {
+    (mediaMetadata as Record<string, unknown>).quoted = quoted;
+    console.log(`💬 Quoted reply detected: stanza=${quoted.stanza_id}, type=${quoted.message_type}, snippet="${(quoted.content || "").substring(0, 40)}"`);
+  }
+
+
   // Resolve sender name: UAZAPI v2 uses senderName, older versions use pushName, fallback to chat.wa_name
   const chatObj = (payload as any).chat;
   const resolvedSenderName = msg.senderName || msg.pushName || chatObj?.wa_name || chatObj?.name || undefined;
