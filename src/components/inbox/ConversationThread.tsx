@@ -925,6 +925,35 @@ export function ConversationThread({
             </div>
           )}
 
+          {replyingTo && (
+            <div className="flex items-start gap-2 rounded-lg border border-border bg-card/80 px-3 py-2">
+              <div className="w-1 self-stretch rounded bg-emerald-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold text-emerald-300">
+                  Respondendo a {replyingTo.senderName || "mensagem"}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {replyingTo.messageType !== "text"
+                    ? (replyingTo.messageType === "image" ? "📷 Foto"
+                      : replyingTo.messageType === "audio" ? "🎤 Áudio"
+                      : replyingTo.messageType === "video" ? "🎬 Vídeo"
+                      : replyingTo.messageType === "document" ? "📎 Documento"
+                      : "[Mídia]")
+                    : replyingTo.content || "Mensagem"}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                onClick={() => setReplyingTo(null)}
+                title="Cancelar resposta"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
           <div className="flex items-end gap-2">
             <input
               ref={fileInputRef}
