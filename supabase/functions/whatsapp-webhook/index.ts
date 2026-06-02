@@ -163,6 +163,75 @@ function extractAdReferralContext(msg: NonNullable<UAZAPIv2Payload["message"]>, 
   };
 }
 
+interface QuotedContext {
+  stanza_id: string | null;
+  sender_name: string | null;
+  content: string;
+  message_type: string;
+}
+
+function inferQuotedType(quotedMessage: Record<string, unknown>): string {
+  if (quotedMessage.conversation || quotedMessage.extendedTextMessage) return "text";
+  if (quotedMessage.imageMessage) return "image";
+  if (quotedMessage.videoMessage) return "video";
+  if (quotedMessage.audioMessage || quotedMessage.pttMessage) return "audio";
+  if (quotedMessage.documentMessage) return "document";
+  if (quotedMessage.stickerMessage) return "sticker";
+  if (quotedMessage.locationMessage) return "location";
+  if (quotedMessage.contactMessage) return "contact";
+  return "text";
+}
+
+function extractQuotedTextFromMessage(qm: Record<string, unknown>): string {
+  if (typeof qm.conversation === "string") return qm.conversation;
+  const ext = qm.extendedTextMessage as Record<string, unknown> | undefined;
+  if (ext && typeof ext.text === "string") return ext.text;
+  const img = qm.imageMessage as Record<string, unknown> | undefined;
+  if (img && typeof img.caption === "string" && img.caption) return img.caption;
+  const vid = qm.videoMessage as Record<string, unknown> | undefined;
+  if (vid && typeof vid.caption === "string" && vid.caption) return vid.caption;
+  const doc = qm.documentMessage as Record<string, unknown> | undefined;
+  if (doc && typeof doc.fileName === "string") return doc.fileName;
+  return "";
+}
+
+function extractQuotedContext(payload: UAZAPIv2Payload): QuotedContext | null {
+  const data = payload.data || {};
+  const msgRaw = (payload.message as Record<string, unknown>) || {};
+  const contentRaw = (msgRaw.content as Record<string, unknown>) || {};
+
+  // contextInfo can live at several paths depending on WhatsApp message subtype
+  const contextInfo = (msgRaw.contextInfo as Record<string, unknown>)
+    || (data.contextInfo as Record<string, unknown>)
+    || (contentRaw.contextInfo as Record<string, unknown>)
+    || ((contentRaw.extendedTextMessage as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || ((contentRaw.imageMessage as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || ((contentRaw.videoMessage as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || ((contentRaw.audioMessage as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || ((data.message as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || null;
+
+  if (!contextInfo) return null;
+  const quotedMessage = contextInfo.quotedMessage as Record<string, unknown> | undefined;
+  const stanzaId = (contextInfo.stanzaId as string)
+    || (contextInfo.stanzaID as string)
+    || (contextInfo.quotedStanzaID as string)
+    || null;
+  if (!quotedMessage && !stanzaId) return null;
+
+  const participant = (contextInfo.participant as string) || null;
+  const senderName = participant ? participant.split("@")[0] : null;
+  const messageType = quotedMessage ? inferQuotedType(quotedMessage) : "text";
+  const content = quotedMessage ? extractQuotedTextFromMessage(quotedMessage) : "";
+
+  return {
+    stanza_id: stanzaId || null,
+    sender_name: senderName,
+    content,
+    message_type: messageType,
+  };
+}
+
 // ========================= PHONE UTILITIES =========================
 
 function formatPhoneE164(phone: string): string {
