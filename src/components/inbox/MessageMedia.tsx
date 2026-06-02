@@ -87,7 +87,7 @@ export function MessageMedia({ msg }: MessageMediaProps) {
             loading="lazy"
             onError={() => setPreviewFailed(true)}
           />
-          {caption ? <p className="whitespace-pre-wrap break-words">{caption}</p> : null}
+          {caption ? <p className="whitespace-pre-wrap break-words">{renderTextWithLinks(caption)}</p> : null}
         </button>
 
         <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
@@ -134,7 +134,7 @@ export function MessageMedia({ msg }: MessageMediaProps) {
               </span>
             </span>
           </button>
-          {caption ? <p className="whitespace-pre-wrap break-words">{caption}</p> : null}
+          {caption ? <p className="whitespace-pre-wrap break-words">{renderTextWithLinks(caption)}</p> : null}
         </div>
 
         <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
@@ -162,21 +162,9 @@ export function MessageMedia({ msg }: MessageMediaProps) {
   }
 
   if (isAudio) {
-    return (
-      <div className="min-w-[240px] space-y-2">
-        <div className="rounded-xl border border-border bg-card/70 p-3">
-          <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <Mic className="h-4 w-4" />
-            <span className="truncate">{fileName}</span>
-          </div>
-          <audio controls preload="metadata" className="w-full">
-            <source src={resolvedUrl} type={mimeType || undefined} />
-          </audio>
-        </div>
-        {caption ? <p className="whitespace-pre-wrap break-words">{caption}</p> : null}
-      </div>
-    );
+    return <AudioMessage url={resolvedUrl} mimeType={mimeType} fileName={fileName} caption={caption} />;
   }
+
 
   const icon = msg.message_type === "image"
     ? <ImageIcon className="h-5 w-5 text-muted-foreground" />
@@ -211,7 +199,7 @@ export function MessageMedia({ msg }: MessageMediaProps) {
           </div>
         ) : null}
       </div>
-      {caption ? <p className="whitespace-pre-wrap break-words">{caption}</p> : null}
+      {caption ? <p className="whitespace-pre-wrap break-words">{renderTextWithLinks(caption)}</p> : null}
     </div>
   );
 }
