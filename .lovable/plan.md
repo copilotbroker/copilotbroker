@@ -1,70 +1,127 @@
-
 ## Objetivo
 
-Fechar as 3 lacunas restantes da implementação de clareza de instâncias e validar o caso real Jaqueline/Olvideo.
+Resolver 3 problemas relatados pelos corretores no Inbox (mobile e desktop):
+
+1. **Áudio não toca no celular** (iOS Safari não suporta OGG/Opus, codec padrão do WhatsApp).
+2. **Links não viram clicáveis** (texto cru, sem `<a>`).
+3. **Respostas citadas** (reply) não aparecem: nem visualização da mensagem original respondida pelo cliente, nem possibilidade do corretor responder uma mensagem específica.
 
 ---
 
-## 1. Realtime nas listas de conversa (item 10)
+## 1. Áudio no mobile (iOS)
 
-**Problema:** placeholder criado por `create_manual_lead_with_conversation` aparece só após refetch manual.
+**Causa:** WhatsApp envia áudio em `.ogg` (Opus). iOS Safari não decodifica Opus, então o `<audio>` aparece mas não roda. O `media-1780...ogg` no print confirma.
 
 **Solução:**
-- Adicionar canal Realtime em `useConversations` (`src/hooks/use-conversations.ts`) escutando `postgres_changes` INSERT/UPDATE em `public.conversations` filtrado por `broker_id` (pessoal) e por `source_instance=eq.global` (plantão).
-- Em cada evento, invalidar as queries de lista (`["conversations", ...]`) e, se aplicável, `["plantao-novos-count"]`.
-- Garantir que a tabela `conversations` está em `supabase_realtime` (migration: `ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;` — idempotente via `DO $$ ... EXCEPTION WHEN duplicate_object ... $$`).
-- Setar `REPLICA IDENTITY FULL` em `conversations` se ainda não estiver, para o payload trazer o registro completo.
+- Em `MessageMedia.tsx`, no bloco de áudio:
+  - Detectar iOS/Safari via `navigator.userAgent` + checar `audio.canPlayType('audio/ogg; codecs=opus')`.
+  - Quando não houver suporte, renderizar um card "Áudio do WhatsApp" com:
+    - Botão "Abrir" (`<a href={url} target="_blank">`) que delega ao app/sistema.
+    - Botão "Baixar" (`<a download>`).
+    - Texto explicativo curto: "Seu navegador não reproduz este formato. Toque em Abrir/Baixar para ouvir."
+  - Quando houver suporte, manter o `<audio controls>` atual.
+- Adicionar `onError` no `<audio>` para, em caso de falha em runtime, fazer fallback para o mesmo card de download (cobre Android antigo / desktop sem codec).
+- Manter o `type={mimeType}` para que o browser declare o codec corretamente.
 
-## 2. Ampliar trigger de "início de atendimento" (item 4)
-
-**Hoje cobre:** envio de mensagem (`whatsapp_message_queue`) e outbound em `conversation_messages`.
-
-**Ampliar para também marcar `status='info_sent'` + `atendimento_iniciado_em=now()` quando:**
-
-a) **Criar agendamento/tarefa** — trigger `AFTER INSERT ON public.calendar_events` chamando `mark_lead_attendance_on_event()` que faz update no lead vinculado (se `lead_id IS NOT NULL` e status atual em `('new','contacted')`).
-
-b) **Registrar nota** — trigger `AFTER INSERT ON public.lead_interactions` quando `interaction_type = 'note'` (mesma lógica condicional).
-
-c) **Clique em "Conversar"** — adicionar chamada explícita a `iniciarAtendimento(leadId, { silent: true })` no handler do botão "Conversar" / "Abrir conversa interna" em `KanbanCard`, `LeadDetailSheet`, `LeadPage` quando o lead está em `new`/`contacted`. Não usar trigger DB porque é uma ação puramente de UI sem evento persistido.
-
-Em todos os casos, registrar `lead_interactions` com `interaction_type='atendimento_iniciado'` para auditoria (já feito pelo helper `iniciarAtendimento`).
-
-## 3. InstanceBadge nos modais de follow-up/cadência (item 5)
-
-Adicionar `<InstanceBadge verbose instance={...} brokerName={...} />` no cabeçalho (logo abaixo do título) de:
-- `src/components/crm/FollowUpSheet.tsx`
-- `src/components/crm/CadenciaSheet.tsx`
-- `src/components/whatsapp/NewFollowUpWizard.tsx` (no header, indicando por qual instância o broker irá disparar — sempre pessoal nesse contexto, mas deixar explícito)
-
-A instância é resolvida via `resolveConversationForLead(leadId)` ou, no caso de campanhas/cadências sem lead específico, pela instância pessoal do broker logado.
-
-## 4. Teste manual Jaqueline/Olvideo
-
-Roteiro a executar após o deploy:
-1. Logar como corretor dono do lead.
-2. Criar lead manual com telefone da Jaqueline, selecionar "Atender por: Pessoal".
-3. Confirmar que o card aparece no Kanban com `InstanceBadge` verde (Pessoal).
-4. Confirmar que a conversa-placeholder aparece imediatamente em `/corretor/inbox` (sem F5) — valida item 1.
-5. Clicar em "Conversar" no Kanban → deve abrir o thread correto.
-6. Tentar criar o mesmo telefone como global → deve bloquear e sugerir abrir a conversa pessoal existente.
+Sem mudança no backend; nenhum transcode no servidor.
 
 ---
 
-## Detalhes técnicos
+## 2. Links clicáveis (entrada e saída)
 
-**Arquivos a editar/criar:**
-- `src/hooks/use-conversations.ts` — canal Realtime.
-- `src/components/crm/KanbanCard.tsx`, `LeadDetailSheet.tsx`, `src/pages/LeadPage.tsx` — chamar `iniciarAtendimento` no clique de "Conversar" (quando status em `new`/`contacted`).
-- `src/components/crm/FollowUpSheet.tsx`, `CadenciaSheet.tsx`, `src/components/whatsapp/NewFollowUpWizard.tsx` — inserir `InstanceBadge`.
-- Migration nova:
-  - `ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;` (idempotente)
-  - `ALTER TABLE public.conversations REPLICA IDENTITY FULL;`
-  - Função `mark_lead_attendance_generic(p_lead_id uuid)` reutilizável.
-  - Trigger `AFTER INSERT ON public.calendar_events` → chama a função.
-  - Trigger `AFTER INSERT ON public.lead_interactions WHEN (NEW.interaction_type = 'note')` → chama a função.
+**Causa:** `ConversationThread.tsx` renderiza texto com `<p>{msg.content}</p>` cru.
 
-**Critério de aceite:**
-- Criar lead manual aparece em <2s nas listas sem refresh.
-- Agendar uma visita ou adicionar uma nota em lead `new` move automaticamente para `info_sent`.
-- Modais de follow-up/cadência mostram badge da instância usada.
-- Cenário Jaqueline reproduzido com sucesso.
+**Solução:**
+- Criar `src/lib/linkify.tsx` com `renderTextWithLinks(content: string): ReactNode[]` que:
+  - Usa regex robusta (`/(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi`).
+  - Divide a string e gera `<a href target="_blank" rel="noopener noreferrer" className="underline text-emerald-300 hover:text-emerald-200 break-all">` para cada match (normalizando `www.` → `https://www.`).
+  - Preserva `whitespace-pre-wrap` ao redor (retorna nodes para serem renderizados dentro do `<p>`).
+- Em `ConversationThread.tsx`, substituir o `<p>{msg.content}</p>` do bloco `message_type === "text"` por `<p className="whitespace-pre-wrap break-words">{renderTextWithLinks(msg.content)}</p>`.
+- Aplicar o mesmo helper na legenda de mídia (`caption`) em `MessageMedia.tsx`.
+
+Funciona para inbound e outbound, mobile e desktop.
+
+---
+
+## 3. Respostas citadas (reply / quoted message)
+
+Maior das três mudanças. Cobre exibição da resposta recebida + UI para o corretor responder uma mensagem específica.
+
+### 3a. Captura no webhook (inbound + outbound espelhado)
+
+Em `supabase/functions/whatsapp-webhook/index.ts`, na extração da mensagem:
+- Ler `contextInfo.quotedMessage` + `contextInfo.stanzaId` + `contextInfo.participant` (mesmos caminhos já usados para `externalAdReply`).
+- Quando presente, montar:
+
+```ts
+quoted: {
+  stanza_id: string,        // id WA da msg respondida
+  sender_name: string|null, // participant ou senderName
+  content: string,          // texto extraído de quotedMessage.conversation / extendedTextMessage.text / imageMessage.caption / etc.
+  message_type: "text"|"image"|"audio"|"video"|"document"|"sticker",
+}
+```
+
+- Antes de inserir na `conversation_messages`, tentar resolver o `stanza_id` para o id local:
+  - `select id from conversation_messages where uazapi_message_id = stanza_id and conversation_id = X`.
+  - Se achar, gravar também `quoted.local_message_id` para o front conseguir rolar até a msg.
+- Mesclar no `metadata` existente: `{ ...meta, quoted }`. Não precisa de migration (coluna `metadata jsonb`).
+
+### 3b. Envio com reply (UAZAPI)
+
+`supabase/functions/inbox-send-message/index.ts`:
+- Aceitar novo campo opcional no body: `replyToMessageId` (uazapi_message_id da mensagem que está sendo respondida).
+- Em `sendViaUAZAPI`, quando presente, incluir no body do POST para UAZAPI o parâmetro `replyid` (UAZAPI v2 suporta esse campo em `/send/text` e `/send/media`).
+- Buscar a mensagem local pelo `id` enviado pelo front (mais seguro) → pegar `uazapi_message_id`, sender, conteúdo curto, type → gravar bloco `quoted` no `metadata` da mensagem que estamos inserindo (espelho local imediato, antes do webhook).
+
+### 3c. Hook `use-conversations.ts`
+
+- Estender `OutboundMessagePayload`:
+  ```ts
+  replyTo?: {
+    messageId: string;       // id local da msg respondida
+    uazapiMessageId?: string;
+    senderName?: string|null;
+    content: string;
+    messageType: string;
+  }
+  ```
+- Encaminhar para `inbox-send-message` como `replyToMessageId` (uazapi) e gravar `quoted` no metadata otimista.
+
+### 3d. UI no `ConversationThread.tsx`
+
+- **Estado:** `replyingTo: ConversationMessage | null`.
+- **Acionar reply:** ícone "Responder" (lucide `CornerUpLeft`) que aparece ao hover sobre a bolha no desktop e via long-press no mobile (usar `onContextMenu` + `onTouchStart` 500ms). Alternativa simples: pequeno menu kebab por mensagem. Vamos com o ícone hover + long-press no mobile.
+- **Pré-visualização acima do textarea:** card com borda colorida lateral mostrando `senderName` + snippet (max 80 chars), com `X` para cancelar. Mesmo padrão do print do WhatsApp.
+- **Renderização da quoted dentro da bolha:** acima do conteúdo, ler `msg.metadata.quoted`:
+  - Card menor com borda esquerda colorida, nome do remetente, snippet do conteúdo (ou label "🎤 Áudio" / "📷 Foto" / "📎 Documento" se não-texto).
+  - Click no card → se `quoted.local_message_id` existir, rolar até o elemento (`scrollIntoView({ behavior:"smooth", block:"center" })`) e dar um destaque temporário (classe `ring-2 ring-primary` por 1.5s). Se não, snackbar "Mensagem original não encontrada nesta conversa".
+- **No `handleSend`:** se `replyingTo`, incluir no payload e limpar após envio bem-sucedido.
+
+### 3e. KanbanCardComposer e outros senders
+
+Fora de escopo (manter envio simples sem reply). Apenas o Inbox/ConversationThread terá a feature.
+
+---
+
+## Critérios de aceite
+
+1. iPhone: áudios `.ogg` do WhatsApp mostram botões Abrir/Baixar funcionais; não aparece player quebrado.
+2. Desktop + Android Chrome: áudios continuam tocando inline como hoje.
+3. Mensagens com `https://...` ou `www....` aparecem como link clicável que abre em nova aba, tanto inbound quanto outbound, desktop e mobile.
+4. Cliente respondendo uma mensagem específica do corretor no WhatsApp → no Inbox aparece bloco quoted dentro da bolha do cliente, com snippet da mensagem original; clique rola até ela.
+5. Corretor clica no ícone "Responder" (ou long-press no mobile) em uma mensagem do cliente → aparece preview acima do textarea, envia, e do lado do cliente (WhatsApp real) a mensagem chega como reply (`replyid` aceito pela UAZAPI).
+6. Sem regressão em envio de mídia, agendamento ou follow-ups.
+
+---
+
+## Arquivos afetados
+
+- `src/lib/linkify.tsx` (novo)
+- `src/components/inbox/MessageMedia.tsx` (áudio iOS + linkify caption)
+- `src/components/inbox/ConversationThread.tsx` (linkify, UI quoted display + reply action + preview)
+- `src/hooks/use-conversations.ts` (payload `replyTo`)
+- `supabase/functions/whatsapp-webhook/index.ts` (extrair `contextInfo.quotedMessage`, gravar `metadata.quoted`)
+- `supabase/functions/inbox-send-message/index.ts` (aceitar `replyToMessageId`, passar `replyid` para UAZAPI, espelhar `quoted` no metadata local)
+
+Sem migration de banco (usa coluna `metadata jsonb` existente).

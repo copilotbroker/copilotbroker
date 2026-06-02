@@ -45,10 +45,12 @@ async function sendViaUAZAPI(
   phone: string,
   content: string,
   messageType: string = "text",
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  replyId?: string | null,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const cleanPhone = formatPhoneForUAZAPI(phone);
   const token = instanceToken || UAZAPI_TOKEN;
+
 
   let baseUrl = UAZAPI_INSTANCE_URL.replace(/\/$/, "");
   try {
@@ -106,6 +108,15 @@ async function sendViaUAZAPI(
       ];
 
   for (const request of requests) {
+    // Inject UAZAPI reply fields (multiple aliases for compatibility across versions)
+    if (replyId) {
+      (request as { body: Record<string, unknown> }).body = {
+        ...(request as { body: Record<string, unknown> }).body,
+        replyid: replyId,
+        quoted: replyId,
+        quotedMessageId: replyId,
+      };
+    }
     for (const authHeader of getAuthHeaders(token)) {
       try {
         const res = await fetch(`${baseUrl}${request.endpoint}`, {
@@ -113,6 +124,7 @@ async function sendViaUAZAPI(
           headers: { "Content-Type": "application/json", ...authHeader },
           body: JSON.stringify(request.body),
         });
+
 
         if (res.status === 401 || res.status === 404 || res.status === 405) {
           await res.text();
@@ -173,13 +185,14 @@ serve(async (req) => {
       });
     }
 
-    const { conversation_id, content, sent_by, message_type, metadata, client_message_id } = await req.json();
+    const { conversation_id, content, sent_by, message_type, metadata, client_message_id, reply_to_message_id, reply_to_uazapi_id } = await req.json();
     if (!conversation_id || (!content && !metadata?.file_url)) {
       return new Response(JSON.stringify({ error: "conversation_id and content or file are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     // 1. Get conversation (include source_instance for routing)
     const { data: conv, error: convError } = await supabase
@@ -279,14 +292,42 @@ serve(async (req) => {
       ? "🎤 Áudio"
       : (typeof metadata?.file_name === "string" ? `📎 ${metadata.file_name}` : "[Mídia]");
 
+    // Resolve reply target: prefer explicit uazapi id; else lookup local message
+    let resolvedReplyUazapiId: string | null = reply_to_uazapi_id || null;
+    let resolvedQuotedBlock: Record<string, unknown> | null = null;
+    if (reply_to_message_id || resolvedReplyUazapiId) {
+      const { data: replyMsg } = await supabase
+        .from("conversation_messages")
+        .select("id, uazapi_message_id, content, message_type, sender_name, direction")
+        .eq("conversation_id", conversation_id)
+        .or(
+          reply_to_message_id
+            ? `id.eq.${reply_to_message_id}`
+            : `uazapi_message_id.eq.${resolvedReplyUazapiId}`
+        )
+        .maybeSingle();
+      if (replyMsg) {
+        resolvedReplyUazapiId = (replyMsg as { uazapi_message_id: string | null }).uazapi_message_id || resolvedReplyUazapiId;
+        resolvedQuotedBlock = {
+          local_message_id: (replyMsg as { id: string }).id,
+          stanza_id: (replyMsg as { uazapi_message_id: string | null }).uazapi_message_id || null,
+          sender_name: (replyMsg as { sender_name: string | null }).sender_name || null,
+          content: String((replyMsg as { content: string }).content || "").substring(0, 200),
+          message_type: (replyMsg as { message_type: string }).message_type || "text",
+        };
+      }
+    }
+
     const enrichedMetadata = {
       ...(metadata || {}),
       source_instance: currentSourceInstance,
       ...(client_message_id ? { client_id: client_message_id } : {}),
+      ...(resolvedQuotedBlock ? { quoted: resolvedQuotedBlock } : {}),
     };
     const senderName = conv.source_instance === "global" && brokerInfo
       ? (brokerInfo.global_display_name || brokerInfo.name)
       : null;
+
 
     // 4. OUTBOX: persist message as `queued` IMMEDIATELY (idempotent via client_message_id)
     let messageRow: { id: string } | null = null;
@@ -372,8 +413,10 @@ serve(async (req) => {
           conv.phone_normalized || conv.phone,
           finalContent,
           normalizedType,
-          metadata
+          metadata,
+          resolvedReplyUazapiId,
         );
+
 
         if (!sendResult.success) {
           await supabase

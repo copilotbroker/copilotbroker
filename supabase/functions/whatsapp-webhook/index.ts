@@ -163,6 +163,100 @@ function extractAdReferralContext(msg: NonNullable<UAZAPIv2Payload["message"]>, 
   };
 }
 
+interface QuotedContext {
+  stanza_id: string | null;
+  sender_name: string | null;
+  content: string;
+  message_type: string;
+}
+
+function inferQuotedType(quotedMessage: Record<string, unknown>): string {
+  if (quotedMessage.conversation || quotedMessage.extendedTextMessage) return "text";
+  if (quotedMessage.imageMessage) return "image";
+  if (quotedMessage.videoMessage) return "video";
+  if (quotedMessage.audioMessage || quotedMessage.pttMessage) return "audio";
+  if (quotedMessage.documentMessage) return "document";
+  if (quotedMessage.stickerMessage) return "sticker";
+  if (quotedMessage.locationMessage) return "location";
+  if (quotedMessage.contactMessage) return "contact";
+  return "text";
+}
+
+function extractQuotedTextFromMessage(qm: Record<string, unknown>): string {
+  if (typeof qm.conversation === "string") return qm.conversation;
+  const ext = qm.extendedTextMessage as Record<string, unknown> | undefined;
+  if (ext && typeof ext.text === "string") return ext.text;
+  const img = qm.imageMessage as Record<string, unknown> | undefined;
+  if (img && typeof img.caption === "string" && img.caption) return img.caption;
+  const vid = qm.videoMessage as Record<string, unknown> | undefined;
+  if (vid && typeof vid.caption === "string" && vid.caption) return vid.caption;
+  const doc = qm.documentMessage as Record<string, unknown> | undefined;
+  if (doc && typeof doc.fileName === "string") return doc.fileName;
+  return "";
+}
+
+function extractQuotedContext(payload: UAZAPIv2Payload): QuotedContext | null {
+  const data = payload.data || {};
+  const msgRaw = (payload.message as Record<string, unknown>) || {};
+  const contentRaw = (msgRaw.content as Record<string, unknown>) || {};
+
+  // contextInfo can live at several paths depending on WhatsApp message subtype
+  const contextInfo = (msgRaw.contextInfo as Record<string, unknown>)
+    || (data.contextInfo as Record<string, unknown>)
+    || (contentRaw.contextInfo as Record<string, unknown>)
+    || ((contentRaw.extendedTextMessage as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || ((contentRaw.imageMessage as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || ((contentRaw.videoMessage as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || ((contentRaw.audioMessage as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || ((data.message as Record<string, unknown>)?.contextInfo as Record<string, unknown>)
+    || null;
+
+  if (!contextInfo) return null;
+  const quotedMessage = contextInfo.quotedMessage as Record<string, unknown> | undefined;
+  const stanzaId = (contextInfo.stanzaId as string)
+    || (contextInfo.stanzaID as string)
+    || (contextInfo.quotedStanzaID as string)
+    || null;
+  if (!quotedMessage && !stanzaId) return null;
+
+  const participant = (contextInfo.participant as string) || null;
+  const senderName = participant ? participant.split("@")[0] : null;
+  const messageType = quotedMessage ? inferQuotedType(quotedMessage) : "text";
+  const content = quotedMessage ? extractQuotedTextFromMessage(quotedMessage) : "";
+
+  return {
+    stanza_id: stanzaId || null,
+    sender_name: senderName,
+    content,
+    message_type: messageType,
+  };
+}
+
+async function resolveQuotedLocalId(
+  supabase: SupabaseClient,
+  conversationId: string,
+  meta: Record<string, unknown>,
+): Promise<void> {
+  const quoted = meta.quoted as Record<string, unknown> | undefined;
+  if (!quoted) return;
+  const stanzaId = (quoted.stanza_id as string) || null;
+  if (!stanzaId || quoted.local_message_id) return;
+  try {
+    const { data } = await supabase
+      .from("conversation_messages")
+      .select("id")
+      .eq("conversation_id", conversationId)
+      .eq("uazapi_message_id", stanzaId)
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      (meta.quoted as Record<string, unknown>).local_message_id = (data as { id: string }).id;
+    }
+  } catch (_err) {
+    // best-effort — local id is optional for the UI
+  }
+}
+
 // ========================= PHONE UTILITIES =========================
 
 function formatPhoneE164(phone: string): string {
@@ -1213,6 +1307,7 @@ async function archiveMessageToConversation(
     if (!conv) return {};
 
     const enrichedMeta = { ...(metadata || {}), source_instance: sourceInstance || "personal" };
+    await resolveQuotedLocalId(supabase, (conv as { id: string }).id, enrichedMeta);
 
     // Deduplicate outbound messages: if this message was already saved by inbox-send-message, skip insert
     if (direction === "outbound" && uazapiMessageId) {
@@ -1751,6 +1846,7 @@ async function insertMessageDirect(
     }
 
     const enrichedMeta = { ...(metadata || {}), source_instance: sourceInstance || "global" };
+    await resolveQuotedLocalId(supabase, conversationId, enrichedMeta);
     const fallbackContent = messageText
       || (messageType === "image" ? "Foto"
         : messageType === "audio" ? "Áudio"
@@ -2179,6 +2275,14 @@ async function handleIncomingMessage(
     (mediaMetadata as Record<string, unknown>).ad_referral = adReferral;
     console.log(`📢 Ad referral detected: source=${adReferral.source}, headline="${(adReferral.headline || "").substring(0, 60)}"`);
   }
+
+  // Extract quoted/reply context (WhatsApp contextInfo.quotedMessage)
+  const quoted = extractQuotedContext(payload);
+  if (quoted) {
+    (mediaMetadata as Record<string, unknown>).quoted = quoted;
+    console.log(`💬 Quoted reply detected: stanza=${quoted.stanza_id}, type=${quoted.message_type}, snippet="${(quoted.content || "").substring(0, 40)}"`);
+  }
+
 
   // Resolve sender name: UAZAPI v2 uses senderName, older versions use pushName, fallback to chat.wa_name
   const chatObj = (payload as any).chat;

@@ -30,6 +30,8 @@ import {
   ShieldAlert,
   AlertCircle,
   RotateCw,
+  CornerUpLeft,
+  Reply,
 } from "lucide-react";
 
 import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
@@ -42,12 +44,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Conversation, ConversationMessage, OutboundMessagePayload, ScheduledConversationMessage } from "@/hooks/use-conversations";
+import { Conversation, ConversationMessage, OutboundMessagePayload, ReplyToRef, ScheduledConversationMessage } from "@/hooks/use-conversations";
 import { cn } from "@/lib/utils";
 import { InstanceBadge } from "./InstanceBadge";
 import { useBrokerPersonalCooldown } from "@/hooks/use-broker-personal-cooldown";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { renderTextWithLinks } from "@/lib/linkify";
 // supabase import removed — file uploads moved to use-conversations hook
 import { toast } from "sonner";
 
@@ -158,6 +161,8 @@ export function ConversationThread({
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [replyingTo, setReplyingTo] = useState<ReplyToRef | null>(null);
+  const [highlightedMsgId, setHighlightedMsgId] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -166,6 +171,8 @@ export function ConversationThread({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
@@ -328,25 +335,75 @@ export function ConversationThread({
 
     const fileToSend = pendingFile;
     const fileTypeToSend = pendingType;
+    const replyRef = replyingTo;
 
     setInputValue("");
     setPendingFile(null);
+    setReplyingTo(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (inputRef.current) inputRef.current.style.height = "auto";
     inputRef.current?.focus();
 
     if (fileToSend && fileTypeToSend) {
-      // Pass file to hook — it handles optimistic + background upload
       onSendMessage({
         content: text || "",
         messageType: fileTypeToSend,
         file: fileToSend,
+        replyTo: replyRef || undefined,
+      });
+    } else if (replyRef) {
+      onSendMessage({
+        content: text,
+        messageType: "text",
+        replyTo: replyRef,
       });
     } else {
-      // Text-only: fire-and-forget (hook handles optimistic)
       onSendMessage(text);
     }
   };
+
+  const startReplyTo = useCallback((msg: ConversationMessage) => {
+    const snippet = msg.message_type === "text"
+      ? msg.content
+      : msg.message_type === "image" ? "📷 Foto"
+      : msg.message_type === "audio" ? "🎤 Áudio"
+      : msg.message_type === "video" ? "🎬 Vídeo"
+      : msg.message_type === "document" ? "📎 Documento"
+      : "[Mídia]";
+    setReplyingTo({
+      messageId: msg.id,
+      uazapiMessageId: msg.uazapi_message_id || null,
+      senderName: msg.sender_name || (msg.direction === "outbound" ? "Você" : leadName),
+      content: String(snippet || "").substring(0, 200),
+      messageType: msg.message_type,
+    });
+    inputRef.current?.focus();
+  }, [leadName]);
+
+  const scrollToMessage = useCallback((localId: string) => {
+    const el = messageRefs.current.get(localId);
+    if (!el) {
+      toast.error("Mensagem original não está nesta conversa.");
+      return;
+    }
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightedMsgId(localId);
+    window.setTimeout(() => setHighlightedMsgId((cur) => (cur === localId ? null : cur)), 1600);
+  }, []);
+
+  const handleBubbleTouchStart = (msg: ConversationMessage) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      startReplyTo(msg);
+    }, 550);
+  };
+  const handleBubbleTouchCancel = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
 
   const handleSchedule = async () => {
     const text = inputValue.trim();
@@ -657,16 +714,38 @@ export function ConversationThread({
                       <div className="h-px flex-1 bg-border" />
                     </div>
                   ) : (
-                    <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
-                    <div className={cn(
-                      "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
+                    <div
+                      className={cn("group/msg flex items-end gap-1", isOutbound ? "justify-end" : "justify-start")}
+                      onTouchStart={() => handleBubbleTouchStart(msg)}
+                      onTouchEnd={handleBubbleTouchCancel}
+                      onTouchMove={handleBubbleTouchCancel}
+                      onTouchCancel={handleBubbleTouchCancel}
+                    >
+                    {isOutbound && !isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => startReplyTo(msg)}
+                        title="Responder"
+                        className="hidden h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:group-hover/msg:flex"
+                      >
+                        <Reply className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <div
+                      ref={(el) => {
+                        if (el) messageRefs.current.set(msg.id, el);
+                        else messageRefs.current.delete(msg.id);
+                      }}
+                      className={cn(
+                      "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm transition-shadow",
                       isOutbound
                         ? isAi
                           ? "rounded-br-sm border border-border bg-card text-foreground"
                           : isGlobalInstance
                             ? "rounded-br-sm border border-purple-500/30 bg-purple-900/20 text-foreground"
                             : "rounded-br-sm border border-emerald-500/30 bg-emerald-900/20 text-foreground"
-                        : "rounded-bl-sm border border-border bg-card text-card-foreground"
+                        : "rounded-bl-sm border border-border bg-card text-card-foreground",
+                      highlightedMsgId === msg.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                     )}>
                       {isAi && <span className="mb-1 flex items-center gap-0.5 text-[10px] text-muted-foreground"><Bot className="h-3 w-3" /> Copiloto</span>}
                       {isOutbound && !isAi && msg.sender_name && isGlobalInstance && (
@@ -688,6 +767,36 @@ export function ConversationThread({
                         </span>
                       )}
                       {!isOutbound && msg.sender_name && <span className="mb-1 block text-[10px] text-muted-foreground">{msg.sender_name}</span>}
+                      {(() => {
+                        const q = (msg.metadata as any)?.quoted as
+                          | { local_message_id?: string | null; sender_name?: string | null; content?: string; message_type?: string }
+                          | undefined;
+                        if (!q) return null;
+                        const qLabel = q.message_type && q.message_type !== "text"
+                          ? (q.message_type === "image" ? "📷 Foto"
+                            : q.message_type === "audio" ? "🎤 Áudio"
+                            : q.message_type === "video" ? "🎬 Vídeo"
+                            : q.message_type === "document" ? "📎 Documento"
+                            : "[Mídia]")
+                          : (q.content || "");
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => q.local_message_id ? scrollToMessage(q.local_message_id) : toast.info("Mensagem original não disponível")}
+                            className={cn(
+                              "mb-1.5 w-full max-w-full text-left rounded-md border-l-4 px-2 py-1.5 text-[11px] leading-snug",
+                              isOutbound
+                                ? "border-l-emerald-400 bg-emerald-500/10 text-emerald-100"
+                                : "border-l-sky-400 bg-sky-500/10 text-sky-100"
+                            )}
+                          >
+                            <span className="block font-semibold opacity-90">
+                              {q.sender_name || (isOutbound ? leadName : "Você")}
+                            </span>
+                            <span className="block truncate opacity-80">{qLabel || "Mensagem"}</span>
+                          </button>
+                        );
+                      })()}
                       {msg.message_type === "text" ? (
                         msg.content?.startsWith("[Undecryptable]") ? (
                           <p className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[12px] text-amber-300">
@@ -698,7 +807,7 @@ export function ConversationThread({
                             </span>
                           </p>
                         ) : (
-                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                          <p className="whitespace-pre-wrap break-words">{renderTextWithLinks(msg.content)}</p>
                         )
                       ) : <MessageMedia msg={msg} />}
                       <span className={cn(
@@ -723,8 +832,19 @@ export function ConversationThread({
                         {isOutbound && getMessageStatusIcon(msg.status)}
                       </span>
                     </div>
+                    {!isOutbound && !isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => startReplyTo(msg)}
+                        title="Responder"
+                        className="hidden h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:group-hover/msg:flex"
+                      >
+                        <Reply className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                   )}
+
 
 
                   {adReferral && !isOutbound && (
@@ -802,6 +922,35 @@ export function ConversationThread({
                 <span className="font-semibold tabular-nums">{personalCooldown.hoursRemaining}h</span>.
                 Você pode responder normalmente assim que o cliente enviar a primeira mensagem ou usar o WhatsApp da imobiliária.
               </p>
+            </div>
+          )}
+
+          {replyingTo && (
+            <div className="flex items-start gap-2 rounded-lg border border-border bg-card/80 px-3 py-2">
+              <div className="w-1 self-stretch rounded bg-emerald-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold text-emerald-300">
+                  Respondendo a {replyingTo.senderName || "mensagem"}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {replyingTo.messageType !== "text"
+                    ? (replyingTo.messageType === "image" ? "📷 Foto"
+                      : replyingTo.messageType === "audio" ? "🎤 Áudio"
+                      : replyingTo.messageType === "video" ? "🎬 Vídeo"
+                      : replyingTo.messageType === "document" ? "📎 Documento"
+                      : "[Mídia]")
+                    : replyingTo.content || "Mensagem"}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                onClick={() => setReplyingTo(null)}
+                title="Cancelar resposta"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           )}
 

@@ -64,6 +64,14 @@ export interface ScheduledConversationMessage {
   status: string;
 }
 
+export interface ReplyToRef {
+  messageId: string;          // local conversation_messages.id
+  uazapiMessageId?: string | null;
+  senderName?: string | null;
+  content: string;
+  messageType: string;
+}
+
 export interface OutboundMessagePayload {
   content: string;
   sentBy?: string;
@@ -71,7 +79,10 @@ export interface OutboundMessagePayload {
   metadata?: Record<string, unknown>;
   /** Pass a File to have the hook upload it in background (optimistic msg appears instantly) */
   file?: File;
+  /** Reply context — renders quoted preview and tells UAZAPI to thread the reply */
+  replyTo?: ReplyToRef;
 }
+
 
 export type InboxTab = "novos" | "meus" | "outros";
 export type BrokerInboxTab = "novos" | "atendimento" | "arquivados";
@@ -705,6 +716,8 @@ export function useConversationMessages(
     sentBy: string;
     messageType: string;
     metadata: Record<string, unknown>;
+    replyToMessageId?: string | null;
+    replyToUazapiId?: string | null;
   }) => {
     const { data, error } = await supabase.functions.invoke("inbox-send-message", {
       body: {
@@ -714,6 +727,8 @@ export function useConversationMessages(
         message_type: params.messageType,
         metadata: params.metadata,
         client_message_id: params.clientId,
+        reply_to_message_id: params.replyToMessageId || null,
+        reply_to_uazapi_id: params.replyToUazapiId || null,
       },
     });
     if (error) throw error;
@@ -731,7 +746,9 @@ export function useConversationMessages(
           messageType: payload.messageType || "text",
           metadata: payload.metadata,
           file: payload.file,
+          replyTo: payload.replyTo,
         };
+
 
     const fileToUpload = normalizedPayload.file;
     const createdAt = new Date().toISOString();
@@ -755,13 +772,25 @@ export function useConversationMessages(
       : undefined;
 
     const conversationSourceInstance = (conversation as any)?.source_instance || "personal";
+    const replyTo = normalizedPayload.replyTo;
+    const quotedBlock = replyTo
+      ? {
+          local_message_id: replyTo.messageId,
+          stanza_id: replyTo.uazapiMessageId || null,
+          sender_name: replyTo.senderName || null,
+          content: replyTo.content || "",
+          message_type: replyTo.messageType || "text",
+        }
+      : undefined;
     const optimisticMetadata: Record<string, unknown> = {
       ...(normalizedPayload.metadata || {}),
       client_id: clientId,
       source_instance: conversationSourceInstance,
+      ...(quotedBlock ? { quoted: quotedBlock } : {}),
       ...(fileToUpload ? { file_name: fileToUpload.name, mime_type: fileToUpload.type, size_bytes: fileToUpload.size } : {}),
       ...(localPreviewUrl ? { file_url: localPreviewUrl, _local_preview: true } : {}),
     };
+
 
     const optimisticMessage: ConversationMessage = {
       id: `temp:${clientId}`,
@@ -839,7 +868,10 @@ export function useConversationMessages(
           sentBy: normalizedPayload.sentBy || "human",
           messageType: normalizedPayload.messageType || "text",
           metadata: finalMetadata,
+          replyToMessageId: replyTo?.messageId || null,
+          replyToUazapiId: replyTo?.uazapiMessageId || null,
         });
+
 
         // Backend persisted the row as `queued`; real `sent` arrives via realtime UPDATE.
         // Reconcile id + status NOW so the bubble swaps from temp: to the DB id.
