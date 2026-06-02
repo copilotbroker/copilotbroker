@@ -232,6 +232,31 @@ function extractQuotedContext(payload: UAZAPIv2Payload): QuotedContext | null {
   };
 }
 
+async function resolveQuotedLocalId(
+  supabase: SupabaseClient,
+  conversationId: string,
+  meta: Record<string, unknown>,
+): Promise<void> {
+  const quoted = meta.quoted as Record<string, unknown> | undefined;
+  if (!quoted) return;
+  const stanzaId = (quoted.stanza_id as string) || null;
+  if (!stanzaId || quoted.local_message_id) return;
+  try {
+    const { data } = await supabase
+      .from("conversation_messages")
+      .select("id")
+      .eq("conversation_id", conversationId)
+      .eq("uazapi_message_id", stanzaId)
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      (meta.quoted as Record<string, unknown>).local_message_id = (data as { id: string }).id;
+    }
+  } catch (_err) {
+    // best-effort — local id is optional for the UI
+  }
+}
+
 // ========================= PHONE UTILITIES =========================
 
 function formatPhoneE164(phone: string): string {
@@ -1282,6 +1307,7 @@ async function archiveMessageToConversation(
     if (!conv) return {};
 
     const enrichedMeta = { ...(metadata || {}), source_instance: sourceInstance || "personal" };
+    await resolveQuotedLocalId(supabase, (conv as { id: string }).id, enrichedMeta);
 
     // Deduplicate outbound messages: if this message was already saved by inbox-send-message, skip insert
     if (direction === "outbound" && uazapiMessageId) {
@@ -1820,6 +1846,7 @@ async function insertMessageDirect(
     }
 
     const enrichedMeta = { ...(metadata || {}), source_instance: sourceInstance || "global" };
+    await resolveQuotedLocalId(supabase, conversationId, enrichedMeta);
     const fallbackContent = messageText
       || (messageType === "image" ? "Foto"
         : messageType === "audio" ? "Áudio"
