@@ -203,3 +203,97 @@ export function MessageMedia({ msg }: MessageMediaProps) {
     </div>
   );
 }
+
+interface AudioMessageProps {
+  url: string;
+  mimeType: string;
+  fileName: string;
+  caption?: string;
+}
+
+function isLikelyOggOpus(mimeType: string, url: string) {
+  const m = mimeType.toLowerCase();
+  if (m.includes("ogg") || m.includes("opus")) return true;
+  const u = url.split("?")[0].toLowerCase();
+  return u.endsWith(".ogg") || u.endsWith(".opus");
+}
+
+function audioIsPlayable(mimeType: string, url: string): boolean {
+  if (typeof document === "undefined") return true;
+  try {
+    const a = document.createElement("audio");
+    const tries = [
+      mimeType || "",
+      isLikelyOggOpus(mimeType, url) ? 'audio/ogg; codecs="opus"' : "",
+      isLikelyOggOpus(mimeType, url) ? "audio/ogg" : "",
+    ].filter(Boolean);
+    for (const t of tries) {
+      const r = a.canPlayType(t);
+      if (r === "probably" || r === "maybe") return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+function AudioMessage({ url, mimeType, fileName, caption }: AudioMessageProps) {
+  const [fallback, setFallback] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (!audioIsPlayable(mimeType, url)) setFallback(true);
+  }, [mimeType, url]);
+
+  if (fallback) {
+    return (
+      <div className="min-w-[240px] space-y-2">
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs text-amber-200">
+            <Mic className="h-4 w-4" />
+            <span className="truncate">Áudio do WhatsApp</span>
+          </div>
+          <p className="mb-2 text-[11px] leading-snug text-muted-foreground">
+            Seu navegador não reproduz este formato (.ogg/opus). Toque em Abrir ou Baixar para ouvir.
+          </p>
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="outline" className="h-8">
+              <a href={url} target="_blank" rel="noreferrer">
+                <ExternalLink className="mr-1 h-3.5 w-3.5" /> Abrir
+              </a>
+            </Button>
+            <Button asChild size="sm" className="h-8">
+              <a href={url} download={fileName}>
+                <Download className="mr-1 h-3.5 w-3.5" /> Baixar
+              </a>
+            </Button>
+          </div>
+        </div>
+        {caption ? <p className="whitespace-pre-wrap break-words">{renderTextWithLinks(caption)}</p> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-w-[240px] space-y-2">
+      <div className="rounded-xl border border-border bg-card/70 p-3">
+        <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <Mic className="h-4 w-4" />
+          <span className="truncate">{fileName}</span>
+        </div>
+        <audio
+          ref={audioRef}
+          controls
+          preload="metadata"
+          className="w-full"
+          onError={() => setFallback(true)}
+        >
+          <source src={url} type={mimeType || undefined} />
+          {isLikelyOggOpus(mimeType, url) ? <source src={url} type='audio/ogg; codecs="opus"' /> : null}
+        </audio>
+      </div>
+      {caption ? <p className="whitespace-pre-wrap break-words">{renderTextWithLinks(caption)}</p> : null}
+    </div>
+  );
+}
+
