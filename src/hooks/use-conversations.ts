@@ -772,13 +772,25 @@ export function useConversationMessages(
       : undefined;
 
     const conversationSourceInstance = (conversation as any)?.source_instance || "personal";
+    const replyTo = normalizedPayload.replyTo;
+    const quotedBlock = replyTo
+      ? {
+          local_message_id: replyTo.messageId,
+          stanza_id: replyTo.uazapiMessageId || null,
+          sender_name: replyTo.senderName || null,
+          content: replyTo.content || "",
+          message_type: replyTo.messageType || "text",
+        }
+      : undefined;
     const optimisticMetadata: Record<string, unknown> = {
       ...(normalizedPayload.metadata || {}),
       client_id: clientId,
       source_instance: conversationSourceInstance,
+      ...(quotedBlock ? { quoted: quotedBlock } : {}),
       ...(fileToUpload ? { file_name: fileToUpload.name, mime_type: fileToUpload.type, size_bytes: fileToUpload.size } : {}),
       ...(localPreviewUrl ? { file_url: localPreviewUrl, _local_preview: true } : {}),
     };
+
 
     const optimisticMessage: ConversationMessage = {
       id: `temp:${clientId}`,
@@ -856,7 +868,10 @@ export function useConversationMessages(
           sentBy: normalizedPayload.sentBy || "human",
           messageType: normalizedPayload.messageType || "text",
           metadata: finalMetadata,
+          replyToMessageId: replyTo?.messageId || null,
+          replyToUazapiId: replyTo?.uazapiMessageId || null,
         });
+
 
         // Backend persisted the row as `queued`; real `sent` arrives via realtime UPDATE.
         // Reconcile id + status NOW so the bubble swaps from temp: to the DB id.
