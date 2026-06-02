@@ -45,10 +45,12 @@ async function sendViaUAZAPI(
   phone: string,
   content: string,
   messageType: string = "text",
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  replyId?: string | null,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const cleanPhone = formatPhoneForUAZAPI(phone);
   const token = instanceToken || UAZAPI_TOKEN;
+
 
   let baseUrl = UAZAPI_INSTANCE_URL.replace(/\/$/, "");
   try {
@@ -106,6 +108,15 @@ async function sendViaUAZAPI(
       ];
 
   for (const request of requests) {
+    // Inject UAZAPI reply fields (multiple aliases for compatibility across versions)
+    if (replyId) {
+      (request as { body: Record<string, unknown> }).body = {
+        ...(request as { body: Record<string, unknown> }).body,
+        replyid: replyId,
+        quoted: replyId,
+        quotedMessageId: replyId,
+      };
+    }
     for (const authHeader of getAuthHeaders(token)) {
       try {
         const res = await fetch(`${baseUrl}${request.endpoint}`, {
@@ -113,6 +124,7 @@ async function sendViaUAZAPI(
           headers: { "Content-Type": "application/json", ...authHeader },
           body: JSON.stringify(request.body),
         });
+
 
         if (res.status === 401 || res.status === 404 || res.status === 405) {
           await res.text();
@@ -173,13 +185,14 @@ serve(async (req) => {
       });
     }
 
-    const { conversation_id, content, sent_by, message_type, metadata, client_message_id } = await req.json();
+    const { conversation_id, content, sent_by, message_type, metadata, client_message_id, reply_to_message_id, reply_to_uazapi_id } = await req.json();
     if (!conversation_id || (!content && !metadata?.file_url)) {
       return new Response(JSON.stringify({ error: "conversation_id and content or file are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     // 1. Get conversation (include source_instance for routing)
     const { data: conv, error: convError } = await supabase
