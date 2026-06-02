@@ -30,6 +30,8 @@ import {
   ShieldAlert,
   AlertCircle,
   RotateCw,
+  CornerUpLeft,
+  Reply,
 } from "lucide-react";
 
 import { ScheduledMessagesPanel } from "./ScheduledMessagesPanel";
@@ -42,12 +44,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Conversation, ConversationMessage, OutboundMessagePayload, ScheduledConversationMessage } from "@/hooks/use-conversations";
+import { Conversation, ConversationMessage, OutboundMessagePayload, ReplyToRef, ScheduledConversationMessage } from "@/hooks/use-conversations";
 import { cn } from "@/lib/utils";
 import { InstanceBadge } from "./InstanceBadge";
 import { useBrokerPersonalCooldown } from "@/hooks/use-broker-personal-cooldown";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { renderTextWithLinks } from "@/lib/linkify";
 // supabase import removed — file uploads moved to use-conversations hook
 import { toast } from "sonner";
 
