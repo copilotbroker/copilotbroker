@@ -335,25 +335,75 @@ export function ConversationThread({
 
     const fileToSend = pendingFile;
     const fileTypeToSend = pendingType;
+    const replyRef = replyingTo;
 
     setInputValue("");
     setPendingFile(null);
+    setReplyingTo(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (inputRef.current) inputRef.current.style.height = "auto";
     inputRef.current?.focus();
 
     if (fileToSend && fileTypeToSend) {
-      // Pass file to hook — it handles optimistic + background upload
       onSendMessage({
         content: text || "",
         messageType: fileTypeToSend,
         file: fileToSend,
+        replyTo: replyRef || undefined,
+      });
+    } else if (replyRef) {
+      onSendMessage({
+        content: text,
+        messageType: "text",
+        replyTo: replyRef,
       });
     } else {
-      // Text-only: fire-and-forget (hook handles optimistic)
       onSendMessage(text);
     }
   };
+
+  const startReplyTo = useCallback((msg: ConversationMessage) => {
+    const snippet = msg.message_type === "text"
+      ? msg.content
+      : msg.message_type === "image" ? "📷 Foto"
+      : msg.message_type === "audio" ? "🎤 Áudio"
+      : msg.message_type === "video" ? "🎬 Vídeo"
+      : msg.message_type === "document" ? "📎 Documento"
+      : "[Mídia]";
+    setReplyingTo({
+      messageId: msg.id,
+      uazapiMessageId: msg.uazapi_message_id || null,
+      senderName: msg.sender_name || (msg.direction === "outbound" ? "Você" : leadName),
+      content: String(snippet || "").substring(0, 200),
+      messageType: msg.message_type,
+    });
+    inputRef.current?.focus();
+  }, [leadName]);
+
+  const scrollToMessage = useCallback((localId: string) => {
+    const el = messageRefs.current.get(localId);
+    if (!el) {
+      toast.error("Mensagem original não está nesta conversa.");
+      return;
+    }
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightedMsgId(localId);
+    window.setTimeout(() => setHighlightedMsgId((cur) => (cur === localId ? null : cur)), 1600);
+  }, []);
+
+  const handleBubbleTouchStart = (msg: ConversationMessage) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      startReplyTo(msg);
+    }, 550);
+  };
+  const handleBubbleTouchCancel = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
 
   const handleSchedule = async () => {
     const text = inputValue.trim();
