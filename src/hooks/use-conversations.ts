@@ -716,6 +716,8 @@ export function useConversationMessages(
     sentBy: string;
     messageType: string;
     metadata: Record<string, unknown>;
+    replyToMessageId?: string | null;
+    replyToUazapiId?: string | null;
   }) => {
     const { data, error } = await supabase.functions.invoke("inbox-send-message", {
       body: {
@@ -725,6 +727,8 @@ export function useConversationMessages(
         message_type: params.messageType,
         metadata: params.metadata,
         client_message_id: params.clientId,
+        reply_to_message_id: params.replyToMessageId || null,
+        reply_to_uazapi_id: params.replyToUazapiId || null,
       },
     });
     if (error) throw error;
@@ -742,7 +746,9 @@ export function useConversationMessages(
           messageType: payload.messageType || "text",
           metadata: payload.metadata,
           file: payload.file,
+          replyTo: payload.replyTo,
         };
+
 
     const fileToUpload = normalizedPayload.file;
     const createdAt = new Date().toISOString();
