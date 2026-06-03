@@ -81,7 +81,10 @@ async function decodeOpusToBuffer(url: string): Promise<AudioBuffer> {
   const length = channelData[0].length;
   const buf = ctx.createBuffer(channelData.length, length, sampleRate);
   for (let ch = 0; ch < channelData.length; ch++) {
-    buf.copyToChannel(channelData[ch] as unknown as Float32Array, ch);
+    const src = channelData[ch];
+    const copy = new Float32Array(src.length);
+    copy.set(src);
+    buf.copyToChannel(copy, ch);
   }
   bufferCache.set(url, buf);
   return buf;
