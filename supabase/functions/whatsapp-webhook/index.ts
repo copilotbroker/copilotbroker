@@ -2364,7 +2364,43 @@ async function handleIncomingMessage(
     }
   }
 
+  // Fire-and-forget audio transcription for inbound audio messages.
+  if (!msg.fromMe && resolvedMessageType === "audio" && archiveResult.conversationId && msg.id) {
+    const triggerTranscription = async () => {
+      try {
+        const { data: row } = await supabase
+          .from("conversation_messages")
+          .select("id")
+          .eq("conversation_id", archiveResult.conversationId!)
+          .eq("uazapi_message_id", msg.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const messageRowId = (row as { id?: string } | null)?.id;
+        if (!messageRowId) return;
+        await fetch(`${SUPABASE_URL}/functions/v1/transcribe-audio`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({ message_id: messageRowId }),
+        });
+      } catch (e) {
+        console.warn("transcribe-audio trigger failed", e);
+      }
+    };
+    // @ts-ignore EdgeRuntime is available at runtime
+    if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(triggerTranscription());
+    } else {
+      triggerTranscription();
+    }
+  }
+
   // Skip further processing for outbound messages
+
   if (msg.fromMe) {
     return new Response(JSON.stringify({ success: true, event: "messages", archived: "outbound" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -1,34 +1,61 @@
-## Problema
+## Objetivo
 
-No Plantão (e nas demais telas que usam `BrokerLayout`), a página inteira rola junto. Isso joga o input de mensagem do `ConversationThread` para fora da viewport — o corretor precisa scrollar para chegar nele em vez de ter a caixa fixa no rodapé e rolar apenas as mensagens.
+Áudio do WhatsApp toca **inline** em qualquer dispositivo (iPhone, Android, desktop) **e** chega com **transcrição automática** em texto logo abaixo do player. Sem fallback "Abrir/Baixar".
 
-## Causa raiz
+## Parte 1 — Player inline (resolve o iOS)
 
-Em `src/components/broker/BrokerLayout.tsx` (linha 61) o wrapper externo usa `min-h-[100dvh]` quando `hideMobileNav` é `false` (sempre no desktop). Com `min-h`, o container cresce com o conteúdo, então:
+iOS Safari não decodifica `.ogg/opus` nativamente. Em vez de depender do `<audio>`, decodificamos o Opus no próprio navegador via WebAssembly e tocamos pelo Web Audio API — funciona idêntico em todo lugar.
 
-- O filho principal `h-full flex flex-col overflow-hidden` não tem altura definida.
-- O `<main>` `flex-1 overflow-y-auto` perde o bound de altura.
-- O `sticky bottom-0` do input no `ConversationThread` gruda no fim do conteúdo (não da viewport).
+Biblioteca: [`opus-decoder`](https://www.npmjs.com/package/opus-decoder) (wasm ~200KB, carregada sob demanda no primeiro Play — não impacta bundle inicial).
 
-## Mudança
+### Novo componente `OpusAudioPlayer`
+Arquivo: `src/components/inbox/OpusAudioPlayer.tsx`
+- Tenta `<audio>` nativo (caminho rápido em desktop/Android).
+- Se `canPlayType` retornar vazio OU disparar `error`, faz fetch → decodifica Opus → PCM via `opus-decoder` → `AudioBuffer` → toca via Web Audio API.
+- UI: ícone de microfone, botão play/pause, barra de progresso clicável, tempo decorrido/total, velocidade (1x / 1.5x / 2x).
+- Cache do `AudioBuffer` por URL para não redecodificar a cada play/pause.
+- `AudioContext.resume()` dentro do gesto do Play (exigência do iOS).
 
-Em `src/components/broker/BrokerLayout.tsx`, trocar o wrapper externo para usar sempre altura fixa de viewport com overflow escondido:
+### Substituir `AudioMessage` em `MessageMedia.tsx`
+Remover `AudioMessage`, `audioIsPlayable`, estado `fallback` e card "Abrir/Baixar". Branch `isAudio` renderiza só `<OpusAudioPlayer ... />` + bloco de transcrição (parte 2).
 
-```tsx
-<div className="bg-[#0f0f12] admin-scrollbar h-[100dvh] overflow-hidden pt-safe">
-```
+### Dependência
+`bun add opus-decoder`.
 
-(remove o `cn(...)` condicional entre `h-[100dvh] overflow-hidden pt-safe` e `min-h-[100dvh]` — usa sempre a versão de viewport fixa.)
+## Parte 2 — Transcrição automática
 
-O restante do layout já está pronto para isso: o container interno é `h-full flex flex-col overflow-hidden` e o `<main>` é `flex-1 min-h-0 overflow-y-auto`, então passa a rolar somente o `<main>`, com header, banner de WhatsApp e bottom nav fixos.
+Toda mensagem de áudio é transcrita em português e exibida em um bloco "Transcrição" abaixo do player (estilo "Transcript" do WhatsApp).
 
-## Impacto
+### Onde transcrever
+**Na recepção, no webhook** — não em runtime no client. Vantagens:
+- Transcreve uma vez, salva no banco, todos os corretores reusam.
+- Aparece pronto quando o corretor abre a conversa.
+- Não consome créditos sempre que alguém revê a conversa.
 
-- **Plantão / Inbox**: input do `ConversationThread` fica fixo no rodapé, e o scroll acontece somente na área de mensagens. ✅
-- **Outras páginas (Dashboard, Projects, Roletas, CopilotConfig, Profile)**: o `<main>` já é `overflow-y-auto`, então o scroll passa a acontecer dentro do `<main>` em vez do body — padrão de app shell, sem perda funcional.
-- **Mobile com bottom nav**: `pb-20` no container principal continua reservando espaço para o bottom nav fixo.
-- **Mobile dentro de conversa (`hideMobileNav` true)**: comportamento já correto, mantido.
+### Stack
+- **Lovable AI Gateway** com `google/gemini-2.5-flash` (já configurado, sem chave nova).
+- Gemini aceita áudio como `inline_data` (base64) em chamadas `/v1/chat/completions` e devolve a transcrição.
+- Custo baixo, latência boa para áudios típicos de WhatsApp (< 2 min).
 
-## Arquivos
+### Mudanças no backend
+1. **`supabase/functions/whatsapp-webhook/index.ts`** — quando `message_type === 'audio'` e a mídia já está disponível (após o download/storage que já fazemos), invocar (fire-and-forget, com `EdgeRuntime.waitUntil`) uma nova função `transcribe-audio` passando `message_id` e `storage_path`. Não bloqueia o ack do webhook.
+2. **Nova edge function `supabase/functions/transcribe-audio/index.ts`** — baixa o arquivo do Storage, converte para base64, chama Gemini Flash via Lovable AI Gateway com prompt "Transcreva fielmente este áudio em português brasileiro, sem comentários extras", recebe o texto e atualiza `messages.metadata.transcription = { text, status: 'done', model, generated_at }`. Trata 429/402 marcando `status: 'rate_limited'` ou `'failed'` (a UI mostra um botão "Tentar novamente" que reinvoca a função).
+3. **Migração**: nenhum schema novo — usamos o `metadata` jsonb que já existe em `messages`.
 
-- `src/components/broker/BrokerLayout.tsx` — uma linha alterada (wrapper externo).
+### Mudanças no frontend
+- `OpusAudioPlayer` recebe `transcription?: { status, text }` como prop.
+- Abaixo do player: bloco discreto com label "Transcrição" + texto. Estados:
+  - `pending` (default ao receber) → "Transcrevendo áudio…" com shimmer.
+  - `done` → texto completo, com botão "ocultar/mostrar" se for longo.
+  - `failed` / `rate_limited` → "Não foi possível transcrever" + botão "Tentar novamente" (chama `transcribe-audio` via `supabase.functions.invoke`).
+- Realtime: a UI já escuta `messages` updates; quando `metadata.transcription` mudar, re-renderiza automaticamente.
+
+### Backfill (opcional, posterior)
+Não cobrir agora. Áudios antigos seguem sem transcrição até alguém clicar em "Transcrever" (botão pequeno no player quando `transcription` for ausente). Simples e barato.
+
+## Fora de escopo
+- Waveform visual estilo WhatsApp.
+- Transcodificação server-side com ffmpeg.
+- Tradução automática (só transcrição em PT-BR).
+- Backfill em massa de áudios antigos.
+- Gravação de áudio pelo corretor.
