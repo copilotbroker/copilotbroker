@@ -71,13 +71,13 @@ async function decodeOpusToBuffer(url: string): Promise<AudioBuffer> {
     // Fall back to wasm Opus decoder.
   }
 
-  const { OggOpusDecoder } = await import("opus-decoder");
+  const { OggOpusDecoder } = await import("ogg-opus-decoder");
   const decoder = new OggOpusDecoder();
   await decoder.ready;
-  const { channelData, sampleRate } = decoder.decode(new Uint8Array(arr));
+  const { channelData, sampleRate } = await decoder.decodeFile(new Uint8Array(arr));
   decoder.free();
 
-  if (!channelData.length) throw new Error("Áudio vazio");
+  if (!channelData.length || !channelData[0].length) throw new Error("Áudio vazio");
   const length = channelData[0].length;
   const buf = ctx.createBuffer(channelData.length, length, sampleRate);
   for (let ch = 0; ch < channelData.length; ch++) {
