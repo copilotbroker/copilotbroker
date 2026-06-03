@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Download, ExternalLink, FileText, Image as ImageIcon, Mic, Play, Video } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { renderTextWithLinks } from "@/lib/linkify";
+import { OpusAudioPlayer } from "./OpusAudioPlayer";
 import type { ConversationMessage } from "@/hooks/use-conversations";
 
 const getMessageTypeLabel = (type: string) => {
