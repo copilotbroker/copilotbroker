@@ -5,7 +5,7 @@
  * cards "card-luxury", botões dourados, ChevronDown indicador.
  */
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { LandingContent, CustomSection } from "@/types/project";
 import { getIcon } from "../iconMap";
 import { getPalette, getTypography } from "./tokens";
@@ -473,9 +473,28 @@ export function Gallery({
   const { ref, v } = useReveal();
   const items = (section.items || []).filter((it) => it.imageUrl);
   const [idx, setIdx] = useState(0);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   if (items.length === 0) return null;
   const title = splitTitle(section.title || "Galeria");
   const go = (delta: number) => setIdx((i) => (i + delta + items.length) % items.length);
+  const goLightbox = (delta: number) =>
+    setLightboxIdx((i) => (i === null ? i : (i + delta + items.length) % items.length));
+
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxIdx(null);
+      if (e.key === "ArrowLeft") goLightbox(-1);
+      if (e.key === "ArrowRight") goLightbox(1);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [lightboxIdx, items.length]);
 
   return (
     <section
@@ -508,7 +527,8 @@ export function Gallery({
                 src={it.imageUrl}
                 alt={it.text || `Imagem ${i + 1}`}
                 loading="lazy"
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
+                onClick={() => setLightboxIdx(i)}
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 cursor-zoom-in ${i === idx ? "opacity-100" : "opacity-0 pointer-events-none"}`}
               />
             ))}
           </div>
@@ -550,6 +570,49 @@ export function Gallery({
           )}
         </div>
       </div>
+
+      {lightboxIdx !== null && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
+          style={{ backgroundColor: "rgba(0,0,0,0.92)" }}
+          onClick={() => setLightboxIdx(null)}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); setLightboxIdx(null); }}
+            aria-label="Fechar"
+            className="absolute top-4 right-4 w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-110"
+            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: `1px solid ${p.primary}66`, color: p.primary }}
+          >
+            <X className="w-5 h-5" />
+          </button>
+          {items.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); goLightbox(-1); }}
+                aria-label="Anterior"
+                className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                style={{ backgroundColor: "rgba(255,255,255,0.08)", border: `1px solid ${p.primary}66`, color: p.primary }}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); goLightbox(1); }}
+                aria-label="Próxima"
+                className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                style={{ backgroundColor: "rgba(255,255,255,0.08)", border: `1px solid ${p.primary}66`, color: p.primary }}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+          <img
+            src={items[lightboxIdx].imageUrl}
+            alt={items[lightboxIdx].text || `Imagem ${lightboxIdx + 1}`}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-full max-h-full object-contain select-none"
+          />
+        </div>
+      )}
     </section>
   );
 }
