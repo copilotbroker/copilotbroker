@@ -1036,7 +1036,7 @@ Faixa de preço: A partir de R$ 320.000`}
         <div className={cn("flex-1 overflow-hidden rounded-xl border border-[#2a2a2e] bg-white", mobileTab !== "preview" ? "hidden md:block" : "block")}>
           {landingContent ? (
             <div className="overflow-y-auto h-full">
-              <div className="transform scale-[0.5] origin-top-left w-[200%]" style={{ height: 'fit-content' }}>
+              <div style={{ zoom: 0.5 }}>
                 <DynamicLandingPage project={previewProject as any} previewContent={landingContent} />
               </div>
             </div>
