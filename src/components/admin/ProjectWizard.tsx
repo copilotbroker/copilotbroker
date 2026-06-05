@@ -1182,7 +1182,8 @@ Faixa de preço: A partir de R$ 320.000`}
   }
 
   return (
-    <div className="flex flex-col">
+    <div className={cn("flex flex-col", isLastStep && "h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)]")}>
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-4">
