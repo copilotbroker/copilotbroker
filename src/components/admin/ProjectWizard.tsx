@@ -169,14 +169,16 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   }, [step]);
 
   // Check slug uniqueness (debounced)
-  const checkSlug = async (slug: string) => {
+  const checkSlug = async (slug: string, citySlug: string) => {
     if (!slug.trim()) { setSlugError(null); return; }
+    if (!citySlug.trim()) { setSlugError(null); return; }
     setIsCheckingSlug(true);
     try {
       const { data: existing } = await supabase
         .from("projects")
         .select("id")
         .eq("slug", slug)
+        .eq("city_slug", citySlug)
         .eq("is_active", true)
         .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
         .maybeSingle();
@@ -191,10 +193,12 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   useEffect(() => {
     if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current);
     const slug = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    const citySlug = data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
     if (!slug) { setSlugError(null); return; }
-    slugCheckTimerRef.current = setTimeout(() => checkSlug(slug), 500);
+    if (!citySlug) { setSlugError(null); return; }
+    slugCheckTimerRef.current = setTimeout(() => checkSlug(slug, citySlug), 500);
     return () => { if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current); };
-  }, [data.slug]);
+  }, [data.slug, data.city_slug]);
 
   const clearDraft = () => {
     localStorage.removeItem(DRAFT_KEY);
@@ -504,18 +508,20 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
 
     try {
       const finalSlug = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+      const finalCitySlug = data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
 
-      // Check for duplicate slug before saving
+      // Check for duplicate URL before saving (same city + same slug)
       const { data: existingSlug } = await supabase
         .from("projects")
         .select("id")
         .eq("slug", finalSlug)
+        .eq("city_slug", finalCitySlug)
         .eq("is_active", true)
         .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
         .maybeSingle();
 
       if (existingSlug) {
-        toast.error("Já existe um projeto com este slug. Altere o nome ou slug.");
+        toast.error("Já existe um projeto com esta URL nesta cidade. Altere o nome ou slug.");
         setIsSaving(false);
         return;
       }
