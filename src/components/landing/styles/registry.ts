@@ -23,6 +23,8 @@ export const STYLE_REGISTRY: Record<StyleFamily, StyleFamilyModule> = {
 };
 
 export function getStyleFamily(family?: StyleFamily): StyleFamilyModule | null {
-  if (!family) return null;
-  return STYLE_REGISTRY[family] || null;
+  // Default to luxury-noir (padrão visual das landings manuais) quando
+  // nenhuma família foi escolhida ou a família é desconhecida.
+  if (!family) return STYLE_REGISTRY["luxury-noir"];
+  return STYLE_REGISTRY[family] || STYLE_REGISTRY["luxury-noir"];
 }
