@@ -557,7 +557,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
           name: data.name.trim(),
           slug: finalSlug,
           city: data.city.trim(),
-          city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+          city_slug: finalCitySlug,
           description: data.description.trim() || null,
           status: data.status,
           type: data.type,
@@ -566,17 +566,34 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
           is_active: true,
         };
 
-        const { data: newProject, error: projError } = await supabase
-          .from("projects")
-          .insert(projectPayload)
-          .select("id")
-          .single();
+        const targetProjectId = isOwnExistingProject ? (existingSlug as any).id : null;
+        const { data: savedProject, error: projError } = targetProjectId
+          ? await supabase
+              .from("projects")
+              .update(projectPayload)
+              .eq("id", targetProjectId)
+              .select("id")
+              .single()
+          : await supabase
+              .from("projects")
+              .insert(projectPayload)
+              .select("id")
+              .single();
 
         if (projError) throw projError;
 
-        const { error: linkError } = await supabase
+        const projectId = savedProject.id;
+
+        const { data: existingLink } = await supabase
           .from("broker_projects")
-          .insert({ broker_id: brokerId, project_id: newProject.id, is_active: true });
+          .select("id, is_active")
+          .eq("broker_id", brokerId)
+          .eq("project_id", projectId)
+          .maybeSingle();
+
+        const { error: linkError } = existingLink
+          ? await supabase.from("broker_projects").update({ is_active: true }).eq("id", existingLink.id)
+          : await supabase.from("broker_projects").insert({ broker_id: brokerId, project_id: projectId, is_active: true });
 
         if (linkError) console.error("Error linking project:", linkError);
 
