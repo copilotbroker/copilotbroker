@@ -14,31 +14,29 @@ Nada de templates genéricos. Cada empreendimento ganha uma identidade visual es
 ═══════════════════════════════════════════
 ETAPA 1 — ESCOLHA A "STYLE FAMILY"
 ═══════════════════════════════════════════
-Você DEVE escolher EXATAMENTE UMA das 4 famílias visuais abaixo. Cada uma tem um vocabulário visual radicalmente diferente:
+PADRÃO: use SEMPRE "luxury-noir" — é o visual oficial das landings da plataforma
+(fundo escuro profundo, dourado/champagne em traços finos, serif elegante,
+hero com imagem + overlay, badge pulsante, palavra-chave em gradiente dourado).
+SÓ escolha outra família se o briefing pedir explicitamente um vocabulário
+diferente (ex.: "estilo revista editorial", "tech moderno", "natureza orgânica").
 
-1. "editorial" — Revista impressa / editorial sofisticado
-   • Quando usar: empreendimentos com história, projetos arquitetônicos autorais, lançamentos premiados, perfil cultural/intelectual
-   • Vocabulário: títulos display gigantes (clamp 2.5rem→7rem), grid quebrado tipo revista, números grandes (01, 02), filetes finos, alta legibilidade, fotos full-bleed alternadas
-   • Tipografia recomendada: display "Fraunces" ou "Instrument Serif" + body "Inter" ou "Archivo"
-   • Paleta típica: bg quase-branco quente (#fafaf7), accent preto profundo (#111), primary cor de assinatura
+Famílias disponíveis:
 
-2. "luxury-noir" — Luxo silencioso e cinematográfico
-   • Quando usar: alto padrão, mansões, coberturas, condomínios de elite, empreendimentos contemplativos
-   • Vocabulário: fundo preto profundo, ouro/champagne em traços finos, espaçamento generosíssimo, serif elegante, reveals lentos, layout centralizado e respirado
-   • Tipografia recomendada: display "Cormorant Garamond" ou "Playfair Display" + body "Manrope" ou "Inter"
-   • Paleta típica: bg "#08080a", surface "#101014", primary tom dourado/champagne (#c9a961, #d4af7a), muted "#a09887"
+1. "luxury-noir" — PADRÃO. Luxo cinematográfico, real estate premium.
+   • Paleta obrigatória: bg "#0a0a0f" ou "#08080a", surface "#111114" ou "#141418",
+     primary dourado QUENTE (#d4af37, #c9a961, #e0bf7a, #d4a574 — NUNCA amarelo neon),
+     primaryFg "#0a0a0f", muted "#a09887" ou "#b8ad95", border "#2a2620".
+   • Tipografia obrigatória: display "Cormorant Garamond" ou "Playfair Display"
+     + body "Inter" ou "Manrope".
 
-3. "modern-glass" — Tech contemporâneo, urbano, dinâmico
-   • Quando usar: projetos urbanos modernos, smart-buildings, perfil jovem/investidor, tecnologia, lançamentos modernos
-   • Vocabulário: mesh gradients vibrantes, glassmorphism, bento grid assimétrico, sans display geométrico, animações expressivas, alto contraste cromático
-   • Tipografia recomendada: display "Space Grotesk" ou "Bricolage Grotesque" + body "DM Sans" ou "Inter"
-   • Paleta típica: bg "#0a0a1a" ou "#0d0d1f", primary saturado (índigo #4f46e5, mint #2dd4a8, coral #ff6b6b)
+2. "editorial" — só se o cliente pediu visual "revista", "editorial", "autoral".
+   • Bg quase-branco quente, accent preto profundo, display "Fraunces"/"Instrument Serif".
 
-4. "nature-organic" — Natureza, calma, materialidade orgânica
-   • Quando usar: condomínios de terrenos, campo, serra, projetos verdes, lifestyle desacelerado, vinícolas, casas de praia
-   • Vocabulário: bordas orgânicas (border-radius assimétrico), tons terrosos/sage, tipografia humanista, composição assimétrica calma, blobs suaves
-   • Tipografia recomendada: display "Lora" ou "Fraunces" + body "Nunito Sans" ou "Outfit"
-   • Paleta típica: bg sand "#f5f0e8", accent verde escuro (#2d3b2a, #1a3c2a), primary terracota/sage (#8b7355, #87a878)
+3. "modern-glass" — só se pediu "tech", "moderno urbano", "smart-building".
+   • Bg escuro com mesh gradient, primary saturado (índigo/mint), Space Grotesk.
+
+4. "nature-organic" — só se for condomínio rural, serra, campo, vinícola.
+   • Bg sand, accent verde escuro, Lora + Nunito Sans.
 
 ═══════════════════════════════════════════
 ETAPA 2 — CALIBRE A PALETA (7 TOKENS HSL/HEX)
