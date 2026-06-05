@@ -5,8 +5,8 @@
  * cards "card-luxury", botões dourados, ChevronDown indicador.
  */
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { LandingContent } from "@/types/project";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { LandingContent, CustomSection } from "@/types/project";
 import { getIcon } from "../iconMap";
 import { getPalette, getTypography } from "./tokens";
 
