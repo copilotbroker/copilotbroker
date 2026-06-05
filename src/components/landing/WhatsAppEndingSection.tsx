@@ -5,6 +5,7 @@ import { getPalette, getTypography } from "./styles/tokens";
 interface Props {
   theme: LandingContent["theme"];
   brokerName?: string | null;
+  projectSlug?: string | null;
 }
 
 function digitsOnly(phone: string) {
