@@ -176,13 +176,14 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     try {
       const { data: existing } = await supabase
         .from("projects")
-        .select("id")
+        .select("id, created_by_broker_id")
         .eq("slug", slug)
         .eq("city_slug", citySlug)
         .eq("is_active", true)
         .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
         .maybeSingle();
-      setSlugError(existing ? "Já existe um projeto com este slug." : null);
+      const isOwnProject = brokerMode && brokerId && (existing as any)?.created_by_broker_id === brokerId;
+      setSlugError(existing && !isOwnProject ? "Já existe um projeto com este slug nesta cidade." : null);
     } catch {
       setSlugError(null);
     } finally {
@@ -513,14 +514,16 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
       // Check for duplicate URL before saving (same city + same slug)
       const { data: existingSlug } = await supabase
         .from("projects")
-        .select("id")
+        .select("id, created_by_broker_id")
         .eq("slug", finalSlug)
         .eq("city_slug", finalCitySlug)
         .eq("is_active", true)
         .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
         .maybeSingle();
 
-      if (existingSlug) {
+      const isOwnExistingProject = brokerMode && brokerId && (existingSlug as any)?.created_by_broker_id === brokerId;
+
+      if (existingSlug && !isOwnExistingProject) {
         toast.error("Já existe um projeto com esta URL nesta cidade. Altere o nome ou slug.");
         setIsSaving(false);
         return;
