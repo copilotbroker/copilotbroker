@@ -38,12 +38,36 @@ export interface CustomSection {
   items?: { icon?: string; text: string; value?: string; imageUrl?: string }[];
 }
 
+export type StyleFamily = "editorial" | "luxury-noir" | "modern-glass" | "nature-organic";
+
+export interface StylePalette {
+  bg: string;
+  surface: string;
+  primary: string;
+  primaryFg: string;
+  muted: string;
+  accent: string;
+  border: string;
+}
+
+export interface StyleTypography {
+  display: string;
+  body: string;
+  displayWeight?: number;
+  bodyWeight?: number;
+}
+
 export interface LandingContent {
   theme: {
     primaryColor: string;
     accentColor: string;
     style: "luxury" | "modern" | "nature" | "urban";
     fontFamily?: "serif" | "sans-serif";
+    styleFamily?: StyleFamily;
+    palette?: StylePalette;
+    typography?: StyleTypography;
+    motion?: "subtle" | "expressive" | "cinematic";
+    density?: "airy" | "balanced" | "dense";
   };
   hero: {
     badge: string;
