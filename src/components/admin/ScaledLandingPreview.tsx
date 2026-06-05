@@ -107,7 +107,7 @@ function IframePortal({
   );
 }
 
-export default function ScaledLandingPreview({ project, previewContent }: Props) {
+export default function ScaledLandingPreview({ project, previewContent, brokerId, brokerName }: Props) {
   const [device, setDevice] = useState<DeviceKey>("desktop");
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
