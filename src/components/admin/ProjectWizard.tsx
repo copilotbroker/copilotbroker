@@ -1236,14 +1236,15 @@ Faixa de preço: A partir de R$ 320.000`}
 
       {/* Content */}
       <div className={cn(
-        isLastStep ? "" : "pb-4",
+        isLastStep ? "flex-1 min-h-0 overflow-hidden flex flex-col" : "pb-4",
       )}>
-        <div className={cn(isLastStep ? "" : "min-h-[340px]")}>
+        <div className={cn(isLastStep ? "flex-1 min-h-0 overflow-hidden" : "min-h-[340px]")}>
           {stepContent[step]}
         </div>
         {/* Sentinel: when this is visible, show the bottom buttons */}
-        <div ref={bottomSentinelRef} className="h-1" />
+        {!isLastStep && <div ref={bottomSentinelRef} className="h-1" />}
       </div>
+
 
       {/* Bottom nav */}
       <div className="border-t border-[#2a2a2e] pt-4 mt-4 pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] lg:pb-0">
