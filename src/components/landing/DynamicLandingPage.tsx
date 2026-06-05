@@ -118,9 +118,6 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
               {LuxuryGallery && gallerySections.map((section, i) => (
                 <LuxuryGallery key={`gal-${i}`} section={section} theme={content.theme} />
               ))}
-              {otherSections.map((section, i) => (
-                <DynamicCustomSection key={`other-${i}`} section={section} theme={content.theme} />
-              ))}
             </>
           ) : (
             <>
