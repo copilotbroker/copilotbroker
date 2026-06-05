@@ -1038,7 +1038,7 @@ Faixa de preço: A partir de R$ 320.000`}
         {/* Preview side */}
         <div className={cn("flex-1 overflow-hidden rounded-xl border border-[#2a2a2e] bg-[#0f0f12]", mobileTab !== "preview" ? "hidden md:block" : "block")}>
           {landingContent ? (
-            <ScaledLandingPreview project={previewProject as any} previewContent={landingContent} />
+            <ScaledLandingPreview project={previewProject as any} previewContent={landingContent} brokerId={brokerId} brokerName={brokerName} />
           ) : (
             <div className="flex items-center justify-center h-full text-slate-400 text-sm">
               {isGenerating ? (
