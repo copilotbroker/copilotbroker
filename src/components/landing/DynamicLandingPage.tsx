@@ -83,9 +83,10 @@ interface Props {
   previewContent?: LandingContent;
   brokerId?: string | null;
   brokerSlug?: string | null;
+  brokerName?: string | null;
 }
 
-export default function DynamicLandingPage({ project, previewContent, brokerId, brokerSlug }: Props) {
+export default function DynamicLandingPage({ project, previewContent, brokerId, brokerSlug, brokerName }: Props) {
   const content = previewContent || project.landing_content;
   const isPreview = !!previewContent;
   const isBrokerOwnedLanding = !!project.created_by_broker_id;
