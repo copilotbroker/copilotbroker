@@ -169,18 +169,21 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   }, [step]);
 
   // Check slug uniqueness (debounced)
-  const checkSlug = async (slug: string) => {
+  const checkSlug = async (slug: string, citySlug: string) => {
     if (!slug.trim()) { setSlugError(null); return; }
+    if (!citySlug.trim()) { setSlugError(null); return; }
     setIsCheckingSlug(true);
     try {
       const { data: existing } = await supabase
         .from("projects")
-        .select("id")
+        .select("id, created_by_broker_id")
         .eq("slug", slug)
+        .eq("city_slug", citySlug)
         .eq("is_active", true)
         .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
         .maybeSingle();
-      setSlugError(existing ? "Já existe um projeto com este slug." : null);
+      const isOwnProject = brokerMode && brokerId && (existing as any)?.created_by_broker_id === brokerId;
+      setSlugError(existing && !isOwnProject ? "Já existe um projeto com este slug nesta cidade." : null);
     } catch {
       setSlugError(null);
     } finally {
@@ -191,10 +194,12 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   useEffect(() => {
     if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current);
     const slug = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    const citySlug = data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
     if (!slug) { setSlugError(null); return; }
-    slugCheckTimerRef.current = setTimeout(() => checkSlug(slug), 500);
+    if (!citySlug) { setSlugError(null); return; }
+    slugCheckTimerRef.current = setTimeout(() => checkSlug(slug, citySlug), 500);
     return () => { if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current); };
-  }, [data.slug]);
+  }, [data.slug, data.city_slug]);
 
   const clearDraft = () => {
     localStorage.removeItem(DRAFT_KEY);
@@ -504,18 +509,22 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
 
     try {
       const finalSlug = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+      const finalCitySlug = data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
 
-      // Check for duplicate slug before saving
+      // Check for duplicate URL before saving (same city + same slug)
       const { data: existingSlug } = await supabase
         .from("projects")
-        .select("id")
+        .select("id, created_by_broker_id")
         .eq("slug", finalSlug)
+        .eq("city_slug", finalCitySlug)
         .eq("is_active", true)
         .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
         .maybeSingle();
 
-      if (existingSlug) {
-        toast.error("Já existe um projeto com este slug. Altere o nome ou slug.");
+      const isOwnExistingProject = brokerMode && brokerId && (existingSlug as any)?.created_by_broker_id === brokerId;
+
+      if (existingSlug && !isOwnExistingProject) {
+        toast.error("Já existe um projeto com esta URL nesta cidade. Altere o nome ou slug.");
         setIsSaving(false);
         return;
       }
@@ -548,7 +557,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
           name: data.name.trim(),
           slug: finalSlug,
           city: data.city.trim(),
-          city_slug: data.city_slug.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+          city_slug: finalCitySlug,
           description: data.description.trim() || null,
           status: data.status,
           type: data.type,
@@ -557,17 +566,34 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
           is_active: true,
         };
 
-        const { data: newProject, error: projError } = await supabase
-          .from("projects")
-          .insert(projectPayload)
-          .select("id")
-          .single();
+        const targetProjectId = isOwnExistingProject ? (existingSlug as any).id : null;
+        const { data: savedProject, error: projError } = targetProjectId
+          ? await supabase
+              .from("projects")
+              .update(projectPayload)
+              .eq("id", targetProjectId)
+              .select("id")
+              .single()
+          : await supabase
+              .from("projects")
+              .insert(projectPayload)
+              .select("id")
+              .single();
 
         if (projError) throw projError;
 
-        const { error: linkError } = await supabase
+        const projectId = savedProject.id;
+
+        const { data: existingLink } = await supabase
           .from("broker_projects")
-          .insert({ broker_id: brokerId, project_id: newProject.id, is_active: true });
+          .select("id, is_active")
+          .eq("broker_id", brokerId)
+          .eq("project_id", projectId)
+          .maybeSingle();
+
+        const { error: linkError } = existingLink
+          ? await supabase.from("broker_projects").update({ is_active: true }).eq("id", existingLink.id)
+          : await supabase.from("broker_projects").insert({ broker_id: brokerId, project_id: projectId, is_active: true });
 
         if (linkError) console.error("Error linking project:", linkError);
 
