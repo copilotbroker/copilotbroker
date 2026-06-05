@@ -930,7 +930,7 @@ Faixa de preço: A partir de R$ 320.000`}
 
       <div className="flex flex-1 gap-4 min-h-0 overflow-hidden">
         {/* Chat side */}
-        <div className={cn("flex flex-col w-full md:w-[380px] md:flex-shrink-0", mobileTab !== "chat" ? "hidden md:flex" : "flex")}>
+        <div className={cn("flex flex-col w-full md:w-[380px] md:flex-shrink-0 min-h-0", mobileTab !== "chat" ? "hidden md:flex" : "flex")}>
           {/* Encerramento da landing: Formulário (CRM) ou Botão WhatsApp */}
           {landingContent && (
             <div className="mb-3 p-3 rounded-xl bg-[#1a1a1e] border border-[#2a2a2e] space-y-2">
