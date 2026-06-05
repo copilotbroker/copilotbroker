@@ -511,18 +511,6 @@ export function Gallery({
                 className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
               />
             ))}
-            <div
-              className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
-              style={{ background: `linear-gradient(180deg, transparent, ${p.bg}cc)` }}
-            />
-            {items[idx]?.text && (
-              <p
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs sm:text-sm tracking-[0.2em] uppercase"
-                style={{ color: "#f3ede0" }}
-              >
-                {items[idx].text}
-              </p>
-            )}
           </div>
 
           {items.length > 1 && (
