@@ -138,16 +138,15 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
           {content.theme.endingMode === "whatsapp" && content.theme.endingWhatsappPhone ? (
             <WhatsAppEndingSection theme={content.theme} projectSlug={project.slug} />
           ) : (
-            <div className="dark bg-background text-foreground">
-              <FormSection
-                projectId={project.id}
-                projectSlug={project.slug}
-                brokerId={brokerId || project.created_by_broker_id}
-                brokerSlug={brokerSlug}
-                allowBrokerSelection={!isBrokerOwnedLanding}
-                webhookUrl={project.webhook_url}
-              />
-            </div>
+            <LandingFormSection
+              theme={content.theme}
+              projectId={project.id}
+              projectSlug={project.slug}
+              brokerId={brokerId || project.created_by_broker_id}
+              brokerSlug={brokerSlug}
+              allowBrokerSelection={!isBrokerOwnedLanding}
+              webhookUrl={project.webhook_url}
+            />
           )}
         </main>
         <Footer content={content.footer} theme={content.theme} />
