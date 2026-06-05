@@ -618,15 +618,16 @@ export function Gallery({
 }
 
 /* ---------------- FOOTER ---------------- */
-export function Footer({ content, theme }: { content: LandingContent["footer"]; theme: LandingContent["theme"] }) {
+export function Footer({ content, theme }: { content?: LandingContent["footer"]; theme: LandingContent["theme"] }) {
   const { p, sans } = S(theme);
+  const c = content ?? { companyName: "", disclaimer: "" };
   return (
     <footer
       className="py-10 px-6 text-center"
       style={{ backgroundColor: p.bg, borderTop: `1px solid ${p.border}`, color: p.muted, ...sans }}
     >
-      <p className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: p.primary }}>{content.companyName}</p>
-      <p className="text-xs max-w-2xl mx-auto leading-relaxed">{content.disclaimer}</p>
+      {c.companyName && <p className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: p.primary }}>{c.companyName}</p>}
+      {c.disclaimer && <p className="text-xs max-w-2xl mx-auto leading-relaxed">{c.disclaimer}</p>}
     </footer>
   );
 }
