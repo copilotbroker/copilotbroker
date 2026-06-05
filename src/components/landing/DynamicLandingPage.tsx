@@ -83,9 +83,10 @@ interface Props {
   previewContent?: LandingContent;
   brokerId?: string | null;
   brokerSlug?: string | null;
+  brokerName?: string | null;
 }
 
-export default function DynamicLandingPage({ project, previewContent, brokerId, brokerSlug }: Props) {
+export default function DynamicLandingPage({ project, previewContent, brokerId, brokerSlug, brokerName }: Props) {
   const content = previewContent || project.landing_content;
   const isPreview = !!previewContent;
   const isBrokerOwnedLanding = !!project.created_by_broker_id;
@@ -136,7 +137,7 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
           {/* Encerramento: formulário (default) ou botão WhatsApp do corretor.
               No preview do editor, mostramos a seção escolhida para visualização. */}
           {content.theme.endingMode === "whatsapp" && content.theme.endingWhatsappPhone ? (
-            <WhatsAppEndingSection theme={content.theme} projectSlug={project.slug} />
+            <WhatsAppEndingSection theme={content.theme} projectSlug={project.slug} brokerName={brokerName} />
           ) : (
             <LandingFormSection
               theme={content.theme}
