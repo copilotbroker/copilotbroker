@@ -176,26 +176,56 @@ IMPORTANTE:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
+          model: "openai/gpt-5",
           messages,
           tools: [
             {
               type: "function",
               function: {
                 name: "generate_landing_content",
-                description: "Generate the complete landing page content as structured JSON",
+                description: "Generate the complete landing page content AND visual design system as structured JSON",
                 parameters: {
                   type: "object",
                   properties: {
                     theme: {
                       type: "object",
                       properties: {
-                        primaryColor: { type: "string", description: "HEX color for primary elements (e.g. #C9A961 for gold)" },
-                        accentColor: { type: "string", description: "HEX color for accent/background (e.g. #1a1a2e for dark)" },
+                        primaryColor: { type: "string", description: "HEX (legacy). Espelha palette.primary." },
+                        accentColor: { type: "string", description: "HEX (legacy). Espelha palette.accent." },
                         style: { type: "string", enum: ["luxury", "modern", "nature", "urban"] },
-                        fontFamily: { type: "string", enum: ["serif", "sans-serif"], description: "serif for luxury/elegant, sans-serif for modern/clean" },
+                        fontFamily: { type: "string", enum: ["serif", "sans-serif"] },
+                        styleFamily: { type: "string", enum: ["editorial", "luxury-noir", "modern-glass", "nature-organic"], description: "OBRIGATÓRIO. A família visual da landing." },
+                        palette: {
+                          type: "object",
+                          description: "OBRIGATÓRIO. Paleta completa em HEX, 7 tokens.",
+                          properties: {
+                            bg: { type: "string" },
+                            surface: { type: "string" },
+                            primary: { type: "string" },
+                            primaryFg: { type: "string", description: "Cor do texto sobre primary, com contraste AA" },
+                            muted: { type: "string" },
+                            accent: { type: "string" },
+                            border: { type: "string" },
+                          },
+                          required: ["bg", "surface", "primary", "primaryFg", "muted", "accent", "border"],
+                          additionalProperties: false,
+                        },
+                        typography: {
+                          type: "object",
+                          description: "OBRIGATÓRIO. Par de Google Fonts para display + body.",
+                          properties: {
+                            display: { type: "string", description: "Ex: Fraunces, Cormorant Garamond, Space Grotesk, Lora" },
+                            body: { type: "string", description: "Ex: Inter, DM Sans, Manrope, Nunito Sans" },
+                            displayWeight: { type: "number" },
+                            bodyWeight: { type: "number" },
+                          },
+                          required: ["display", "body"],
+                          additionalProperties: false,
+                        },
+                        motion: { type: "string", enum: ["subtle", "expressive", "cinematic"] },
+                        density: { type: "string", enum: ["airy", "balanced", "dense"] },
                       },
-                      required: ["primaryColor", "accentColor", "style"],
+                      required: ["primaryColor", "accentColor", "style", "styleFamily", "palette", "typography"],
                       additionalProperties: false,
                     },
                     hero: {
