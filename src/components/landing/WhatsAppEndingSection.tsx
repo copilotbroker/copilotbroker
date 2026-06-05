@@ -5,15 +5,19 @@ import { getPalette, getTypography } from "./styles/tokens";
 interface Props {
   theme: LandingContent["theme"];
   brokerName?: string | null;
+  projectSlug?: string | null;
 }
 
 function digitsOnly(phone: string) {
   return (phone || "").replace(/\D/g, "");
 }
 
-export default function WhatsAppEndingSection({ theme, brokerName }: Props) {
+export default function WhatsAppEndingSection({ theme, brokerName, projectSlug }: Props) {
   const phone = digitsOnly(theme.endingWhatsappPhone || "");
-  const msg = theme.endingWhatsappMessage?.trim() || "Olá! Tenho interesse no imóvel anunciado.";
+  const defaultMsg = projectSlug
+    ? `Olá, tenho interesse no imóvel ${projectSlug}`
+    : "Olá! Tenho interesse no imóvel anunciado.";
+  const msg = theme.endingWhatsappMessage?.trim() || defaultMsg;
   if (!phone) return null;
 
   const p = getPalette(theme);
