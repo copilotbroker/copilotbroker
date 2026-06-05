@@ -111,16 +111,20 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
         <main>
           <Hero content={content.hero} theme={content.theme} />
           <About content={content.about} theme={content.theme} />
-          <Features content={content.features} theme={content.theme} />
 
-          {/* Luxury: galeria/carrossel + formulário (layout enxuto) */}
-          {isLuxury && LuxuryGallery && gallerySections.map((section, i) => (
-            <LuxuryGallery key={`gal-${i}`} section={section} theme={content.theme} />
-          ))}
-
-          {/* Demais famílias mantêm o fluxo completo */}
-          {!isLuxury && (
+          {/* Luxury: layout enxuto — Hero → Sobre → Carrossel → Formulário */}
+          {isLuxury ? (
             <>
+              {LuxuryGallery && gallerySections.map((section, i) => (
+                <LuxuryGallery key={`gal-${i}`} section={section} theme={content.theme} />
+              ))}
+              {otherSections.map((section, i) => (
+                <DynamicCustomSection key={`other-${i}`} section={section} theme={content.theme} />
+              ))}
+            </>
+          ) : (
+            <>
+              <Features content={content.features} theme={content.theme} />
               {(content.customSections || []).map((section, i) => (
                 <DynamicCustomSection key={i} section={section} theme={content.theme} />
               ))}
@@ -129,11 +133,6 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
               <CTA content={content.cta} theme={content.theme} />
             </>
           )}
-
-          {/* Luxury: seções não-galeria entram aqui (text/stats/embed) antes do form */}
-          {isLuxury && otherSections.map((section, i) => (
-            <DynamicCustomSection key={`other-${i}`} section={section} theme={content.theme} />
-          ))}
 
           {!isPreview && (
             <div className="dark bg-background text-foreground">
