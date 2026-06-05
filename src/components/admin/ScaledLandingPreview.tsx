@@ -8,6 +8,8 @@ import { LandingContent, Project } from "@/types/project";
 interface Props {
   project: Project;
   previewContent?: LandingContent;
+  brokerId?: string | null;
+  brokerName?: string | null;
 }
 
 const DEVICES = {
