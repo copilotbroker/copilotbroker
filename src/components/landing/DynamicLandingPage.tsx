@@ -92,10 +92,19 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
   const family = getStyleFamily(content.theme.styleFamily);
   const typography = getTypography(content.theme);
   const fontsToLoad = family ? [typography.display, typography.body] : [];
+  const isLuxury = (content.theme.styleFamily ?? "luxury-noir") === "luxury-noir";
 
   // New style families
   if (family) {
     const { Hero, About, Features, Urgency, Benefits, CTA, Footer } = family;
+    const LuxuryGallery = (family as any).Gallery as
+      | ((props: { section: CustomSection; theme: LandingContent["theme"] }) => JSX.Element)
+      | undefined;
+    const gallerySections = (content.customSections || []).filter(
+      (s) => s.type === "gallery" && (s.items?.some((it) => it.imageUrl) ?? false)
+    );
+    const otherSections = (content.customSections || []).filter((s) => !gallerySections.includes(s));
+
     return (
       <div className="min-h-screen">
         <FontLoader fonts={fontsToLoad} />
@@ -103,12 +112,29 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
           <Hero content={content.hero} theme={content.theme} />
           <About content={content.about} theme={content.theme} />
           <Features content={content.features} theme={content.theme} />
-          {content.customSections?.map((section, i) => (
-            <DynamicCustomSection key={i} section={section} theme={content.theme} />
+
+          {/* Luxury: galeria/carrossel + formulário (layout enxuto) */}
+          {isLuxury && LuxuryGallery && gallerySections.map((section, i) => (
+            <LuxuryGallery key={`gal-${i}`} section={section} theme={content.theme} />
           ))}
-          <Urgency content={content.urgency} theme={content.theme} />
-          <Benefits content={content.benefits} theme={content.theme} />
-          <CTA content={content.cta} theme={content.theme} />
+
+          {/* Demais famílias mantêm o fluxo completo */}
+          {!isLuxury && (
+            <>
+              {(content.customSections || []).map((section, i) => (
+                <DynamicCustomSection key={i} section={section} theme={content.theme} />
+              ))}
+              <Urgency content={content.urgency} theme={content.theme} />
+              <Benefits content={content.benefits} theme={content.theme} />
+              <CTA content={content.cta} theme={content.theme} />
+            </>
+          )}
+
+          {/* Luxury: seções não-galeria entram aqui (text/stats/embed) antes do form */}
+          {isLuxury && otherSections.map((section, i) => (
+            <DynamicCustomSection key={`other-${i}`} section={section} theme={content.theme} />
+          ))}
+
           {!isPreview && (
             <div className="dark bg-background text-foreground">
               <FormSection

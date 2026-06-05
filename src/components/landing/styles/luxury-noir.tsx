@@ -5,8 +5,8 @@
  * cards "card-luxury", botões dourados, ChevronDown indicador.
  */
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { LandingContent } from "@/types/project";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { LandingContent, CustomSection } from "@/types/project";
 import { getIcon } from "../iconMap";
 import { getPalette, getTypography } from "./tokens";
 
@@ -455,6 +455,111 @@ export function CTA({ content, theme }: { content: LandingContent["cta"]; theme:
           >
             {content.buttonText}
           </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- GALLERY / CARROSSEL ---------------- */
+export function Gallery({
+  section,
+  theme,
+}: {
+  section: CustomSection;
+  theme: LandingContent["theme"];
+}) {
+  const { p, serif, sans, goldGradient } = S(theme);
+  const { ref, v } = useReveal();
+  const items = (section.items || []).filter((it) => it.imageUrl);
+  const [idx, setIdx] = useState(0);
+  if (items.length === 0) return null;
+  const title = splitTitle(section.title || "Galeria");
+  const go = (delta: number) => setIdx((i) => (i + delta + items.length) % items.length);
+
+  return (
+    <section
+      ref={ref as any}
+      className="py-20 md:py-28"
+      style={{ backgroundColor: p.bg, color: "#d8cfb8", ...sans }}
+    >
+      <div className="container px-4">
+        <div className={`max-w-3xl mx-auto text-center mb-10 transition-all duration-1000 ${v ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+          <h2 style={{ ...serif, fontSize: "clamp(1.75rem, 4.5vw, 3rem)", color: "#f3ede0" }}>
+            {title.head}{" "}
+            <span className="bg-clip-text text-transparent" style={{ backgroundImage: goldGradient, WebkitBackgroundClip: "text" }}>
+              {title.tail}
+            </span>
+          </h2>
+          {section.description && (
+            <p className="mt-4 text-sm sm:text-base" style={{ color: p.muted }}>{section.description}</p>
+          )}
+          <div className="mt-6"><GoldDivider color={p.primary} /></div>
+        </div>
+
+        <div className="max-w-5xl mx-auto relative">
+          <div
+            className="relative overflow-hidden rounded-md"
+            style={{ border: `1px solid ${p.border}`, aspectRatio: "16 / 10" }}
+          >
+            {items.map((it, i) => (
+              <img
+                key={i}
+                src={it.imageUrl}
+                alt={it.text || `Imagem ${i + 1}`}
+                loading="lazy"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
+              />
+            ))}
+            <div
+              className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+              style={{ background: `linear-gradient(180deg, transparent, ${p.bg}cc)` }}
+            />
+            {items[idx]?.text && (
+              <p
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs sm:text-sm tracking-[0.2em] uppercase"
+                style={{ color: "#f3ede0" }}
+              >
+                {items[idx].text}
+              </p>
+            )}
+          </div>
+
+          {items.length > 1 && (
+            <>
+              <button
+                onClick={() => go(-1)}
+                aria-label="Anterior"
+                className="absolute left-2 sm:-left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110"
+                style={{ backgroundColor: `${p.bg}cc`, border: `1px solid ${p.primary}66`, color: p.primary }}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => go(1)}
+                aria-label="Próxima"
+                className="absolute right-2 sm:-right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110"
+                style={{ backgroundColor: `${p.bg}cc`, border: `1px solid ${p.primary}66`, color: p.primary }}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+
+              <div className="flex justify-center gap-2 mt-6">
+                {items.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setIdx(i)}
+                    aria-label={`Ir para imagem ${i + 1}`}
+                    className="h-1.5 rounded-full transition-all"
+                    style={{
+                      width: i === idx ? "1.75rem" : "0.5rem",
+                      backgroundColor: i === idx ? p.primary : `${p.primary}40`,
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </section>
