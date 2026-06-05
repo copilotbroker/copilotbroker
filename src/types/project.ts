@@ -68,6 +68,12 @@ export interface LandingContent {
     typography?: StyleTypography;
     motion?: "subtle" | "expressive" | "cinematic";
     density?: "airy" | "balanced" | "dense";
+    /** Como a landing termina: formulário no CRM (default) ou botão direto pro WhatsApp. */
+    endingMode?: "form" | "whatsapp";
+    /** Telefone E.164 (apenas dígitos com DDI) usado quando endingMode = "whatsapp". */
+    endingWhatsappPhone?: string;
+    /** Mensagem pré-preenchida do WhatsApp (opcional). */
+    endingWhatsappMessage?: string;
   };
   hero: {
     badge: string;
