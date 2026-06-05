@@ -168,18 +168,16 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
         <DynamicUrgency content={content.urgency} theme={content.theme} />
         <DynamicBenefits content={content.benefits} theme={content.theme} />
         <DynamicCTA content={content.cta} theme={content.theme} />
-        {!isPreview && (
-          <div className="dark bg-background text-foreground">
-            <FormSection
-              projectId={project.id}
-              projectSlug={project.slug}
-              brokerId={brokerId || project.created_by_broker_id}
-              brokerSlug={brokerSlug}
-              allowBrokerSelection={!isBrokerOwnedLanding}
-              webhookUrl={project.webhook_url}
-            />
-          </div>
-        )}
+        <div className="dark bg-background text-foreground">
+          <FormSection
+            projectId={project.id}
+            projectSlug={project.slug}
+            brokerId={brokerId || project.created_by_broker_id}
+            brokerSlug={brokerSlug}
+            allowBrokerSelection={!isBrokerOwnedLanding}
+            webhookUrl={project.webhook_url}
+          />
+        </div>
       </main>
       <DynamicFooter content={content.footer} theme={content.theme} />
       {!isPreview && <FloatingCTA />}
