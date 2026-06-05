@@ -8,6 +8,8 @@ import { LandingContent, Project } from "@/types/project";
 interface Props {
   project: Project;
   previewContent?: LandingContent;
+  brokerId?: string | null;
+  brokerName?: string | null;
 }
 
 const DEVICES = {
@@ -105,7 +107,7 @@ function IframePortal({
   );
 }
 
-export default function ScaledLandingPreview({ project, previewContent }: Props) {
+export default function ScaledLandingPreview({ project, previewContent, brokerId, brokerName }: Props) {
   const [device, setDevice] = useState<DeviceKey>("desktop");
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -157,7 +159,7 @@ export default function ScaledLandingPreview({ project, previewContent }: Props)
           }}
         >
           <IframePortal width={deviceWidth} scale={scale}>
-            <DynamicLandingPage project={project} previewContent={previewContent} />
+            <DynamicLandingPage project={project} previewContent={previewContent} brokerId={brokerId} brokerName={brokerName} />
           </IframePortal>
         </div>
       </div>

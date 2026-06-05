@@ -106,12 +106,14 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
   });
   const [landingContent, setLandingContent] = useState<LandingContent | null>(editProject?.landing_content || null);
   const [brokerWhatsapp, setBrokerWhatsapp] = useState<string>("");
+  const [brokerName, setBrokerName] = useState<string>("");
 
-  // Busca o WhatsApp do broker dono (para prefill ao escolher modo WhatsApp)
+  // Busca o WhatsApp e nome do broker dono (para prefill / preview)
   useEffect(() => {
     if (!brokerMode || !brokerId) return;
-    supabase.from("brokers").select("whatsapp").eq("id", brokerId).maybeSingle().then(({ data }) => {
+    supabase.from("brokers").select("whatsapp, name").eq("id", brokerId).maybeSingle().then(({ data }) => {
       if (data?.whatsapp) setBrokerWhatsapp(String(data.whatsapp));
+      if ((data as any)?.name) setBrokerName(String((data as any).name));
     });
   }, [brokerMode, brokerId]);
 
@@ -1036,7 +1038,7 @@ Faixa de preço: A partir de R$ 320.000`}
         {/* Preview side */}
         <div className={cn("flex-1 overflow-hidden rounded-xl border border-[#2a2a2e] bg-[#0f0f12]", mobileTab !== "preview" ? "hidden md:block" : "block")}>
           {landingContent ? (
-            <ScaledLandingPreview project={previewProject as any} previewContent={landingContent} />
+            <ScaledLandingPreview project={previewProject as any} previewContent={landingContent} brokerId={brokerId} brokerName={brokerName} />
           ) : (
             <div className="flex items-center justify-center h-full text-slate-400 text-sm">
               {isGenerating ? (
