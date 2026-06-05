@@ -151,6 +151,7 @@ const BrokerProjectLanding = () => {
         project={project}
         brokerId={brokerOwner?.id || project.created_by_broker_id}
         brokerSlug={brokerOwner?.slug || brokerSlug || undefined}
+        brokerName={brokerOwner?.name}
       />
     );
   }
