@@ -198,7 +198,7 @@ export default function LandingFormSection({
     <section
       id="formulario"
       ref={sectionRef}
-      className="py-20 md:py-28 relative overflow-hidden"
+      className="dark py-20 md:py-28 relative overflow-hidden"
       style={{ backgroundColor: p.bg, color: "#d8cfb8", fontFamily: sans }}
       aria-labelledby="form-title"
     >
