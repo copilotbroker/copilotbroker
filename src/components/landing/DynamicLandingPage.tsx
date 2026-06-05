@@ -7,6 +7,7 @@ import DynamicBenefits from "./DynamicBenefits";
 import DynamicCTA from "./DynamicCTA";
 import DynamicFooter from "./DynamicFooter";
 import FormSection from "@/components/FormSection";
+import LandingFormSection from "./LandingFormSection";
 import FloatingCTA from "@/components/FloatingCTA";
 import FontLoader from "./FontLoader";
 import WhatsAppEndingSection from "./WhatsAppEndingSection";
