@@ -8,6 +8,9 @@ import DynamicCTA from "./DynamicCTA";
 import DynamicFooter from "./DynamicFooter";
 import FormSection from "@/components/FormSection";
 import FloatingCTA from "@/components/FloatingCTA";
+import FontLoader from "./FontLoader";
+import { getStyleFamily } from "./styles/registry";
+import { getTypography } from "./styles/tokens";
 import iconMap from "./iconMap";
 
 function DynamicCustomSection({ section, theme }: { section: CustomSection; theme: LandingContent["theme"] }) {
@@ -86,6 +89,46 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
   const isBrokerOwnedLanding = !!project.created_by_broker_id;
   if (!content) return null;
 
+  const family = getStyleFamily(content.theme.styleFamily);
+  const typography = getTypography(content.theme);
+  const fontsToLoad = family ? [typography.display, typography.body] : [];
+
+  // New style families
+  if (family) {
+    const { Hero, About, Features, Urgency, Benefits, CTA, Footer } = family;
+    return (
+      <div className="min-h-screen">
+        <FontLoader fonts={fontsToLoad} />
+        <main>
+          <Hero content={content.hero} theme={content.theme} />
+          <About content={content.about} theme={content.theme} />
+          <Features content={content.features} theme={content.theme} />
+          {content.customSections?.map((section, i) => (
+            <DynamicCustomSection key={i} section={section} theme={content.theme} />
+          ))}
+          <Urgency content={content.urgency} theme={content.theme} />
+          <Benefits content={content.benefits} theme={content.theme} />
+          <CTA content={content.cta} theme={content.theme} />
+          {!isPreview && (
+            <div className="dark bg-background text-foreground">
+              <FormSection
+                projectId={project.id}
+                projectSlug={project.slug}
+                brokerId={brokerId || project.created_by_broker_id}
+                brokerSlug={brokerSlug}
+                allowBrokerSelection={!isBrokerOwnedLanding}
+                webhookUrl={project.webhook_url}
+              />
+            </div>
+          )}
+        </main>
+        <Footer content={content.footer} theme={content.theme} />
+        {!isPreview && <FloatingCTA />}
+      </div>
+    );
+  }
+
+  // Legacy fallback (landings created before the style engine)
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <main>

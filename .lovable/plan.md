@@ -1,61 +1,84 @@
-## Objetivo
+# Plano: elevar o nível artístico do gerador de Landing Pages
 
-Áudio do WhatsApp toca **inline** em qualquer dispositivo (iPhone, Android, desktop) **e** chega com **transcrição automática** em texto logo abaixo do player. Sem fallback "Abrir/Baixar".
+## Diagnóstico
 
-## Parte 1 — Player inline (resolve o iOS)
+O texto gerado já está bom. O problema é o **renderizador**: existe um único template `DynamicLandingPage` com sub-componentes `DynamicHero`, `DynamicAbout`, `DynamicFeatures`, etc. Independentemente do empreendimento, sempre saem:
 
-iOS Safari não decodifica `.ogg/opus` nativamente. Em vez de depender do `<audio>`, decodificamos o Opus no próprio navegador via WebAssembly e tocamos pelo Web Audio API — funciona idêntico em todo lugar.
+- Hero gradiente diagonal com dois círculos radiais.
+- Badge oval + título + subtítulo + descrição + botão pill, sempre na mesma ordem.
+- Cards genéricos em grid 2 colunas com ícone redondo Lucide.
+- Mesma paleta heurística (`accentColor` + `primaryColor`), mesma tipografia (serif vs sans), mesmas animações fade-up.
 
-Biblioteca: [`opus-decoder`](https://www.npmjs.com/package/opus-decoder) (wasm ~200KB, carregada sob demanda no primeiro Play — não impacta bundle inicial).
+Quando construo no chat, eu escolho composições, tensões, ritmos, tipografia bem específicos para o projeto. Hoje o gerador automático não tem esse "vocabulário". Vou dar a ele.
 
-### Novo componente `OpusAudioPlayer`
-Arquivo: `src/components/inbox/OpusAudioPlayer.tsx`
-- Tenta `<audio>` nativo (caminho rápido em desktop/Android).
-- Se `canPlayType` retornar vazio OU disparar `error`, faz fetch → decodifica Opus → PCM via `opus-decoder` → `AudioBuffer` → toca via Web Audio API.
-- UI: ícone de microfone, botão play/pause, barra de progresso clicável, tempo decorrido/total, velocidade (1x / 1.5x / 2x).
-- Cache do `AudioBuffer` por URL para não redecodificar a cada play/pause.
-- `AudioContext.resume()` dentro do gesto do Play (exigência do iOS).
+## Solução: Style Engine com 4 design systems distintos
 
-### Substituir `AudioMessage` em `MessageMedia.tsx`
-Remover `AudioMessage`, `audioIsPlayable`, estado `fallback` e card "Abrir/Baixar". Branch `isAudio` renderiza só `<OpusAudioPlayer ... />` + bloco de transcrição (parte 2).
+Crio 4 famílias visuais, cada uma com seu próprio Hero/About/Features/Urgency/Benefits/CTA. A IA escolhe a família mais adequada e devolve tokens de design ricos. O renderer monta a página combinando os blocos da família escolhida.
 
-### Dependência
-`bun add opus-decoder`.
+### Famílias (visualmente bem distintas, não variações sutis)
 
-## Parte 2 — Transcrição automática
+1. **Editorial Magazine** — alto contraste P&B, tipografia display enorme (Fraunces/Instrument Serif), grid quebrado tipo revista, números grandes (01, 02), linhas horizontais finas, fotos full-bleed alternadas zig-zag.
+2. **Luxury Noir** — fundo preto profundo + dourado sutil, serif (Cormorant), espaçamento generoso, reveals lentos, traços dourados finos, layout centralizado contemplativo.
+3. **Modern Glass / Tech** — gradientes complexos (mesh), glassmorphism, sans display (Space Grotesk), bento grid, partículas, animações Framer Motion, paleta saturada.
+4. **Nature Organic** — tons terrosos/sage, bordas orgânicas (border-radius assimétrico), texturas SVG noise, tipografia humanista (Lora + Nunito Sans), composição assimétrica calma.
 
-Toda mensagem de áudio é transcrita em português e exibida em um bloco "Transcrição" abaixo do player (estilo "Transcript" do WhatsApp).
+Cada família vive em `src/components/landing/styles/<familia>/` com `Hero.tsx`, `About.tsx`, `Features.tsx`, `Urgency.tsx`, `Benefits.tsx`, `CTA.tsx`, `Footer.tsx` próprios.
 
-### Onde transcrever
-**Na recepção, no webhook** — não em runtime no client. Vantagens:
-- Transcreve uma vez, salva no banco, todos os corretores reusam.
-- Aparece pronto quando o corretor abre a conversa.
-- Não consome créditos sempre que alguém revê a conversa.
+### Tokens enriquecidos no JSON
 
-### Stack
-- **Lovable AI Gateway** com `google/gemini-2.5-flash` (já configurado, sem chave nova).
-- Gemini aceita áudio como `inline_data` (base64) em chamadas `/v1/chat/completions` e devolve a transcrição.
-- Custo baixo, latência boa para áudios típicos de WhatsApp (< 2 min).
+Estendo `LandingContent["theme"]`:
 
-### Mudanças no backend
-1. **`supabase/functions/whatsapp-webhook/index.ts`** — quando `message_type === 'audio'` e a mídia já está disponível (após o download/storage que já fazemos), invocar (fire-and-forget, com `EdgeRuntime.waitUntil`) uma nova função `transcribe-audio` passando `message_id` e `storage_path`. Não bloqueia o ack do webhook.
-2. **Nova edge function `supabase/functions/transcribe-audio/index.ts`** — baixa o arquivo do Storage, converte para base64, chama Gemini Flash via Lovable AI Gateway com prompt "Transcreva fielmente este áudio em português brasileiro, sem comentários extras", recebe o texto e atualiza `messages.metadata.transcription = { text, status: 'done', model, generated_at }`. Trata 429/402 marcando `status: 'rate_limited'` ou `'failed'` (a UI mostra um botão "Tentar novamente" que reinvoca a função).
-3. **Migração**: nenhum schema novo — usamos o `metadata` jsonb que já existe em `messages`.
+```ts
+theme: {
+  styleFamily: "editorial" | "luxury-noir" | "modern-glass" | "nature-organic";
+  palette: { bg, surface, primary, primaryFg, muted, accent, border }; // 7 tokens HSL
+  typography: { display: GoogleFontName, body: GoogleFontName, displayWeight, bodyWeight };
+  motion: "subtle" | "expressive" | "cinematic";
+  density: "airy" | "balanced" | "dense";
+  // mantém primaryColor/accentColor para compat
+}
+```
 
-### Mudanças no frontend
-- `OpusAudioPlayer` recebe `transcription?: { status, text }` como prop.
-- Abaixo do player: bloco discreto com label "Transcrição" + texto. Estados:
-  - `pending` (default ao receber) → "Transcrevendo áudio…" com shimmer.
-  - `done` → texto completo, com botão "ocultar/mostrar" se for longo.
-  - `failed` / `rate_limited` → "Não foi possível transcrever" + botão "Tentar novamente" (chama `transcribe-audio` via `supabase.functions.invoke`).
-- Realtime: a UI já escuta `messages` updates; quando `metadata.transcription` mudar, re-renderiza automaticamente.
+`DynamicLandingPage` injeta as Google Fonts via `<link>` dinâmico e aplica CSS variables no escopo da página.
 
-### Backfill (opcional, posterior)
-Não cobrir agora. Áudios antigos seguem sem transcrição até alguém clicar em "Transcrever" (botão pequeno no player quando `transcription` for ausente). Simples e barato.
+### Pipeline da IA (continua 1 chamada só, conforme pediu)
 
-## Fora de escopo
-- Waveform visual estilo WhatsApp.
-- Transcodificação server-side com ffmpeg.
-- Tradução automática (só transcrição em PT-BR).
-- Backfill em massa de áudios antigos.
-- Gravação de áudio pelo corretor.
+Mantenho `generate-landing` em uma chamada, mas:
+
+- Troco modelo para **GPT-5** (melhor direção criativa visual que Gemini).
+- Adiciono ao system prompt um catálogo das 4 famílias com critérios de escolha + paleta de tokens (em vez de só `primaryColor`/`accentColor` HEX livre).
+- O tool schema passa a exigir os campos novos (`styleFamily`, `palette`, `typography`, `motion`, `density`).
+- Prompt instrui a IA a agir como **art director**: escolher família por personalidade do projeto, calibrar paleta com contraste correto, escolher fontes específicas dentre uma lista curada (~12 Google Fonts).
+- Refinamentos podem trocar família inteira se pedido ("mais editorial", "mais luxuoso").
+
+### Roteamento no renderer
+
+`DynamicLandingPage` lê `theme.styleFamily` e seleciona o conjunto de componentes daquela família. Fallback para o renderer atual se `styleFamily` ausente (landings antigas continuam funcionando).
+
+## Arquivos
+
+**Novos**
+- `src/components/landing/styles/editorial/{Hero,About,Features,Urgency,Benefits,CTA,Footer}.tsx`
+- `src/components/landing/styles/luxury-noir/...` (mesmos 7)
+- `src/components/landing/styles/modern-glass/...`
+- `src/components/landing/styles/nature-organic/...`
+- `src/components/landing/styles/registry.ts` — mapa `styleFamily → componentes` e fontes a carregar
+- `src/components/landing/FontLoader.tsx` — injeta Google Fonts conforme `typography`
+
+**Editados**
+- `src/types/project.ts` — extensão de `LandingContent.theme` (campos opcionais; compat retro)
+- `src/components/landing/DynamicLandingPage.tsx` — escolhe família via registry; aplica CSS vars
+- `supabase/functions/generate-landing/index.ts` — modelo GPT-5, novo system prompt com catálogo, tool schema atualizado
+
+**Fora de escopo** (não pediu)
+- Geração de imagens hero por IA.
+- Pipeline multi-etapa.
+- Mudanças no formulário, no FloatingCTA, ou no fluxo de captura.
+
+## Riscos
+- Landings antigas sem `styleFamily` precisam continuar renderizando — uso fallback explícito.
+- Carregar Google Fonts dinamicamente pode causar FOUT — uso `display=swap` e preconnect.
+- Quatro famílias = 28 componentes novos; é trabalho substancial mas é o que entrega o salto de qualidade pedido.
+
+## Validação
+Após implementar, gero uma landing de teste com `Vivapark NC-1` e outra com um projeto luxo (`Aura Legano`) e comparo visualmente com versões feitas manualmente.
