@@ -177,6 +177,7 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
         .from("projects")
         .select("id")
         .eq("slug", slug)
+        .eq("is_active", true)
         .neq("id", editProject?.id || "00000000-0000-0000-0000-000000000000")
         .maybeSingle();
       setSlugError(existing ? "Já existe um projeto com este slug." : null);
