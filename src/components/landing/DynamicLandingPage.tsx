@@ -9,6 +9,7 @@ import DynamicFooter from "./DynamicFooter";
 import FormSection from "@/components/FormSection";
 import FloatingCTA from "@/components/FloatingCTA";
 import FontLoader from "./FontLoader";
+import WhatsAppEndingSection from "./WhatsAppEndingSection";
 import { getStyleFamily } from "./styles/registry";
 import { getTypography } from "./styles/tokens";
 import iconMap from "./iconMap";
@@ -131,17 +132,23 @@ export default function DynamicLandingPage({ project, previewContent, brokerId, 
             </>
           )}
 
-          {!isPreview && (
-            <div className="dark bg-background text-foreground">
-              <FormSection
-                projectId={project.id}
-                projectSlug={project.slug}
-                brokerId={brokerId || project.created_by_broker_id}
-                brokerSlug={brokerSlug}
-                allowBrokerSelection={!isBrokerOwnedLanding}
-                webhookUrl={project.webhook_url}
-              />
-            </div>
+          {/* Encerramento: formulário (default) ou botão WhatsApp do corretor.
+              No preview do editor, mostramos a seção escolhida para visualização. */}
+          {content.theme.endingMode === "whatsapp" && content.theme.endingWhatsappPhone ? (
+            <WhatsAppEndingSection theme={content.theme} />
+          ) : (
+            !isPreview && (
+              <div className="dark bg-background text-foreground">
+                <FormSection
+                  projectId={project.id}
+                  projectSlug={project.slug}
+                  brokerId={brokerId || project.created_by_broker_id}
+                  brokerSlug={brokerSlug}
+                  allowBrokerSelection={!isBrokerOwnedLanding}
+                  webhookUrl={project.webhook_url}
+                />
+              </div>
+            )
           )}
         </main>
         <Footer content={content.footer} theme={content.theme} />

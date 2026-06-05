@@ -104,6 +104,40 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     return initialData;
   });
   const [landingContent, setLandingContent] = useState<LandingContent | null>(editProject?.landing_content || null);
+  const [brokerWhatsapp, setBrokerWhatsapp] = useState<string>("");
+
+  // Busca o WhatsApp do broker dono (para prefill ao escolher modo WhatsApp)
+  useEffect(() => {
+    if (!brokerMode || !brokerId) return;
+    supabase.from("brokers").select("whatsapp").eq("id", brokerId).maybeSingle().then(({ data }) => {
+      if (data?.whatsapp) setBrokerWhatsapp(String(data.whatsapp));
+    });
+  }, [brokerMode, brokerId]);
+
+  const updateEndingMode = (mode: "form" | "whatsapp") => {
+    setLandingContent((prev) => {
+      if (!prev) return prev;
+      const next: LandingContent = {
+        ...prev,
+        theme: {
+          ...prev.theme,
+          endingMode: mode,
+          endingWhatsappPhone:
+            mode === "whatsapp"
+              ? prev.theme.endingWhatsappPhone || brokerWhatsapp || ""
+              : prev.theme.endingWhatsappPhone,
+        },
+      };
+      return next;
+    });
+  };
+
+  const updateEndingField = (field: "endingWhatsappPhone" | "endingWhatsappMessage", value: string) => {
+    setLandingContent((prev) => {
+      if (!prev) return prev;
+      return { ...prev, theme: { ...prev.theme, [field]: value } };
+    });
+  };
   const [isGenerating, setIsGenerating] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -897,6 +931,58 @@ Faixa de preço: A partir de R$ 320.000`}
       <div className="flex flex-1 gap-4 min-h-0 overflow-hidden">
         {/* Chat side */}
         <div className={cn("flex flex-col w-full md:w-[380px] md:flex-shrink-0", mobileTab !== "chat" ? "hidden md:flex" : "flex")}>
+          {/* Encerramento da landing: Formulário (CRM) ou Botão WhatsApp */}
+          {landingContent && (
+            <div className="mb-3 p-3 rounded-xl bg-[#1a1a1e] border border-[#2a2a2e] space-y-2">
+              <Label className="text-xs uppercase tracking-wide text-slate-400">Encerramento da landing</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => updateEndingMode("form")}
+                  className={cn(
+                    "py-2 px-3 text-xs rounded-md border transition-colors",
+                    (landingContent.theme.endingMode ?? "form") === "form"
+                      ? "bg-[#FFFF00] text-black border-[#FFFF00] font-semibold"
+                      : "bg-[#1e1e22] text-slate-300 border-[#2a2a2e] hover:bg-[#2a2a2e]"
+                  )}
+                >
+                  Formulário (CRM)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateEndingMode("whatsapp")}
+                  className={cn(
+                    "py-2 px-3 text-xs rounded-md border transition-colors",
+                    landingContent.theme.endingMode === "whatsapp"
+                      ? "bg-[#25D366] text-black border-[#25D366] font-semibold"
+                      : "bg-[#1e1e22] text-slate-300 border-[#2a2a2e] hover:bg-[#2a2a2e]"
+                  )}
+                >
+                  Botão WhatsApp
+                </button>
+              </div>
+              {landingContent.theme.endingMode === "whatsapp" && (
+                <div className="space-y-2 pt-2">
+                  <Input
+                    value={landingContent.theme.endingWhatsappPhone || ""}
+                    onChange={(e) => updateEndingField("endingWhatsappPhone", e.target.value)}
+                    placeholder="WhatsApp (DDI+DDD+número, só dígitos)"
+                    className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600 text-xs"
+                  />
+                  <Input
+                    value={landingContent.theme.endingWhatsappMessage || ""}
+                    onChange={(e) => updateEndingField("endingWhatsappMessage", e.target.value)}
+                    placeholder="Mensagem pré-preenchida (opcional)"
+                    className="bg-[#1e1e22] border-[#2a2a2e] text-white placeholder:text-slate-600 text-xs"
+                  />
+                  {!landingContent.theme.endingWhatsappPhone && brokerWhatsapp && (
+                    <p className="text-[10px] text-slate-500">Sugestão: seu WhatsApp {brokerWhatsapp}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-[#1a1a1e] rounded-xl mb-3">
             {chatMessages.length === 0 && !isGenerating && (
               <p className="text-sm text-slate-500 text-center py-8">
