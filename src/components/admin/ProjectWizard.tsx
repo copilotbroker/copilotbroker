@@ -17,6 +17,7 @@ import {
   Building2, MapPin, Rocket, X, Upload, Image, Trash2, FileVideo, Home, Save,
 } from "lucide-react";
 import DynamicLandingPage from "@/components/landing/DynamicLandingPage";
+import ScaledLandingPreview from "@/components/admin/ScaledLandingPreview";
 import WizardMethodSelector from "@/components/admin/WizardMethodSelector";
 import LinkImportStep, { ScrapedData } from "@/components/admin/LinkImportStep";
 
@@ -1033,13 +1034,9 @@ Faixa de preço: A partir de R$ 320.000`}
         </div>
 
         {/* Preview side */}
-        <div className={cn("flex-1 overflow-hidden rounded-xl border border-[#2a2a2e] bg-white", mobileTab !== "preview" ? "hidden md:block" : "block")}>
+        <div className={cn("flex-1 overflow-hidden rounded-xl border border-[#2a2a2e] bg-[#0f0f12]", mobileTab !== "preview" ? "hidden md:block" : "block")}>
           {landingContent ? (
-            <div className="overflow-y-auto h-full">
-              <div style={{ zoom: 0.5 }}>
-                <DynamicLandingPage project={previewProject as any} previewContent={landingContent} />
-              </div>
-            </div>
+            <ScaledLandingPreview project={previewProject as any} previewContent={landingContent} />
           ) : (
             <div className="flex items-center justify-center h-full text-slate-400 text-sm">
               {isGenerating ? (
