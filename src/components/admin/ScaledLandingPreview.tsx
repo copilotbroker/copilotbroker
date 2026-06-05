@@ -159,7 +159,7 @@ export default function ScaledLandingPreview({ project, previewContent, brokerId
           }}
         >
           <IframePortal width={deviceWidth} scale={scale}>
-            <DynamicLandingPage project={project} previewContent={previewContent} />
+            <DynamicLandingPage project={project} previewContent={previewContent} brokerId={brokerId} brokerName={brokerName} />
           </IframePortal>
         </div>
       </div>
