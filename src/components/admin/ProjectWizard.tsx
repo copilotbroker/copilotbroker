@@ -104,6 +104,40 @@ export default function ProjectWizard({ inline, onBack, editProject, onComplete,
     return initialData;
   });
   const [landingContent, setLandingContent] = useState<LandingContent | null>(editProject?.landing_content || null);
+  const [brokerWhatsapp, setBrokerWhatsapp] = useState<string>("");
+
+  // Busca o WhatsApp do broker dono (para prefill ao escolher modo WhatsApp)
+  useEffect(() => {
+    if (!brokerMode || !brokerId) return;
+    supabase.from("brokers").select("whatsapp").eq("id", brokerId).maybeSingle().then(({ data }) => {
+      if (data?.whatsapp) setBrokerWhatsapp(String(data.whatsapp));
+    });
+  }, [brokerMode, brokerId]);
+
+  const updateEndingMode = (mode: "form" | "whatsapp") => {
+    setLandingContent((prev) => {
+      if (!prev) return prev;
+      const next: LandingContent = {
+        ...prev,
+        theme: {
+          ...prev.theme,
+          endingMode: mode,
+          endingWhatsappPhone:
+            mode === "whatsapp"
+              ? prev.theme.endingWhatsappPhone || brokerWhatsapp || ""
+              : prev.theme.endingWhatsappPhone,
+        },
+      };
+      return next;
+    });
+  };
+
+  const updateEndingField = (field: "endingWhatsappPhone" | "endingWhatsappMessage", value: string) => {
+    setLandingContent((prev) => {
+      if (!prev) return prev;
+      return { ...prev, theme: { ...prev.theme, [field]: value } };
+    });
+  };
   const [isGenerating, setIsGenerating] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
