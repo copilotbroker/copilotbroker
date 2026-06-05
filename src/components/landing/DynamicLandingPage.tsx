@@ -9,6 +9,7 @@ import DynamicFooter from "./DynamicFooter";
 import FormSection from "@/components/FormSection";
 import FloatingCTA from "@/components/FloatingCTA";
 import FontLoader from "./FontLoader";
+import WhatsAppEndingSection from "./WhatsAppEndingSection";
 import { getStyleFamily } from "./styles/registry";
 import { getTypography } from "./styles/tokens";
 import iconMap from "./iconMap";
