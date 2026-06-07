@@ -87,6 +87,12 @@ function applyFilters(query: any, filters: KanbanColumnFilters, status?: LeadSta
   if (filters.selectedLabelIds && filters.selectedLabelIds.length > 0) {
     query = query.in("id", filters.selectedLabelIds);
   }
+  if (filters.periodStart) {
+    query = query.gte("created_at", filters.periodStart.toISOString());
+  }
+  if (filters.periodEnd) {
+    query = query.lte("created_at", filters.periodEnd.toISOString());
+  }
   return query;
 }
 
