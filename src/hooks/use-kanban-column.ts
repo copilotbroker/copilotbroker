@@ -23,6 +23,8 @@ export interface KanbanColumnFilters {
   selectedOrigins?: string[];
   searchTerm?: string;
   selectedLabelIds?: string[];
+  periodStart?: Date | null;
+  periodEnd?: Date | null;
 }
 
 export interface ActiveFlowData {
@@ -85,6 +87,12 @@ function applyFilters(query: any, filters: KanbanColumnFilters, status?: LeadSta
   if (filters.selectedLabelIds && filters.selectedLabelIds.length > 0) {
     query = query.in("id", filters.selectedLabelIds);
   }
+  if (filters.periodStart) {
+    query = query.gte("created_at", filters.periodStart.toISOString());
+  }
+  if (filters.periodEnd) {
+    query = query.lte("created_at", filters.periodEnd.toISOString());
+  }
   return query;
 }
 
@@ -116,7 +124,9 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     JSON.stringify(filters.selectedOrigins || []),
     filters.searchTerm || "",
     JSON.stringify(filters.selectedLabelIds || []),
-  ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm, filters.selectedLabelIds]);
+    filters.periodStart ? filters.periodStart.getTime() : 0,
+    filters.periodEnd ? filters.periodEnd.getTime() : 0,
+  ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm, filters.selectedLabelIds, filters.periodStart, filters.periodEnd]);
 
   const { activeFlowLeadIds, activeFlowIdList, activeFlowSignature } = activeFlow;
 

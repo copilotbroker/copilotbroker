@@ -9,6 +9,8 @@ import { buildInboxUrlForConversation } from "@/lib/conversation-resolver";
 import { useCustomOrigins } from "@/hooks/use-custom-origins";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
 import { useActiveFlowLeads } from "@/hooks/use-active-flow-reconciliation";
+import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
+import { getPeriodDates } from "@/hooks/use-broker-dashboard";
 import { KanbanColumn } from "./KanbanColumn";
 import LeadPage from "@/pages/LeadPage";
 import { LeadDetailSheet } from "./LeadDetailSheet";
@@ -64,6 +66,8 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
+  const [period, setPeriod] = useState<string>("all");
+  const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
   const { data: customOrigins = [] } = useCustomOrigins();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedLead, setSelectedLead] = useState<CRMLead | null>(null);
@@ -282,6 +286,12 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     return () => { supabase.removeChannel(channel); };
   }, [queryClient, brokerId, isAdmin, handleNewLead]);
 
+  // Period dates
+  const periodDates = useMemo(() => {
+    if (period === "custom" && customRange) return customRange;
+    return getPeriodDates(period);
+  }, [period, customRange]);
+
   // Column filters
   const columnFilters: KanbanColumnFilters = useMemo(() => ({
     brokerId,
@@ -293,7 +303,9 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     selectedLabelIds: selectedLabelIds.length > 0
       ? (labelFilteredLeadIds && labelFilteredLeadIds.length > 0 ? labelFilteredLeadIds : ["00000000-0000-0000-0000-000000000000"])
       : undefined,
-  }), [brokerId, isAdmin, selectedProject, selectedBroker, selectedOrigins, debouncedSearch, selectedLabelIds, labelFilteredLeadIds]);
+    periodStart: periodDates.start,
+    periodEnd: periodDates.end,
+  }), [brokerId, isAdmin, selectedProject, selectedBroker, selectedOrigins, debouncedSearch, selectedLabelIds, labelFilteredLeadIds, periodDates]);
 
   // Lead lookup callback
   const handleLeadsLoaded = useCallback((leads: CRMLead[]) => {
@@ -673,6 +685,16 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   // Filter buttons JSX (reused for portal and inline)
   const filterButtonsJsx = (
     <div className="flex items-center gap-2 overflow-x-auto">
+      <PeriodFilterWithCustom
+        period={period}
+        onPeriodChange={(v) => setPeriod(v)}
+        customRange={customRange}
+        onCustomRangeApply={(start, end) => {
+          setCustomRange({ start, end });
+          setPeriod("custom");
+        }}
+        showAllPeriod
+      />
       {(isAdmin || projects.length > 1) && projects.length > 0 && (
         <Select value={selectedProject} onValueChange={setSelectedProject}>
           <SelectTrigger className="w-auto max-w-[140px] md:max-w-none h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-1 md:gap-2 px-2">
