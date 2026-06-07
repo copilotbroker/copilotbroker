@@ -286,6 +286,12 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     return () => { supabase.removeChannel(channel); };
   }, [queryClient, brokerId, isAdmin, handleNewLead]);
 
+  // Period dates
+  const periodDates = useMemo(() => {
+    if (period === "custom" && customRange) return customRange;
+    return getPeriodDates(period);
+  }, [period, customRange]);
+
   // Column filters
   const columnFilters: KanbanColumnFilters = useMemo(() => ({
     brokerId,
@@ -297,7 +303,9 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     selectedLabelIds: selectedLabelIds.length > 0
       ? (labelFilteredLeadIds && labelFilteredLeadIds.length > 0 ? labelFilteredLeadIds : ["00000000-0000-0000-0000-000000000000"])
       : undefined,
-  }), [brokerId, isAdmin, selectedProject, selectedBroker, selectedOrigins, debouncedSearch, selectedLabelIds, labelFilteredLeadIds]);
+    periodStart: periodDates.start,
+    periodEnd: periodDates.end,
+  }), [brokerId, isAdmin, selectedProject, selectedBroker, selectedOrigins, debouncedSearch, selectedLabelIds, labelFilteredLeadIds, periodDates]);
 
   // Lead lookup callback
   const handleLeadsLoaded = useCallback((leads: CRMLead[]) => {
