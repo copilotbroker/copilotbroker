@@ -685,6 +685,16 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   // Filter buttons JSX (reused for portal and inline)
   const filterButtonsJsx = (
     <div className="flex items-center gap-2 overflow-x-auto">
+      <PeriodFilterWithCustom
+        period={period}
+        onPeriodChange={(v) => setPeriod(v)}
+        customRange={customRange}
+        onCustomRangeApply={(start, end) => {
+          setCustomRange({ start, end });
+          setPeriod("custom");
+        }}
+        showAllPeriod
+      />
       {(isAdmin || projects.length > 1) && projects.length > 0 && (
         <Select value={selectedProject} onValueChange={setSelectedProject}>
           <SelectTrigger className="w-auto max-w-[140px] md:max-w-none h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-1 md:gap-2 px-2">
