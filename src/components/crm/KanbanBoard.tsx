@@ -880,41 +880,28 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Portal mobile filters into header collapsible area */}
-      {hideToolbarMobile && mobileFilterPortal && createPortal(filterButtonsJsx, mobileFilterPortal)}
+      {/* Portal mobile filters into header collapsible area (BrokerAdmin) — include period filter */}
+      {hideToolbarMobile && mobileFilterPortal && createPortal(
+        <div className="flex items-center gap-2 overflow-x-auto">
+          {filterButtonsJsx}
+          <div className="ml-auto shrink-0">{periodFilterJsx}</div>
+        </div>,
+        mobileFilterPortal
+      )}
 
       {/* Toolbar - Filters */}
       <div className={cn("flex flex-col gap-2 md:gap-0 mb-4 md:mb-6 px-1", hideToolbarMobile && "hidden md:flex")}>
-        {/* Mobile search */}
-        <div className="md:hidden relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Buscar por nome ou WhatsApp..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            className={cn(
-              "w-full pl-9 pr-3 py-2 rounded-lg text-sm",
-              "bg-[#1e1e22] border border-[#2a2a2e]",
-              "text-slate-200 placeholder:text-slate-500",
-              "focus:outline-none focus:ring-2 focus:ring-primary/50",
-              "transition-all duration-200"
-            )}
-          />
-        </div>
-        {/* Filters row + desktop search */}
-        <div className="flex items-center gap-2 md:gap-3 overflow-x-auto">
-          {filterButtonsJsx}
-          {/* Desktop search */}
-          <div className="hidden md:block relative ml-auto">
+        {/* Mobile search row: search + period filter */}
+        <div className="md:hidden flex items-center gap-2">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
-              placeholder="Buscar..."
+              placeholder="Buscar por nome ou WhatsApp..."
               value={searchTerm}
               onChange={(e) => onSearchChange?.(e.target.value)}
               className={cn(
-                "w-48 pl-9 pr-3 py-2 rounded-lg text-sm",
+                "w-full pl-9 pr-3 py-2 rounded-lg text-sm",
                 "bg-[#1e1e22] border border-[#2a2a2e]",
                 "text-slate-200 placeholder:text-slate-500",
                 "focus:outline-none focus:ring-2 focus:ring-primary/50",
@@ -922,8 +909,33 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
               )}
             />
           </div>
+          {periodFilterJsx}
+        </div>
+        {/* Filters row + desktop search + period filter */}
+        <div className="flex items-center gap-2 md:gap-3 overflow-x-auto">
+          {filterButtonsJsx}
+          <div className="hidden md:flex items-center gap-2 ml-auto">
+            {periodFilterJsx}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                className={cn(
+                  "w-48 pl-9 pr-3 py-2 rounded-lg text-sm",
+                  "bg-[#1e1e22] border border-[#2a2a2e]",
+                  "text-slate-200 placeholder:text-slate-500",
+                  "focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  "transition-all duration-200"
+                )}
+              />
+            </div>
+          </div>
         </div>
       </div>
+
 
       {/* Kanban Board */}
       <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden scrollbar-subtle pb-4 -mx-3 px-3 md:mx-0 md:px-0">
