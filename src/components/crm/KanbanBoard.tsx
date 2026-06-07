@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Building2, Users, Search, MapPin, X, Tags } from "lucide-react";
+import { Building2, Users, Search, MapPin, X, Tags, CalendarRange } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { CRMLead, LeadStatus, STATUS_CONFIG, LEAD_ORIGINS } from "@/types/crm";
@@ -9,7 +10,7 @@ import { buildInboxUrlForConversation } from "@/lib/conversation-resolver";
 import { useCustomOrigins } from "@/hooks/use-custom-origins";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
 import { useActiveFlowLeads } from "@/hooks/use-active-flow-reconciliation";
-import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
+import { CustomDateRangePickerContent } from "@/components/ui/custom-date-range-picker";
 import { getPeriodDates } from "@/hooks/use-broker-dashboard";
 import { KanbanColumn } from "./KanbanColumn";
 import LeadPage from "@/pages/LeadPage";
@@ -682,19 +683,94 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     }
   }, [hideToolbarMobile]);
 
-  // Filter buttons JSX (reused for portal and inline)
+  // Period filter label
+  const periodLabel = useMemo(() => {
+    if (period === "today") return "Hoje";
+    if (period === "7d") return "7 dias";
+    if (period === "30d") return "30 dias";
+    if (period === "all") return null;
+    if (period === "custom" && customRange) {
+      return `${format(customRange.start, "dd/MM")} - ${format(customRange.end, "dd/MM")}`;
+    }
+    return null;
+  }, [period, customRange]);
+
+  const PRESET_OPTIONS: { value: string; label: string }[] = [
+    { value: "all", label: "Todo período" },
+    { value: "today", label: "Hoje" },
+    { value: "7d", label: "Últimos 7 dias" },
+    { value: "30d", label: "Últimos 30 dias" },
+  ];
+
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [periodMode, setPeriodMode] = useState<"presets" | "custom">("presets");
+
+  const periodFilterJsx = (
+    <Popover open={periodOpen} onOpenChange={(o) => { setPeriodOpen(o); if (!o) setPeriodMode("presets"); }}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "flex items-center gap-1.5 h-9 px-2 text-sm transition-colors rounded-lg hover:bg-[#2a2a2e] shrink-0",
+            period !== "all" ? "text-[#FFFF00]" : "text-slate-400 hover:text-slate-200"
+          )}
+          aria-label="Filtrar por período"
+        >
+          <CalendarRange className="w-4 h-4 shrink-0" />
+          {periodLabel && <span className="hidden sm:inline truncate max-w-[110px]">{periodLabel}</span>}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-auto p-2 bg-[#1e1e22] border-[#2a2a2e]" sideOffset={8}>
+        {periodMode === "presets" ? (
+          <div className="flex flex-col gap-0.5 min-w-[180px]">
+            {PRESET_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { setPeriod(opt.value); setCustomRange(null); setPeriodOpen(false); }}
+                className={cn(
+                  "text-left text-xs px-2.5 py-2 rounded transition-colors",
+                  period === opt.value
+                    ? "bg-[#FFFF00]/15 text-[#FFFF00] font-medium"
+                    : "text-slate-300 hover:bg-[#2a2a2e]"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+            <div className="h-px bg-[#2a2a2e] my-1" />
+            <button
+              onClick={() => setPeriodMode("custom")}
+              className={cn(
+                "text-left text-xs px-2.5 py-2 rounded transition-colors flex items-center gap-2",
+                period === "custom"
+                  ? "bg-[#FFFF00]/15 text-[#FFFF00] font-medium"
+                  : "text-slate-300 hover:bg-[#2a2a2e]"
+              )}
+            >
+              <CalendarRange className="w-3.5 h-3.5" />
+              Personalizado{period === "custom" && customRange ? ` (${format(customRange.start, "dd/MM")} - ${format(customRange.end, "dd/MM")})` : ""}
+            </button>
+          </div>
+        ) : (
+          <div className="max-w-[calc(100vw-2rem)] overflow-x-auto">
+            <CustomDateRangePickerContent
+              initialStart={customRange?.start}
+              initialEnd={customRange?.end}
+              onApply={(start, end) => {
+                setCustomRange({ start, end });
+                setPeriod("custom");
+                setPeriodOpen(false);
+                setPeriodMode("presets");
+              }}
+            />
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+
+  // Filter buttons JSX (reused for portal and inline) — period filter is rendered separately next to search
   const filterButtonsJsx = (
     <div className="flex items-center gap-2 overflow-x-auto">
-      <PeriodFilterWithCustom
-        period={period}
-        onPeriodChange={(v) => setPeriod(v)}
-        customRange={customRange}
-        onCustomRangeApply={(start, end) => {
-          setCustomRange({ start, end });
-          setPeriod("custom");
-        }}
-        showAllPeriod
-      />
       {(isAdmin || projects.length > 1) && projects.length > 0 && (
         <Select value={selectedProject} onValueChange={setSelectedProject}>
           <SelectTrigger className="w-auto max-w-[140px] md:max-w-none h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-1 md:gap-2 px-2">
@@ -804,41 +880,28 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Portal mobile filters into header collapsible area */}
-      {hideToolbarMobile && mobileFilterPortal && createPortal(filterButtonsJsx, mobileFilterPortal)}
+      {/* Portal mobile filters into header collapsible area (BrokerAdmin) — include period filter */}
+      {hideToolbarMobile && mobileFilterPortal && createPortal(
+        <div className="flex items-center gap-2 overflow-x-auto">
+          {filterButtonsJsx}
+          <div className="ml-auto shrink-0">{periodFilterJsx}</div>
+        </div>,
+        mobileFilterPortal
+      )}
 
       {/* Toolbar - Filters */}
       <div className={cn("flex flex-col gap-2 md:gap-0 mb-4 md:mb-6 px-1", hideToolbarMobile && "hidden md:flex")}>
-        {/* Mobile search */}
-        <div className="md:hidden relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Buscar por nome ou WhatsApp..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            className={cn(
-              "w-full pl-9 pr-3 py-2 rounded-lg text-sm",
-              "bg-[#1e1e22] border border-[#2a2a2e]",
-              "text-slate-200 placeholder:text-slate-500",
-              "focus:outline-none focus:ring-2 focus:ring-primary/50",
-              "transition-all duration-200"
-            )}
-          />
-        </div>
-        {/* Filters row + desktop search */}
-        <div className="flex items-center gap-2 md:gap-3 overflow-x-auto">
-          {filterButtonsJsx}
-          {/* Desktop search */}
-          <div className="hidden md:block relative ml-auto">
+        {/* Mobile search row: search + period filter */}
+        <div className="md:hidden flex items-center gap-2">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
-              placeholder="Buscar..."
+              placeholder="Buscar por nome ou WhatsApp..."
               value={searchTerm}
               onChange={(e) => onSearchChange?.(e.target.value)}
               className={cn(
-                "w-48 pl-9 pr-3 py-2 rounded-lg text-sm",
+                "w-full pl-9 pr-3 py-2 rounded-lg text-sm",
                 "bg-[#1e1e22] border border-[#2a2a2e]",
                 "text-slate-200 placeholder:text-slate-500",
                 "focus:outline-none focus:ring-2 focus:ring-primary/50",
@@ -846,8 +909,33 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
               )}
             />
           </div>
+          {periodFilterJsx}
+        </div>
+        {/* Filters row + desktop search + period filter */}
+        <div className="flex items-center gap-2 md:gap-3 overflow-x-auto">
+          {filterButtonsJsx}
+          <div className="hidden md:flex items-center gap-2 ml-auto">
+            {periodFilterJsx}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                className={cn(
+                  "w-48 pl-9 pr-3 py-2 rounded-lg text-sm",
+                  "bg-[#1e1e22] border border-[#2a2a2e]",
+                  "text-slate-200 placeholder:text-slate-500",
+                  "focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  "transition-all duration-200"
+                )}
+              />
+            </div>
+          </div>
         </div>
       </div>
+
 
       {/* Kanban Board */}
       <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden scrollbar-subtle pb-4 -mx-3 px-3 md:mx-0 md:px-0">
