@@ -768,7 +768,7 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     </Popover>
   );
 
-  // Filter buttons JSX (reused for portal and inline)
+  // Filter buttons JSX (reused for portal and inline) — period filter is rendered separately next to search
   const filterButtonsJsx = (
     <div className="flex items-center gap-2 overflow-x-auto">
       {(isAdmin || projects.length > 1) && projects.length > 0 && (
