@@ -683,19 +683,94 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
     }
   }, [hideToolbarMobile]);
 
+  // Period filter label
+  const periodLabel = useMemo(() => {
+    if (period === "today") return "Hoje";
+    if (period === "7d") return "7 dias";
+    if (period === "30d") return "30 dias";
+    if (period === "all") return null;
+    if (period === "custom" && customRange) {
+      return `${format(customRange.start, "dd/MM")} - ${format(customRange.end, "dd/MM")}`;
+    }
+    return null;
+  }, [period, customRange]);
+
+  const PRESET_OPTIONS: { value: string; label: string }[] = [
+    { value: "all", label: "Todo período" },
+    { value: "today", label: "Hoje" },
+    { value: "7d", label: "Últimos 7 dias" },
+    { value: "30d", label: "Últimos 30 dias" },
+  ];
+
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [periodMode, setPeriodMode] = useState<"presets" | "custom">("presets");
+
+  const periodFilterJsx = (
+    <Popover open={periodOpen} onOpenChange={(o) => { setPeriodOpen(o); if (!o) setPeriodMode("presets"); }}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "flex items-center gap-1.5 h-9 px-2 text-sm transition-colors rounded-lg hover:bg-[#2a2a2e] shrink-0",
+            period !== "all" ? "text-[#FFFF00]" : "text-slate-400 hover:text-slate-200"
+          )}
+          aria-label="Filtrar por período"
+        >
+          <CalendarRange className="w-4 h-4 shrink-0" />
+          {periodLabel && <span className="hidden sm:inline truncate max-w-[110px]">{periodLabel}</span>}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-auto p-2 bg-[#1e1e22] border-[#2a2a2e]" sideOffset={8}>
+        {periodMode === "presets" ? (
+          <div className="flex flex-col gap-0.5 min-w-[180px]">
+            {PRESET_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { setPeriod(opt.value); setCustomRange(null); setPeriodOpen(false); }}
+                className={cn(
+                  "text-left text-xs px-2.5 py-2 rounded transition-colors",
+                  period === opt.value
+                    ? "bg-[#FFFF00]/15 text-[#FFFF00] font-medium"
+                    : "text-slate-300 hover:bg-[#2a2a2e]"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+            <div className="h-px bg-[#2a2a2e] my-1" />
+            <button
+              onClick={() => setPeriodMode("custom")}
+              className={cn(
+                "text-left text-xs px-2.5 py-2 rounded transition-colors flex items-center gap-2",
+                period === "custom"
+                  ? "bg-[#FFFF00]/15 text-[#FFFF00] font-medium"
+                  : "text-slate-300 hover:bg-[#2a2a2e]"
+              )}
+            >
+              <CalendarRange className="w-3.5 h-3.5" />
+              Personalizado{period === "custom" && customRange ? ` (${format(customRange.start, "dd/MM")} - ${format(customRange.end, "dd/MM")})` : ""}
+            </button>
+          </div>
+        ) : (
+          <div className="max-w-[calc(100vw-2rem)] overflow-x-auto">
+            <CustomDateRangePickerContent
+              initialStart={customRange?.start}
+              initialEnd={customRange?.end}
+              onApply={(start, end) => {
+                setCustomRange({ start, end });
+                setPeriod("custom");
+                setPeriodOpen(false);
+                setPeriodMode("presets");
+              }}
+            />
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+
   // Filter buttons JSX (reused for portal and inline)
   const filterButtonsJsx = (
     <div className="flex items-center gap-2 overflow-x-auto">
-      <PeriodFilterWithCustom
-        period={period}
-        onPeriodChange={(v) => setPeriod(v)}
-        customRange={customRange}
-        onCustomRangeApply={(start, end) => {
-          setCustomRange({ start, end });
-          setPeriod("custom");
-        }}
-        showAllPeriod
-      />
       {(isAdmin || projects.length > 1) && projects.length > 0 && (
         <Select value={selectedProject} onValueChange={setSelectedProject}>
           <SelectTrigger className="w-auto max-w-[140px] md:max-w-none h-9 bg-transparent border-none text-slate-400 hover:text-slate-200 text-sm gap-1 md:gap-2 px-2">
