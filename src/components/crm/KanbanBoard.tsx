@@ -66,6 +66,8 @@ export function KanbanBoard({ brokerId, isAdmin = false, brokers: brokersProp = 
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
+  const [period, setPeriod] = useState<string>("all");
+  const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | null>(null);
   const { data: customOrigins = [] } = useCustomOrigins();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedLead, setSelectedLead] = useState<CRMLead | null>(null);
