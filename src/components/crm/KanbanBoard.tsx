@@ -10,7 +10,7 @@ import { buildInboxUrlForConversation } from "@/lib/conversation-resolver";
 import { useCustomOrigins } from "@/hooks/use-custom-origins";
 import { useKanbanLeads } from "@/hooks/use-kanban-leads";
 import { useActiveFlowLeads } from "@/hooks/use-active-flow-reconciliation";
-import { PeriodFilterWithCustom } from "@/components/ui/custom-date-range-picker";
+import { CustomDateRangePickerContent } from "@/components/ui/custom-date-range-picker";
 import { getPeriodDates } from "@/hooks/use-broker-dashboard";
 import { KanbanColumn } from "./KanbanColumn";
 import LeadPage from "@/pages/LeadPage";
