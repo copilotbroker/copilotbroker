@@ -124,7 +124,9 @@ export function useKanbanColumn(status: LeadStatus, filters: KanbanColumnFilters
     JSON.stringify(filters.selectedOrigins || []),
     filters.searchTerm || "",
     JSON.stringify(filters.selectedLabelIds || []),
-  ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm, filters.selectedLabelIds]);
+    filters.periodStart ? filters.periodStart.getTime() : 0,
+    filters.periodEnd ? filters.periodEnd.getTime() : 0,
+  ], [filters.brokerId, filters.isAdmin, filters.projectId, filters.selectedBroker, filters.selectedOrigins, filters.searchTerm, filters.selectedLabelIds, filters.periodStart, filters.periodEnd]);
 
   const { activeFlowLeadIds, activeFlowIdList, activeFlowSignature } = activeFlow;
 
