@@ -23,6 +23,8 @@ export interface KanbanColumnFilters {
   selectedOrigins?: string[];
   searchTerm?: string;
   selectedLabelIds?: string[];
+  periodStart?: Date | null;
+  periodEnd?: Date | null;
 }
 
 export interface ActiveFlowData {
