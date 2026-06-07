@@ -98,7 +98,7 @@ function MiniCalendar({ month, year, selectedStart, selectedEnd, onSelect, onMon
   );
 }
 
-function CustomDateRangePickerContent({ onApply, initialStart, initialEnd }: {
+export function CustomDateRangePickerContent({ onApply, initialStart, initialEnd }: {
   onApply: (start: Date, end: Date) => void;
   initialStart?: Date; initialEnd?: Date;
 }) {
