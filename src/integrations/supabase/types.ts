@@ -53,6 +53,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "admin_audit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       auto_cadencia_steps: {
@@ -171,6 +178,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "broker_activity_logs_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "broker_activity_logs_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -222,10 +236,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "broker_auto_cadencia_rules_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "broker_auto_cadencia_rules_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broker_auto_cadencia_rules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
         ]
@@ -270,10 +298,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "broker_auto_message_rules_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "broker_auto_message_rules_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broker_auto_message_rules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
         ]
@@ -309,10 +351,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "broker_projects_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "broker_projects_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broker_projects_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
         ]
@@ -354,6 +410,13 @@ export type Database = {
             columns: ["broker_id"]
             isOneToOne: false
             referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broker_sessions_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
             referencedColumns: ["id"]
           },
         ]
@@ -440,10 +503,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "broker_whatsapp_instances_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: true
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "broker_whatsapp_instances_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broker_whatsapp_instances_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -512,10 +589,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "brokers_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "brokers_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brokers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -584,6 +675,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "calendar_events_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "calendar_events_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -598,10 +696,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "calendar_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "calendar_events_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
         ]
@@ -804,6 +916,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "conversations_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "conversations_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -815,6 +934,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -922,10 +1048,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "copilot_configs_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: true
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "copilot_configs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copilot_configs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -967,6 +1107,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "global_whatsapp_config_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1014,6 +1161,13 @@ export type Database = {
             columns: ["broker_id"]
             isOneToOne: true
             referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_calendar_connections_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: true
+            referencedRelation: "brokers_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1080,10 +1234,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lead_attribution_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lead_attribution_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_attribution_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1338,6 +1506,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "lead_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       lead_interactions: {
@@ -1389,6 +1564,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lead_interactions_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lead_interactions_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -1400,6 +1582,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1441,6 +1630,13 @@ export type Database = {
             columns: ["broker_id"]
             isOneToOne: false
             referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_whatsapp_labels_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
             referencedColumns: ["id"]
           },
           {
@@ -1601,10 +1797,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leads_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leads_corretor_atribuido_id_fkey"
             columns: ["corretor_atribuido_id"]
             isOneToOne: false
             referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_corretor_atribuido_id_fkey"
+            columns: ["corretor_atribuido_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
             referencedColumns: ["id"]
           },
           {
@@ -1615,10 +1825,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leads_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
           {
@@ -1710,6 +1934,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "organization_feature_overrides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       organization_invites: {
@@ -1752,6 +1983,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1819,6 +2057,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       organization_subscriptions: {
@@ -1870,6 +2115,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
           {
@@ -1999,6 +2251,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_views_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2159,10 +2418,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "projects_created_by_broker_id_fkey"
+            columns: ["created_by_broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "projects_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2306,10 +2579,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "propostas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "propostas_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2381,10 +2668,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "roletas_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "roletas_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roletas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2420,6 +2721,13 @@ export type Database = {
             columns: ["empreendimento_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roletas_empreendimentos_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
           {
@@ -2474,6 +2782,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "roletas_log_de_corretor_id_fkey"
+            columns: ["de_corretor_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "roletas_log_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -2485,6 +2800,13 @@ export type Database = {
             columns: ["para_corretor_id"]
             isOneToOne: false
             referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roletas_log_para_corretor_id_fkey"
+            columns: ["para_corretor_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
             referencedColumns: ["id"]
           },
           {
@@ -2539,6 +2861,13 @@ export type Database = {
             columns: ["corretor_id"]
             isOneToOne: false
             referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roletas_membros_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
             referencedColumns: ["id"]
           },
           {
@@ -2647,6 +2976,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "whatsapp_campaigns_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "whatsapp_campaigns_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -2661,10 +2997,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "whatsapp_campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "whatsapp_campaigns_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_campaigns_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_public"
             referencedColumns: ["id"]
           },
           {
@@ -2715,6 +3065,13 @@ export type Database = {
             referencedRelation: "brokers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "whatsapp_daily_stats_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       whatsapp_labels: {
@@ -2763,10 +3120,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "whatsapp_labels_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "whatsapp_labels_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_labels_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2873,6 +3244,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "whatsapp_message_queue_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "whatsapp_message_queue_campaign_id_fkey"
             columns: ["campaign_id"]
             isOneToOne: false
@@ -2891,6 +3269,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_queue_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2938,10 +3323,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "whatsapp_message_templates_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "whatsapp_message_templates_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2972,7 +3371,179 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      brokers_public: {
+        Row: {
+          global_display_name: string | null
+          id: string | null
+          is_active: boolean | null
+          lider_id: string | null
+          name: string | null
+          nome_equipe: string | null
+          organization_id: string | null
+          show_name_on_global: boolean | null
+          slug: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          global_display_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          lider_id?: string | null
+          name?: string | null
+          nome_equipe?: string | null
+          organization_id?: string | null
+          show_name_on_global?: boolean | null
+          slug?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          global_display_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          lider_id?: string | null
+          name?: string | null
+          nome_equipe?: string | null
+          organization_id?: string | null
+          show_name_on_global?: boolean | null
+          slug?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brokers_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brokers_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "brokers_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brokers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brokers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations_public: {
+        Row: {
+          display_name: string | null
+          favicon_url: string | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          slug: string | null
+          status: string | null
+        }
+        Insert: {
+          display_name?: string | null
+          favicon_url?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          slug?: string | null
+          status?: string | null
+        }
+        Update: {
+          display_name?: string | null
+          favicon_url?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          slug?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      projects_public: {
+        Row: {
+          city: string | null
+          city_slug: string | null
+          created_at: string | null
+          description: string | null
+          features: Json | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          organization_id: string | null
+          slug: string | null
+          status: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          city_slug?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          organization_id?: string | null
+          slug?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          city_slug?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          organization_id?: string | null
+          slug?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_organization_limit: {
@@ -3006,6 +3577,35 @@ export type Database = {
           role: string
           user_id: string
           whatsapp: string
+        }[]
+      }
+      get_project_brokers: {
+        Args: { _project_id: string }
+        Returns: {
+          broker_id: string
+          global_display_name: string
+          name: string
+          organization_id: string
+          show_name_on_global: boolean
+          slug: string
+          whatsapp: string
+        }[]
+      }
+      get_project_landing_content: {
+        Args: { _city_slug?: string; _slug: string }
+        Returns: {
+          city: string
+          city_slug: string
+          description: string
+          features: Json
+          hero_subtitle: string
+          hero_title: string
+          id: string
+          landing_content: Json
+          name: string
+          organization_id: string
+          slug: string
+          type: string
         }[]
       }
       get_user_organization_ids: {
