@@ -25,7 +25,7 @@ type CheckResult = {
   error?: string;
 };
 
-async function fetchWebhookConfig(token: string): Promise<{ url: string | null; enabled: boolean } | null> {
+async function fetchWebhookConfig(token: string): Promise<{ url: string | null; enabled: boolean; reachable: boolean } | null> {
   try {
     const r = await fetch(`${UAZAPI_BASE_URL}/webhook`, {
       method: "GET",
@@ -33,10 +33,14 @@ async function fetchWebhookConfig(token: string): Promise<{ url: string | null; 
     });
     if (!r.ok) return null;
     const body = await r.json().catch(() => null);
-    if (!body) return { url: null, enabled: false };
+    // UAZAPI can return null, a single object, or an array of webhook entries
+    if (body == null) return { url: null, enabled: false, reachable: true };
+    const entry = Array.isArray(body) ? body[0] : body;
+    if (!entry || typeof entry !== "object") return { url: null, enabled: false, reachable: true };
     return {
-      url: body.url ?? null,
-      enabled: body.enabled !== false,
+      url: (entry as any).url ?? null,
+      enabled: (entry as any).enabled !== false,
+      reachable: true,
     };
   } catch {
     return null;
