@@ -147,7 +147,7 @@ export function Hero({ content, theme }: { content: LandingContent["hero"]; them
           )}
 
           <button
-            onClick={scrollToForm}
+            onClick={scrollDown}
             className="inline-flex items-center justify-center px-10 py-4 text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] rounded-sm transition-all duration-300 hover:scale-[1.02]"
             style={{
               background: goldGradient,

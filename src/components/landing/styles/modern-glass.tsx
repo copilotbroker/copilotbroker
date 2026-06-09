@@ -42,7 +42,7 @@ export function Hero({ content, theme }: { content: LandingContent["hero"]; them
   const { p, display, body } = S(theme);
   const [shown, setShown] = useState(false);
   useEffect(() => { const t = setTimeout(() => setShown(true), 80); return () => clearTimeout(t); }, []);
-  const scrollToForm = () => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" });
+  const scrollToForm = () => (document.getElementById("sobre") || document.getElementById("formulario"))?.scrollIntoView({ behavior: "smooth" });
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden" style={{ backgroundColor: p.bg, color: "#f1f5f9", ...body }}>
       <Mesh p={p} />

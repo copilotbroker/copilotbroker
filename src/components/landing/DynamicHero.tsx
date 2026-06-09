@@ -27,7 +27,9 @@ export default function DynamicHero({ content, theme }: Props) {
   }, []);
 
   const scrollToForm = () => {
-    document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" });
+    // Primeiro CTA do Hero leva para a seção logo abaixo (Sobre), não para o formulário.
+    const target = document.getElementById("sobre") || document.getElementById("formulario");
+    target?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (

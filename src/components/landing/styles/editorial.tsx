@@ -21,7 +21,7 @@ function S(theme: LandingContent["theme"]) {
 
 export function Hero({ content, theme }: { content: LandingContent["hero"]; theme: LandingContent["theme"] }) {
   const { p, t, display, body } = S(theme);
-  const scrollToForm = () => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" });
+  const scrollToForm = () => (document.getElementById("sobre") || document.getElementById("formulario"))?.scrollIntoView({ behavior: "smooth" });
   return (
     <section className="relative min-h-[92vh] flex flex-col" style={{ backgroundColor: p.bg, color: p.accent, ...body }}>
       <div className="border-b" style={{ borderColor: p.border }}>

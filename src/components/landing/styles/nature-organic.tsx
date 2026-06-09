@@ -36,7 +36,7 @@ export function Hero({ content, theme }: { content: LandingContent["hero"]; them
   const { p, display, body } = S(theme);
   const [shown, setShown] = useState(false);
   useEffect(() => { const t = setTimeout(() => setShown(true), 80); return () => clearTimeout(t); }, []);
-  const scrollToForm = () => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" });
+  const scrollToForm = () => (document.getElementById("sobre") || document.getElementById("formulario"))?.scrollIntoView({ behavior: "smooth" });
   return (
     <section className="relative min-h-screen flex items-center px-6 md:px-10 py-20 overflow-hidden" style={{ backgroundColor: p.bg, color: p.accent, ...body }}>
       <div className="absolute -top-32 -left-32 w-[500px] h-[500px] opacity-30" style={{ backgroundColor: p.primary, borderRadius: blobA }} />
